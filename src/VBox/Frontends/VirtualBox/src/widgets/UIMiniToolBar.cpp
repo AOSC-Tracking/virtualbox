@@ -1076,6 +1076,10 @@ void UIMiniToolBar::prepare()
     /* Enable translucency through Qt API if supported: */
     if (uiCommon().isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
+
+    if (NativeWindowSubsystem::X11WindowManagerType() == X11WMType_i3)
+         setWindowFlags(Qt::FramelessWindowHint);
+
 #endif /* VBOX_WS_X11 */
 
     /* Make sure we have no focus: */
