@@ -380,7 +380,8 @@ QRect UIDesktopWidgetWatchdog::availableGeometry(QScreen *pScreen) const
     /* Get cached available-geometry: */
     const QRect availableGeometry = m_availableGeometryData.value(screenToIndex(pScreen));
     /* Return cached available-geometry if it's valid or screen-geometry otherwise: */
-    return availableGeometry.isValid() ? availableGeometry : screenGeometry(pScreen);
+    return availableGeometry.isValid() && NativeWindowSubsystem::X11WindowManagerType() != X11WMType_i3 ?
+           availableGeometry : screenGeometry(pScreen);
 # endif /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 #else /* !VBOX_WS_NIX */
     /* Just return screen available-geometry: */
