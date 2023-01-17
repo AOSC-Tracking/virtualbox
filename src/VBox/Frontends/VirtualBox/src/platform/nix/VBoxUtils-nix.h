@@ -51,6 +51,7 @@ enum X11WMType
     X11WMType_Metacity,
     X11WMType_Mutter,
     X11WMType_Xfwm4,
+    X11WMType_i3,
 };
 
 /** X11: Screen-saver inhibit methods. */
@@ -104,9 +105,9 @@ namespace NativeWindowSubsystem
     /** Wrapper for window manager type functions. */
     X11WMType windowManagerType(bool fIsXServerAvailable);
     /** X11: Determines and returns current Window Manager type. */
-    X11WMType X11WindowManagerType();
+    SHARED_LIBRARY_STUFF X11WMType X11WindowManagerType();
     /** Wayland: Determines and returns current Window Manager type. */
-    X11WMType WaylandWindowManagerType();
+    SHARED_LIBRARY_STUFF X11WMType WaylandWindowManagerType();
 
     /** Wrapper for X11CheckExtension and WaylandCheckExtension functions. */
     bool checkExtension(bool fIsXServerAvailable, const char *extensionName);
