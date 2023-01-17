@@ -115,6 +115,9 @@ X11WMType NativeWindowSubsystem::X11WindowManagerType()
                 else
                 if (QString((const char*)pcData).contains("Xfwm4", Qt::CaseInsensitive))
                     wmType = X11WMType_Xfwm4;
+                else
+                if (QString((const char*)pcData).contains("i3", Qt::CaseInsensitive))
+                    wmType = X11WMType_i3;
                 if (pcData)
                     XFree(pcData);
             }
