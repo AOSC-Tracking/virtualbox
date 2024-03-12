@@ -1,9 +1,9 @@
-Template: virtualbox/group-vboxusers
+Template: virtualbox/group-wheel
 Type: note
-Description: Creating group 'vboxusers'
+Description: Creating group 'wheel'
  Users of VirtualBox must be members of this group. Host network interfaces
  will be assigned to this group.
-Description-de.UTF-8: Erzeuge Gruppe 'vboxusers'
+Description-de.UTF-8: Erzeuge Gruppe 'wheel'
  Nutzer von VirtualBox müssen Mitglied dieser Gruppe sein. Hostinterfaces
  werden dieser Gruppe zugewiesen.
 

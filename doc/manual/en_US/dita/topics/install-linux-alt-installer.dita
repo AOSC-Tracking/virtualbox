@@ -19,7 +19,7 @@
             conkeyref="vbox-conkeyref-phrases/product-name"/> kernel module. </p>
       </li>
       <li>
-        <p>Creates a new system group called <codeph>vboxusers</codeph>. </p>
+        <p>Creates a new system group called <codeph>wheel</codeph>. </p>
       </li>
       <li>
         <p>Creates symbolic links in <filepath>/usr/bin</filepath> to a shell script
@@ -29,7 +29,7 @@
       </li>
       <li>
         <p>Creates <filepath>/etc/udev/rules.d/60-vboxdrv.rules</filepath>, a description file for udev, if that is
-          present, which makes the USB devices accessible to all users in the <codeph>vboxusers</codeph> group. </p>
+          present, which makes the USB devices accessible to all users in the <codeph>wheel</codeph> group. </p>
       </li>
       <li>
         <p>Writes the installation directory to <filepath>/etc/vbox/vbox.cfg</filepath>. </p>
@@ -40,15 +40,15 @@
     <pre xml:space="preserve">sudo ./VirtualBox.run install</pre>
     <p>Or if you do not have the <userinput>sudo</userinput> command available, run the following as root instead: </p>
     <pre xml:space="preserve">./VirtualBox.run install</pre>
-    <p>Add every user who needs to access USB devices from a VirtualBox guests to the group <codeph>vboxusers</codeph>.
+    <p>Add every user who needs to access USB devices from a VirtualBox guests to the group <codeph>wheel</codeph>.
       Either use the OS user management tools or run the following command as root: </p>
-    <pre xml:space="preserve">sudo usermod -a -G vboxusers username</pre>
+    <pre xml:space="preserve">sudo usermod -a -G wheel username</pre>
     <note>
       <p>The <userinput>usermod</userinput> command of some older Linux distributions does not support the
           <codeph>-a</codeph> option, which adds the user to the given group without affecting membership of other
         groups. In this case, find out the current group memberships with the <userinput>groups</userinput> command and
         add all these groups in a comma-separated list to the command line after the <codeph>-G</codeph> option. For
-        example: <userinput>usermod -G <varname>group1</varname>,<varname>group2</varname>,vboxusers
+        example: <userinput>usermod -G <varname>group1</varname>,<varname>group2</varname>,wheel
             <varname>username</varname></userinput>. </p>
     </note>
   </body>

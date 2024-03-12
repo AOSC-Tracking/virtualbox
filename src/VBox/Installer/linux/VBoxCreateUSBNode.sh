@@ -46,7 +46,7 @@ case "$do_remove" in
   then
       exit 0
   fi
-  case "$group" in "") group="vboxusers";; esac
+  case "$group" in "") group="wheel";; esac
   mkdir /dev/vboxusb -m 0750 2>/dev/null
   chown root:$group /dev/vboxusb 2>/dev/null
   mkdir "$devdir" -m 0750 2>/dev/null

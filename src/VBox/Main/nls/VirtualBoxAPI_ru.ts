@@ -5018,8 +5018,8 @@ Guest offers: %s</source>
         <translation>Невозможно запустить службу USB прокси хоста (VERR_FILE_NOT_FOUND). Служба может быть не установлена на хосте</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>В настоящее время VirtualBox не имеет доступа к USB устройствам. Вы можете изменить это путем добавления пользователя в группу &apos;vboxusers&apos;. Пожалуйста, обратитесь к руководству пользователя за более подробными объяснениями</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>В настоящее время VirtualBox не имеет доступа к USB устройствам. Вы можете изменить это путем добавления пользователя в группу &apos;wheel&apos;. Пожалуйста, обратитесь к руководству пользователя за более подробными объяснениями</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>

@@ -9449,8 +9449,8 @@
         <translation>&lt;p&gt;VirtualBox使用者指南已從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; 下載成功，但無法在本機儲存為 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;請為該檔案選擇其它位置。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>目前不允許 VirtualBox 存取 USB 裝置。 您可以透過將使用者加入到「vboxusers」群組來變更這個設定。 有關更詳細的說明，請參閱使用者指南</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>目前不允許 VirtualBox 存取 USB 裝置。 您可以透過將使用者加入到「wheel」群組來變更這個設定。 有關更詳細的說明，請參閱使用者指南</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>

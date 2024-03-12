@@ -77,7 +77,7 @@
                <topicref href="topics/install-linux-rpm-automatic.dita"/>
                <topicref href="topics/linux_install_opts.dita"/>
             </topicref>
-            <topicref href="topics/install-linux-vboxusers.dita"/>
+            <topicref href="topics/install-linux-wheel.dita"/>
             <topicref href="topics/startingvboxonlinux.dita"/>
          </topicref>
          <topicref href="topics/install-solaris-host.dita">

@@ -9488,8 +9488,8 @@
         <translation>Συνέχεια</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>Το VirtualBox δεν έχει αυτή τη στιγμή πρόσβαση στις συσκευές USB.  Μπορείτε να το αλλάξετε αυτό προσθέτοντας τον χρήστη σας στην ομάδα &apos;vboxusers&apos;. Παρακαλώ δείτε τον οδηγό χρήστη για λεπτομερέστερη εξήγηση</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>Το VirtualBox δεν έχει αυτή τη στιγμή πρόσβαση στις συσκευές USB.  Μπορείτε να το αλλάξετε αυτό προσθέτοντας τον χρήστη σας στην ομάδα &apos;wheel&apos;. Παρακαλώ δείτε τον οδηγό χρήστη για λεπτομερέστερη εξήγηση</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>

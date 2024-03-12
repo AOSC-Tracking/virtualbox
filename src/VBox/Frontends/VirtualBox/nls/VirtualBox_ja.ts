@@ -9455,8 +9455,8 @@
         <translation>&lt;p&gt;VirtualBox ユーザーガイドは、&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; から正常にダウンロードされましたが、ローカルに &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; として保存できませんでした。&lt;/p&gt;&lt;p&gt;別の保存先を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>VirtualBox は USB デバイスにアクセスできません。この問題を解決するには、現在のユーザーを &apos;vboxusers&apos; グループに追加してください。詳細な手順については、ユーザーマニュアルを参照してください</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>VirtualBox は USB デバイスにアクセスできません。この問題を解決するには、現在のユーザーを &apos;wheel&apos; グループに追加してください。詳細な手順については、ユーザーマニュアルを参照してください</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
