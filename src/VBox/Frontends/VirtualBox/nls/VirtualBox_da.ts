@@ -12565,8 +12565,8 @@
         <translation>Kunne ikke starte værtens USB-proxytjeneste (VERR_FILE_NOT_FOUND). Tjenesten er muligvis ikke installeret på værtsmaskinen</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox har ikke rettigheder til at tilgå USB-enheder. Du kan ændre dette ved at tilføje din bruger til gruppen &apos;vboxusers&apos;. Se dokumentationen for yderligere detaljer</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox har ikke rettigheder til at tilgå USB-enheder. Du kan ændre dette ved at tilføje din bruger til gruppen &apos;wheel&apos;. Se dokumentationen for yderligere detaljer</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>

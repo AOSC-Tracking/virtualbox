@@ -2479,7 +2479,7 @@
         On supported Linux hosts, &product-name; accesses USB devices
         through special files in the file system. When &product-name; is
         installed, these are made available to all users in the
-        <literal>vboxusers</literal> system group. In order to be able
+        <literal>wheel</literal> system group. In order to be able
         to access USB from guest systems, make sure that you are a
         member of this group.
       </para>

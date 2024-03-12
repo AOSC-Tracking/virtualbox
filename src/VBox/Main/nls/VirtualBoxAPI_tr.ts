@@ -5714,8 +5714,8 @@ Guest offers: %s</source>
     </message>
     <message>
         <location filename="../src-server/HostImpl.cpp" line="3621"/>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox&apos;ın şu anda USB aygıtlara erişmesine izin verilmiyor. Kullanıcınızı &apos;vboxusers&apos; grubuna ekleyerek bunu değiştirebilirsiniz. Daha ayrıntılı bir açıklama için lütfen kullanım kılavuzuna bakın</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox&apos;ın şu anda USB aygıtlara erişmesine izin verilmiyor. Kullanıcınızı &apos;wheel&apos; grubuna ekleyerek bunu değiştirebilirsiniz. Daha ayrıntılı bir açıklama için lütfen kullanım kılavuzuna bakın</translation>
     </message>
     <message>
         <location filename="../src-server/HostImpl.cpp" line="3624"/>

@@ -173,7 +173,7 @@
         and Linux hosts it is necessary to configure the proper
         permissions for users executing VMs and who should be able to
         access certain host resources. For instance, Linux users must be
-        member of the <emphasis>vboxusers</emphasis> group to be able to
+        member of the <emphasis>wheel</emphasis> group to be able to
         pass USB devices to a guest. If a serial host interface should
         be accessed from a VM, the proper permissions must be granted to
         the user to be able to access that device. The same applies to

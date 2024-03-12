@@ -1863,7 +1863,7 @@ VirtualBox</screen>
 
       <para>
         If USB is not working on your Linux host, make sure that the
-        current user is a member of the <literal>vboxusers</literal>
+        current user is a member of the <literal>wheel</literal>
         group. Please keep in mind that group membership does not take
         effect immediately but rather at the next login. If available,
         the <command>newgrp</command> command may avoid the need for a

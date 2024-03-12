@@ -59,9 +59,9 @@ if [ "$1" = "configure" ]; then
 
   # create users groups (disable with INSTALL_NO_GROUP=1 in /etc/default/virtualbox)
   if [ "$INSTALL_NO_GROUP" != "1" ]; then
-    db_input low virtualbox/group-vboxusers || true
+    db_input low virtualbox/group-wheel || true
     db_go || true
-    addgroup --system vboxusers || true
+    addgroup --system wheel || true
   fi
 
   # The starters need to be set-uid-to-root. They drop the privileges before
