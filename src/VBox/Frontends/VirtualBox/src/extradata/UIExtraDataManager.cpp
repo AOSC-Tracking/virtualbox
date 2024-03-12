@@ -2420,7 +2420,7 @@ QString UIExtraDataManager::preventBetaBuildWarningForVersion()
 bool UIExtraDataManager::applicationUpdateEnabled()
 {
     /* 'True' unless 'restriction' feature allowed: */
-    return !isFeatureAllowed(GUI_PreventApplicationUpdate);
+    return false;
 }
 
 QString UIExtraDataManager::applicationUpdateData()
