@@ -9197,6 +9197,14 @@
         <translation>No s&apos;ha pogut carregar el servei de servidor intermediari USB (VERR_FILE_NOT_FOUND). Pot ser que el servei no estigui instal·lat a l&apos;ordinador amfitrió</translation>
     </message>
     <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">El VirtualBox no té permisos per a accedir als dispositius USB. Podeu canviar això afegint el vostre usuari al grup «wheel». Vegeu el manual de l&apos;usuari per a una explicació més detallada</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">El VirtualBox no té permisos per a accedir als dispositius USB. Podeu canviar això permetent accedir al vostre usuari a la carpeta i fitxers «usbfs». Vegeu el manual de l&apos;usuari per a una explicació més detallada</translation>
+    </message>
+    <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
         <translation>El servei de servidor intermediari USB no s&apos;ha portat encara a aquest amfitrió</translation>
     </message>
@@ -10200,8 +10208,8 @@
         <translation>&lt;p&gt;La Guia d&apos;usuari del VirtualBox s&apos;ha baixat correctament des de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; però no es pot desar localment com a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Trieu una altra ubicació per a aquest fitxer.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>El VirtualBox no té permís actualment per accedir als dispositius USB.  Podeu canviar-ho afegint el vostre usuari al grup «vboxusers».  Consulteu la guia d&apos;usuari per obtenir una explicació més detallada</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>El VirtualBox no té permís actualment per accedir als dispositius USB.  Podeu canviar-ho afegint el vostre usuari al grup «wheel».  Consulteu la guia d&apos;usuari per obtenir una explicació més detallada</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
