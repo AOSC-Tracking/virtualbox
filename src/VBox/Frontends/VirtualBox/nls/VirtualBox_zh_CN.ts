@@ -9483,8 +9483,8 @@
         <translation>&lt;p&gt;VirtualBox 用户指南已成功从&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;下载，但无法在本地另存为&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;请为该文件选择其他位置。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>VirtualBox 目前不允许访问 USB 设备。您可以通过将用户添加到“vboxusers”组来更改此设置。请参阅用户指南以获取更详细的解释.</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>VirtualBox 目前不允许访问 USB 设备。您可以通过将用户添加到“wheel”组来更改此设置。请参阅用户指南以获取更详细的解释.</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>

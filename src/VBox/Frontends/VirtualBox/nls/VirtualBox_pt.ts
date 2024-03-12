@@ -16974,7 +16974,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation>Atualmente, o VirtualBox não tem permissão para aceder aos dispositivos USB.  Pode alterar isto adicionando o seu utilizador ao grupo &apos;Vboxusers&apos;.  Por favor, consulte o guia do utilizador para uma explicação mais detalhada</translation>
     </message>
     <message>
