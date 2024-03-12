@@ -17542,8 +17542,8 @@ p, li { white-space: pre-wrap; }
         <translation>Не може да се зареди услугата Host USB Proxy (VERR_FILE_NOT_FOUND). Услугата може да не е инсталирана на реалния компютър</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">Текущо не е позволено VirtualBox да достъпва USB устройства. Можете да промените това с добавяне на вашия потребител към групата &apos;vboxusers&apos;.  Моля, погледнете потребителското ръководство за по-подробно описание</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">Текущо не е позволено VirtualBox да достъпва USB устройства. Можете да промените това с добавяне на вашия потребител към групата &apos;wheel&apos;.  Моля, погледнете потребителското ръководство за по-подробно описание</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -19196,7 +19196,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

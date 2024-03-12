@@ -16724,8 +16724,8 @@ serial ports</comment>
         <translation>Kunde inte läsa in USB-proxytjänsten för värden (VERR_FILE_NOT_FOUND). Tjänsten kanske inte är installerad på värddatorn</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">VirtualBox tillåts för närvarande inte att komma åt USB-enheter.  Du kan ändra detta genom att lägga till din användare till gruppen &quot;vboxusers&quot;.  Se användarhandboken för ytterligare information</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">VirtualBox tillåts för närvarande inte att komma åt USB-enheter.  Du kan ändra detta genom att lägga till din användare till gruppen &quot;wheel&quot;.  Se användarhandboken för ytterligare information</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -18346,7 +18346,7 @@ serial ports</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

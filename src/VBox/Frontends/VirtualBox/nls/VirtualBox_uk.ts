@@ -16947,8 +16947,8 @@ p, li { white-space: pre-wrap; }
         <translation>Неможливо завантажити головний проксі сервер USB (VERR_FILE_NOT_FOUND). Службу, можливо, не встановили на головному комп&apos;ютері</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">VirtualBox зараз не дозволяє доступитись до пристроїв USB. Ви моежете змінити це, додавши користувача до групи «vboxusers». Будь ласка, ознайомтесь з користувацьким підручником для докладнішого пояснення</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">VirtualBox зараз не дозволяє доступитись до пристроїв USB. Ви моежете змінити це, додавши користувача до групи «wheel». Будь ласка, ознайомтесь з користувацьким підручником для докладнішого пояснення</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -18544,7 +18544,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

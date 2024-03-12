@@ -19188,8 +19188,8 @@ p, li { white-space: pre-wrap; }
         <translation>Nem tölthető be a gazda USB Proxy szolgáltatás (FÁJL_NEM_TALÁLHATÓ). A szolgáltatás talán nincs telepítve a gazda számítógépre</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">A VirtualBox jelenleg nem férhet hozzá az USB eszközökhöz.  Ezen változtathatsz, ha a felhasználód hozzáadod a &apos;vboxusers&apos; csoporthoz.  Részletes magyarázatért nézd meg a Felhasználói kézikönyvet</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">A VirtualBox jelenleg nem férhet hozzá az USB eszközökhöz.  Ezen változtathatsz, ha a felhasználód hozzáadod a &apos;wheel&apos; csoporthoz.  Részletes magyarázatért nézd meg a Felhasználói kézikönyvet</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -20917,7 +20917,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

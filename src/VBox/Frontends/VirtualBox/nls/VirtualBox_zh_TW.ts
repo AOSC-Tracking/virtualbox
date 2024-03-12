@@ -9352,8 +9352,8 @@
         <translation>無法載入主機 USB Proxy 服務  (VERR_FILE_NOT_FOUND)。 服務可能未安裝在主機上</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">目前不允許 VirtualBox 存取 USB 裝置。 您可以透過將使用者加入到「vboxusers」群組來變更這個設定。 有關更詳細的說明，請參閱使用者手冊</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">目前不允許 VirtualBox 存取 USB 裝置。 您可以透過將使用者加入到「wheel」群組來變更這個設定。 有關更詳細的說明，請參閱使用者手冊</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -10391,7 +10391,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

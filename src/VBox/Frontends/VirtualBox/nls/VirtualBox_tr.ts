@@ -9393,8 +9393,8 @@
         <translation>&lt;p&gt;VirtualBox Kullanım Kılavuzu &lt;nobr&gt;, &lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; adresinden başarılı olarak indirildi ancak &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ile yerel olarak kaydedilemez.&lt;/p&gt;&lt;p&gt;Lütfen bu dosya için başka bir yer seçin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>VirtualBox şu anda USB aygıtlara erişime izin vermiyor. Bunu kullanıcınızı &apos;vboxusers&apos; grubuna ekleyerek değiştirebilirsiniz. Lütfen daha fazla ayrıntılı açıklama için kullanım kılavuzuna bakın</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>VirtualBox şu anda USB aygıtlara erişime izin vermiyor. Bunu kullanıcınızı &apos;wheel&apos; grubuna ekleyerek değiştirebilirsiniz. Lütfen daha fazla ayrıntılı açıklama için kullanım kılavuzuna bakın</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>

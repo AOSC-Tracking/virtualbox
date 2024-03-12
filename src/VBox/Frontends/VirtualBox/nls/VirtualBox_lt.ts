@@ -16339,8 +16339,8 @@
         <translation>Nepavyksta įkelti pagr. kompiuterio USB įgaliotojo serverio paslaugos (VERR_FILE_NOT_FOUND). Galbūt ši paslauga neįdiegta pagrindiniame kompiueryje</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">VirtualBox programai neleidote pasiekti USB įrenginių. Šią parinktį galite pakeisti savo naudotoją priskirdami „vboxusers“ grupei. Daugiau informacijos rasite naudotojo žinyne</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">VirtualBox programai neleidote pasiekti USB įrenginių. Šią parinktį galite pakeisti savo naudotoją priskirdami „wheel“ grupei. Daugiau informacijos rasite naudotojo žinyne</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -17835,7 +17835,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

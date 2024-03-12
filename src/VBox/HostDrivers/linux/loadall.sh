@@ -36,13 +36,13 @@
 
 TARGET=`readlink -e -- "${0}"` || exit 1 # The GNU-specific way.
 MY_DIR="${TARGET%/[!/]*}"
-MY_GROUPNAME="vboxusers"
+MY_GROUPNAME="wheel"
 
 #
-# vboxusers membership check.
+# wheel membership check.
 #
 if ! (id -Gn | grep -w ${MY_GROUPNAME}); then
-    echo "loadall.sh: you're not a member of vboxusers...";
+    echo "loadall.sh: you're not a member of wheel...";
     # Create the group.
     if ! getent group ${MY_GROUPNAME}; then
         set -e
