@@ -824,7 +824,7 @@
           <listitem>
             <para>
               Creates a new system group called
-              <literal>vboxusers</literal>.
+              <literal>wheel</literal>.
             </para>
           </listitem>
 
@@ -846,7 +846,7 @@
               <filename>/etc/udev/rules.d/60-vboxdrv.rules</filename>, a
               description file for udev, if that is present, which makes
               the USB devices accessible to all users in the
-              <literal>vboxusers</literal> group.
+              <literal>wheel</literal> group.
             </para>
           </listitem>
 
@@ -876,12 +876,12 @@
 
         <para>
           Add every user who needs to access USB devices from a
-          VirtualBox guests to the group <literal>vboxusers</literal>.
+          VirtualBox guests to the group <literal>wheel</literal>.
           Either use the OS user management tools or run the following
           command as root:
         </para>
 
-<screen>sudo usermod -a -G vboxusers username</screen>
+<screen>sudo usermod -a -G wheel username</screen>
 
         <note>
           <para>
@@ -893,7 +893,7 @@
             <command>groups</command> command and add all these groups
             in a comma-separated list to the command line after the
             <option>-G</option> option. For example: <command>usermod -G
-            <replaceable>group1</replaceable>,<replaceable>group2</replaceable>,vboxusers
+            <replaceable>group1</replaceable>,<replaceable>group2</replaceable>,wheel
             <replaceable>username</replaceable></command>.
           </para>
         </note>
@@ -1107,7 +1107,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 <screen>INSTALL_NO_UDEV=1</screen>
 
         <para>
-          The creation of the group vboxusers can be prevented as
+          The creation of the group wheel can be prevented as
           follows:
         </para>
 
@@ -1125,20 +1125,20 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 
     </sect2>
 
-    <sect2 id="install-linux-vboxusers">
+    <sect2 id="install-linux-wheel">
 
-      <title>The vboxusers Group</title>
+      <title>The wheel Group</title>
 
       <para>
         The Linux installers create the system user group
-        <literal>vboxusers</literal> during installation. Any system
+        <literal>wheel</literal> during installation. Any system
         user who is going to use USB devices from &product-name; guests
         must be a member of that group. A user can be made a member of
-        the group <literal>vboxusers</literal> either by using the
+        the group <literal>wheel</literal> either by using the
         desktop user and group tools, or with the following command:
       </para>
 
-<screen>sudo usermod -a -G vboxusers username</screen>
+<screen>sudo usermod -a -G wheel username</screen>
 
     </sect2>
 

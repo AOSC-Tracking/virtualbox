@@ -14597,8 +14597,8 @@ p, li { white-space: pre-wrap; }
         <translation>Не могу да учитам Host USB Proxy Service (VERR_FILE_NOT_FOUND). Сервис можда није инсталиран на хосту</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox нема приступа USB уређајима. Можете то да промените тако што додате корисник у групи &apos;vboxusers&apos;.  Видети приручник за више детаље</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox нема приступа USB уређајима. Можете то да промените тако што додате корисник у групи &apos;wheel&apos;.  Видети приручник за више детаље</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>

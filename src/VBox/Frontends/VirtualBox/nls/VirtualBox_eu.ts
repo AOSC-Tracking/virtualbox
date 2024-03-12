@@ -18349,8 +18349,8 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox-ek ez du sarbiderik USB gailuetara.  Hau zure erabiltzailea &apos;vboxusers&apos; taldera gehituz aldatu dezakezu.  Mesedez ikusi erabiltzaile eskuliburua azalpen xehetuagorako</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox-ek ez du sarbiderik USB gailuetara.  Hau zure erabiltzailea &apos;wheel&apos; taldera gehituz aldatu dezakezu.  Mesedez ikusi erabiltzaile eskuliburua azalpen xehetuagorako</translation>
     </message>
     <message>
         <location line="+1"/>

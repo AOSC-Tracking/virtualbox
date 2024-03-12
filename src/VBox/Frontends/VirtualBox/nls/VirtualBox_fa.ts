@@ -15375,8 +15375,8 @@
         <translation>قادر به بارگیری سرویس پراکسی یو اِس بی میزبان نیست (VERR_FILE_NOT_FOUND). شاید سرویس در رایانه میزبان نصب نشده است</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>ویرچوال باکس اکنون اجازه دسترسی به دستگاه یو ایس بی را ندارد.  این را میتوانید با افزودن کاربر خود به گروه &apos;vboxusers&apos; تغییر دهید.  لطفا برای توضیحات جزئی تر راهنمای کاربری را ببینید</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>ویرچوال باکس اکنون اجازه دسترسی به دستگاه یو ایس بی را ندارد.  این را میتوانید با افزودن کاربر خود به گروه &apos;wheel&apos; تغییر دهید.  لطفا برای توضیحات جزئی تر راهنمای کاربری را ببینید</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>

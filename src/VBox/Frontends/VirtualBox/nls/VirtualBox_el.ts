@@ -13788,8 +13788,8 @@
         <translation>Δεν φορτώθηκε η υπηρεσία διαμεσολάβησης USB του οικοδεσπότη (VERR_FILE_NOT_FOUND). Η υπηρεσία μπορεί να μην έχει εγκατασταθεί στον υπολογιστή</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>Το VirtualBox δεν έχει αυτή τη στιγμή πρόσβαση στις συσκευές USB. Μπορείτε να το αλλάξετε προσθέτοντας τον χρήστη στην ομάδα &apos;vboxusers&apos;. Δείτε το εγχειρίδιο για λεπτομερέστερη εξήγηση</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>Το VirtualBox δεν έχει αυτή τη στιγμή πρόσβαση στις συσκευές USB. Μπορείτε να το αλλάξετε προσθέτοντας τον χρήστη στην ομάδα &apos;wheel&apos;. Δείτε το εγχειρίδιο για λεπτομερέστερη εξήγηση</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>

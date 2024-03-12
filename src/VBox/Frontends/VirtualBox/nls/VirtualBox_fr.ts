@@ -17151,8 +17151,8 @@
         <translation>Le service de relais de périphériques USB n&apos;a pas pû être activé (erreur VERR_FILE_NOT_FOUND). Il se peut que le service ne soit pas installé sur l&apos;ordinateur hôte</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox n&apos;est pas autorisé à accéder aux périphériques USB actuellement. Vous pouvez changer ceci en ajoutant votre nom d&apos;utilisateur au groupe «vboxusers». Veuillez consulter le guide de l&apos;utilisateur pour des explications plus détaillées</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox n&apos;est pas autorisé à accéder aux périphériques USB actuellement. Vous pouvez changer ceci en ajoutant votre nom d&apos;utilisateur au groupe «wheel». Veuillez consulter le guide de l&apos;utilisateur pour des explications plus détaillées</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>

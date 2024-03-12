@@ -18912,8 +18912,8 @@ p, li { white-space: pre-wrap; }
         <translation>Não foi possível carregar o Serviço de Proxy USB do Hospedeiro (VERR_FILE_NOT_FOUND). O serviço pode não estar instalado no computador hospedeiro</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>O VirtualBox não está conseguindo acessar os dispositivos USB.  Você pode alterar este comportamento acrescentando o seu usuário ao grupo &apos;vboxusers&apos;.  Leia o manual do usuário para uma explicação mais detalhada</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>O VirtualBox não está conseguindo acessar os dispositivos USB.  Você pode alterar este comportamento acrescentando o seu usuário ao grupo &apos;wheel&apos;.  Leia o manual do usuário para uma explicação mais detalhada</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>

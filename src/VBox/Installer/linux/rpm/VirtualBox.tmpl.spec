@@ -299,9 +299,9 @@ rm -f /etc/vbox/module_not_compiled
 # create users groups (disable with INSTALL_NO_GROUP=1 in /etc/default/virtualbox)
 if [ "$INSTALL_NO_GROUP" != "1" ]; then
   echo
-  echo "Creating group 'vboxusers'. VM users must be member of that group!"
+  echo "Creating group 'wheel'. VM users must be member of that group!"
   echo
-  groupadd -r -f vboxusers 2> /dev/null
+  groupadd -r -f wheel 2> /dev/null
 fi
 
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}

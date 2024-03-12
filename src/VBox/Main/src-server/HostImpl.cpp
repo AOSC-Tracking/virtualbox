@@ -3618,7 +3618,7 @@ HRESULT Host::i_checkUSBProxyService()
                                   tr("Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND).  The service might not be installed on the host computer"));
             case VERR_VUSB_USB_DEVICE_PERMISSION:
                 return setWarning(E_FAIL,
-                                  tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.  Please see the user manual for a more detailed explanation"));
+                                  tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'wheel' group.  Please see the user manual for a more detailed explanation"));
             case VERR_VUSB_USBFS_PERMISSION:
                 return setWarning(E_FAIL,
                                   tr("VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the 'usbfs' folder and files.  Please see the user manual for a more detailed explanation"));

@@ -8399,8 +8399,8 @@
         <translation>Nisam uspio učitati Domaćinov USB Posrednički Servis (VERR_FILE_NOT_FOUND). Servis možda nije instaliran na računalo domaćina</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBoxu trenutačno nije dozvoljen pristup USB uređajima.  Možete promijeniti to dodavajući svog korisnika &apos;vboxusers&apos; grupi.  Pogledajte korisnička uputstva za detaljnije objašnjenje</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBoxu trenutačno nije dozvoljen pristup USB uređajima.  Možete promijeniti to dodavajući svog korisnika &apos;wheel&apos; grupi.  Pogledajte korisnička uputstva za detaljnije objašnjenje</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
