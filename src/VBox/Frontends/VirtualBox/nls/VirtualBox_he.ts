@@ -9457,8 +9457,8 @@
         <translation>&lt;p&gt;המדריך למשתמשים ב־VirtualBox ירד בהצלחה מ־&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; אך לא ניתן לשמור אותו מקומית בתור &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;נא לבחור מקום אחר לקובץ הזה.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>ל־VirtualBox אין כרגע הרשאה לגשת להתקני USB. אפשר לשנות את זה על ידי הוספת המשתמש שלך לקבוצה ‚vboxusers’. נא לעיין במדריך למשתמשים לקבלת הסבר מפורט יותר</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>ל־VirtualBox אין כרגע הרשאה לגשת להתקני USB. אפשר לשנות את זה על ידי הוספת המשתמש שלך לקבוצה ‚wheel’. נא לעיין במדריך למשתמשים לקבלת הסבר מפורט יותר</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
