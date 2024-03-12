@@ -2624,7 +2624,7 @@ int Console::i_configNetwork(const char *pszDevice,
                                                              "Failed to open '/dev/%s' for read/write access.  Please check the "
                                                              "permissions of that node, and that the net.link.tap.user_open "
                                                              "sysctl is set.  Either run 'chmod 0666 /dev/%s' or change the "
-                                                             "group of that node to vboxusers and make yourself a member of "
+                                                             "group of that node to wheel and make yourself a member of "
                                                              "that group.  Make sure that these changes are permanent."),
                                                              pszBridgedIfName, pszBridgedIfName);
                             default:

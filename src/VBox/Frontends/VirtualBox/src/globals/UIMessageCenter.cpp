@@ -2169,7 +2169,7 @@ void UIMessageCenter::prepare()
     /* Translations for Main.
      * Please make sure they corresponds to the strings coming from Main one-by-one symbol! */
     tr("Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer");
-    tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.  Please see the user guide for a more detailed explanation");
+    tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'wheel' group.  Please see the user guide for a more detailed explanation");
     tr("VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the 'usbfs' folder and files.  Please see the user guide for a more detailed explanation");
     tr("The USB Proxy Service has not yet been ported to this host");
     tr("Could not load the Host USB Proxy service");
