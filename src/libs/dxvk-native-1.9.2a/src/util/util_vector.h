@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <cstdint>
 
 #include "util_bit.h"
 #include "util_math.h"
