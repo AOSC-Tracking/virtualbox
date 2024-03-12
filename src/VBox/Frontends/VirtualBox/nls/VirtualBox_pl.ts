@@ -17948,8 +17948,8 @@ p, li { white-space: pre-wrap; }
         <translation>Nie można załadować usługi Host USB Proxy (VERR_FILE_NOT_FOUND). Usługa ta być może nie została zainstalowana na komputerze gospodarza</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">VirtualBox aktualnie nie ma dostępu do urządzeń USB. Można to zmienić, dodając użytkownika do grupy vboxusers&apos;. Proszę zapoznać się z instrukcją obsługi w celu bardziej szczegółowego wyjaśnienia</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">VirtualBox aktualnie nie ma dostępu do urządzeń USB. Można to zmienić, dodając użytkownika do grupy wheel&apos;. Proszę zapoznać się z instrukcją obsługi w celu bardziej szczegółowego wyjaśnienia</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -19582,8 +19582,8 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Instrukcja VirtualBox została pomyślnie pobrana z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; ale nie może zostać zapisana lokalnie jako &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Proszę wskazać inną lokalizację dla tego pliku.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>VirtualBox aktualnie nie ma dostępu do urządzeń USB. Można to zmienić, dodając lokalnego użytkownika do grupy vboxusers&apos;. Proszę zapoznać się z instrukcją obsługi w celu bardziej szczegółowego wyjaśnienia</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>VirtualBox aktualnie nie ma dostępu do urządzeń USB. Można to zmienić, dodając lokalnego użytkownika do grupy wheel&apos;. Proszę zapoznać się z instrukcją obsługi w celu bardziej szczegółowego wyjaśnienia</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>

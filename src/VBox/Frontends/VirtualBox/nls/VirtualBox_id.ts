@@ -9932,8 +9932,8 @@
         <translation>&lt;p&gt;Panduan Pengguna VirtualBox telah sukses diunduh dari &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; namun tidak dapat disimpan secara lokal sebagai &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Silakan pilih lokasi lain bagi berkas itu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>VirtualBox saat ini tidak diizinkan mengakses peranti USB. Anda dapat mengubah ini dengan cara menambahkan pengguna Anda ke grup &apos;vboxusers&apos;.  Silakan lihat panduan pengguna untuk penjelasan lebih  rinci</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>VirtualBox saat ini tidak diizinkan mengakses peranti USB. Anda dapat mengubah ini dengan cara menambahkan pengguna Anda ke grup &apos;wheel&apos;.  Silakan lihat panduan pengguna untuk penjelasan lebih  rinci</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>

@@ -19,7 +19,7 @@
             conkeyref="vbox-conkeyref-phrases/product-name"/> kernel module. </p>
       </li>
       <li>
-        <p>Creates a new system group called <codeph>vboxusers</codeph>. </p>
+        <p>Creates a new system group called <codeph>wheel</codeph>. </p>
       </li>
       <li>
         <p>Creates symbolic links in <filepath>/usr/bin</filepath> to a shell script
