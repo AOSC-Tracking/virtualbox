@@ -12167,8 +12167,8 @@
         <translation>호스트 USB 프록시 서비스를 불러올 수 없습니다(VERR_FILE_NOT_FOUND). 호스트 컴퓨터에 서비스가 설치되어 있지 않을 수도 있습니다</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">VirtualBox에서 USB 장치에 접근할 수 없습니다. 현재 사용자를 &apos;vboxusers&apos; 그룹에 추가하십시오. 더 자세한 설명은 사용자 설명서를 참고하십시오</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">VirtualBox에서 USB 장치에 접근할 수 없습니다. 현재 사용자를 &apos;wheel&apos; 그룹에 추가하십시오. 더 자세한 설명은 사용자 설명서를 참고하십시오</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -13790,7 +13790,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

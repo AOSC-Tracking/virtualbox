@@ -9651,8 +9651,8 @@
         <translation>Εντάξει</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">Το VirtualBox δεν έχει αυτή τη στιγμή πρόσβαση στις συσκευές USB. Μπορείτε να το αλλάξετε προσθέτοντας τον χρήστη στην ομάδα &apos;vboxusers&apos;. Δείτε το εγχειρίδιο για λεπτομερέστερη εξήγηση</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">Το VirtualBox δεν έχει αυτή τη στιγμή πρόσβαση στις συσκευές USB. Μπορείτε να το αλλάξετε προσθέτοντας τον χρήστη στην ομάδα &apos;wheel&apos;. Δείτε το εγχειρίδιο για λεπτομερέστερη εξήγηση</translation>
     </message>
     <message>
         <source>Keep</source>
@@ -11571,7 +11571,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
