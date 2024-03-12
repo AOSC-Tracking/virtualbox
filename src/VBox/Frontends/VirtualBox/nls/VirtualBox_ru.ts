@@ -9416,8 +9416,8 @@
         <translation>&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;, но не может быть сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста выберите иное место для этого файла.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>В данный момент VirtualBox не может использовать устройства USB.  Вы можете это исправить, добавив текущего пользователя в группу &apos;vboxusers&apos;. Для получения более детальных объяснений следуйте указаниям руководства пользователя</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>В данный момент VirtualBox не может использовать устройства USB.  Вы можете это исправить, добавив текущего пользователя в группу &apos;wheel&apos;. Для получения более детальных объяснений следуйте указаниям руководства пользователя</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>

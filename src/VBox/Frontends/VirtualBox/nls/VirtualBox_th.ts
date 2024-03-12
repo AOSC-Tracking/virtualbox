@@ -13055,8 +13055,8 @@
         <translation>ไม่สามารถโหลดบริการพรอกซี USB ของโฮสต์ได้  (VERR_FILE_NOT_FOUND) บริการนี้อาจไม่ได้ถูกติดตั้งไว้บนคอมพิวเตอร์โฮสต์</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">เวอร์ชวลบอกซ์ไม่ได้รับอนุญาตให้เข้าถึงอุปกรณ์ USB คุณสามารถแก้ไขได้ด้วยการเพิ่มผู้ใช้ของคุณไปยังกลุ่ม &apos;vboxusers&apos; คำอธิบายโดยละเอียดสามารถดูเพิ่มเติมได้จากคู่มือผู้ใช้</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">เวอร์ชวลบอกซ์ไม่ได้รับอนุญาตให้เข้าถึงอุปกรณ์ USB คุณสามารถแก้ไขได้ด้วยการเพิ่มผู้ใช้ของคุณไปยังกลุ่ม &apos;wheel&apos; คำอธิบายโดยละเอียดสามารถดูเพิ่มเติมได้จากคู่มือผู้ใช้</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -14594,7 +14594,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

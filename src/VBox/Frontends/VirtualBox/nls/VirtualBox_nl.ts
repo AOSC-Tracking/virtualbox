@@ -9432,8 +9432,8 @@
         <translation>&lt;p&gt;De VirtualBox Gebruikershandleiding is met succes gedownload van &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; maar kan lokaal niet worden opgeslagen als &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Kies een andere locatie voor dit bestand.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>VirtualBox wordt momenteel niet toegestaan USB-apparaten te benaderen.  U kunt dit veranderen door uw gebruiker toe te voegen aan de groep &apos;vboxusers&apos;.  Lees de gebruikershandleiding voor een meer gedetailleerde uitleg</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>VirtualBox wordt momenteel niet toegestaan USB-apparaten te benaderen.  U kunt dit veranderen door uw gebruiker toe te voegen aan de groep &apos;wheel&apos;.  Lees de gebruikershandleiding voor een meer gedetailleerde uitleg</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>

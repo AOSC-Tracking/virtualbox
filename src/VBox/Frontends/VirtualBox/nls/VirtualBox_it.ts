@@ -9411,8 +9411,8 @@
         <translation>&lt;p&gt;Il manuale utente di VirtualBox è stato scaricato correttamente da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;, ma non può essere salvato localmente come &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Scegli un&apos;altra posizione per il file.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation>VirtualBox non è attualmente autorizzato ad accedere ai dispositivi USB. Puoi modificare questa impostazione aggiungendo il tuo utente al gruppo &apos;vboxusers&apos;. Consulta il manuale utente per una spiegazione più dettagliata</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <translation>VirtualBox non è attualmente autorizzato ad accedere ai dispositivi USB. Puoi modificare questa impostazione aggiungendo il tuo utente al gruppo &apos;wheel&apos;. Consulta il manuale utente per una spiegazione più dettagliata</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
