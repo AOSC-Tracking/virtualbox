@@ -94,7 +94,7 @@ if test -u "${INSTALL_DIR}/VirtualBoxVM" || test '!' -e "${INSTALL_DIR}/VirtualB
     GROUP=root
     DEVICE_MODE=0600
 else
-    GROUP=vboxusers
+    GROUP=wheel
     DEVICE_MODE=0660
 fi
 
@@ -591,7 +591,7 @@ See the documentation for your Linux distribution." console
     # of USB access.  The USB code checks for the existence of that path.
     if grep -q usb_device /proc/devices; then
         mkdir -p -m 0750 /dev/vboxusb 2>/dev/null
-        chown root:vboxusers /dev/vboxusb 2>/dev/null
+        chown root:wheel /dev/vboxusb 2>/dev/null
     fi
     # Remove any kernel modules left over from previously installed kernels.
     cleanup only_old

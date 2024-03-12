@@ -17832,8 +17832,8 @@
         <translation>无法载入主机 USB 代理服务 (VERR_FILE_NOT_FOUND)。主机电脑中可能没有安装服务</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">VirtualBox 当前不允许访问 USB 设备。您可以将您的用户添加到“vboxusers”组来更改以上的问题。请查阅用户手册以获得更多详细的说明</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">VirtualBox 当前不允许访问 USB 设备。您可以将您的用户添加到“wheel”组来更改以上的问题。请查阅用户手册以获得更多详细的说明</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -19621,7 +19621,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

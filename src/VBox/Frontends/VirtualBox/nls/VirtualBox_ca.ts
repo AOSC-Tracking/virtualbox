@@ -12586,8 +12586,8 @@
         <translation>No s&apos;ha pogut carregar el servei de servidor intermediari USB (VERR_FILE_NOT_FOUND). Pot ser que el servei no estigui instal·lat a l&apos;ordinador amfitrió</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">El VirtualBox no té permisos per a accedir als dispositius USB. Podeu canviar això afegint el vostre usuari al grup «vboxusers». Vegeu el manual de l&apos;usuari per a una explicació més detallada</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">El VirtualBox no té permisos per a accedir als dispositius USB. Podeu canviar això afegint el vostre usuari al grup «wheel». Vegeu el manual de l&apos;usuari per a una explicació més detallada</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -13665,7 +13665,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

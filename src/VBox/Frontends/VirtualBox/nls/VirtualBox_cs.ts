@@ -17563,8 +17563,8 @@ p, li { white-space: pre-wrap; }
         <translation>Nelze spustit službu USB Proxy (VERR_FILE_NOT_FOUND). Zřejmě na tomto hostutelském počítači není služba nainstalována</translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">Aplikace VirtualBox nemůže nyní přistupovat k USB zařízením. Můžete to změnit přidáním uživatele do skupiny &apos;vboxusers&apos;. Více informací najdete v uživatelské příručce</translation>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="vanished">Aplikace VirtualBox nemůže nyní přistupovat k USB zařízením. Můžete to změnit přidáním uživatele do skupiny &apos;wheel&apos;. Více informací najdete v uživatelské příručce</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -19208,7 +19208,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;wheel&apos; group.  Please see the user guide for a more detailed explanation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
