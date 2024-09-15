@@ -15,7 +15,7 @@ UPT
 #
 import locale
 import sys
-from imp import reload
+from impportlib import reload
 encoding = locale.getdefaultlocale()[1]
 if encoding:
     reload(sys)
