@@ -1875,9 +1875,9 @@ check_libvorbis()
   if which_wrapper pkg-config > /dev/null; then
     libvorbis_ver=`pkg-config vorbis --modversion 2>> $LOG`
     if [ $? -eq 0 ]; then
-      FLGVRB=`pkg-config vorbis --cflags`
+      FLGVRB="$(pkg-config vorbis --cflags) $(pkg-config vorbisenc --cflags)"
       INCVRB=`strip_I "$FLGVRB"`
-      LIBVRB=`pkg-config vorbis --libs`
+      LIBVRB="$(pkg-config vorbis --libs) $(pkg-config vorbisenc --libs)"
     fi
     cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
