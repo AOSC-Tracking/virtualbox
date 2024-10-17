@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2007-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2007-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -61,6 +61,17 @@
 #include <libxml/xmlschemas.h>
 
 #include <map>
+
+
+/*********************************************************************************************************************************
+*   Strict / debug helpers                                                                                                       *
+*********************************************************************************************************************************/
+#ifdef DEBUG_andy
+/** Enable the following to get strict assertions if the XML got some invalid values for attributes. */
+# define VBOX_XML_STRICT_ASSERT_FAILED { AssertMsgFailed(("Invalid value '%s' for %s/@%s\n", pcsz, m_pcszName, pcszMatch)); }
+#else
+# define VBOX_XML_STRICT_ASSERT_FAILED void(0)
+#endif
 
 
 /*********************************************************************************************************************************
@@ -885,11 +896,11 @@ const ElementNode *ElementNode::findChildElementFromId(const char *pcszId) const
     return NULL;
 }
 
-
 const ElementNode *ElementNode::findChildElementP(const char *pcszPath, const char *pcszNamespace /*= NULL*/) const
 {
-    size_t cchThis = strchr(pcszPath, '/') - pcszPath;
-    if (cchThis == (size_t)((const char *)0 - pcszPath))
+    const char *pszElm   = strchr(pcszPath, '/');
+    size_t const cchThis = pszElm ? pszElm - pcszPath : 0;
+    if (!cchThis)
         return findChildElementNS(pcszNamespace, pcszPath);
 
     /** @todo Can be done without recursion as we have both sibling lists and parent
@@ -1102,6 +1113,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int32_t *piValue, con
         int rc = RTStrToInt32Ex(pcsz, NULL, 0, piValue);
         if (rc == VINF_SUCCESS)
             return true;
+        VBOX_XML_STRICT_ASSERT_FAILED;
     }
     return false;
 }
@@ -1123,6 +1135,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint32_t *puValue, co
         int rc = RTStrToUInt32Ex(pcsz, NULL, 0, puValue);
         if (rc == VINF_SUCCESS)
             return true;
+       VBOX_XML_STRICT_ASSERT_FAILED;
     }
     return false;
 }
@@ -1144,6 +1157,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t *piValue, con
         int rc = RTStrToInt64Ex(pcsz, NULL, 0, piValue);
         if (rc == VINF_SUCCESS)
             return true;
+        VBOX_XML_STRICT_ASSERT_FAILED;
     }
     return false;
 }
@@ -1165,6 +1179,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t *puValue, co
         int rc = RTStrToUInt64Ex(pcsz, NULL, 0, puValue);
         if (rc == VINF_SUCCESS)
             return true;
+        VBOX_XML_STRICT_ASSERT_FAILED;
     }
     return false;
 }
@@ -1200,8 +1215,8 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, bool *pfValue, const 
             *pfValue = false;
             return true;
         }
+        VBOX_XML_STRICT_ASSERT_FAILED;
     }
-
     return false;
 }
 
@@ -1856,12 +1871,20 @@ static void xmlParserBaseGenericError(void *pCtx, const char *pszMsg, ...) RT_NO
     va_end(args);
 }
 
+#if LIBXML_VERSION >= 21206
+static void xmlStructuredErrorFunc(void *userData, const xmlError *error)  RT_NOTHROW_DEF
+{
+    NOREF(userData);
+    NOREF(error);
+}
+#else
 static void xmlParserBaseStructuredError(void *pCtx, xmlErrorPtr error) RT_NOTHROW_DEF
 {
     NOREF(pCtx);
     /* we expect that there is always a trailing NL */
     LogRel(("XML error at '%s' line %d: %s", error->file, error->line, error->message));
 }
+#endif
 
 XmlParserBase::XmlParserBase()
 {
@@ -1870,7 +1893,11 @@ XmlParserBase::XmlParserBase()
         throw std::bad_alloc();
     /* per-thread so it must be here */
     xmlSetGenericErrorFunc(NULL, xmlParserBaseGenericError);
+#if LIBXML_VERSION >= 21206
+    xmlSetStructuredErrorFunc(NULL, xmlStructuredErrorFunc);
+#else
     xmlSetStructuredErrorFunc(NULL, xmlParserBaseStructuredError);
+#endif
 }
 
 XmlParserBase::~XmlParserBase()
@@ -1931,7 +1958,7 @@ void XmlMemParser::read(const void *pvBuf, size_t cbSize,
                                                   pcszFilename,
                                                   NULL,       // encoding = auto
                                                   options)))
-        throw XmlError(xmlCtxtGetLastError(m_ctxt));
+        throw XmlError((xmlErrorPtr)xmlCtxtGetLastError(m_ctxt));
 
     doc.refreshInternals();
 }
@@ -2191,7 +2218,7 @@ void XmlFileParser::read(const RTCString &strFilename,
                                               pcszFilename,
                                               NULL,       // encoding = auto
                                               options)))
-        throw XmlError(xmlCtxtGetLastError(m_ctxt));
+        throw XmlError((xmlErrorPtr)xmlCtxtGetLastError(m_ctxt));
 
     doc.refreshInternals();
 }
@@ -2290,24 +2317,24 @@ void XmlFileWriter::write(const char *pcszFilename, bool fSafe)
             throw xml::LogicError(RT_SRC_POS);
 
         /* Construct both filenames first to ease error handling.  */
+        size_t const cchFilename = strlen(pcszFilename);
+        size_t const cchTmpSuff  = strlen(s_pszTmpSuff);
+        size_t const cchPrevSuff = strlen(s_pszPrevSuff);
+        AssertStmt(cchFilename + RT_MAX(cchTmpSuff, cchPrevSuff) < RTPATH_MAX,
+                   throw EIPRTFailure(VERR_BUFFER_OVERFLOW, "filename to long (%zu)", cchFilename));
+
         char szTmpFilename[RTPATH_MAX];
-        int rc = RTStrCopy(szTmpFilename, sizeof(szTmpFilename) - strlen(s_pszTmpSuff), pcszFilename);
-        if (RT_FAILURE(rc))
-            throw EIPRTFailure(rc, "RTStrCopy");
-        strcat(szTmpFilename, s_pszTmpSuff);
+        memcpy(mempcpy(szTmpFilename, pcszFilename, cchFilename), s_pszTmpSuff, cchTmpSuff + 1);
 
         char szPrevFilename[RTPATH_MAX];
-        rc = RTStrCopy(szPrevFilename, sizeof(szPrevFilename) - strlen(s_pszPrevSuff), pcszFilename);
-        if (RT_FAILURE(rc))
-            throw EIPRTFailure(rc, "RTStrCopy");
-        strcat(szPrevFilename, s_pszPrevSuff);
+        memcpy(mempcpy(szPrevFilename, pcszFilename, cchFilename), s_pszPrevSuff, cchPrevSuff + 1);
 
         /* Write the XML document to the temporary file.  */
         writeInternal(szTmpFilename, fSafe);
 
         /* Make a backup of any existing file (ignore failure). */
         uint64_t cbPrevFile;
-        rc = RTFileQuerySizeByPath(pcszFilename, &cbPrevFile);
+        int rc = RTFileQuerySizeByPath(pcszFilename, &cbPrevFile);
         if (RT_SUCCESS(rc) && cbPrevFile >= 16)
             RTFileRename(pcszFilename, szPrevFilename, RTPATHRENAME_FLAGS_REPLACE);
 

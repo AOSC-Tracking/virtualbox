@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -79,7 +79,7 @@
 /**
  * The environment information for services.
  */
-typedef struct _VBOXSERVICEENV
+typedef struct VBOXSERVICEENV
 {
     /** hInstance of VBoxTray. */
     HINSTANCE hInstance;
@@ -96,12 +96,12 @@ typedef VBOXSERVICEENV const *PCVBOXSERVICEENV;
 /**
  * A service descriptor.
  */
-typedef struct _VBOXSERVICEDESC
+typedef struct VBOXSERVICEDESC
 {
     /** The service's name. RTTHREAD_NAME_LEN maximum characters. */
-    char           *pszName;
+    const char *pszName;
     /** The service description. */
-    char           *pszDesc;
+    const char *pszDesc;
 
     /** Callbacks. */
 
@@ -144,7 +144,7 @@ typedef struct _VBOXSERVICEDESC
 /**
  * The service initialization info and runtime variables.
  */
-typedef struct _VBOXSERVICEINFO
+typedef struct VBOXSERVICEINFO
 {
     /** Pointer to the service descriptor. */
     PVBOXSERVICEDESC pDesc;
@@ -165,13 +165,15 @@ typedef struct _VBOXSERVICEINFO
     bool             fEnabled;
 } VBOXSERVICEINFO, *PVBOXSERVICEINFO;
 
-/* Globally unique (system wide) message registration. */
-typedef struct _VBOXGLOBALMESSAGE
+/**
+ * Globally unique (system wide) message registration.
+ */
+typedef struct VBOXGLOBALMESSAGE
 {
     /** Message name. */
-    char    *pszName;
+    const char *pszName;
     /** Function pointer for handling the message. */
-    int      (* pfnHandler)          (WPARAM wParam, LPARAM lParam);
+    int       (*pfnHandler)(WPARAM wParam, LPARAM lParam);
 
     /* Variables. */
 

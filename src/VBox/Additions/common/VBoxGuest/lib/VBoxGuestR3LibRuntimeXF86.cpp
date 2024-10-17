@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2007-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2007-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -46,6 +46,9 @@
 #if defined(VBOX_VBGLR3_XFREE86)
 extern "C" {
 # define XFree86LOADER
+# if RT_GNUC_PREREQ(13,0) /* cmath gets dragged in and the c++/13/cmath header is allergic to -ffreestanding.  */
+#  define _GLIBCXX_INCLUDE_NEXT_C_HEADERS
+# endif
 # include <xf86_ansic.h>
 # undef size_t
 }

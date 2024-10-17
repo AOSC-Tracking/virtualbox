@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2022-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2022-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -1592,7 +1592,7 @@ static RTEXITCODE ShowVersion(void)
 {
     DoWriteNStr(g_hStdOut, RT_STR_TUPLE(VBOX_VERSION_STRING " r"));
 
-    const char *pszRev = "$Rev: 155244 $";
+    const char *pszRev = "$Rev: 164827 $";
     while (!RT_C_IS_DIGIT(*pszRev))
         pszRev++;
     size_t cchRev = 1;

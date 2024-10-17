@@ -3,7 +3,7 @@
     manpage, user manual, usage: VBoxManage createvm
 -->
 <!--
-    Copyright (C) 2006-2023 Oracle and/or its affiliates.
+    Copyright (C) 2006-2024 Oracle and/or its affiliates.
 
     This file is part of VirtualBox base platform packages, as
     available from https://www.virtualbox.org.
@@ -30,7 +30,7 @@
 ]>
 <refentry id="vboxmanage-createvm" lang="en">
   <refentryinfo>
-    <pubdate>$Date: 2023-01-17 15:15:46 +0100 (Tue, 17 Jan 2023) $</pubdate>
+    <pubdate>$Date: 2024-09-16 16:03:52 +0200 (Mon, 16 Sep 2024) $</pubdate>
     <title>VBoxManage createvm</title>
   </refentryinfo>
 
@@ -52,14 +52,14 @@
       <arg choice="req">--name=<replaceable>имя-ВМ</replaceable></arg>
       <arg>--basefolder=<replaceable>основная-папка</replaceable></arg>
       <arg>--default</arg>
-      <arg>--group=<replaceable>ID-группы</replaceable>,...</arg>
+      <arg>--groups=<replaceable>ID-группы</replaceable>,...</arg>
       <arg>--ostype=<replaceable>тип-ОС</replaceable></arg>
       <arg>--register</arg>
       <arg>--uuid=<replaceable>uuid</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createvm-description">
     <title>Описание</title>
     <para>
       Команда <command>VBoxManage createvm</command> создает новый
@@ -82,7 +82,7 @@
     </para>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createvm-common-options">
     <title>Опции команды</title>
     <para>
       В дополнение к требуемому указанию имени или UUID ВМ, можно
@@ -108,7 +108,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--group=<replaceable>ID-группы</replaceable>,...</option></term>
+        <term><option>--groups=<replaceable>ID-группы</replaceable>,...</option></term>
         <listitem><para>
             Назначает ВМ на указанные группы. Если указывается более
             чем одна группа, разделите их запятыми.
@@ -150,7 +150,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createvm-examples">
     <title>Примеры</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -165,7 +165,7 @@
 <screen>$ VBoxManage createvm --name "vm3" --register</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createvm-see-also">
     <title>Смотрите также</title>
     <para>
       <xref linkend="vboxmanage-list" />,

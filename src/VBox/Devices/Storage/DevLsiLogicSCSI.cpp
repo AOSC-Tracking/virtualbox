@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -1876,7 +1876,7 @@ lsilogicDiagnosticWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void con
 {
     RT_NOREF(pDevIns, pvUser, off, pv, cb);
     LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI), off, pv, cb, pv, cb));
-    return VINF_SUCCESS;
+    return VINF_IOM_MMIO_UNUSED_FF;
 }
 
 /**
@@ -2295,7 +2295,8 @@ static int lsilogicR3ProcessSCSIIORequest(PPDMDEVINS pDevIns, PLSILOGICSCSI pThi
     {
         PLSILOGICDEVICE pTgtDev = &pThisCC->paDeviceStates[pGuestReq->SCSIIO.u8TargetID];
 
-        if (pTgtDev->pDrvBase)
+        if (   pTgtDev->pDrvBase
+            && pGuestReq->SCSIIO.u8CDBLength <= RT_ELEMENTS(pGuestReq->SCSIIO.au8CDB))
         {
             /* Allocate and prepare a new request. */
             PDMMEDIAEXIOREQ hIoReq;
@@ -2364,12 +2365,12 @@ static int lsilogicR3ProcessSCSIIORequest(PPDMDEVINS pDevIns, PLSILOGICSCSI pThi
 
     if (g_cLogged++ < MAX_REL_LOG_ERRORS)
     {
-        LogRel(("LsiLogic#%d: %d/%d (Bus/Target) doesn't exist\n", pDevIns->iInstance,
-                pGuestReq->SCSIIO.u8TargetID, pGuestReq->SCSIIO.u8Bus));
+        LogRel(("LsiLogic#%d: %d/%d/%d (Bus/Target/CDBLength) doesn't exist\n", pDevIns->iInstance,
+                pGuestReq->SCSIIO.u8TargetID, pGuestReq->SCSIIO.u8Bus, pGuestReq->SCSIIO.u8CDBLength));
         /* Log the CDB too  */
         LogRel(("LsiLogic#%d: Guest issued CDB {%#x",
                 pDevIns->iInstance, pGuestReq->SCSIIO.au8CDB[0]));
-        for (unsigned i = 1; i < pGuestReq->SCSIIO.u8CDBLength; i++)
+        for (unsigned i = 1; i < RT_MIN(pGuestReq->SCSIIO.u8CDBLength, RT_ELEMENTS(pGuestReq->SCSIIO.au8CDB)); i++)
             LogRel((", %#x", pGuestReq->SCSIIO.au8CDB[i]));
         LogRel(("}\n"));
     }
@@ -3437,7 +3438,7 @@ DECLINLINE(uint16_t) lsilogicGetHandle(PLSILOGICSCSI pThis)
  *
  * @todo Generate better SAS addresses. (Request a block from SUN probably)
  */
-void lsilogicSASAddressGenerate(PSASADDRESS pSASAddress, unsigned iId)
+DECLINLINE(void) lsilogicSASAddressGenerate(PSASADDRESS pSASAddress, unsigned iId)
 {
     pSASAddress->u8Address[0] = (0x5 << 5);
     pSASAddress->u8Address[1] = 0x01;
@@ -5201,7 +5202,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Region #2: MMIO - Diag. */
     rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 2 /*iPciRegion*/, LSILOGIC_PCI_SPACE_MEM_SIZE, PCI_ADDRESS_SPACE_MEM,
                                         lsilogicDiagnosticWrite, lsilogicDiagnosticRead, NULL /*pvUser*/,
-                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                        IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
                                         pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "LsiLogicDiag" : "LsiLogicSasDiag",
                                         &pThis->hMmioDiag);
     AssertRCReturn(rc, rc);

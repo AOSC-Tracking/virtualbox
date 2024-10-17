@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -92,58 +92,204 @@ static char s_szClipWndClassName[] = SHCL_WIN_WNDCLASS_NAME;
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-static DECLCALLBACK(int)  vboxClipboardOnTransferInitCallback(PSHCLTXPROVIDERCTX pCtx);
-static DECLCALLBACK(int)  vboxClipboardOnTransferStartCallback(PSHCLTXPROVIDERCTX pCtx);
-static DECLCALLBACK(void) vboxClipboardOnTransferCompleteCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
-static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
+static DECLCALLBACK(void) vbtrShClTransferCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) vbtrShClTransferDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc);
 #endif
 
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-
 /**
- * Cleanup helper function for transfer callbacks.
+ * @copydoc ShClWinDataObject::CALLBACKS::pfnTransferBegin
  *
- * @param   pTransferCtx        Pointer to transfer context that the transfer contains.
- * @param   pTransfer           Pointer to transfer to cleanup.
+ * Called by ShClWinDataObject::GetData() when the user wants to paste data.
+ * This then requests a new transfer on the host.
+ *
+ * @thread  Clipboard main thread.
  */
-static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
+static DECLCALLBACK(int) vbtrShClDataObjectTransferBeginCallback(ShClWinDataObject::PCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
-    if (!pTransferCtx || !pTransfer)
-        return;
-
-    if (pTransfer->pvUser) /* SharedClipboardWinTransferCtx */
-    {
-        delete pTransfer->pvUser;
-        pTransfer->pvUser = NULL;
-    }
-
-    int rc2 = ShClTransferCtxTransferUnregister(pTransferCtx, pTransfer->State.uID);
-    AssertRC(rc2);
-
-    ShClTransferDestroy(pTransfer);
-
-    RTMemFree(pTransfer);
-    pTransfer = NULL;
-}
-
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnInitialize */
-static DECLCALLBACK(int) vboxClipboardOnTransferInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
-{
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
-    LogFlowFunc(("pCtx=%p\n", pCtx));
+    int rc = VbglR3ClipboardTransferRequest(&pCtx->CmdCtx);
 
-    RT_NOREF(pCtx);
-
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnStart */
-static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnCreated
+ *
+ * Called by ShClTransferCreate via VbglR3.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbtrShClTransferCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    int rc = ShClWinTransferCreate(&pCtx->Win, pCbCtx->pTransfer);
+
+    LogFlowFuncLeaveRC(rc);
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnDestroy
+ *
+ * Called by ShClTransferDestroy via VbglR3.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbtrShClTransferDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    ShClWinTransferDestroy(&pCtx->Win, pCbCtx->pTransfer);
+
+    LogFlowFuncLeave();
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialize
+ *
+ * Called by ShClTransferInit via VbglR3.
+ * For H->G: Called on transfer intialization to initialize the "in-flight" IDataObject for a data transfer.
+ * For G->H: Called on transfer intialization to populate the transfer's root list.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(int) vbtrShClTransferInitializeCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    switch(ShClTransferGetDir(pTransfer))
+    {
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* H->G */
+        {
+            rc = ShClWinTransferInitialize(&pCtx->Win, pTransfer);
+            break;
+        }
+
+        case SHCLTRANSFERDIR_TO_REMOTE: /* G->H */
+        {
+            rc = ShClWinTransferGetRootsFromClipboard(&pCtx->Win, pTransfer);
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
+ *
+ * Called by ShClTransferInit via VbglR3.
+ * For H->G: Called on transfer intialization to start the data transfer for the "in-flight" IDataObject.
+ * For G->H: Nothing to do here.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    switch(ShClTransferGetDir(pTransfer))
+    {
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* H->G */
+        {
+            rc = ShClWinTransferStart(&pCtx->Win, pTransfer);
+            break;
+        }
+
+        case SHCLTRANSFERDIR_TO_REMOTE: /* G->H */
+            break;
+
+        default:
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+}
+
+/**
+ * Worker for a reading clipboard from the host.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_SHCLPB_NO_DATA if no clipboard data is available.
+ * @param   pCtx                Shared Clipbaord context to use.
+ * @param   uFmt                The format to read clipboard data in.
+ * @param   ppvData             Where to return the allocated data read.
+ *                              Must be free'd by the caller.
+ * @param   pcbData             Where to return number of bytes read.
+ * @param   pvUser              User-supplied context.
+ *
+ * @thread  Clipboard main thread.
+ *
+ */
+static DECLCALLBACK(int) vbtrShClRequestDataFromSourceCallbackWorker(PSHCLCONTEXT pCtx,
+                                                                     SHCLFORMAT uFmt, void **ppvData, uint32_t *pcbData, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    return VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, ppvData, pcbData);
+}
+
+/**
+ * @copydoc SHCLCALLBACKS::pfnOnRequestDataFromSource
+ *
+ * Called from the IDataObject implementation to request data from the host.
+ *
+ * @thread  shclwnd thread.
+ */
+DECLCALLBACK(int) vbtrShClRequestDataFromSourceCallback(PSHCLCONTEXT pCtx,
+                                                        SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
+{
+    PRTREQ pReq = NULL;
+    int rc = RTReqQueueCallEx(pCtx->Win.hReqQ, &pReq, SHCL_TIMEOUT_DEFAULT_MS, RTREQFLAGS_IPRT_STATUS,
+                              (PFNRT)vbtrShClRequestDataFromSourceCallbackWorker, 5, pCtx, uFmt, ppv, pcb, pvUser);
+    RTReqRelease(pReq);
+    return rc;
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnStart
+ *
+ * Called from VbglR3 (main thread) to notify the IDataObject.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
@@ -151,80 +297,87 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
     AssertPtr(pTransfer);
 
-    const SHCLTRANSFERDIR enmDir = ShClTransferGetDir(pTransfer);
+    SHCLTRANSFERDIR const enmDir = ShClTransferGetDir(pTransfer);
 
-    LogFlowFunc(("pCtx=%p, idTransfer=%RU32, enmDir=%RU32\n", pCtx, ShClTransferGetID(pTransfer), enmDir));
+    int rc = VINF_SUCCESS;
 
-    int rc;
-
-    /* The guest wants to write local data to the host? */
-    if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
+    /* The guest wants to transfer data to the host. */
+    if (enmDir == SHCLTRANSFERDIR_TO_REMOTE) /* G->H */
     {
-        rc = SharedClipboardWinGetRoots(&pCtx->Win, pTransfer);
+        rc = ShClWinTransferGetRootsFromClipboard(&pCtx->Win, pTransfer);
     }
-    /* The guest wants to read data from a remote source. */
-    else if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
+    else if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE) /* H->G */
     {
-        /* The IDataObject *must* be created on the same thread as our (proxy) window, so post a message to it
-         * to do the stuff for us. */
-        PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pTransfer->Events, &pEvent);
-        if (RT_SUCCESS(rc))
-        {
-            /* Don't want to rely on SendMessage (synchronous) here, so just post and wait the event getting signalled. */
-            ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)pEvent->idEvent);
-
-            PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(pEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
-            if (RT_SUCCESS(rc))
-            {
-                Assert(pPayload->cbData == sizeof(int));
-                rc = *(int *)pPayload->pvData;
-
-                ShClPayloadFree(pPayload);
-            }
-
-            ShClEventRelease(pEvent);
-        }
-        else
-            AssertFailedStmt(rc = VERR_SHCLPB_MAX_EVENTS_REACHED);
+        /* Nothing to do here. */
     }
     else
         AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
 
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: Starting transfer failed, rc=%Rrc\n", rc));
-
-    LogFlowFunc(("LEAVE: idTransfer=%RU32, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
-    return rc;
 }
 
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnCompleted */
-static DECLCALLBACK(void) vboxClipboardOnTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcCompletion)
+/** @copydoc SHCLTRANSFERCALLBACKS::pfnOnCompleted */
+static DECLCALLBACK(void) vbtrShClTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcCompletion)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
-    LogRel2(("Shared Clipboard: Transfer to destination %s\n",
-             rcCompletion == VERR_CANCELLED ? "canceled" : "complete"));
+    LogFlowFunc(("rcCompletion=%Rrc\n", rcCompletion));
 
-    vboxClipboardTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
+    LogRel2(("Shared Clipboard: Transfer %RU16 %s\n",
+             ShClTransferGetID(pCbCtx->pTransfer), rcCompletion == VERR_CANCELLED ? "canceled" : "complete"));
+
+    SHCLTRANSFERSTATUS enmSts;
+
+    switch (rcCompletion)
+    {
+        case VERR_CANCELLED:
+            enmSts = SHCLTRANSFERSTATUS_CANCELED;
+            break;
+
+        case VINF_SUCCESS:
+            enmSts = SHCLTRANSFERSTATUS_COMPLETED;
+            break;
+
+        default:
+            AssertFailedStmt(enmSts = SHCLTRANSFERSTATUS_ERROR);
+            break;
+    }
+
+    int rc = VbglR3ClipboardTransferSendStatus(&pCtx->CmdCtx, pCbCtx->pTransfer, enmSts, rcCompletion);
+    LogFlowFuncLeaveRC(rc);
 }
 
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnError */
-static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcError)
+/** @copydoc SHCLTRANSFERCALLBACKS::pfnOnError */
+static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcError)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
-    LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rcError));
+    LogRel(("Shared Clipboard: Transfer %RU16 failed with %Rrc\n", ShClTransferGetID(pCbCtx->pTransfer), rcError));
 
-    vboxClipboardTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
+    if (g_cVerbosity) /* Only show this in verbose mode. */
+    {
+        char szMsg  [256]; /* Sizes according to MSDN. */
+        char szTitle[64];
+
+        /** @todo Add some translation macros here. */
+        RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Shared Clipboard");
+        RTStrPrintf(szMsg, sizeof(szMsg),
+                    "Transfer %RU16 failed with %Rrc", ShClTransferGetID(pCbCtx->pTransfer), rcError);
+
+        hlpShowBalloonTip(g_hInstance, g_hwndToolWindow, ID_TRAYICON,
+                          szMsg, szTitle,
+                          5000 /* Time to display in msec */, NIIF_INFO);
+    }
+
+    int rc = VbglR3ClipboardTransferSendStatus(&pCtx->CmdCtx, pCbCtx->pTransfer, SHCLTRANSFERSTATUS_ERROR, rcError);
+    LogFlowFuncLeaveRC(rc);
 }
-
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     AssertPtr(pCtx);
 
@@ -257,7 +410,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     /* Clipboard was updated by another application.
                      * Report available formats to the host. */
                     SHCLFORMATS fFormats;
-                    rc = SharedClipboardWinGetFormats(pWinCtx, &fFormats);
+                    rc = ShClWinGetFormats(pWinCtx, &fFormats);
                     if (RT_SUCCESS(rc))
                     {
                         LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats %#x\n", fFormats));
@@ -280,7 +433,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
         case WM_CHANGECBCHAIN:
         {
             LogFunc(("WM_CHANGECBCHAIN\n"));
-            lresultRc = SharedClipboardWinHandleWMChangeCBChain(pWinCtx, hwnd, msg, wParam, lParam);
+            lresultRc = ShClWinHandleWMChangeCBChain(pWinCtx, hwnd, msg, wParam, lParam);
             break;
         }
 
@@ -304,7 +457,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     /* Clipboard was updated by another application. */
                     /* WM_DRAWCLIPBOARD always expects a return code of 0, so don't change "rc" here. */
                     SHCLFORMATS fFormats;
-                    rc = SharedClipboardWinGetFormats(pWinCtx, &fFormats);
+                    rc = ShClWinGetFormats(pWinCtx, &fFormats);
                     if (   RT_SUCCESS(rc)
                         && fFormats != VBOX_SHCL_FMT_NONE)
                         rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
@@ -316,13 +469,13 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                 }
             }
 
-            lresultRc = SharedClipboardWinChainPassToNext(pWinCtx, msg, wParam, lParam);
+            lresultRc = ShClWinChainPassToNext(pWinCtx, msg, wParam, lParam);
             break;
         }
 
         case WM_TIMER:
         {
-            int rc = SharedClipboardWinHandleWMTimer(pWinCtx);
+            int rc = ShClWinHandleWMTimer(pWinCtx);
             AssertRC(rc);
 
             break;
@@ -334,190 +487,96 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
-        case WM_RENDERFORMAT:
+        case WM_RENDERFORMAT: /* Guest wants to render the clipboard data. */
         {
-            LogFunc(("WM_RENDERFORMAT\n"));
-
             /* Insert the requested clipboard format data into the clipboard. */
-            const UINT cfFormat = (UINT)wParam;
+            const UINT       uFmtWin  = (UINT)wParam;
+            const SHCLFORMAT uFmtVBox = ShClWinClipboardFormatToVBox(uFmtWin);
 
-            const SHCLFORMAT fFormat = SharedClipboardWinClipboardFormatToVBox(cfFormat);
-
-            LogFunc(("WM_RENDERFORMAT: cfFormat=%u -> fFormat=0x%x\n", cfFormat, fFormat));
-
-            if (fFormat == VBOX_SHCL_FMT_NONE)
+            LogFunc(("WM_RENDERFORMAT: uFmtWin=%u -> uFmtVBox=0x%x\n", uFmtWin, uFmtVBox));
+#ifdef LOG_ENABLED
+            char *pszFmts = ShClFormatsToStrA(uFmtVBox);
+            AssertPtrReturn(pszFmts, 0);
+            LogRel(("Shared Clipboard: Rendering Windows format %#x as VBox format '%s'\n", uFmtWin, pszFmts));
+            RTStrFree(pszFmts);
+#endif
+            if (uFmtVBox == VBOX_SHCL_FMT_NONE)
             {
-                LogFunc(("WM_RENDERFORMAT: Unsupported format requested\n"));
-                SharedClipboardWinClear();
+                LogRel(("Shared Clipboard: Unsupported format (%#x) requested\n", uFmtWin));
+                ShClWinClear();
             }
             else
             {
-                uint32_t const cbPrealloc = _4K;
-                uint32_t       cb         = 0;
+                void    *pvData = NULL;
+                uint32_t cbData;
 
-                /* Preallocate a buffer, most of small text transfers will fit into it. */
-                HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, cbPrealloc);
-                if (hMem)
+                HANDLE hMem;
+                int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmtVBox, &pvData, &cbData);
+                if (RT_SUCCESS(rc))
                 {
-                    void *pvMem = GlobalLock(hMem);
-                    if (pvMem)
+                    /* Verify the size of returned text, the memory block for clipboard must have the exact string size. */
+                    if (uFmtVBox == VBOX_SHCL_FMT_UNICODETEXT)
                     {
-                        /* Read the host data to the preallocated buffer. */
-                        int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pvMem, cbPrealloc, &cb);
+                        size_t cwcActual = 0;
+                        rc = RTUtf16NLenEx((PCRTUTF16)pvData, cbData / sizeof(RTUTF16), &cwcActual);
                         if (RT_SUCCESS(rc))
+                            cbData = (uint32_t)((cwcActual + 1 /* '\0' */) * sizeof(RTUTF16));
+                        else
+                            LogRel(("Shared Clipboard: Invalid UTF16 string from host: cb=%RU32, cwcActual=%zu, rc=%Rrc\n",
+                                    cbData, cwcActual, rc));
+                    }
+                    else if (uFmtVBox == VBOX_SHCL_FMT_HTML)
+                    {
+                        /* Wrap content into CF_HTML clipboard format if needed. */
+                        if (!ShClWinIsCFHTML((const char *)pvData))
                         {
-                            if (cb == 0)
+                            char    *pszWrapped = NULL;
+                            uint32_t cbWrapped  = 0;
+                            rc = ShClWinConvertMIMEToCFHTML((const char *)pvData, cbData, &pszWrapped, &cbWrapped);
+                            if (RT_SUCCESS(rc))
                             {
-                                /* 0 bytes returned means the clipboard is empty.
-                                 * Deallocate the memory and set hMem to NULL to get to
-                                 * the clipboard empty code path. */
-                                GlobalUnlock(hMem);
-                                GlobalFree(hMem);
-                                hMem = NULL;
-                            }
-                            else if (cb > cbPrealloc)
-                            {
-                                GlobalUnlock(hMem);
-
-                                LogRel2(("Shared Clipboard: Buffer too small (%RU32), needs %RU32 bytes\n", cbPrealloc, cb));
-
-                                /* The preallocated buffer is too small, adjust the size. */
-                                hMem = GlobalReAlloc(hMem, cb, 0);
-                                if (hMem)
+                                AssertBreakStmt(cbWrapped, rc = VERR_INVALID_PARAMETER);
+                                pvData = RTMemRealloc(pvData, cbWrapped);
+                                if (pvData)
                                 {
-                                    pvMem = GlobalLock(hMem);
-                                    if (pvMem)
-                                    {
-                                        /* Read the host data to the preallocated buffer. */
-                                        uint32_t cbNew = 0;
-                                        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pvMem, cb, &cbNew);
-                                        if (   RT_SUCCESS(rc)
-                                            && cbNew <= cb)
-                                        {
-                                            cb = cbNew;
-                                        }
-                                        else
-                                        {
-                                            LogRel(("Shared Clipboard: Receiving host data failed with %Rrc\n", rc));
-
-                                            GlobalUnlock(hMem);
-                                            GlobalFree(hMem);
-                                            hMem = NULL;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        LogRel(("Shared Clipboard: Error locking reallocated host data buffer\n"));
-
-                                        GlobalFree(hMem);
-                                        hMem = NULL;
-                                    }
+                                    memcpy(pvData, pszWrapped, cbWrapped);
+                                    cbData = cbWrapped;
                                 }
                                 else
-                                    LogRel(("Shared Clipboard: No memory for reallocating host data buffer\n"));
+                                    rc = VERR_NO_MEMORY;
+                                RTMemFree(pszWrapped);
                             }
 
-                            if (hMem)
-                            {
-                                /* pvMem is the address of the data. cb is the size of returned data. */
-                                /* Verify the size of returned text, the memory block for clipboard
-                                 * must have the exact string size.
-                                 */
-                                if (fFormat == VBOX_SHCL_FMT_UNICODETEXT)
-                                {
-                                    size_t cwcActual = 0;
-                                    rc = RTUtf16NLenEx((PCRTUTF16)pvMem, cb / sizeof(RTUTF16), &cwcActual);
-                                    if (RT_SUCCESS(rc))
-                                        cb = (uint32_t)((cwcActual + 1 /* '\0' */) * sizeof(RTUTF16));
-                                    else
-                                    {
-                                        LogRel(("Shared Clipboard: Invalid UTF16 string from host: cb=%RU32, cwcActual=%zu, rc=%Rrc\n",
-                                                cb, cwcActual, rc));
-
-                                        /* Discard invalid data. */
-                                        GlobalUnlock(hMem);
-                                        GlobalFree(hMem);
-                                        hMem = NULL;
-                                    }
-                                }
-                                else if (fFormat == VBOX_SHCL_FMT_HTML)
-                                {
-                                    /* Wrap content into CF_HTML clipboard format if needed. */
-                                    if (!SharedClipboardWinIsCFHTML((const char *)pvMem))
-                                    {
-                                        char *pszWrapped = NULL;
-                                        uint32_t cbWrapped = 0;
-                                        rc = SharedClipboardWinConvertMIMEToCFHTML((const char *)pvMem, cb,
-                                                                                   &pszWrapped, &cbWrapped);
-                                        if (RT_SUCCESS(rc))
-                                        {
-                                            if (GlobalUnlock(hMem) == 0)
-                                            {
-                                                hMem = GlobalReAlloc(hMem, cbWrapped, 0);
-                                                if (hMem)
-                                                {
-                                                    pvMem = GlobalLock(hMem);
-                                                    if (pvMem)
-                                                    {
-                                                        /* Copy wrapped content back to memory passed to system clipboard. */
-                                                        memcpy(pvMem, pszWrapped, cbWrapped);
-                                                        cb = cbWrapped;
-                                                    }
-                                                    else
-                                                    {
-                                                        LogRel(("Shared Clipboard: Failed to lock memory (%u), HTML clipboard data won't be converted into CF_HTML clipboard format\n", GetLastError()));
-                                                        GlobalFree(hMem);
-                                                        hMem = NULL;
-                                                    }
-                                                }
-                                                else
-                                                    LogRel(("Shared Clipboard: Failed to re-allocate memory (%u), HTML clipboard data won't be converted into CF_HTML clipboard format\n", GetLastError()));
-                                            }
-                                            else
-                                                LogRel(("Shared Clipboard: Failed to unlock memory (%u), HTML clipboard data won't be converted into CF_HTML clipboard format\n", GetLastError()));
-
-                                            RTMemFree(pszWrapped);
-                                        }
-                                        else
-                                            LogRel(("Shared Clipboard: Cannot convert HTML clipboard data into CF_HTML clipboard format, rc=%Rrc\n", rc));
-                                    }
-                                }
-                            }
-
-                            if (hMem)
-                            {
-                                GlobalUnlock(hMem);
-
-                                hMem = GlobalReAlloc(hMem, cb, 0);
-                                if (hMem)
-                                {
-                                    /* 'hMem' contains the host clipboard data.
-                                     * size is 'cb' and format is 'format'. */
-                                    HANDLE hClip = SetClipboardData(cfFormat, hMem);
-                                    if (hClip)
-                                    {
-                                        /* The hMem ownership has gone to the system. Finish the processing. */
-                                        break;
-                                    }
-                                    else
-                                        LogRel(("Shared Clipboard: Setting host data buffer to clipboard failed with %ld\n",
-                                                GetLastError()));
-
-                                    /* Cleanup follows. */
-                                }
-                                else
-                                    LogRel(("Shared Clipboard: No memory for allocating final host data buffer\n"));
-                            }
+                            if (RT_FAILURE(rc))
+                                LogRel(("Shared Clipboard: Cannot convert HTML clipboard data into CF_HTML clipboard format, rc=%Rrc\n", rc));
                         }
+                    }
 
-                        if (hMem)
+                    hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, cbData);
+                    if (hMem)
+                    {
+                        void *pvMem = GlobalLock(hMem);
+                        if (pvMem)
+                        {
+                            memcpy(pvMem, pvData, cbData);
                             GlobalUnlock(hMem);
+
+                            HANDLE hClip = SetClipboardData(uFmtWin, hMem);
+                            if (!hClip)
+                            {
+                                /* The hMem ownership has gone to the system. Finish the processing. */
+                                break;
+                            }
+                            else
+                                LogRel(("Shared Clipboard: Setting host data buffer to clipboard failed with %Rrc\n",
+                                        RTErrConvertFromWin32(GetLastError())));
+                        }
+                        else
+                            LogRel(("Shared Clipboard: Failed to lock memory (%Rrc)\n", RTErrConvertFromWin32(GetLastError())));
+                        GlobalFree(hMem);
                     }
                     else
                         LogRel(("Shared Clipboard: No memory for allocating host data buffer\n"));
-
-                    if (hMem)
-                        GlobalFree(hMem);
                 }
             }
 
@@ -528,13 +587,13 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
         {
             LogFunc(("WM_RENDERALLFORMATS\n"));
 
-            int rc = SharedClipboardWinHandleWMRenderAllFormats(pWinCtx, hwnd);
+            int rc = ShClWinHandleWMRenderAllFormats(pWinCtx, hwnd);
             AssertRC(rc);
 
             break;
         }
 
-        case SHCL_WIN_WM_REPORT_FORMATS:
+        case SHCL_WIN_WM_REPORT_FORMATS: /* Host reported clipboard formats. */
         {
             LogFunc(("SHCL_WIN_WM_REPORT_FORMATS\n"));
 
@@ -545,28 +604,31 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
             const SHCLFORMATS fFormats = pEvent->u.fReportedFormats;
 
+#ifdef LOG_ENABLED
+            char *pszFmts = ShClFormatsToStrA(fFormats);
+            AssertPtrReturn(pszFmts, 0);
+            LogRel(("Shared Clipboard: Host reported formats '%s'\n", pszFmts));
+            RTStrFree(pszFmts);
+#endif
             if (fFormats != VBOX_SHCL_FMT_NONE) /* Could arrive with some older GA versions. */
             {
+                int rc = ShClWinClearAndAnnounceFormats(pWinCtx, fFormats, hwnd);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                if (fFormats & VBOX_SHCL_FMT_URI_LIST)
+                if (   RT_SUCCESS(rc)
+                    && fFormats & VBOX_SHCL_FMT_URI_LIST)
                 {
-                    LogFunc(("VBOX_SHCL_FMT_URI_LIST\n"));
-
                     /*
-                     * Creating and starting the actual transfer will be done in vbglR3ClipboardTransferStart() as soon
-                     * as the host announces the start of the transfer via a VBOX_SHCL_HOST_MSG_TRANSFER_STATUS message.
-                     * Transfers always are controlled and initiated on the host side!
-                     *
-                     * So don't announce the transfer to the OS here yet. Don't touch the clipboard in any here; otherwise
-                     * this will trigger a WM_DRAWCLIPBOARD or friends, which will result in fun bugs coming up.
+                     * Create our IDataObject implementation and push it to the Windows clibpoard.
+                     * That way Windows will recognize that there is a data transfer available.
                      */
+                    ShClWinDataObject::CALLBACKS Callbacks;
+                    RT_ZERO(Callbacks);
+                    Callbacks.pfnTransferBegin = vbtrShClDataObjectTransferBeginCallback;
+
+                    rc = ShClWinTransferCreateAndSetDataObject(pWinCtx, pCtx, &Callbacks);
                 }
-                else
-                {
-#endif
-                    SharedClipboardWinClearAndAnnounceFormats(pWinCtx, fFormats, hwnd);
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                }
+#else
+                RT_NOREF(rc);
 #endif
             }
 
@@ -574,7 +636,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
-        case SHCL_WIN_WM_READ_DATA:
+        case SHCL_WIN_WM_READ_DATA: /* Host wants to read clipboard data from the guest. */
         {
             /* Send data in the specified format to the host. */
             PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)lParam;
@@ -584,8 +646,13 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             const SHCLFORMAT fFormat = (uint32_t)pEvent->u.fReadData;
 
             LogFlowFunc(("SHCL_WIN_WM_READ_DATA: fFormat=%#x\n", fFormat));
-
-            int rc = SharedClipboardWinOpen(hwnd);
+#ifdef LOG_ENABLED
+            char *pszFmts = ShClFormatsToStrA(fFormat);
+            AssertPtrReturn(pszFmts, 0);
+            LogRel(("Shared Clipboard: Sending data to host as '%s'\n", pszFmts));
+            RTStrFree(pszFmts);
+#endif
+            int rc = ShClWinOpen(hwnd);
             HANDLE hClip = NULL;
             if (RT_SUCCESS(rc))
             {
@@ -636,11 +703,11 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                 uint32_t const cbClip = (uint32_t)GlobalSize(hClip);
 
                                 /* Unwrap clipboard content from CF_HTML format if needed. */
-                                if (SharedClipboardWinIsCFHTML((const char *)pvClip))
+                                if (ShClWinIsCFHTML((const char *)pvClip))
                                 {
                                     char        *pszBuf = NULL;
                                     uint32_t    cbBuf   = 0;
-                                    rc = SharedClipboardWinConvertCFHTMLToMIME((const char *)pvClip, cbClip, &pszBuf, &cbBuf);
+                                    rc = ShClWinConvertCFHTMLToMIME((const char *)pvClip, cbClip, &pszBuf, &cbBuf);
                                     if (RT_SUCCESS(rc))
                                     {
                                         rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, pszBuf, cbBuf);
@@ -663,7 +730,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                 if (hClip == NULL)
                     LogFunc(("SHCL_WIN_WM_READ_DATA: hClip=NULL, lastError=%ld\n", GetLastError()));
 
-                SharedClipboardWinClose();
+                ShClWinClose();
             }
 
             /* If the requested clipboard format is not available, we must send empty data. */
@@ -672,37 +739,11 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        case SHCL_WIN_WM_TRANSFER_START:
-        {
-            LogFunc(("SHCL_WIN_WM_TRANSFER_START\n"));
-
-            PSHCLTRANSFER pTransfer  = (PSHCLTRANSFER)wParam;
-            AssertPtr(pTransfer);
-
-            const SHCLEVENTID idEvent = (SHCLEVENTID)lParam;
-
-            Assert(ShClTransferGetSource(pTransfer) == SHCLSOURCE_REMOTE); /* Sanity. */
-
-            int rcTransfer = SharedClipboardWinTransferCreate(pWinCtx, pTransfer);
-
-            PSHCLEVENTPAYLOAD pPayload = NULL;
-            int rc = ShClPayloadAlloc(idEvent, &rcTransfer, sizeof(rcTransfer), &pPayload);
-            if (RT_SUCCESS(rc))
-            {
-                rc = ShClEventSignal(&pTransfer->Events, idEvent, pPayload);
-                if (RT_FAILURE(rc))
-                    ShClPayloadFree(pPayload);
-            }
-
-            break;
-        }
-#endif
         case WM_DESTROY:
         {
             LogFunc(("WM_DESTROY\n"));
 
-            int rc = SharedClipboardWinHandleWMDestroy(pWinCtx);
+            int rc = ShClWinHandleWMDestroy(pWinCtx);
             AssertRC(rc);
 
             /*
@@ -725,9 +766,9 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
     return lresultRc;
 }
 
-static LRESULT CALLBACK vboxClipboardWinWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK vbtrShClWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
+static int vbtrShClCreateWindow(PSHCLCONTEXT pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -746,7 +787,7 @@ static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
     if (!GetClassInfoEx(hInstance, s_szClipWndClassName, &wc))
     {
         wc.style         = CS_NOCLOSE;
-        wc.lpfnWndProc   = vboxClipboardWinWndProc;
+        wc.lpfnWndProc   = vbtrShClWndProc;
         wc.hInstance     = pCtx->pEnv->hInstance;
         wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
         wc.lpszClassName = s_szClipWndClassName;
@@ -774,10 +815,10 @@ static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
             SetWindowPos(pWinCtx->hWnd, HWND_TOPMOST, -200, -200, 0, 0,
                          SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
 
-            rc = SharedClipboardWinChainAdd(pWinCtx);
+            rc = ShClWinChainAdd(pWinCtx);
             if (RT_SUCCESS(rc))
             {
-                if (!SharedClipboardWinIsNewAPI(&pWinCtx->newAPI))
+                if (!ShClWinIsNewAPI(&pWinCtx->newAPI))
                     pWinCtx->oldAPI.timerRefresh = SetTimer(pWinCtx->hWnd, 0, 10 * 1000 /* 10s */, NULL);
             }
         }
@@ -787,7 +828,7 @@ static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
     return rc;
 }
 
-static DECLCALLBACK(int) vboxClipboardWindowThread(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) vbtrShClWindowThread(RTTHREAD hThread, void *pvUser)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pvUser;
     AssertPtr(pCtx);
@@ -801,9 +842,9 @@ static DECLCALLBACK(int) vboxClipboardWindowThread(RTTHREAD hThread, void *pvUse
     }
     else
         LogRel(("Shared Clipboard: Initialized OLE in window thread\n"));
-#endif
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-    int rc = vboxClipboardCreateWindow(pCtx);
+    int rc = vbtrShClCreateWindow(pCtx);
     if (RT_FAILURE(rc))
     {
         LogRel(("Shared Clipboard: Unable to create window, rc=%Rrc\n", rc));
@@ -854,48 +895,16 @@ static DECLCALLBACK(int) vboxClipboardWindowThread(RTTHREAD hThread, void *pvUse
     return rc;
 }
 
-static void vboxClipboardDestroy(PSHCLCONTEXT pCtx)
-{
-    AssertPtrReturnVoid(pCtx);
-
-    LogFlowFunc(("pCtx=%p\n", pCtx));
-
-    LogRel2(("Shared Clipboard: Destroying ...\n"));
-
-    const PSHCLWINCTX pWinCtx = &pCtx->Win;
-
-    if (pCtx->hThread != NIL_RTTHREAD)
-    {
-        int rcThread = VERR_WRONG_ORDER;
-        int rc = RTThreadWait(pCtx->hThread, 60 * 1000 /* Timeout in ms */, &rcThread);
-        LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n",
-                     rc, rcThread));
-        RT_NOREF(rc);
-    }
-
-    if (pWinCtx->hWnd)
-    {
-        DestroyWindow(pWinCtx->hWnd);
-        pWinCtx->hWnd = NULL;
-    }
-
-    UnregisterClass(s_szClipWndClassName, pCtx->pEnv->hInstance);
-
-    SharedClipboardWinCtxDestroy(&pCtx->Win);
-
-    LogRel2(("Shared Clipboard: Destroyed\n"));
-}
-
-static LRESULT CALLBACK vboxClipboardWinWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK vbtrShClWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     PSHCLCONTEXT pCtx = &g_Ctx; /** @todo r=andy Make pCtx available through SetWindowLongPtr() / GWL_USERDATA. */
     AssertPtr(pCtx);
 
     /* Forward with proper context. */
-    return vboxClipboardWinProcessMsg(pCtx, hWnd, uMsg, wParam, lParam);
+    return vbtrShClWndProcWorker(pCtx, hWnd, uMsg, wParam, lParam);
 }
 
-DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
+DECLCALLBACK(int) vbtrShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 {
     LogFlowFuncEnter();
 
@@ -920,57 +929,39 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
     pCtx->fStarted  = false;
     pCtx->fShutdown = false;
 
-    int rc = VINF_SUCCESS;
+    int rc = RTReqQueueCreate(&pCtx->Win.hReqQ);
+    AssertRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /*
-     * Set callbacks.
-     * Those will be registered within VbglR3 when a new transfer gets initialized.
-     */
-    RT_ZERO(pCtx->CmdCtx.Transfers.Callbacks);
-
-    pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
-    pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
-
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialize = vboxClipboardOnTransferInitCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnStart      = vboxClipboardOnTransferStartCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted  = vboxClipboardOnTransferCompletedCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError      = vboxClipboardOnTransferErrorCallback;
-#endif
-
+    rc = ShClWinCtxInit(&pCtx->Win);
+    if (RT_SUCCESS(rc))
+        rc = VbglR3ClipboardConnectEx(&pCtx->CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID);
     if (RT_SUCCESS(rc))
     {
-        rc = SharedClipboardWinCtxInit(&pCtx->Win);
-        if (RT_SUCCESS(rc))
-            rc = VbglR3ClipboardConnectEx(&pCtx->CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID);
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        rc = ShClTransferCtxInit(&pCtx->TransferCtx);
+#endif
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = ShClTransferCtxInit(&pCtx->TransferCtx);
-#endif
+            /* Message pump thread for our proxy window. */
+            rc = RTThreadCreate(&pCtx->hThread, vbtrShClWindowThread, pCtx /* pvUser */,
+                                0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
+                                "shclwnd");
             if (RT_SUCCESS(rc))
             {
-                /* Message pump thread for our proxy window. */
-                rc = RTThreadCreate(&pCtx->hThread, vboxClipboardWindowThread, pCtx /* pvUser */,
-                                    0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
-                                    "shclwnd");
-                if (RT_SUCCESS(rc))
-                {
-                    int rc2 = RTThreadUserWait(pCtx->hThread, 30 * 1000 /* Timeout in ms */);
-                    AssertRC(rc2);
+                int rc2 = RTThreadUserWait(pCtx->hThread, RT_MS_30SEC /* Timeout in ms */);
+                AssertRC(rc2);
 
-                    if (!pCtx->fStarted) /* Did the thread fail to start? */
-                        rc = VERR_NOT_SUPPORTED; /* Report back Shared Clipboard as not being supported. */
-                }
+                if (!pCtx->fStarted) /* Did the thread fail to start? */
+                    rc = VERR_NOT_SUPPORTED; /* Report back Shared Clipboard as not being supported. */
             }
-
-            if (RT_SUCCESS(rc))
-            {
-                *ppInstance = pCtx;
-            }
-            else
-                VbglR3ClipboardDisconnectEx(&pCtx->CmdCtx);
         }
+
+        if (RT_SUCCESS(rc))
+        {
+            *ppInstance = pCtx;
+        }
+        else
+            VbglR3ClipboardDisconnectEx(&pCtx->CmdCtx);
     }
 
     if (RT_FAILURE(rc))
@@ -980,7 +971,7 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
     return rc;
 }
 
-DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
+DECLCALLBACK(int) vbtrShClWorker(void *pInstance, bool volatile *pfShutdown)
 {
     AssertPtr(pInstance);
     LogFlowFunc(("pInstance=%p\n", pInstance));
@@ -1006,18 +997,37 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
         /* Not critical, the rest of the clipboard might work. */
     }
     else
-        LogRel(("Shared Clipboard: Initialized OLE in worker thraed\n"));
-#endif
+        LogRel(("Shared Clipboard: Initialized OLE in worker thread\n"));
+
+    /*
+     * Init callbacks.
+     * Those will be registered within VbglR3 when a new transfer gets initialized.
+     */
+    RT_ZERO(pCtx->CmdCtx.Transfers.Callbacks);
+
+    pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
+    pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
+
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCreated     = vbtrShClTransferCreatedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnDestroy     = vbtrShClTransferDestroyCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialize  = vbtrShClTransferInitializeCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialized = vbtrShClTransferInitializedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnStarted     = vbtrShClTransferStartedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted   = vbtrShClTransferCompletedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError       = vbtrShClTransferErrorCallback;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     int rc;
 
     /* The thread waits for incoming messages from the host. */
+    PVBGLR3CLIPBOARDEVENT pEvent = NULL;
     for (;;)
     {
         LogFlowFunc(("Waiting for host message (fUseLegacyProtocol=%RTbool, fHostFeatures=%#RX64) ...\n",
                      pCtx->CmdCtx.fUseLegacyProtocol, pCtx->CmdCtx.fHostFeatures));
 
-        PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
+        if (!pEvent)
+            pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
         AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);
 
         uint32_t idMsg  = 0;
@@ -1030,6 +1040,11 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
 #else
             rc = VbglR3ClipboardEventGetNext(idMsg, cParms, &pCtx->CmdCtx, pEvent);
 #endif
+        }
+        else if (rc == VERR_TRY_AGAIN) /* No new message (yet). */
+        {
+            RTReqQueueProcess(pCtx->Win.hReqQ, RT_MS_1SEC);
+            continue;
         }
 
         if (RT_FAILURE(rc))
@@ -1125,7 +1140,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
     return rc;
 }
 
-DECLCALLBACK(int) VBoxShClStop(void *pInstance)
+DECLCALLBACK(int) vbtrShClStop(void *pInstance)
 {
     AssertPtrReturn(pInstance, VERR_INVALID_POINTER);
 
@@ -1149,21 +1164,48 @@ DECLCALLBACK(int) VBoxShClStop(void *pInstance)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(void) VBoxShClDestroy(void *pInstance)
+DECLCALLBACK(void) vbtrShClDestroy(void *pInstance)
 {
     AssertPtrReturnVoid(pInstance);
 
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pInstance;
-    AssertPtr(pCtx);
+    AssertPtrReturnVoid(pCtx);
 
     /* Make sure that we are disconnected. */
     Assert(pCtx->CmdCtx.idClient == 0);
 
-    vboxClipboardDestroy(pCtx);
+    LogFlowFunc(("pCtx=%p\n", pCtx));
+
+    LogRel2(("Shared Clipboard: Destroying ...\n"));
+
+    const PSHCLWINCTX pWinCtx = &pCtx->Win;
+
+    if (pCtx->hThread != NIL_RTTHREAD)
+    {
+        int rcThread = VERR_WRONG_ORDER;
+        int rc = RTThreadWait(pCtx->hThread, 60 * 1000 /* Timeout in ms */, &rcThread);
+        LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n",
+                     rc, rcThread));
+        RT_NOREF(rc);
+    }
+
+    if (pWinCtx->hWnd)
+    {
+        DestroyWindow(pWinCtx->hWnd);
+        pWinCtx->hWnd = NULL;
+    }
+
+    UnregisterClass(s_szClipWndClassName, pCtx->pEnv->hInstance);
+
+    ShClWinCtxDestroy(&pCtx->Win);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     ShClTransferCtxDestroy(&pCtx->TransferCtx);
 #endif
+
+    RTReqQueueDestroy(pCtx->Win.hReqQ);
+
+    LogRel2(("Shared Clipboard: Destroyed\n"));
 
     return;
 }
@@ -1178,8 +1220,8 @@ VBOXSERVICEDESC g_SvcDescClipboard =
     /* pszDescription. */
     "Shared Clipboard",
     /* methods */
-    VBoxShClInit,
-    VBoxShClWorker,
-    VBoxShClStop,
-    VBoxShClDestroy
+    vbtrShClInit,
+    vbtrShClWorker,
+    vbtrShClStop,
+    vbtrShClDestroy
 };

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2022-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2022-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -75,6 +75,24 @@ int vgpu10DefineRasterizerState(PVBOXDX_DEVICE pDevice,
                                 uint8 lineStippleEnable,
                                 uint8 lineStippleFactor,
                                 uint16 lineStipplePattern);
+int vgpu10DefineRasterizerState_v2(PVBOXDX_DEVICE pDevice,
+                                   SVGA3dRasterizerStateId rasterizerId,
+                                   uint8 fillMode,
+                                   SVGA3dCullMode cullMode,
+                                   uint8 frontCounterClockwise,
+                                   uint8 provokingVertexLast,
+                                   int32 depthBias,
+                                   float depthBiasClamp,
+                                   float slopeScaledDepthBias,
+                                   uint8 depthClipEnable,
+                                   uint8 scissorEnable,
+                                   SVGA3dMultisampleRastEnable multisampleEnable,
+                                   uint8 antialiasedLineEnable,
+                                   float lineWidth,
+                                   uint8 lineStippleEnable,
+                                   uint8 lineStippleFactor,
+                                   uint16 lineStipplePattern,
+                                   uint32 forcedSampleCount);
 int vgpu10DestroyRasterizerState(PVBOXDX_DEVICE pDevice,
                                  SVGA3dRasterizerStateId rasterizerId);
 int vgpu10DefineSamplerState(PVBOXDX_DEVICE pDevice,
@@ -261,6 +279,12 @@ int vgpu10ResourceCopyRegion(PVBOXDX_DEVICE pDevice,
 int vgpu10ResourceCopy(PVBOXDX_DEVICE pDevice,
                        D3DKMT_HANDLE hDstAllocation,
                        D3DKMT_HANDLE hSrcAllocation);
+int vgpu10ResolveCopy(PVBOXDX_DEVICE pDevice,
+                      D3DKMT_HANDLE hDstAllocation,
+                      uint32 dstSubResource,
+                      D3DKMT_HANDLE hSrcAllocation,
+                      uint32 srcSubResource,
+                      SVGA3dSurfaceFormat copyFormat);
 int vgpu10MobFence64(PVBOXDX_DEVICE pDevice,
                      uint64 value,
                      D3DKMT_HANDLE hAllocation,
@@ -341,5 +365,158 @@ int vgpu10PresentBlt(PVBOXDX_DEVICE pDevice,
                      SVGA3dBox const &boxSrc,
                      SVGA3dBox const &boxDest,
                      SVGA3dDXPresentBltMode mode);
+
+int vgpu10DefineVideoProcessor(PVBOXDX_DEVICE pDevice,
+                               uint32 uVideoProcessorId,
+                               VBSVGA3dVideoProcessorDesc const &desc);
+int vgpu10DefineVideoDecoderOutputView(PVBOXDX_DEVICE pDevice,
+                                       VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId,
+                                       D3DKMT_HANDLE hAllocation,
+                                       VBSVGA3dVDOVDesc const &desc);
+int vgpu10DefineVideoDecoder(PVBOXDX_DEVICE pDevice,
+                             VBSVGA3dVideoDecoderId videoDecoderId,
+                             VBSVGA3dVideoDecoderDesc const &desc,
+                             VBSVGA3dVideoDecoderConfig const &config);
+int vgpu10VideoDecoderBeginFrame(PVBOXDX_DEVICE pDevice,
+                                 VBSVGA3dVideoDecoderId videoDecoderId,
+                                 VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId);
+int vgpu10VideoDecoderSubmitBuffers(PVBOXDX_DEVICE pDevice,
+                                    VBSVGA3dVideoDecoderId videoDecoderId,
+                                    uint32 bufferCount,
+                                    D3DKMT_HANDLE const *pahAllocation,
+                                    VBSVGA3dVideoDecoderBufferDesc const *paBufferDesc);
+int vgpu10VideoDecoderEndFrame(PVBOXDX_DEVICE pDevice,
+                               VBSVGA3dVideoDecoderId videoDecoderId);
+int vgpu10DefineVideoProcessorInputView(PVBOXDX_DEVICE pDevice,
+                                        VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId,
+                                        D3DKMT_HANDLE hAllocation,
+                                        VBSVGA3dVideoProcessorDesc const &contentDesc,
+                                        VBSVGA3dVPIVDesc const &desc);
+int vgpu10DefineVideoProcessorOutputView(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId,
+                                         D3DKMT_HANDLE hAllocation,
+                                         VBSVGA3dVideoProcessorDesc const &contentDesc,
+                                         VBSVGA3dVPOVDesc const &desc);
+int vgpu10VideoProcessorBlt(PVBOXDX_DEVICE pDevice,
+                            VBSVGA3dVideoProcessorId videoProcessorId,
+                            VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId,
+                            uint32 OutputFrame,
+                            uint32 StreamCount,
+                            uint32 cbVideoProcessorStreams,
+                            VBSVGA3dVideoProcessorStream *paVideoProcessorStreams);
+int vgpu10DestroyVideoDecoder(PVBOXDX_DEVICE pDevice,
+                              VBSVGA3dVideoDecoderId videoDecoderId);
+int vgpu10DestroyVideoDecoderOutputView(PVBOXDX_DEVICE pDevice,
+                                        VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId);
+int vgpu10DestroyVideoProcessor(PVBOXDX_DEVICE pDevice,
+                                VBSVGA3dVideoProcessorId videoProcessorId);
+int vgpu10DestroyVideoProcessorInputView(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId);
+int vgpu10DestroyVideoProcessorOutputView(PVBOXDX_DEVICE pDevice,
+                                          VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId);
+int vgpu10VideoProcessorSetOutputTargetRect(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            BOOL enable,
+                                            RECT const &outputRect);
+int vgpu10VideoProcessorSetOutputBackgroundColor(PVBOXDX_DEVICE pDevice,
+                                                 VBSVGA3dVideoProcessorId videoProcessorId,
+                                                 BOOL ycbcr,
+                                                 D3D11_1DDI_VIDEO_COLOR const &color);
+int vgpu10VideoProcessorSetOutputColorSpace(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            VBSVGA3dVideoProcessorColorSpace const &colorSpace);
+int vgpu10VideoProcessorSetOutputAlphaFillMode(PVBOXDX_DEVICE pDevice,
+                                               VBSVGA3dVideoProcessorId videoProcessorId,
+                                               VBSVGA3dVideoProcessorAlphaFillMode fillMode,
+                                               uint32 streamIndex);
+int vgpu10VideoProcessorSetOutputConstriction(PVBOXDX_DEVICE pDevice,
+                                               VBSVGA3dVideoProcessorId videoProcessorId,
+                                               BOOL enabled,
+                                               SIZE constrictonSize);
+int vgpu10VideoProcessorSetOutputStereoMode(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            BOOL enable);
+int vgpu10VideoProcessorSetStreamFrameFormat(PVBOXDX_DEVICE pDevice,
+                                             VBSVGA3dVideoProcessorId videoProcessorId,
+                                             uint32 streamIndex,
+                                             VBSVGA3dVideoFrameFormat format);
+int vgpu10VideoProcessorSetStreamColorSpace(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            uint32 streamIndex,
+                                            VBSVGA3dVideoProcessorColorSpace const &colorSpace);
+int vgpu10VideoProcessorSetStreamOutputRate(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            uint32 streamIndex,
+                                            VBSVGA3dVideoProcessorOutputRate outputRate,
+                                            uint8 repeatFrame,
+                                            SVGA3dFraction64 const &customRate);
+int vgpu10VideoProcessorSetStreamSourceRect(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            uint32 streamIndex,
+                                            BOOL enable,
+                                            RECT const *pSourceRect);
+int vgpu10VideoProcessorSetStreamDestRect(PVBOXDX_DEVICE pDevice,
+                                          VBSVGA3dVideoProcessorId videoProcessorId,
+                                          uint32 streamIndex,
+                                          BOOL enable,
+                                          RECT const *pDestRect);
+int vgpu10VideoProcessorSetStreamAlpha(PVBOXDX_DEVICE pDevice,
+                                       VBSVGA3dVideoProcessorId videoProcessorId,
+                                       uint32 streamIndex,
+                                       BOOL enable,
+                                       float alpha);
+int vgpu10VideoProcessorSetStreamPalette(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorId videoProcessorId,
+                                         uint32 streamIndex,
+                                         UINT Count,
+                                         UINT const *pEntries);
+int vgpu10VideoProcessorSetStreamPixelAspectRatio(PVBOXDX_DEVICE pDevice,
+                                                  VBSVGA3dVideoProcessorId videoProcessorId,
+                                                  uint32 streamIndex,
+                                                  BOOL enable,
+                                                  SVGA3dFraction64 const &sourceRatio,
+                                                  SVGA3dFraction64 const &destRatio);
+int vgpu10VideoProcessorSetStreamLumaKey(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorId videoProcessorId,
+                                         uint32 streamIndex,
+                                         BOOL enable,
+                                         float lower,
+                                         float upper);
+int vgpu10VideoProcessorSetStreamStereoFormat(PVBOXDX_DEVICE pDevice,
+                                              VBSVGA3dVideoProcessorId videoProcessorId,
+                                              uint32 streamIndex,
+                                              BOOL enable,
+                                              VBSVGA3dVideoProcessorStereoFormat stereoFormat,
+                                              uint8 leftViewFrame0,
+                                              uint8 baseViewFrame0,
+                                              VBSVGA3dVideoProcessorStereoFlipMode flipMode,
+                                              int monoOffset);
+int vgpu10VideoProcessorSetStreamAutoProcessingMode(PVBOXDX_DEVICE pDevice,
+                                                    VBSVGA3dVideoProcessorId videoProcessorId,
+                                                    uint32 streamIndex,
+                                                    BOOL enable);
+int vgpu10VideoProcessorSetStreamFilter(PVBOXDX_DEVICE pDevice,
+                                        VBSVGA3dVideoProcessorId videoProcessorId,
+                                        uint32 streamIndex,
+                                        BOOL enable,
+                                        VBSVGA3dVideoProcessorFilter filter,
+                                        int level);
+int vgpu10VideoProcessorSetStreamRotation(PVBOXDX_DEVICE pDevice,
+                                          VBSVGA3dVideoProcessorId videoProcessorId,
+                                          uint32 streamIndex,
+                                          BOOL enable,
+                                          VBSVGA3dVideoProcessorRotation rotation);
+int vgpu10GetVideoCapability(PVBOXDX_DEVICE pDevice,
+                             VBSVGA3dVideoCapability capability,
+                             D3DKMT_HANDLE hAllocation,
+                             uint32 offsetInBytes,
+                             uint32 sizeInBytes,
+                             uint64 fenceValue);
+int vgpu10ClearView(PVBOXDX_DEVICE pDevice,
+                    SVGAFifo3dCmdId cmdId,
+                    uint32_t viewId,
+                    const float color[4],
+                    const D3D10_DDI_RECT *paRects,
+                    uint32_t cRects);
 
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_dx_VBoxDXCmd_h */

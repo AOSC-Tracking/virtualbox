@@ -1,10 +1,10 @@
-# $Id $
+# $Id: Makefile.kmk $
 ## @file
 # Sub-Makefile for GINA test cases.
 #
 
 #
-# Copyright (C) 2012-2023 Oracle and/or its affiliates.
+# Copyright (C) 2012-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -32,5 +32,6 @@ PROGRAMS += tstVBoxGINA
 tstVBoxGINA_TEMPLATE = VBoxGuestR3Exe
 tstVBoxGINA_SOURCES  = \
 	tstVBoxGINA.cpp
+tstVBoxGINA_VBOX_SET_PE_VERSION.win.x86 = nt351
 
 include $(FILE_KBUILD_SUB_FOOTER)

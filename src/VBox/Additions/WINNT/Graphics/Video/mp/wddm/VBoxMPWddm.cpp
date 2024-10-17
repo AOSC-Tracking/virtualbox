@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -3130,6 +3130,24 @@ static void vboxWddmHostPointerEnable(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnable)
     vboxWddmUpdatePointerShape(pDevExt, &PointerAttributes, sizeof(PointerAttributes));
 }
 
+/**
+ * Reports the current mouse cursor position to the host.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt             Device extension to use.
+ * @param   xPos                X position to report to the host.
+ * @param   yPos                Y position to report to the host.
+ */
+static int vboxWddmReportCursorPosition(PVBOXMP_DEVEXT pDevExt, uint32_t xPos, uint32_t yPos)
+{
+    VIDEO_POINTER_POSITION Pos;
+    RT_ZERO(Pos);
+    Pos.Column = xPos;
+    Pos.Row    = yPos;
+
+    return VBoxMPCmnReportCursorPosition(VBoxCommonFromDeviceExt(pDevExt), &Pos);
+}
+
 NTSTATUS
 APIENTRY
 DxgkDdiSetPointerPosition(
@@ -3168,7 +3186,9 @@ DxgkDdiSetPointerPosition(
 
     pGlobalPointerInfo->iLastReportedScreen = pSetPointerPosition->VidPnSourceId;
 
-    if ((fVisStateChanged || fScreenChanged) && VBoxQueryHostWantsAbsolute())
+    const bool fWantsAbsolute = VBoxQueryHostWantsAbsolute();
+
+    if ((fVisStateChanged || fScreenChanged) && fWantsAbsolute)
     {
         if (fScreenChanged)
         {
@@ -3183,7 +3203,18 @@ DxgkDdiSetPointerPosition(
         vboxWddmHostPointerEnable(pDevExt, pSetPointerPosition->Flags.Visible);
     }
 
-//    LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
+    /* Report the mouse cursor position to the host if changed. */
+    if (   fWantsAbsolute
+        && (   pGlobalPointerInfo->iLastPosX != (uint32_t)pSetPointerPosition->X
+            || pGlobalPointerInfo->iLastPosY != (uint32_t)pSetPointerPosition->Y))
+    {
+        vboxWddmReportCursorPosition(pDevExt, (uint32_t)pSetPointerPosition->X, (uint32_t)pSetPointerPosition->Y);
+
+        pGlobalPointerInfo->iLastPosX = (uint32_t)pSetPointerPosition->X;
+        pGlobalPointerInfo->iLastPosY = (uint32_t)pSetPointerPosition->Y;
+    }
+
+    //    LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
     return STATUS_SUCCESS;
 }
@@ -3449,6 +3480,92 @@ DxgkDdiEscape(
                 LOG(("<= VBOXESC_CONFIGURETARGETS"));
                 break;
             }
+
+            case VBOXESC_RECONNECT_TARGETS:
+            {
+                LOG(("=> VBOXESC_RECONNECT_TARGETS"));
+
+                if (!pEscape->Flags.HardwareAccess)
+                {
+                    WARN(("VBOXESC_RECONNECT_TARGETS called without HardwareAccess flag set, failing\n"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pEscape->PrivateDriverDataSize < sizeof (VBOXDISPIFESCAPE_RECONNECT_TARGETS))
+                {
+                    WARN(("VBOXESC_RECONNECT_TARGETS invalid private driver size %d\n", pEscape->PrivateDriverDataSize));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pEscapeHdr->u32CmdSpecific != 0)
+                {
+                    WARN(("VBOXESC_RECONNECT_TARGETS u32CmdSpecific is not zero\n"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                VBOXDISPIFESCAPE_RECONNECT_TARGETS *pVBoxEscapeReconnectTargets = (VBOXDISPIFESCAPE_RECONNECT_TARGETS *)pEscape->pPrivateDriverData;
+                uint32_t u32ConnectMask = pVBoxEscapeReconnectTargets->u32ConnectMask;
+                uint32_t u32DisconnectMask = pVBoxEscapeReconnectTargets->u32DisconnectMask;
+
+                if (u32ConnectMask & u32DisconnectMask)
+                {
+                    WARN(("VBOXESC_RECONNECT_TARGETS (u32ConnectMask & u32DisconnectMask) is not zero\n"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                HANDLE hKey = NULL;
+                Status = IoOpenDeviceRegistryKey(pDevExt->pPDO, PLUGPLAY_REGKEY_DRIVER, GENERIC_WRITE, &hKey);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("VBOXESC_CONFIGURETARGETS IoOpenDeviceRegistryKey failed, Status = 0x%x", Status));
+                    hKey = NULL;
+                }
+
+                for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                {
+                    VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[i];
+                    bool fConnectReq;
+
+                    if (u32ConnectMask & RT_BIT(i))
+                        fConnectReq = true;
+                    else if (u32DisconnectMask & RT_BIT(i))
+                        fConnectReq = false;
+                    else
+                        continue;
+
+                    pTarget->fConfigured = true;
+
+                    if (pTarget->fConnected != fConnectReq)
+                    {
+                        Status = VBoxWddmChildStatusConnect(pDevExt, (uint32_t)i, fConnectReq);
+                        LOG(("VBOXESC_RECONNECT_TARGETS %sconnecting target %d, status 0x%x", fConnectReq ? "" : "dis", i, Status));
+                        pTarget->fConnected = fConnectReq;
+
+                        if (RT_LIKELY(hKey))
+                        {
+                            WCHAR wszNameBuf[sizeof(VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX) / sizeof(WCHAR) + 32];
+                            RTUtf16Printf(wszNameBuf, RT_ELEMENTS(wszNameBuf), "%ls%u", VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX, i);
+                            Status = vboxWddmRegSetValueDword(hKey, wszNameBuf, fConnectReq);
+                        }
+                    }
+                }
+
+                if (RT_LIKELY(hKey))
+                {
+                    NTSTATUS rcNt2 = ZwClose(hKey);
+                    Assert(rcNt2 == STATUS_SUCCESS); NOREF(rcNt2);
+                }
+
+                Status = STATUS_SUCCESS;
+
+                LOG(("<= VBOXESC_RECONNECT_TARGETS"));
+                break;
+            }
+
             case VBOXESC_SETALLOCHOSTID:
             {
                 PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)pEscape->hDevice;

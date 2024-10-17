@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -92,10 +92,10 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
 
 NTSTATUS vboxWddmRegQueryDrvKeyName(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult);
 
-NTSTATUS vboxWddmRegOpenKeyEx(OUT PHANDLE phKey, IN HANDLE hRootKey, IN PWCHAR pName, IN ACCESS_MASK fAccess);
-NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess);
-NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD pDword);
-NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, IN DWORD val);
+NTSTATUS vboxWddmRegOpenKeyEx(OUT PHANDLE phKey, IN HANDLE hRootKey, IN PCWCHAR pName, IN ACCESS_MASK fAccess);
+NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PCWCHAR pName, IN ACCESS_MASK fAccess);
+NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PCWCHAR pName, OUT PDWORD pDword);
+NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PCWCHAR pName, IN DWORD val);
 
 NTSTATUS vboxWddmRegDrvFlagsSet(PVBOXMP_DEVEXT pDevExt, DWORD fVal);
 DWORD vboxWddmRegDrvFlagsGet(PVBOXMP_DEVEXT pDevExt, DWORD fDefault);

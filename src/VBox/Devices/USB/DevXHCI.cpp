@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2012-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -1603,8 +1603,8 @@ typedef struct XHCI
     uint32_t                        Alignment00;    /**< Force alignment. */
 #endif
 
-    /** Flag indicating a sleeping worker thread. */
-    volatile bool                   fWrkThreadSleeping;
+    /** Flag indicating a pending worker thread notification. */
+    volatile bool                   fNotificationSent;
     volatile bool                   afPadding[3];
 
     /** The event semaphore the worker thread waits on. */
@@ -2165,7 +2165,7 @@ static void xhciKickWorker(PPDMDEVINS pDevIns, PXHCI pThis, XHCI_JOB enmJob, uin
     RT_NOREF(enmJob, uWorkDesc);
 
     /* Tell the worker thread there's something to do. */
-    if (ASMAtomicReadBool(&pThis->fWrkThreadSleeping))
+    if (!ASMAtomicXchgBool(&pThis->fNotificationSent, true))
     {
         LogFlowFunc(("Signal event semaphore\n"));
         int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
@@ -2965,11 +2965,11 @@ static int xhciR3ConsumeNonXferTRBs(PPDMDEVINS pDevIns, PXHCI pThis, uint8_t uSl
             case XHCI_TRB_LINK:
                 Log2(("Link extra-TD: Ptr=%RGp IOC=%u TC=%u CH=%u\n", xfer.link.rseg_ptr, xfer.link.ioc, xfer.link.toggle, xfer.link.chain));
                 Assert(!xfer.link.chain);
+                AssertCompile(XHCI_TRDP_DCS_MASK == 1); /* link.toggle is 0 or 1, can be used as XHCI_TRDP_DCS_MASK */
                 /* Set new TRDP but leave DCS bit alone... */
                 pEpCtx->trdp = (xfer.link.rseg_ptr & XHCI_TRDP_ADDR_MASK) | (pEpCtx->trdp & XHCI_TRDP_DCS_MASK);
                 /* ...and flip the DCS bit if required. Then update the TREP. */
-                if (xfer.link.toggle)
-                    pEpCtx->trdp = (pEpCtx->trdp & ~XHCI_TRDP_DCS_MASK) | (pEpCtx->trdp ^ XHCI_TRDP_DCS_MASK);
+                pEpCtx->trdp = pEpCtx->trdp ^ xfer.link.toggle;
                 if (!fInFlight)
                     pEpCtx->trep = pEpCtx->trdp;
                 if (xfer.link.ioc)
@@ -3942,8 +3942,7 @@ static int xhciR3ProcessDevCtx(PPDMDEVINS pDevIns, PXHCI pThis, PXHCICC pThisCC,
                 /* Set new TREP but leave DCS bit alone... */
                 ep_ctx.trep = (xfer.link.rseg_ptr & XHCI_TRDP_ADDR_MASK) | (ep_ctx.trep & XHCI_TRDP_DCS_MASK);
                 /* ...and flip the DCS bit if required. Then update the TREP. */
-                if (xfer.link.toggle)
-                    ep_ctx.trep = (ep_ctx.trep & ~XHCI_TRDP_DCS_MASK) | (ep_ctx.trep ^ XHCI_TRDP_DCS_MASK);
+                ep_ctx.trep = ep_ctx.trep ^ xfer.link.toggle;
                 rc = xhciR3WriteBackEp(pDevIns, pThis, uSlotID, uDBTarget, &ep_ctx);
                 break;
             case XHCI_TRB_NOOP_XFER:
@@ -4352,18 +4351,21 @@ static unsigned xhciR3StopEndpoint(PPDMDEVINS pDevIns, PXHCI pThis, PXHCICC pThi
         uint32_t        uPort;
 
         /* Abort the endpoint, i.e. cancel any outstanding URBs. This needs to be done after
-         * writing back the EP state so that the completion callback can operate.
+         * writing back the EP state so that the completion callback can operate. Note that
+         * the completion callback will not modify the TR when it sees that the EP is not in
+         * the 'running' state.
+         * NB: If a URB is canceled before it completed, we have no way to tell if any data
+         * was already (partially) transferred.
          */
         if (RT_SUCCESS(xhciR3FindRhDevBySlot(pDevIns, pThis, pThisCC, uSlotID, &pRh, &uPort)))
         {
             /* Temporarily give up the lock so that the completion callbacks can run. */
             RTCritSectLeave(&pThisCC->CritSectThrd);
             Log(("Aborting DCI %u -> ep=%u d=%u\n", uDCI, uDCI / 2, uDCI & 1 ? VUSBDIRECTION_IN : VUSBDIRECTION_OUT));
-            pRh->pIRhConn->pfnAbortEp(pRh->pIRhConn, uPort, uDCI / 2, uDCI & 1 ? VUSBDIRECTION_IN : VUSBDIRECTION_OUT);
+            pRh->pIRhConn->pfnAbortEpByPort(pRh->pIRhConn, uPort, uDCI / 2, uDCI & 1 ? VUSBDIRECTION_IN : VUSBDIRECTION_OUT);
             RTCritSectEnter(&pThisCC->CritSectThrd);
         }
 
-        /// @todo The completion callbacks should do more work for canceled URBs.
         /* Once the completion callbacks had a chance to run, we have to adjust
          * the endpoint state.
          * NB: The guest may just ring the doorbell to continue and not execute
@@ -4371,6 +4373,9 @@ static unsigned xhciR3StopEndpoint(PPDMDEVINS pDevIns, PXHCI pThis, PXHCICC pThi
          */
         PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhysEndp, &endp_ctx, sizeof(endp_ctx));
 
+        /* If the enqueue and dequeue pointers are different, a transfer was
+         * in progress.
+         */
         bool fXferWasInProgress = endp_ctx.trep != endp_ctx.trdp;
 
         /* Reset the TREP, but the EDTLA should be left alone. */
@@ -4557,6 +4562,8 @@ static unsigned xhciR3ConfigureDevice(PPDMDEVINS pDevIns, PXHCI pThis, uint64_t 
     XHCI_DEV_CTX    dc_out;
     unsigned        uDCI;
 
+    RT_ZERO(dc_inp);
+
     Assert(uSlotID);
     LogFlowFunc(("Slot ID %u, input control context @ %RGp\n", uSlotID, GCPhysInpCtx));
 
@@ -4638,15 +4645,6 @@ static unsigned xhciR3ConfigureDevice(PPDMDEVINS pDevIns, PXHCI pThis, uint64_t 
             /// @todo Check input slot context according to 6.2.2.2
             /// @todo Check input EP contexts according to 6.2.3.2
         }
-/** @todo r=bird: Looks like MSC is right that dc_inp can be used uninitalized.
- *
- * However, this function is so hard to read I'm leaving the exorcism of it to
- * the author and just zeroing it in the mean time.
- *
- */
-        else
-            RT_ZERO(dc_inp);
-
         /* Read the output Slot Context plus all Endpoint Contexts up to and
          * including the one with the highest 'add' or 'drop' bit set.
          */
@@ -5252,20 +5250,17 @@ static DECLCALLBACK(int) xhciR3WorkerLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        uint32_t    u32Tasks = 0;
         uint8_t     uSlotID;
 
-        ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, true);
-        u32Tasks = ASMAtomicXchgU32(&pThis->u32TasksNew, 0);
-        if (!u32Tasks)
+        bool fNotificationSent = ASMAtomicXchgBool(&pThis->fNotificationSent, false);
+        if (!fNotificationSent)
         {
-            Assert(ASMAtomicReadBool(&pThis->fWrkThreadSleeping));
             rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtProcess, RT_INDEFINITE_WAIT);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                 break;
             LogFlowFunc(("Woken up with rc=%Rrc\n", rc));
-            u32Tasks = ASMAtomicXchgU32(&pThis->u32TasksNew, 0);
+            ASMAtomicWriteBool(&pThis->fNotificationSent, false);
         }
 
         RTCritSectEnter(&pThisCC->CritSectThrd);
@@ -5305,8 +5300,6 @@ static DECLCALLBACK(int) xhciR3WorkerLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
         }
 
         RTCritSectLeave(&pThisCC->CritSectThrd);
-
-        ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, false);
     } /* While running */
 
     LogFlow(("xHCI worker thread exiting.\n"));
@@ -7565,6 +7558,68 @@ static DECLCALLBACK(void) xhciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
         pThis->fDropUrb = true;
         return;
     }
+
+    if (pszArgs && strstr(pszArgs, "genintrhw"))
+    {
+        pHlp->pfnPrintf(pHlp, "Generating hardware interrupt (external)...\n");
+        int iIntr = 0;
+        PXHCIINTRPTR pIntr = &pThis->aInterrupters[iIntr & XHCI_INTR_MASK];
+        xhciSetIntr(pDevIns, pThis, pIntr);
+        return;
+    }
+
+    if (pszArgs && strstr(pszArgs, "genintrint"))
+    {
+        pHlp->pfnPrintf(pHlp, "Generating hardware interrupt (internal)...\n");
+        int iIntr = 0;
+        PXHCIINTRPTR pIntr = &pThis->aInterrupters[iIntr & XHCI_INTR_MASK];
+        xhciR3SetIntrPending(pDevIns, pThis, pIntr);
+        return;
+    }
+
+    if (pszArgs && strstr(pszArgs, "genintrhw"))
+    {
+        pHlp->pfnPrintf(pHlp, "Generating hardware interrupt (external)...\n");
+        int iIntr = 0;
+        PXHCIINTRPTR pIntr = &pThis->aInterrupters[iIntr & XHCI_INTR_MASK];
+        xhciSetIntr(pDevIns, pThis, pIntr);
+        return;
+    }
+
+    if (pszArgs && strstr(pszArgs, "genintrint"))
+    {
+        pHlp->pfnPrintf(pHlp, "Generating hardware interrupt (internal)...\n");
+        int iIntr = 0;
+        PXHCIINTRPTR pIntr = &pThis->aInterrupters[iIntr & XHCI_INTR_MASK];
+        xhciR3SetIntrPending(pDevIns, pThis, pIntr);
+        return;
+    }
+
+    if (pszArgs && strstr(pszArgs, "genportchgevt"))
+    {
+        pHlp->pfnPrintf(pHlp, "Generating port change event...\n");
+        int iPort = 0;
+        xhciR3GenPortChgEvent(pDevIns, pThis, IDX_TO_ID(iPort));
+        return;
+    }
+
+    if (pszArgs && strstr(pszArgs, "genmfiwrapevt"))
+    {
+        pHlp->pfnPrintf(pHlp, "Generating MF Index wrap event...\n");
+        XHCI_EVENT_TRB  ed;
+        RT_ZERO(ed);
+        ed.mwe.cc   = XHCI_TCC_SUCCESS;
+        ed.mwe.type = XHCI_TRB_MFIDX_WRAP;
+        xhciR3WriteEvent(pDevIns, pThis, &ed, XHCI_PRIMARY_INTERRUPTER, false);
+        return;
+    }
+
+    if (pszArgs && strstr(pszArgs, "gendoorbell"))
+    {
+        pHlp->pfnPrintf(pHlp, "Generating doorbell ring..\n");
+        xhciKickWorker(pDevIns, pThis, XHCI_JOB_DOORBELL, 0);
+        return;
+    }
 #endif
 
     /* Show basic information. */
@@ -7731,6 +7786,7 @@ static DECLCALLBACK(void) xhciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
                 pcszDesc = ctxSlot.slot_state < RT_ELEMENTS(g_apszSltStates) ? g_apszSltStates[ctxSlot.slot_state] : "BAD!!!";
                 pHlp->pfnPrintf(pHlp, "  Speed:%u Entries:%u RhPort:%u", ctxSlot.speed, ctxSlot.ctx_ent, ctxSlot.rh_port);
                 pHlp->pfnPrintf(pHlp, " Address:%u State:%s \n", ctxSlot.dev_addr, pcszDesc);
+                pHlp->pfnPrintf(pHlp, "  Doorbells:%08X\n", pThis->aBellsRung[ID_TO_IDX(uSlotID)]);
 
                 /* Endpoint contexts. */
                 for (j = 1; j <= ctxSlot.ctx_ent; ++j)

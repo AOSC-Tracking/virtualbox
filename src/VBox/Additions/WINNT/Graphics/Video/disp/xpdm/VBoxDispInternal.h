@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -162,7 +162,7 @@ BOOL vrdpReportOrderGeneric(PVBOXDISPDEV pDev, const VRDPCLIPRECTS *pClipRects,
                              const void *pvOrder, unsigned cbOrder, unsigned code);
 
 BOOL VBoxDispIsScreenSurface(SURFOBJ *pso);
-void VBoxDispDumpPSO(SURFOBJ *pso, char *s);
+void VBoxDispDumpPSO(SURFOBJ *pso, const char *s);
 
 BOOL vrdpDrvRealizeBrush(BRUSHOBJ *pbo, SURFOBJ *psoTarget, SURFOBJ *psoPattern, SURFOBJ *psoMask,
                          XLATEOBJ *pxlo, ULONG iHatch);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -161,7 +161,7 @@ typedef struct VUSBURBHCITDINT
     /** The address of the TD. */
     RTGCPHYS        TdAddr;
     /** A copy of the TD. */
-    uint32_t        TdCopy[16];
+    uint32_t        TdCopy[18];
 } VUSBURBHCITDINT;
 
 /**
@@ -526,19 +526,25 @@ typedef const EHCI_ITD *PEHCI_CITD;
 AssertCompileSize(EHCI_ITD, 0x40);
 /** @} */
 
-/* ITD with extra padding to add 8th 'Buffer' entry. The PG member of
+/* ITD with extra padding to add 8th and 9th 'Buffer' entry. The PG member of
  * EHCI_ITD_TRANSACTION can contain values in the 0-7 range, but only values
  * 0-6 are valid. The extra padding is added to avoid cluttering the code
  * with range checks; ehciR3ReadItd() initializes the pad with a safe value.
  * The EHCI 1.0 specification explicitly says using PG value of 7 yields
- * undefined behavior.
+ * undefined behavior. Two pad entries are needed because initial PG value
+ * of 7 (already 'wrong') can cross to the next page (8).
  */
 typedef struct
 {
-    EHCI_ITD         itd;
-    EHCI_BUFFER_PTR  pad;
+    EHCI_TD_PTR             Next;
+    EHCI_ITD_TRANSACTION    Transaction[EHCI_NUM_ITD_TRANSACTIONS];
+    union
+    {
+        EHCI_ITD_MISC       Misc;
+        EHCI_BUFFER_PTR     Buffer[EHCI_NUM_ITD_PAGES + 2];
+    } Buffer;
 } EHCI_ITD_PAD, *PEHCI_ITD_PAD;
-AssertCompileSize(EHCI_ITD_PAD, 0x44);
+AssertCompileSize(EHCI_ITD_PAD, 0x48);
 
 /** @name Split Transaction Isochronous Transfer Descriptor (siTD)
  * @{ */
@@ -1471,7 +1477,8 @@ DECLINLINE(void) ehciR3ReadTDPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, EHCI_TD_PT
 DECLINLINE(void) ehciR3ReadItd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_ITD_PAD pPItd)
 {
     ehciGetDWords(pDevIns, GCPhys, (uint32_t *)pPItd, sizeof(EHCI_ITD) >> 2);
-    pPItd->pad.Pointer = 0xFFFFF;   /* Direct accesses at the last page under 4GB (ROM). */
+    pPItd->Buffer.Buffer[7].Pointer = 0xFFFFF;  /* Direct ill-defined accesses to the last page under 4GB (ROM). */
+    pPItd->Buffer.Buffer[8].Pointer = 0xFFFFF;
 }
 
 DECLINLINE(void) ehciR3ReadSitd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_SITD pSitd)
@@ -1479,7 +1486,7 @@ DECLINLINE(void) ehciR3ReadSitd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_SITD 
     ehciGetDWords(pDevIns, GCPhys, (uint32_t *)pSitd, sizeof(*pSitd) >> 2);
 }
 
-DECLINLINE(void) ehciR3WriteItd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_ITD pItd)
+DECLINLINE(void) ehciR3WriteItd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_ITD_PAD pItd)
 {
     /** @todo might need to be careful about write order in async io thread */
     /*
@@ -1490,7 +1497,7 @@ DECLINLINE(void) ehciR3WriteItd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_ITD p
     uint32_t offDWordsWrite = offWrite / sizeof(uint32_t);
     Assert(!(offWrite % sizeof(uint32_t)));
 
-    ehciPutDWords(pDevIns, GCPhys + offWrite, (uint32_t *)pItd + offDWordsWrite,  (sizeof(*pItd) >> 2) - offDWordsWrite);
+    ehciPutDWords(pDevIns, GCPhys + offWrite, (uint32_t *)pItd + offDWordsWrite,  (sizeof(EHCI_ITD) >> 2) - offDWordsWrite);
 }
 
 DECLINLINE(void) ehciR3ReadQHD(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_QHD pQHD)
@@ -1623,7 +1630,7 @@ DECLINLINE(void) ehciR3DumpQTD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
         if (GCPhys == ((RTGCPHYS)qtd.Next.Pointer << EHCI_TD_PTR_SHIFT))
             break; /* detect if list item is self-cycled. */
 
-        GCPhys = qtd.Next.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)qtd.Next.Pointer << EHCI_TD_PTR_SHIFT;
 
         if (GCPhys == GCPhysHead)
             break;
@@ -1659,7 +1666,7 @@ DECLINLINE(void) ehciR3DumpQTD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
         if (GCPhys == ((RTGCPHYS)qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT))
             break; /* detect if list item is self-cycled. */
 
-        GCPhys = qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
 
         if (GCPhys == GCPhysHead)
             break;
@@ -1701,8 +1708,8 @@ DECLINLINE(void) ehciR3DumpQH(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLis
           ((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT),
           ((RTGCPHYS)qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT), qhd.Overlay.OrgQTD.Next.Terminate,
           ((RTGCPHYS)qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT), qhd.Overlay.OrgQTD.AltNext.Terminate));
-    ehciR3DumpSingleQTD(qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qhd.Overlay.OrgQTD, "");
-    ehciR3DumpQTD(pDevIns, qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT, true);
+    ehciR3DumpSingleQTD((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qhd.Overlay.OrgQTD, "");
+    ehciR3DumpQTD(pDevIns, (RTGCPHYS)qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT, true);
 
     Assert(qhd.Next.Pointer || qhd.Next.Terminate);
     if (    !fList
@@ -1727,7 +1734,7 @@ DECLINLINE(void) ehciR3DumpQH(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLis
         if (GCPhys == ((RTGCPHYS)ptr.Pointer << EHCI_TD_PTR_SHIFT))
             break;  /* Looping on itself. Bad guest! */
 
-        GCPhys = ptr.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)ptr.Pointer << EHCI_TD_PTR_SHIFT;
         if (GCPhys == GCPhysHead)
             break;  /* break the loop */
 
@@ -1758,7 +1765,7 @@ DECLINLINE(void) ehciR3DumpITD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
 
         /* Read the whole ITD */
         EHCI_ITD_PAD    PaddedItd;
-        PEHCI_ITD       pItd = &PaddedItd.itd;
+        PEHCI_ITD_PAD   pItd = &PaddedItd;
         ehciR3ReadItd(pDevIns, GCPhys, &PaddedItd);
 
         Log2(("Addr=%x EndPt=%x Dir=%s MaxSize=%x Mult=%d}\n", pItd->Buffer.Misc.DeviceAddress, pItd->Buffer.Misc.EndPt, (pItd->Buffer.Misc.DirectionIn) ? "in" : "out", pItd->Buffer.Misc.MaxPacket, pItd->Buffer.Misc.Multi));
@@ -1767,7 +1774,7 @@ DECLINLINE(void) ehciR3DumpITD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
             if (pItd->Transaction[i].Active)
             {
                 Log2(("T%d Len=%x Offset=%x PG=%d IOC=%d Buffer=%x\n", i, pItd->Transaction[i].Length, pItd->Transaction[i].Offset, pItd->Transaction[i].PG, pItd->Transaction[i].IOC,
-                       pItd->Buffer.Buffer[pItd->Transaction[i].PG].Pointer << EHCI_BUFFER_PTR_SHIFT));
+                       (RTGCPHYS)pItd->Buffer.Buffer[pItd->Transaction[i].PG].Pointer << EHCI_BUFFER_PTR_SHIFT));
             }
         }
         Assert(pItd->Next.Pointer || pItd->Next.Terminate);
@@ -1784,7 +1791,7 @@ DECLINLINE(void) ehciR3DumpITD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
         }
 
         /* next */
-        GCPhys = pItd->Next.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)pItd->Next.Pointer << EHCI_TD_PTR_SHIFT;
     }
 }
 
@@ -2028,7 +2035,7 @@ static int ehciR3InFlightRemoveUrb(PEHCI pThis, PEHCICC pThisCC, PVUSBURB pUrb)
  * @param   pUrb        The URB in question.
  * @param   pItd        The ITD pointer.
  */
-static bool ehciR3ItdHasUrbBeenCanceled(PEHCICC pThisCC, PVUSBURB pUrb, PEHCI_ITD pItd)
+static bool ehciR3ItdHasUrbBeenCanceled(PEHCICC pThisCC, PVUSBURB pUrb, PEHCI_ITD_PAD pItd)
 {
     RT_NOREF(pThisCC);
     Assert(pItd);
@@ -2252,7 +2259,7 @@ static void ehciR3RhXferCompleteITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pTh
 {
     /* Read the whole ITD */
     EHCI_ITD_PAD  PaddedItd;
-    PEHCI_ITD     pItd = &PaddedItd.itd;
+    PEHCI_ITD_PAD pItd = &PaddedItd;
     ehciR3ReadItd(pDevIns, pUrb->paTds[0].TdAddr, &PaddedItd);
 
     /*
@@ -2323,9 +2330,9 @@ static void ehciR3RhXferCompleteITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pTh
 
                             ehciPhysWrite(pDevIns, GCPhysBuf, pb, cb1);
                             if ((pg + 1) >= EHCI_NUM_ITD_PAGES)
-                               LogRelMax(10, ("EHCI: Crossing to undefined page %d in iTD at %RGp on completion.\n", pg + 1, pUrb->paTds[0].TdAddr));
+                               LogRelMax(10, ("EHCI: Crossing to nonstandard page %d in iTD at %RGp on completion.\n", pg + 1, pUrb->paTds[0].TdAddr));
 
-                            GCPhysBuf = pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
+                            GCPhysBuf = (RTGCPHYS)pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
                             ehciPhysWrite(pDevIns, GCPhysBuf, pb + cb1, cb2);
                         }
                         else
@@ -2409,7 +2416,7 @@ static void ehciR3RhXferCompleteQH(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThi
     AssertMsg(pUrb->paTds[0].TdAddr == ((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT),
               ("Out of order completion %RGp != %RGp Endpoint=%#x\n", pUrb->paTds[0].TdAddr,
                ((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT), pUrb->EndPt));
-    ehciR3ReadQTD(pDevIns, qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qtd);
+    ehciR3ReadQTD(pDevIns, (RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qtd);
 
     /*
      * Check that the URB hasn't been canceled and then try unlink the TDs.
@@ -2460,7 +2467,7 @@ static void ehciR3RhXferCompleteQH(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThi
             RTGCPHYS GCPhysBuf;
             unsigned cbCurTransfer;
 
-            GCPhysBuf = qtd.Buffer.Buffer[i].Pointer << EHCI_BUFFER_PTR_SHIFT;
+            GCPhysBuf = (RTGCPHYS)qtd.Buffer.Buffer[i].Pointer << EHCI_BUFFER_PTR_SHIFT;
             if (i == 0)
                 GCPhysBuf += qtd.Buffer.Offset.Offset;
 
@@ -2600,7 +2607,7 @@ static bool ehciR3RhXferErrorQH(PPDMDEVINS pDevIns, PEHCICC pThisCC, PVUSBURB pU
     /* Read the whole QHD & QTD */
     ehciR3ReadQHD(pDevIns, pUrb->pHci->EdAddr, &qhd);
     Assert(pUrb->paTds[0].TdAddr == ((RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT));
-    ehciR3ReadQTD(pDevIns, qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qtd);
+    ehciR3ReadQTD(pDevIns, (RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT, &qtd);
 
     /*
      * Check if the TDs still are valid.
@@ -2737,7 +2744,7 @@ static bool ehciR3SubmitQTD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC, RT
             RTGCPHYS GCPhysBuf;
             unsigned cbCurTransfer;
 
-            GCPhysBuf = pQtd->Buffer.Buffer[i].Pointer << EHCI_BUFFER_PTR_SHIFT;
+            GCPhysBuf = (RTGCPHYS)pQtd->Buffer.Buffer[i].Pointer << EHCI_BUFFER_PTR_SHIFT;
             if (i == 0)
                 GCPhysBuf += pQtd->Buffer.Offset.Offset;
 
@@ -2790,7 +2797,7 @@ static bool ehciR3SubmitQTD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC, RT
  * @returns false on failure to submit.
  */
 static bool ehciR3SubmitITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
-                            PEHCI_ITD pItd, RTGCPHYS ITdAddr, const unsigned iFrame)
+                            PEHCI_ITD_PAD pItd, RTGCPHYS ITdAddr, const unsigned iFrame)
 {
     /*
      * Determine the endpoint direction.
@@ -2862,7 +2869,7 @@ static bool ehciR3SubmitITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
             {
                 const unsigned  pg = pItd->Transaction[i].PG;
 
-                GCPhysBuf = pItd->Buffer.Buffer[pg].Pointer << EHCI_BUFFER_PTR_SHIFT;
+                GCPhysBuf = (RTGCPHYS)pItd->Buffer.Buffer[pg].Pointer << EHCI_BUFFER_PTR_SHIFT;
                 GCPhysBuf += pItd->Transaction[i].Offset;
 
                 /* If the transfer would cross page boundary, use the next sequential PG pointer
@@ -2875,9 +2882,9 @@ static bool ehciR3SubmitITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
 
                     ehciPhysRead(pDevIns, GCPhysBuf, &pUrb->abData[curOffset], cb1);
                     if ((pg + 1) >= EHCI_NUM_ITD_PAGES)
-                       LogRelMax(10, ("EHCI: Crossing to undefined page %d in iTD at %RGp on submit.\n", pg + 1, pUrb->paTds[0].TdAddr));
+                       LogRelMax(10, ("EHCI: Crossing to nonstandard page %d in iTD at %RGp on submit.\n", pg + 1, pUrb->paTds[0].TdAddr));
 
-                    GCPhysBuf = pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
+                    GCPhysBuf = (RTGCPHYS)pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
                     ehciPhysRead(pDevIns, GCPhysBuf, &pUrb->abData[curOffset + cb1], cb2);
                 }
                 else
@@ -2932,7 +2939,7 @@ static void ehciR3ServiceITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
     RT_NOREF(enmServiceType);
     bool          fAnyActive = false;
     EHCI_ITD_PAD  PaddedItd;
-    PEHCI_ITD     pItd = &PaddedItd.itd;
+    PEHCI_ITD_PAD pItd = &PaddedItd;
 
     if (ehciR3IsTdInFlight(pThisCC, GCPhys))
         return;
@@ -2953,7 +2960,7 @@ static void ehciR3ServiceITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
                 /* Using out of range PG value (7) yields undefined behavior. We will attempt
                  * the last page below 4GB (which is ROM, not writable).
                  */
-                LogRelMax(10, ("EHCI: Illegal page value %d in iTD at %RGp.\n", pItd->Transaction[i].PG, (RTGCPHYS)GCPhys));
+                LogRelMax(10, ("EHCI: Nonstandard page value %d in iTD at %RGp.\n", pItd->Transaction[i].PG, (RTGCPHYS)GCPhys));
             }
 
             Log2(("      T%d Len=%x Offset=%x PG=%d IOC=%d Buffer=%x\n", i, pItd->Transaction[i].Length, pItd->Transaction[i].Offset, pItd->Transaction[i].PG, pItd->Transaction[i].IOC,
@@ -3024,7 +3031,7 @@ static void ehciR3QHUpdateOverlay(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThis
     if (!pQhd->Overlay.OrgQTD.Next.Terminate)
     {
         EHCI_QTD qtdNext;
-        RTGCPHYS GCPhysNextQTD = pQhd->Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT;
+        RTGCPHYS GCPhysNextQTD = (RTGCPHYS)pQhd->Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT;
 
         if (ehciR3IsTdInFlight(pThisCC, GCPhysNextQTD))
         {
@@ -3073,7 +3080,7 @@ static RTGCPHYS ehciR3ServiceQTD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisC
                 ||  GCPhysQTD == (RTGCPHYS)pQhd->CurrQTD.Pointer << EHCI_TD_PTR_SHIFT)
                 ehciR3QHSetupOverlay(pDevIns, pQhd, GCPhysQHD, &qtd, GCPhysQTD);
             else
-                Log2Func(("transfer %RGp in progress -> don't update the overlay\n", (RTGCPHYS)(pQhd->CurrQTD.Pointer << EHCI_TD_PTR_SHIFT)));
+                Log2Func(("transfer %RGp in progress -> don't update the overlay\n", (RTGCPHYS)pQhd->CurrQTD.Pointer << EHCI_TD_PTR_SHIFT));
 
             ehciR3SubmitQTD(pDevIns, pThis, pThisCC, GCPhysQHD, pQhd, GCPhysQTD, &qtd, iFrame);
 
@@ -3119,14 +3126,14 @@ static RTGCPHYS ehciR3ServiceQTD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisC
     {
         Assert(qtd.AltNext.Pointer);
         Log2(("Taking alternate pointer %RGp\n", (RTGCPHYS)(qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT)));
-        return qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
+        return (RTGCPHYS)qtd.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
     }
     else
     {
         Assert(qtd.Next.Pointer || qtd.Next.Terminate);
         if (qtd.Next.Terminate || !qtd.Next.Pointer)
             return 0;
-        return qtd.Next.Pointer << EHCI_TD_PTR_SHIFT;
+        return (RTGCPHYS)qtd.Next.Pointer << EHCI_TD_PTR_SHIFT;
     }
 }
 
@@ -3206,8 +3213,8 @@ static bool ehciR3ServiceQHD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
     RTGCPHYS GCPhysQTD;
     if (qhd.Overlay.OrgQTD.Token.Bits.Active)
     {
-        Assert(ehciR3IsTdInFlight(pThisCC, qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT));
-        GCPhysQTD = qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT;
+        Assert(ehciR3IsTdInFlight(pThisCC, (RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT));
+        GCPhysQTD = (RTGCPHYS)qhd.CurrQTD.Pointer << EHCI_TD_PTR_SHIFT;
     }
     else
     {
@@ -3216,8 +3223,8 @@ static bool ehciR3ServiceQHD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
             &&  qhd.Overlay.OrgQTD.Token.Bits.Length)
         {
             Assert(qhd.Overlay.OrgQTD.AltNext.Pointer);
-            Log2(("Taking alternate pointer %RGp\n", (RTGCPHYS)(qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT)));
-            GCPhysQTD = qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
+            Log2(("Taking alternate pointer %RGp\n", (RTGCPHYS)qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT));
+            GCPhysQTD = (RTGCPHYS)qhd.Overlay.OrgQTD.AltNext.Pointer << EHCI_TD_PTR_SHIFT;
         }
         else
         {
@@ -3225,7 +3232,7 @@ static bool ehciR3ServiceQHD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
             if (qhd.Overlay.OrgQTD.Next.Terminate || !qhd.Overlay.OrgQTD.Next.Pointer || qhd.Overlay.OrgQTD.Token.Bits.Halted)
                 GCPhysQTD = 0;
             else
-                GCPhysQTD = qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT;
+                GCPhysQTD = (RTGCPHYS)qhd.Overlay.OrgQTD.Next.Pointer << EHCI_TD_PTR_SHIFT;
         }
     }
 
@@ -3308,7 +3315,7 @@ static void ehciR3ServiceAsyncList(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThi
         AssertMsgBreak(++cIterations < 128, ("Too many iterations, exiting\n"));
 
         /* next */
-        GCPhys = ptr.Pointer << EHCI_TD_PTR_SHIFT;
+        GCPhys = (RTGCPHYS)ptr.Pointer << EHCI_TD_PTR_SHIFT;
         Assert(!(GCPhys & 0x1f));
         if (   GCPhys == GCPhysHead
             || GCPhys == GCPhysLast)
@@ -3357,7 +3364,7 @@ static void ehciR3ServicePeriodicList(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC p
     ehciR3ReadFrameListPtr(pDevIns, GCPhys, &FramePtr);
     while (!FramePtr.Terminate && (pThis->cmd & EHCI_CMD_RUN))
     {
-        GCPhys = FramePtr.FrameAddr << EHCI_FRAME_LIST_NEXTPTR_SHIFT;
+        GCPhys = (RTGCPHYS)FramePtr.FrameAddr << EHCI_FRAME_LIST_NEXTPTR_SHIFT;
         /* Process the descriptor based on its type. Note that on the periodic
          * list, HCDs may (and do) mix iTDs and qHDs more or less freely.
          */
@@ -4612,7 +4619,7 @@ static DECLCALLBACK(int) ehciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
      * Note! Looks like someone remove the code that dealt with versions 1 thru 4,
      *       without adjust the above comment.
      */
-    if (uVersion == EHCI_SAVED_STATE_VERSION_PRE_TIMER_REMOVAL)
+    if (uVersion <= EHCI_SAVED_STATE_VERSION_PRE_TIMER_REMOVAL)
     {
         bool fActive1 = false;
         pHlp->pfnTimerSkipLoad(pSSM, &fActive1);

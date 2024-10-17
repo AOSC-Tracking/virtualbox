@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2017-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -104,13 +104,20 @@
 #include <iprt/buildconfig.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/path.h>
 #include <iprt/message.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
 
 #include <VBox/com/microatl.h>
+
+#include <package-generated.h>
+#include "product-generated.h"
+
+#include <VBox/version.h>
 
 #define _ATL_FREE_THREADED /** @todo r=bird: WTF? */
 
@@ -763,6 +770,70 @@ void VBoxSDSNotifyClientCount(uint32_t cClients)
 }
 #endif
 
+/**
+ * Shows an information message box.
+ *
+ * @param   pszFormat   The message text.
+ * @param   ...         Format string arguments.
+ */
+static void vboxSdsShowInfoMsgBox(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+
+    char *psz = NULL;
+    int vrc = RTStrAPrintfV(&psz, pszFormat, va);
+    AssertRCReturnVoid(vrc);
+
+    va_end(va);
+
+    PRTUTF16 pwsz = NULL;
+    vrc = RTStrToUtf16(psz, &pwsz);
+    AssertRCReturnVoid(vrc);
+
+    MessageBoxW(NULL, pwsz, L"VBoxSDS", MB_OK | MB_ICONINFORMATION);
+
+    RTUtf16Free(pwsz);
+    RTStrFree(psz);
+}
+
+/**
+ * Shows tool usage text.
+ *
+ * @returns RTEXITCODE_SYNTAX
+ */
+static RTEXITCODE vboxSdsShowUsage(void)
+{
+    vboxSdsShowInfoMsgBox(
+                 VBOX_PRODUCT " VBoxSDS (System Directory Service) Version " VBOX_VERSION_STRING " - r%s\n"
+                 "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                 "\n"
+                 " Service handling:\n"
+                 " --regservice, /RegService\n"
+                 "   Registers COM out-of-proc service\n"
+                 " --unregservice, /UnregService\n"
+                 "   Unregisters COM out-of-proc service\n"
+                 " --reregservice, /ReregService\n"
+                 "   Unregisters and registers COM service\n"
+                 "\n"
+                 " Common options:\n"
+                 "  -V, --version\n"
+                 "    Displays version\n"
+                 "  -h, -?, --help\n"
+                 "    Displays help\n"
+                 "\n"
+                 " Logging options:\n"
+                 "  --logfile, /logfile </path/to/log>\n"
+                 "    Specifies the log file destination\n"
+                 "  --logsize, /logsize <bytes>\n"
+                 "    Specifies the maximum log size (in bytes)\n"
+                  "  --loginterval, /loginterval <s>\n"
+                 "    Specifies the maximum log time (in seconds)\n",
+                 RTBldCfgRevisionStr());
+
+    return RTEXITCODE_SYNTAX;
+}
+
 
 /**
  * Main function for the VBoxSDS process.
@@ -812,6 +883,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         { "--loginterval",  'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
         { "-loginterval",   'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
         { "/loginterval",   'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+        { "/?",             'h',    RTGETOPT_REQ_NOTHING }, /* Most Windows programs use '/?', so have this as an alias. */
+        { "/h",             'h',    RTGETOPT_REQ_NOTHING }, /* Ditto for '/h'. */
+        { "/help",          'h',    RTGETOPT_REQ_NOTHING }, /* Ditto for '/help'. */
+        { "--version",      'V',    RTGETOPT_REQ_NOTHING },
+        { "/V",             'V',    RTGETOPT_REQ_NOTHING },
+        { "/version",       'V',    RTGETOPT_REQ_NOTHING }
     };
 
     bool            fRun = true;
@@ -859,62 +936,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 break;
 
             case 'S':
-                uHistoryFileSize = ValueUnion.u64;
+                uHistoryFileSize = ValueUnion.u64; /** @todo r=andy Too fine grained (bytes), MB would be enough, I think. */
                 break;
 
             case 'I':
-                uHistoryFileTime = ValueUnion.u32;
+                uHistoryFileTime = ValueUnion.u32; /** @todo r=andy Too fine grained (seconds), minutes/hours would be enough, I think. */
                 break;
 
             case 'h':
             {
-                static WCHAR const s_wszHelpText[] =
-                    L"Options:\n"
-                    L"\n"
-                    L"/RegService\t"   L"register COM out-of-proc service\n"
-                    L"/UnregService\t" L"unregister COM out-of-proc service\n"
-                    L"/ReregService\t" L"unregister and register COM service\n"
-                    L"no options\t"    L"run the service";
-                MessageBoxW(NULL, s_wszHelpText, L"VBoxSDS - Usage", MB_OK);
-                return 0;
+                vboxSdsShowUsage();
+                return RTEXITCODE_SUCCESS;
             }
 
             case 'V':
             {
-                char *pszText = NULL;
-                RTStrAPrintf(&pszText, "%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
-
-                PRTUTF16 pwszText = NULL;
-                RTStrToUtf16(pszText, &pwszText);
-
-                MessageBoxW(NULL, pwszText, L"VBoxSDS - Version", MB_OK);
-
-                RTStrFree(pszText);
-                RTUtf16Free(pwszText);
-                return 0;
+                vboxSdsShowInfoMsgBox("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                return RTEXITCODE_SUCCESS;
             }
 
             default:
-            {
-                char szTmp[256];
-                RTGetOptFormatError(szTmp, sizeof(szTmp), vrc, &ValueUnion);
-
-                PRTUTF16 pwszText = NULL;
-                RTStrToUtf16(szTmp, &pwszText);
-
-                MessageBoxW(NULL, pwszText, L"VBoxSDS - Syntax error", MB_OK | MB_ICONERROR);
-
-                RTUtf16Free(pwszText);
-                return RTEXITCODE_SYNTAX;
-            }
+                return vboxSdsShowUsage();
         }
     }
 
     /*
-     * Default log location is %ProgramData%\VirtualBox\VBoxSDS.log, falling back
-     * on %_CWD%\VBoxSDS.log (where _CWD typicaly is 'C:\Windows\System32').
+     * Default log location (LOGDIR) is %APPDATA%\VirtualBox\VBoxSDS.log.
      *
-     * We change the current directory to %ProgramData%\VirtualBox\ if possible.
+     * When running VBoxSDS as a regular user, LOGDIR typically will be 'C:\Users\<User>\AppData\Roaming\VirtualBox\'.
+     * When running VBoxSDS as a service (via SCM), LOGDIR typically will be 'C:\Windows\System32\config\systemprofile\AppData\Roaming\VirtualBox\'.
+     *
+     * We change the current directory to LOGDIR if possible.
+     *
+     * See @bugref{10632}.
      *
      * We only create the log file when running VBoxSDS normally, but not
      * when registering/unregistering, at least for now.
@@ -924,14 +978,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         char szLogFile[RTPATH_MAX];
         if (!pszLogFile || !*pszLogFile)
         {
-            WCHAR wszAppData[MAX_PATH + 16];
-            if (SHGetSpecialFolderPathW(NULL, wszAppData, CSIDL_COMMON_APPDATA, TRUE /*fCreate*/))
+            WCHAR wszSpecialFolder[MAX_PATH + 16];
+            if (SHGetSpecialFolderPathW(NULL, wszSpecialFolder, CSIDL_APPDATA, TRUE /*fCreate*/))
             {
                 char *pszConv = szLogFile;
-                vrc = RTUtf16ToUtf8Ex(wszAppData, RTSTR_MAX, &pszConv, sizeof(szLogFile) - 12, NULL);
+                vrc = RTUtf16ToUtf8Ex(wszSpecialFolder, RTSTR_MAX, &pszConv, sizeof(szLogFile) - 12, NULL);
             }
-            else
-                vrc = RTEnvGetUtf8("ProgramData", szLogFile, sizeof(szLogFile) - sizeof("VBoxSDS.log"), NULL);
+            else if (SHGetSpecialFolderPathW(NULL, wszSpecialFolder, CSIDL_SYSTEM, TRUE /*fCreate*/))
+            {
+                char *pszConv = szLogFile;
+                vrc = RTUtf16ToUtf8Ex(wszSpecialFolder, RTSTR_MAX, &pszConv, sizeof(szLogFile) - 12, NULL);
+            }
+            else /* Note! No fallback to environment variables or such. See @bugref{10632}. */
+                vrc = VERR_PATH_NOT_FOUND;
             if (RT_SUCCESS(vrc))
             {
                 vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VirtualBox\\");
@@ -942,14 +1001,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         vrc = RTDirCreate(szLogFile, 0755, RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET);
                     if (RT_SUCCESS(vrc))
                     {
-                        /* Change into it. */
-                        RTPathSetCurrent(szLogFile);
+                        /* Change into it.
+                         * If this fails, better don't continue, as there might be something fishy. */
+                        vrc = RTPathSetCurrent(szLogFile);
+                        if (RT_SUCCESS(vrc))
+                            vrc = RTStrCat(szLogFile, sizeof(szLogFile), "VBoxSDS.log");
                     }
                 }
             }
-            if (RT_FAILURE(vrc))     /* ignore any failure above */
-                szLogFile[0] = '\0';
-            vrc = RTStrCat(szLogFile, sizeof(szLogFile), "VBoxSDS.log");
             if (RT_FAILURE(vrc))
                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct release log filename: %Rrc", vrc);
             pszLogFile = szLogFile;

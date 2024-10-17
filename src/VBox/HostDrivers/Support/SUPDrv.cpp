@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -453,7 +453,7 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    3,  RTR0MemKernelCopyTo),
     SUPEXP_STK_OKAY(    1,  RTR0MemObjAddress),
     SUPEXP_STK_OKAY(    1,  RTR0MemObjAddressR3),
-    SUPEXP_STK_BACK(    4,  RTR0MemObjAllocContTag),
+    SUPEXP_STK_BACK(    5,  RTR0MemObjAllocContTag),
     SUPEXP_STK_BACK(    5,  RTR0MemObjAllocLargeTag),
     SUPEXP_STK_BACK(    4,  RTR0MemObjAllocLowTag),
     SUPEXP_STK_BACK(    4,  RTR0MemObjAllocPageTag),
@@ -473,6 +473,7 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    4,  RTR0MemObjProtect),
     SUPEXP_STK_OKAY(    1,  RTR0MemObjSize),
     SUPEXP_STK_OKAY(    1,  RTR0MemObjWasZeroInitialized),
+    SUPEXP_STK_OKAY(    2,  RTR0MemObjZeroInitialize),
     SUPEXP_STK_BACK(    3,  RTR0MemUserCopyFrom),
     SUPEXP_STK_BACK(    3,  RTR0MemUserCopyTo),
     SUPEXP_STK_BACK(    1,  RTR0MemUserIsValidAddr),
@@ -1847,6 +1848,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
         {
             /* validate */
             PSUPLDRLOAD pReq = (PSUPLDRLOAD)pReqHdr;
+            uint8_t const * const pbSrcImage = pReq->u.In.abImage;
             REQ_CHECK_EXPR(Name, pReq->Hdr.cbIn >= SUP_IOCTL_LDR_LOAD_SIZE_IN(32));
             REQ_CHECK_SIZES_EX(SUP_IOCTL_LDR_LOAD, SUP_IOCTL_LDR_LOAD_SIZE_IN(pReq->u.In.cbImageWithEverything), SUP_IOCTL_LDR_LOAD_SIZE_OUT);
             REQ_CHECK_EXPR_FMT(     !pReq->u.In.cSymbols
@@ -1875,14 +1877,14 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             if (pReq->u.In.cSymbols)
             {
                 uint32_t i;
-                PSUPLDRSYM paSyms = (PSUPLDRSYM)&pReq->u.In.abImage[pReq->u.In.offSymbols];
+                PSUPLDRSYM paSyms = (PSUPLDRSYM)(&pbSrcImage[pReq->u.In.offSymbols]);
                 for (i = 0; i < pReq->u.In.cSymbols; i++)
                 {
                     REQ_CHECK_EXPR_FMT(paSyms[i].offSymbol < pReq->u.In.cbImageWithEverything,
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImageWithEverything));
                     REQ_CHECK_EXPR_FMT(paSyms[i].offName < pReq->u.In.cbStrTab,
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithEverything));
-                    REQ_CHECK_EXPR_FMT(RTStrEnd((char const *)&pReq->u.In.abImage[pReq->u.In.offStrTab + paSyms[i].offName],
+                    REQ_CHECK_EXPR_FMT(RTStrEnd((char const *)(&pbSrcImage[pReq->u.In.offStrTab + paSyms[i].offName]),
                                                 pReq->u.In.cbStrTab - paSyms[i].offName),
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithEverything));
                 }
@@ -1890,7 +1892,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             {
                 uint32_t i;
                 uint32_t offPrevEnd = 0;
-                PSUPLDRSEG paSegs = (PSUPLDRSEG)&pReq->u.In.abImage[pReq->u.In.offSegments];
+                PSUPLDRSEG paSegs = (PSUPLDRSEG)(&pbSrcImage[pReq->u.In.offSegments]);
                 for (i = 0; i < pReq->u.In.cSegments; i++)
                 {
                     REQ_CHECK_EXPR_FMT(paSegs[i].off < pReq->u.In.cbImageBits && !(paSegs[i].off & PAGE_OFFSET_MASK),
@@ -3503,7 +3505,8 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
     /*
      * Let IPRT do the job.
      */
-    rc = RTR0MemObjAllocCont(&Mem.MemObj, cPages << PAGE_SHIFT, true /* executable R0 mapping */);
+    /** @todo Is the 4GiB requirement actually necessray? */
+    rc = RTR0MemObjAllocCont(&Mem.MemObj, cPages << PAGE_SHIFT, _4G-1 /*PhysHighest*/, true /* executable R0 mapping */);
     if (RT_SUCCESS(rc))
     {
         int rc2;
@@ -5548,7 +5551,8 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->cSegments = pReq->u.In.cSegments;
     {
         size_t  cbSegments = pImage->cSegments * sizeof(SUPLDRSEG);
-        pImage->paSegments = (PSUPLDRSEG)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSegments], cbSegments);
+        uint8_t const * const pbSrcImage = pReq->u.In.abImage;
+        pImage->paSegments = (PSUPLDRSEG)RTMemDup(&pbSrcImage[pReq->u.In.offSegments], cbSegments);
         if (pImage->paSegments) /* Align the last segment size to avoid upsetting RTR0MemObjProtect. */ /** @todo relax RTR0MemObjProtect */
             pImage->paSegments[pImage->cSegments - 1].cb = RT_ALIGN_32(pImage->paSegments[pImage->cSegments - 1].cb, PAGE_SIZE);
         else
@@ -5617,10 +5621,11 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
     if (!pImage->fNative)
     {
+        uint8_t const * const pbSrcImage = pReq->u.In.abImage;
         pImage->cbStrTab = pReq->u.In.cbStrTab;
         if (pImage->cbStrTab)
         {
-            pImage->pachStrTab = (char *)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
+            pImage->pachStrTab = (char *)RTMemDup(&pbSrcImage[pReq->u.In.offStrTab], pImage->cbStrTab);
             if (!pImage->pachStrTab)
                 rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for string table: %#x", pImage->cbStrTab);
             SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
@@ -5630,7 +5635,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (RT_SUCCESS(rc) && pImage->cSymbols)
         {
             size_t  cbSymbols = pImage->cSymbols * sizeof(SUPLDRSYM);
-            pImage->paSymbols = (PSUPLDRSYM)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
+            pImage->paSymbols = (PSUPLDRSYM)RTMemDup(&pbSrcImage[pReq->u.In.offSymbols], cbSymbols);
             if (!pImage->paSymbols)
                 rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for symbol table: %#x", cbSymbols);
             SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);

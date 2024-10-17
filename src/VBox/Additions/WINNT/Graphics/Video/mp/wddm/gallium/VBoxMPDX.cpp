@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2022-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2022-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -30,6 +30,8 @@
 #include "VBoxMPGaWddm.h"
 #include "../VBoxMPVidPn.h"
 #include "VBoxMPGaExt.h"
+
+#include <iprt/asm-mem.h> /* must be included before SvgaHw.h */
 
 #include "Svga.h"
 #include "SvgaFifo.h"
@@ -724,6 +726,11 @@ static NTSTATUS svgaPagingFill(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER
     AssertReturn(   pAllocation->enmType != VBOXWDDM_ALLOC_TYPE_D3D
                  || pBuildPagingBuffer->Fill.Destination.SegmentId == pAllocation->dx.SegmentId, STATUS_INVALID_PARAMETER);
 
+    /* "The size value is expanded to a multiple of the native host page size (for example, 4 KB on the x86 architecture)."
+     * I.e. TransferOffset and TransferSize are within the aligned size.
+     */
+    SIZE_T const cbAllocation = RT_ALIGN_32(svgaGetAllocationSize(pAllocation), PAGE_SIZE);
+
     NTSTATUS Status = STATUS_SUCCESS;
     switch (pBuildPagingBuffer->Fill.Destination.SegmentId)
     {
@@ -760,7 +767,7 @@ static NTSTATUS svgaPagingFill(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER
             }
 
             /* Fill the guest backing pages. */
-            uint32_t const cbFill = RT_MIN(pBuildPagingBuffer->Fill.FillSize, pAllocation->dx.desc.cbAllocation);
+            uint32_t const cbFill = RT_MIN(pBuildPagingBuffer->Fill.FillSize, cbAllocation);
             ASMMemFill32(pvDst, cbFill, pBuildPagingBuffer->Fill.FillPattern);
 
             /* Emit UPDATE_GB_SURFACE */

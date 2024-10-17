@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2013-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -96,6 +96,23 @@ static DECLCALLBACK(int) tstDriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIB
     g_drvTstMouse.pDrvBase = pBaseInterface;
     g_drvTstMouse.pDrv = PDMIBASE_QUERY_INTERFACE(pBaseInterface, PDMIMOUSEPORT);
     *ppBaseInterface = &g_drvTstMouse.IBase;
+    return VINF_SUCCESS;
+}
+
+
+/** @interface_method_impl{PDMUSBHLP,pfnTimerCreate} */
+static DECLCALLBACK(int) tstTimerCreate(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, void *pvUser,
+                                        uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
+{
+    RT_NOREF7(pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, phTimer);
+    return VINF_SUCCESS;
+}
+
+
+/** @interface_method_impl{PDMUSBHLP,pfnTimerCreate} */
+static DECLCALLBACK(int) tstTimerDestroy(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    RT_NOREF2(pUsbIns, hTimer);
     return VINF_SUCCESS;
 }
 
@@ -393,6 +410,8 @@ int main()
     g_tstUsbHlp.u32Version      = PDM_USBHLP_VERSION;
     g_tstUsbHlp.pfnVMSetErrorV  = tstVMSetErrorV;
     g_tstUsbHlp.pfnDriverAttach = tstDriverAttach;
+    g_tstUsbHlp.pfnTimerCreate  = tstTimerCreate;
+    g_tstUsbHlp.pfnTimerDestroy = tstTimerDestroy;
     g_tstUsbHlp.pfnCFGMValidateConfig = CFGMR3ValidateConfig;
     g_tstUsbHlp.pfnCFGMQueryStringDef = CFGMR3QueryStringDef;
     g_tstUsbHlp.pfnCFGMQueryU8Def     = CFGMR3QueryU8Def;

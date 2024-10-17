@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2022-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2022-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -588,7 +588,7 @@ static uint32_t vboxDXCalcResourceAllocationSize(PVBOXDX_RESOURCE pResource)
                                                       base_level_size,
                                                       pResource->AllocationDesc.surfaceInfo.numMipLevels,
                                                       pResource->AllocationDesc.surfaceInfo.arraySize,
-                                                      1);
+                                                      pResource->AllocationDesc.surfaceInfo.multisampleCount);
 }
 
 
@@ -605,7 +605,8 @@ static SVGA3dSurfaceAllFlags vboxDXCalcSurfaceFlags(const D3D11DDIARG_CREATERESO
                              | D3D10_DDI_BIND_STREAM_OUTPUT
                              | D3D10_DDI_BIND_RENDER_TARGET
                              | D3D10_DDI_BIND_DEPTH_STENCIL
-                             | D3D11_DDI_BIND_UNORDERED_ACCESS))) == 0);
+                             | D3D11_DDI_BIND_UNORDERED_ACCESS
+                             | D3D11_DDI_BIND_DECODER))) == 0);
 
     if (BindFlags & D3D10_DDI_BIND_VERTEX_BUFFER)
         f |= SVGA3D_SURFACE_BIND_VERTEX_BUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER;
@@ -623,6 +624,8 @@ static SVGA3dSurfaceAllFlags vboxDXCalcSurfaceFlags(const D3D11DDIARG_CREATERESO
         f |= SVGA3D_SURFACE_BIND_DEPTH_STENCIL | SVGA3D_SURFACE_HINT_DEPTHSTENCIL;
     if (BindFlags & D3D11_DDI_BIND_UNORDERED_ACCESS)
         f |= SVGA3D_SURFACE_BIND_UAVIEW;
+    if (BindFlags & D3D11_DDI_BIND_DECODER)
+        f |= SVGA3D_SURFACE_RESERVED1;
 
     /* D3D10_DDI_BIND_PRESENT textures can be used as render targets in a blitter on the host. */
     if (BindFlags & D3D10_DDI_BIND_PRESENT)
@@ -658,8 +661,8 @@ static SVGA3dSurfaceAllFlags vboxDXCalcSurfaceFlags(const D3D11DDIARG_CREATERESO
     if (MiscFlags & D3D11_DDI_RESOURCE_MISC_RESOURCE_CLAMP)
         f |= SVGA3D_SURFACE_RESOURCE_CLAMP;
 
-    /** @todo SVGA3D_SURFACE_MULTISAMPLE */
-    Assert(pCreateResource->SampleDesc.Count <= 1);
+    if (pCreateResource->SampleDesc.Count > 1)
+        f |= SVGA3D_SURFACE_MULTISAMPLE;
 
     return f;
 }
@@ -700,9 +703,17 @@ int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATER
     pDesc->surfaceInfo.surfaceFlags       = vboxDXCalcSurfaceFlags(pCreateResource);
     pDesc->surfaceInfo.format             = vboxDXDxgiToSvgaFormat(pCreateResource->Format);
     pDesc->surfaceInfo.numMipLevels       = pCreateResource->MipLevels;
-    pDesc->surfaceInfo.multisampleCount   = 0;
-    pDesc->surfaceInfo.multisamplePattern = SVGA3D_MS_PATTERN_NONE;
-    pDesc->surfaceInfo.qualityLevel       = SVGA3D_MS_QUALITY_NONE;
+    pDesc->surfaceInfo.multisampleCount   = pCreateResource->SampleDesc.Count;
+    if (pDesc->surfaceInfo.multisampleCount > 1)
+    {
+        pDesc->surfaceInfo.multisamplePattern = SVGA3D_MS_PATTERN_STANDARD;
+        pDesc->surfaceInfo.qualityLevel       = SVGA3D_MS_QUALITY_FULL;
+    }
+    else
+    {
+        pDesc->surfaceInfo.multisamplePattern = SVGA3D_MS_PATTERN_NONE;
+        pDesc->surfaceInfo.qualityLevel       = SVGA3D_MS_QUALITY_NONE;
+    }
     pDesc->surfaceInfo.autogenFilter      = SVGA3D_TEX_FILTER_NONE;
     pDesc->surfaceInfo.size.width         = pCreateResource->pMipInfoList[0].TexelWidth;
     pDesc->surfaceInfo.size.height        = pCreateResource->pMipInfoList[0].TexelHeight;
@@ -735,6 +746,9 @@ int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATER
     RTListInit(&pResource->listRTV);
     RTListInit(&pResource->listDSV);
     RTListInit(&pResource->listUAV);
+    RTListInit(&pResource->listVDOV);
+    RTListInit(&pResource->listVPIV);
+    RTListInit(&pResource->listVPOV);
 
     return VINF_SUCCESS;
 }
@@ -860,6 +874,9 @@ bool vboxDXOpenResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
     RTListInit(&pResource->listRTV);
     RTListInit(&pResource->listDSV);
     RTListInit(&pResource->listUAV);
+    RTListInit(&pResource->listVDOV);
+    RTListInit(&pResource->listVPIV);
+    RTListInit(&pResource->listVPOV);
 
     pResource->pKMResource->pResource = pResource;
     pResource->pKMResource->hAllocation = pOpenResource->pOpenAllocationInfo2[0].hAllocation;
@@ -883,6 +900,9 @@ void vboxDXDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
     Assert(RTListIsEmpty(&pResource->listRTV));
     Assert(RTListIsEmpty(&pResource->listDSV));
     Assert(RTListIsEmpty(&pResource->listUAV));
+    Assert(RTListIsEmpty(&pResource->listVDOV));
+    Assert(RTListIsEmpty(&pResource->listVPIV));
+    Assert(RTListIsEmpty(&pResource->listVPOV));
 
     /* Remove from the list of active resources. */
     RTListNodeRemove(&pResource->pKMResource->nodeResource);
@@ -1174,25 +1194,49 @@ void vboxDXCreateRasterizerState(PVBOXDX_DEVICE pDevice, PVBOXDX_RASTERIZER_STAT
     uint8 lineStippleEnable     = 0; /** @todo */
     uint8 lineStippleFactor     = 0; /** @todo */
     uint16 lineStipplePattern   = 0; /** @todo */
-    /** @todo uint32 forcedSampleCount = p->ForcedSampleCount; SVGA3dCmdDXDefineRasterizerState_v2 */
+    uint32 forcedSampleCount    = p->ForcedSampleCount;
 
-    vgpu10DefineRasterizerState(pDevice,
-                                pRasterizerState->uRasterizerId,
-                                fillMode,
-                                cullMode,
-                                frontCounterClockwise,
-                                provokingVertexLast,
-                                depthBias,
-                                depthBiasClamp,
-                                slopeScaledDepthBias,
-                                depthClipEnable,
-                                scissorEnable,
-                                multisampleEnable,
-                                antialiasedLineEnable,
-                                lineWidth,
-                                lineStippleEnable,
-                                lineStippleFactor,
-                                lineStipplePattern);
+    if (pDevice->pAdapter->fVBoxCaps & VBSVGA3D_CAP_RASTERIZER_STATE_V2)
+    {
+        vgpu10DefineRasterizerState_v2(pDevice,
+                                       pRasterizerState->uRasterizerId,
+                                       fillMode,
+                                       cullMode,
+                                       frontCounterClockwise,
+                                       provokingVertexLast,
+                                       depthBias,
+                                       depthBiasClamp,
+                                       slopeScaledDepthBias,
+                                       depthClipEnable,
+                                       scissorEnable,
+                                       multisampleEnable,
+                                       antialiasedLineEnable,
+                                       lineWidth,
+                                       lineStippleEnable,
+                                       lineStippleFactor,
+                                       lineStipplePattern,
+                                       forcedSampleCount);
+    }
+    else
+    {
+        vgpu10DefineRasterizerState(pDevice,
+                                    pRasterizerState->uRasterizerId,
+                                    fillMode,
+                                    cullMode,
+                                    frontCounterClockwise,
+                                    provokingVertexLast,
+                                    depthBias,
+                                    depthBiasClamp,
+                                    slopeScaledDepthBias,
+                                    depthClipEnable,
+                                    scissorEnable,
+                                    multisampleEnable,
+                                    antialiasedLineEnable,
+                                    lineWidth,
+                                    lineStippleEnable,
+                                    lineStippleFactor,
+                                    lineStipplePattern);
+    }
 }
 
 
@@ -2095,7 +2139,7 @@ void vboxDXQueryEnd(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
 
     if (pQuery->Query == D3D10DDI_QUERY_EVENT)
     {
-        pQuery->u64Value = ++pDevice->u64MobFenceValue;
+        pQuery->u64Value = ASMAtomicIncU64(&pDevice->u64MobFenceValue);
         vgpu10MobFence64(pDevice, pQuery->u64Value, pQuery->pCOAllocation->hCOAllocation, pQuery->offQuery);
         return;
     }
@@ -2929,7 +2973,12 @@ void vboxDXCreateDepthStencilView(PVBOXDX_DEVICE pDevice, PVBOXDXDEPTHSTENCILVIE
 void vboxDXClearDepthStencilView(PVBOXDX_DEVICE pDevice, PVBOXDXDEPTHSTENCILVIEW pDepthStencilView,
                                  UINT Flags, FLOAT Depth, UINT8 Stencil)
 {
-    vgpu10ClearDepthStencilView(pDevice, (uint16)Flags, Stencil, pDepthStencilView->uDepthStencilViewId, Depth);
+    uint16_t svgaFlags = 0;
+    if (Flags & D3D10_DDI_CLEAR_DEPTH)
+        svgaFlags |= SVGA3D_CLEAR_DEPTH;
+    if (Flags & D3D10_DDI_CLEAR_STENCIL)
+        svgaFlags |= SVGA3D_CLEAR_STENCIL;
+    vgpu10ClearDepthStencilView(pDevice, svgaFlags, Stencil, pDepthStencilView->uDepthStencilViewId, Depth);
 }
 
 
@@ -2975,9 +3024,35 @@ void vboxDXSetRenderTargets(PVBOXDX_DEVICE pDevice, PVBOXDXDEPTHSTENCILVIEW pDep
 
 
 void vboxDXSetShaderResourceViews(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, uint32_t StartSlot,
-                                  uint32_t NumViews, uint32_t *paViewIds)
+                                  uint32_t NumViews, PVBOXDXSHADERRESOURCEVIEW const *papViews)
 {
-    vgpu10SetShaderResources(pDevice, enmShaderType, StartSlot, NumViews, paViewIds);
+    Assert(NumViews <= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
+    NumViews = RT_MIN(NumViews, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
+
+    /* Update the pipeline state. */
+    PVBOXDXSRVSTATE pSRVS = &pDevice->pipeline.aSRVs[enmShaderType - SVGA3D_SHADERTYPE_MIN];
+
+    for (unsigned i = 0; i < NumViews; ++i)
+        pSRVS->apShaderResourceView[StartSlot + i] = papViews[i];
+
+    uint32_t cSRV = RT_MAX(pSRVS->cShaderResourceView, StartSlot + NumViews);
+    while (cSRV)
+    {
+        if (pSRVS->apShaderResourceView[cSRV - 1])
+            break;
+        --cSRV;
+    }
+    pSRVS->cShaderResourceView = cSRV;
+
+    /* Fetch View ids. */
+    uint32_t aViewIds[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    for (unsigned i = 0; i < NumViews; ++i)
+    {
+        VBOXDXSHADERRESOURCEVIEW *pView = papViews[i];
+        aViewIds[i] = pView ? pView->uShaderResourceViewId : SVGA3D_INVALID_ID;
+    }
+
+    vgpu10SetShaderResources(pDevice, enmShaderType, StartSlot, NumViews, aViewIds);
 }
 
 
@@ -3073,6 +3148,14 @@ void vboxDXResourceCopy(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, P
 }
 
 
+void vboxDXResourceResolveSubresource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT DstSubresource,
+                                      PVBOXDX_RESOURCE pSrcResource, UINT SrcSubresource, DXGI_FORMAT ResolveFormat)
+{
+    SVGA3dSurfaceFormat const copyFormat = vboxDXDxgiToSvgaFormat(ResolveFormat);
+    vgpu10ResolveCopy(pDevice, vboxDXGetAllocation(pDstResource), DstSubresource,
+                      vboxDXGetAllocation(pSrcResource), SrcSubresource, copyFormat);
+}
+
 static void vboxDXUndefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
 {
     VBOXDXSHADERRESOURCEVIEW *pShaderResourceView;
@@ -3105,7 +3188,46 @@ static void vboxDXUndefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
         }
     }
 
-    /** @todo UAV */
+    VBOXDXUNORDEREDACCESSVIEW *pUnorderedAccessView;
+    RTListForEach(&pResource->listUAV, pUnorderedAccessView, VBOXDXUNORDEREDACCESSVIEW, nodeView)
+    {
+        if (pUnorderedAccessView->fDefined)
+        {
+            vgpu10DestroyUAView(pDevice, pUnorderedAccessView->uUnorderedAccessViewId);
+            pUnorderedAccessView->fDefined = false;
+        }
+    }
+
+    VBOXDXVIDEODECODEROUTPUTVIEW *pVDOV;
+    RTListForEach(&pResource->listVDOV, pVDOV, VBOXDXVIDEODECODEROUTPUTVIEW, nodeView)
+    {
+        if (pVDOV->fDefined)
+        {
+            vgpu10DestroyVideoDecoderOutputView(pDevice, pVDOV->uVideoDecoderOutputViewId);
+            pVDOV->fDefined = false;
+        }
+    }
+
+    VBOXDXVIDEOPROCESSORINPUTVIEW *pVPIV;
+    RTListForEach(&pResource->listVPIV, pVPIV, VBOXDXVIDEOPROCESSORINPUTVIEW, nodeView)
+    {
+        if (pVPIV->fDefined)
+        {
+            vgpu10DestroyVideoProcessorInputView(pDevice, pVPIV->uVideoProcessorInputViewId);
+            pVPIV->fDefined = false;
+        }
+    }
+
+
+    VBOXDXVIDEOPROCESSOROUTPUTVIEW *pVPOV;
+    RTListForEach(&pResource->listVPOV, pVPOV, VBOXDXVIDEOPROCESSOROUTPUTVIEW, nodeView)
+    {
+        if (pVPOV->fDefined)
+        {
+            vgpu10DestroyVideoProcessorOutputView(pDevice, pVPOV->uVideoProcessorOutputViewId);
+            pVPOV->fDefined = false;
+        }
+    }
 }
 
 
@@ -3148,13 +3270,130 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
         }
     }
 
-    /** @todo UAV */
+    VBOXDXUNORDEREDACCESSVIEW *pUnorderedAccessView;
+    RTListForEach(&pResource->listUAV, pUnorderedAccessView, VBOXDXUNORDEREDACCESSVIEW, nodeView)
+    {
+        if (!pUnorderedAccessView->fDefined)
+        {
+            vgpu10DefineUAView(pDevice, pUnorderedAccessView->uUnorderedAccessViewId, vboxDXGetAllocation(pUnorderedAccessView->pResource),
+                               pUnorderedAccessView->svga.format, pUnorderedAccessView->svga.resourceDimension,
+                               pUnorderedAccessView->svga.desc);
+            pUnorderedAccessView->fDefined = true;
+        }
+    }
+
+    VBOXDXVIDEODECODEROUTPUTVIEW *pVDOV;
+    RTListForEach(&pResource->listVDOV, pVDOV, VBOXDXVIDEODECODEROUTPUTVIEW, nodeView)
+    {
+        if (!pVDOV->fDefined)
+        {
+            vgpu10DefineVideoDecoderOutputView(pDevice, pVDOV->uVideoDecoderOutputViewId,
+                                               vboxDXGetAllocation(pVDOV->pResource),
+                                               pVDOV->svga.desc);
+            pVDOV->fDefined = true;
+        }
+    }
+
+    VBOXDXVIDEOPROCESSORINPUTVIEW *pVPIV;
+    RTListForEach(&pResource->listVPIV, pVPIV, VBOXDXVIDEOPROCESSORINPUTVIEW, nodeView)
+    {
+        if (!pVPIV->fDefined)
+        {
+            vgpu10DefineVideoProcessorInputView(pDevice, pVPIV->uVideoProcessorInputViewId,
+                                                vboxDXGetAllocation(pVPIV->pResource),
+                                                pVPIV->svga.ContentDesc, pVPIV->svga.VPIVDesc);
+            pVPIV->fDefined = true;
+        }
+    }
+
+    VBOXDXVIDEOPROCESSOROUTPUTVIEW *pVPOV;
+    RTListForEach(&pResource->listVPOV, pVPOV, VBOXDXVIDEOPROCESSOROUTPUTVIEW, nodeView)
+    {
+        if (!pVPOV->fDefined)
+        {
+            vgpu10DefineVideoProcessorOutputView(pDevice, pVPOV->uVideoProcessorOutputViewId,
+                                                 vboxDXGetAllocation(pVPOV->pResource),
+                                                 pVPOV->svga.ContentDesc, pVPOV->svga.VPOVDesc);
+            pVPOV->fDefined = true;
+        }
+    }
+}
+
+
+static void vboxdxUnbindResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
+{
+    VBOXDXSHADERRESOURCEVIEW *pShaderResourceView;
+    RTListForEach(&pResource->listSRV, pShaderResourceView, VBOXDXSHADERRESOURCEVIEW, nodeView)
+    {
+        /* Search this view in the pipeline state. */
+        for (unsigned idxShaderType = 0; idxShaderType < RT_ELEMENTS(pDevice->pipeline.aSRVs); ++idxShaderType)
+        {
+            SVGA3dShaderType const enmShaderType = (SVGA3dShaderType)(idxShaderType + SVGA3D_SHADERTYPE_MIN);
+
+            PVBOXDXSRVSTATE pSRVS = &pDevice->pipeline.aSRVs[idxShaderType];
+            for (unsigned i = 0; i < pSRVS->cShaderResourceView; ++i)
+            {
+                if (pSRVS->apShaderResourceView[i] == pShaderResourceView)
+                {
+                    uint32_t id = SVGA3D_INVALID_ID;
+                    vgpu10SetShaderResources(pDevice, enmShaderType, i, 1, &id);
+                }
+            }
+        }
+    }
 }
 
 
 HRESULT vboxDXRotateResourceIdentities(PVBOXDX_DEVICE pDevice, UINT cResources, PVBOXDX_RESOURCE *papResources)
 {
-    /** @todo Rebind SRVs, UAVs which are currently bound to pipeline stages. */
+#ifdef LOG_ENABLED
+    for (unsigned i = 0; i < cResources; ++i)
+    {
+        PVBOXDX_RESOURCE pResource = papResources[i];
+        LogFlowFunc(("Resources[%d]: pResource %p, hAllocation 0x%08x\n", i, pResource, vboxDXGetAllocation(pResource)));
+
+        unsigned iV = 0;
+        VBOXDXRENDERTARGETVIEW *pRTV;
+        RTListForEach(&pResource->listRTV, pRTV, VBOXDXRENDERTARGETVIEW, nodeView)
+        {
+            LogFlowFunc(("  RTV[%d]: %p\n", iV, pRTV));
+            ++iV;
+        }
+
+        iV = 0;
+        VBOXDXSHADERRESOURCEVIEW *pSRV;
+        RTListForEach(&pResource->listSRV, pSRV, VBOXDXSHADERRESOURCEVIEW, nodeView)
+        {
+            LogFlowFunc(("  SRV[%d]: %p\n", iV, pSRV));
+            ++iV;
+        }
+    }
+
+    LogFlowFunc(("Pipeline: cRTV %u, cSRV VS %u, PS %u, GS %u, HS %u, DS %u, CS %u\n",
+                 pDevice->pipeline.cRenderTargetViews,
+                 pDevice->pipeline.aSRVs[0].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[1].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[2].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[3].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[4].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[5].cShaderResourceView));
+    for (unsigned i = 0; i < pDevice->pipeline.cRenderTargetViews; ++i)
+        LogFlowFunc(("  RTV[%d]: %p\n", i, pDevice->pipeline.apRenderTargetViews[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[0].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV VS[%d]: %p\n", i, pDevice->pipeline.aSRVs[0].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[1].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV PS[%d]: %p\n", i, pDevice->pipeline.aSRVs[1].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[2].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV GS[%d]: %p\n", i, pDevice->pipeline.aSRVs[2].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[3].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV HS[%d]: %p\n", i, pDevice->pipeline.aSRVs[3].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[4].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV DS[%d]: %p\n", i, pDevice->pipeline.aSRVs[4].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[5].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV CS[%d]: %p\n", i, pDevice->pipeline.aSRVs[5].apShaderResourceView[i]));
+#endif
+
+    /** @todo Rebind UAVs which are currently bound to pipeline. */
 
     /* Unbind current render targets, if a resource is bound as a render target. */
     for (unsigned i = 0; i < cResources; ++i)
@@ -3201,11 +3440,12 @@ HRESULT vboxDXRotateResourceIdentities(PVBOXDX_DEVICE pDevice, UINT cResources, 
     for (unsigned i = 0; i < cResources; ++i)
     {
         PVBOXDX_RESOURCE pResource = papResources[i];
+        vboxdxUnbindResourceViews(pDevice, pResource);
         vboxDXUndefineResourceViews(pDevice, pResource);
     }
 
     /* Rotate allocation handles. The function would be that simple if resources would not have views. */
-    D3DKMT_HANDLE hAllocation = papResources[0]->pKMResource->hAllocation;
+    D3DKMT_HANDLE const hAllocation = papResources[0]->pKMResource->hAllocation;
     for (unsigned i = 0; i < cResources - 1; ++i)
         papResources[i]->pKMResource->hAllocation = papResources[i + 1]->pKMResource->hAllocation;
     papResources[cResources - 1]->pKMResource->hAllocation = hAllocation;
@@ -3452,7 +3692,7 @@ HRESULT vboxDXBlt(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT Ds
                   DXGI_DDI_ARG_BLT_FLAGS Flags, DXGI_DDI_MODE_ROTATION Rotate)
 {
     AssertReturn(Rotate == DXGI_DDI_MODE_ROTATION_IDENTITY, DXGI_ERROR_INVALID_CALL);
-    AssertReturn(Flags.Resolve == 0, DXGI_ERROR_INVALID_CALL);
+    AssertReturn(Flags.Resolve == 0, DXGI_ERROR_INVALID_CALL); /** @todo Multisampled resources. */
 
     SVGA3dBox boxSrc;
     vboxDXGetSubresourceBox(pSrcResource, SrcSubresource, &boxSrc); /* Entire subresource. */
@@ -3470,6 +3710,33 @@ HRESULT vboxDXBlt(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT Ds
     vgpu10PresentBlt(pDevice, vboxDXGetAllocation(pSrcResource), SrcSubresource, vboxDXGetAllocation(pDstResource), DstSubresource,
                      boxSrc, boxDest, mode);
     return S_OK;
+}
+
+
+void vboxDXClearView(PVBOXDX_DEVICE pDevice, D3D11DDI_HANDLETYPE ViewType, uint32_t ViewId, FLOAT const Color[4], D3D10_DDI_RECT const *pRect, UINT NumRects)
+{
+    SVGAFifo3dCmdId enmCmdId = VBSVGA_3D_CMD_DX_CLEAR_RTV;
+    switch (ViewType)
+    {
+        case D3D10DDI_HT_RENDERTARGETVIEW:
+            break;
+        case D3D11DDI_HT_UNORDEREDACCESSVIEW:
+            enmCmdId = VBSVGA_3D_CMD_DX_CLEAR_UAV;
+            break;
+        case D3D11_1DDI_HT_VIDEODECODEROUTPUTVIEW:
+            enmCmdId = VBSVGA_3D_CMD_DX_CLEAR_VDOV;
+            break;
+        case D3D11_1DDI_HT_VIDEOPROCESSORINPUTVIEW:
+            enmCmdId = VBSVGA_3D_CMD_DX_CLEAR_VPIV;
+            break;
+        case D3D11_1DDI_HT_VIDEOPROCESSOROUTPUTVIEW:
+            enmCmdId = VBSVGA_3D_CMD_DX_CLEAR_VPOV;
+            break;
+        default:
+            AssertFailedReturnVoid();
+    }
+
+    vgpu10ClearView(pDevice, enmCmdId, ViewId, Color, pRect, NumRects);
 }
 
 
@@ -3633,6 +3900,26 @@ static int vboxDXDeviceCreateObjects(PVBOXDX_DEVICE pDevice)
                                SVGA_COTABLE_MAX_IDS, NULL, NULL);
     AssertRCReturn(rc, rc);
 
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoProcessor, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoDecoderOutputView, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoDecoder, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoProcessorInputView, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoProcessorOutputView, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
     RTListInit(&pDevice->listResources);
     RTListInit(&pDevice->listDestroyedResources);
     RTListInit(&pDevice->listStagingResources);
@@ -3720,6 +4007,36 @@ static void vboxDXDeviceDeleteObjects(PVBOXDX_DEVICE pDevice)
         RTHandleTableDestroy(pDevice->hHTStreamOutput, NULL, NULL);
         pDevice->hHTStreamOutput = 0;
     }
+
+    if (pDevice->hHTVideoProcessor)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoProcessor, NULL, NULL);
+        pDevice->hHTVideoProcessor = 0;
+    }
+
+    if (pDevice->hHTVideoDecoderOutputView)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoDecoderOutputView, NULL, NULL);
+        pDevice->hHTVideoDecoderOutputView = 0;
+    }
+
+    if (pDevice->hHTVideoDecoder)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoDecoder, NULL, NULL);
+        pDevice->hHTVideoDecoder = 0;
+    }
+
+    if (pDevice->hHTVideoProcessorInputView)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoProcessorInputView, NULL, NULL);
+        pDevice->hHTVideoProcessorInputView = 0;
+    }
+
+    if (pDevice->hHTVideoProcessorOutputView)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoProcessorOutputView, NULL, NULL);
+        pDevice->hHTVideoProcessorOutputView = 0;
+    }
 }
 
 
@@ -3782,4 +4099,10 @@ void vboxDXDestroyDevice(PVBOXDX_DEVICE pDevice)
     LogFlowFunc(("hr %d, hContext 0x%p",  hr, pDevice->hContext)); RT_NOREF(hr);
 
     vboxDXDeviceDeleteObjects(pDevice);
+
+    RTMemFree(pDevice->VideoDevice.paDecodeProfile);
+    pDevice->VideoDevice.paDecodeProfile = 0;
+
+    RTMemFree(pDevice->VideoDevice.config.pConfigInfo);
+    pDevice->VideoDevice.config.pConfigInfo = 0;
 }

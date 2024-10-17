@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2021-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2021-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -35,16 +35,25 @@
  * @returns @c true if valid, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   uEntry  The EPT page table entry to check.
+ *
+ * @remarks Current this ASSUMES @c uEntry is present (debug asserted)!
  */
 DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_t uEntry)
 {
     if (!(uEntry & EPT_E_READ))
     {
-        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
-        Assert(!RT_BF_GET(pVCpu->pgm.s.uEptVpidCapMsr, VMX_BF_EPT_VPID_CAP_EXEC_ONLY));
-        NOREF(pVCpu);
-        if (uEntry & (EPT_E_WRITE | EPT_E_EXECUTE))
+        if (uEntry & EPT_E_WRITE)
             return false;
+
+        /*
+         * Currently all callers of this function check for the present mask prior
+         * to calling this function. Hence, the execute bit must be set now.
+         */
+        Assert(uEntry & EPT_E_EXECUTE);
+        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
+        if (pVCpu->pgm.s.uEptVpidCapMsr & VMX_BF_EPT_VPID_CAP_EXEC_ONLY_MASK)
+            return true;
+        return false;
     }
     return true;
 }
@@ -92,7 +101,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PCVMCPUCC pVCpu, PPG
 
     pWalk->fNotPresent = true;
     pWalk->uLevel      = uLevel;
-    pWalk->fFailed     = s_afEptViolations[idxViolationType];
+    pWalk->fFailed     = s_afEptViolations[idxViolationType] | ((uint32_t)uLevel << PGM_WALKFAIL_LEVEL_SHIFT);
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
@@ -111,7 +120,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PCVMCPUCC pVCpu, PP
     AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc); NOREF(pVCpu);
     pWalk->fBadPhysAddr = true;
     pWalk->uLevel       = uLevel;
-    pWalk->fFailed      = PGM_WALKFAIL_EPT_VIOLATION;
+    pWalk->fFailed      = PGM_WALKFAIL_EPT_VIOLATION         | ((uint32_t)uLevel << PGM_WALKFAIL_LEVEL_SHIFT);
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
@@ -129,7 +138,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMP
     NOREF(pVCpu);
     pWalk->fRsvdError = true;
     pWalk->uLevel     = uLevel;
-    pWalk->fFailed    = PGM_WALKFAIL_EPT_MISCONFIG;
+    pWalk->fFailed    = PGM_WALKFAIL_EPT_MISCONFIG           | ((uint32_t)uLevel << PGM_WALKFAIL_LEVEL_SHIFT);
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 

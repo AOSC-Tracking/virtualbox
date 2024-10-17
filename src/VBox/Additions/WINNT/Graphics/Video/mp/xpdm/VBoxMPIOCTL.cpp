@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -345,7 +345,35 @@ BOOLEAN VBoxMPSetPointerAttr(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_ATTRIBUTES pPoi
     return fRc;
 }
 
+/**
+ * Called by IOCTL_VIDEO_SET_POINTER_POSITION to report the current mouse cursor position to the host.
+ *
+ * @returns \c TRUE on success, \c FALSE on failure.
+ * @param   pExt                Device extension to use.
+ * @param   pPos                Mouse pointer position to report.
+ * @param   pStatus             Status to return.
+ */
+BOOLEAN VBoxMPReportCursorPosition(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_POSITION pPos, PSTATUS_BLOCK pStatus)
+{
+    LOGF_ENTER();
 
+    BOOLEAN fRc;
+    if (VBoxQueryHostWantsAbsolute())
+    {
+        fRc = RT_SUCCESS(VBoxMPCmnReportCursorPosition(VBoxCommonFromDeviceExt(pExt), pPos));
+    }
+    else
+    {
+        LOG(("Fallback to sw pointer."));
+        fRc = FALSE;
+    }
+
+    if (!fRc)
+        pStatus->Status = ERROR_INVALID_FUNCTION;
+
+    LOGF_LEAVE();
+    return fRc;
+}
 
 /* Called for IOCTL_VIDEO_ENABLE_POINTER/IOCTL_VIDEO_DISABLE_POINTER.
  * Hides pointer or makes it visible depending on bEnable value passed.

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -869,7 +869,19 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   EndPt       Endpoint number.
      * @param   enmDir      Endpoint direction.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAbortEp,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, int EndPt, VUSBDIRECTION enmDir));
+    DECLR3CALLBACKMEMBER(int, pfnAbortEpByPort,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, int EndPt, VUSBDIRECTION enmDir));
+
+    /**
+     * Cancels and completes - with CRC failure - all URBs queued on an endpoint.
+     * This is done in response to a guest endpoint/pipe abort.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this struct.
+     * @param   DstAddress  Port of the device.
+     * @param   EndPt       Endpoint number.
+     * @param   enmDir      Endpoint direction.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAbortEpByAddr,(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, int EndPt, VUSBDIRECTION enmDir));
 
     /**
      * Attach the device to the root hub.
@@ -1003,10 +1015,13 @@ typedef struct VUSBIROOTHUBCONNECTOR
      */
     DECLR3CALLBACKMEMBER(VUSBSPEED, pfnDevGetSpeed,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
 
+    /** Alignment dummy. */
+    RTR3PTR Alignment;
+
 } VUSBIROOTHUBCONNECTOR;
 AssertCompileSizeAlignment(VUSBIROOTHUBCONNECTOR, 8);
 /** VUSBIROOTHUBCONNECTOR interface ID. */
-# define VUSBIROOTHUBCONNECTOR_IID              "662d7822-b9c6-43b5-88b6-5d59f0106e46"
+# define VUSBIROOTHUBCONNECTOR_IID              "83eb1fb4-d755-4925-a7c5-751d0899c048"
 
 
 # ifdef IN_RING3

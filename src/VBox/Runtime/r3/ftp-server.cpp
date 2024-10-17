@@ -17,7 +17,7 @@
  */
 
 /*
- * Copyright (C) 2020-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2020-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -1800,7 +1800,7 @@ static DECLCALLBACK(int) rtFtpServerDataConnListThread(RTTHREAD ThreadSelf, void
      * If no argument is given, the implementation must use the last directory set. */
     char *pszPath = RTStrDup(  pDataConn->cArgs == 1
                              ? pDataConn->papszArgs[0] : pDataConn->pClient->State.pszCWD); /** @todo Needs locking. */
-    AssertPtrReturn(pszPath, VERR_NO_MEMORY);
+    AssertPtrReturnStmt(pszPath, rtFtpServerDataConnDirCollFree(pColl), VERR_NO_MEMORY);
     /* The paths already have been validated in the actual command handlers. */
 
     void *pvHandle = NULL; /* Shut up MSVC. */
@@ -2269,7 +2269,7 @@ static int rtFtpServerCmdArgsParse(const char *pszCmdParms, uint8_t *pcArgs, cha
     int rc = RTGetOptArgvFromString(ppapszArgs, &cArgs, pszCmdParms, RTGETOPTARGV_CNV_QUOTE_MS_CRT, " " /* Separators */);
     if (RT_SUCCESS(rc))
     {
-        if (cArgs <= UINT8_MAX)
+        if ((unsigned int)cArgs <= (unsigned int)UINT8_MAX)
         {
             *pcArgs = (uint8_t)cArgs;
         }

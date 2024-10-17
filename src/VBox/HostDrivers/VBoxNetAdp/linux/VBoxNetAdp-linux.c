@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -54,6 +54,7 @@
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <VBox/VBoxLnxModInline.h>
 
 /*
 #include <iprt/assert.h>
@@ -529,6 +530,11 @@ int  vboxNetAdpOsInit(PVBOXNETADP pThis)
 static int __init VBoxNetAdpLinuxInit(void)
 {
     int rc;
+
+    /* Check if modue loading was disabled. */
+    if (!vbox_mod_should_load())
+        return -EINVAL;
+
     /*
      * Initialize IPRT.
      */

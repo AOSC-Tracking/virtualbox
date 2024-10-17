@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -58,6 +58,8 @@
 # define VBOXESC_UPDATEMODES                0xABCD9016
 # define VBOXESC_GUEST_DISPLAYCHANGED       0xABCD9017
 # define VBOXESC_TARGET_CONNECTIVITY        0xABCD9018
+
+# define VBOXESC_RECONNECT_TARGETS          0xABCD9019
 #endif /* #ifdef VBOX_WITH_WDDM */
 
 # define VBOXESC_ISANYX                     0xABCD9200
@@ -129,6 +131,13 @@ typedef struct VBOXDISPIFESCAPE_TARGETCONNECTIVITY
     uint32_t u32TargetId;
     uint32_t fu32Connect;
 } VBOXDISPIFESCAPE_TARGETCONNECTIVITY;
+
+typedef struct VBOXDISPIFESCAPE_RECONNECT_TARGETS
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint32_t u32ConnectMask;
+    uint32_t u32DisconnectMask;
+} VBOXDISPIFESCAPE_RECONNECT_TARGETS;
 
 #endif /* VBOX_WITH_WDDM */
 

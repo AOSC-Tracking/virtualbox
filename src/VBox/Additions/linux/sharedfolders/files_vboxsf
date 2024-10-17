@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2007-2023 Oracle and/or its affiliates.
+# Copyright (C) 2007-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -32,6 +32,7 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
     ${PATH_ROOT}/include/iprt/asm-amd64-x86.h=>include/iprt/asm-amd64-x86.h \
     ${PATH_ROOT}/include/iprt/asm-math.h=>include/iprt/asm-math.h \
+    ${PATH_ROOT}/include/iprt/asm-mem.h=>include/iprt/asm-mem.h \
     ${PATH_ROOT}/include/iprt/assert.h=>include/iprt/assert.h \
     ${PATH_ROOT}/include/iprt/assertcompile.h=>include/iprt/assertcompile.h \
     ${PATH_ROOT}/include/iprt/cdefs.h=>include/iprt/cdefs.h \
@@ -72,6 +73,7 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/include/VBox/VBoxGuestMangling.h=>include/VBox/VBoxGuestMangling.h \
     ${PATH_ROOT}/include/VBox/VMMDev.h=>include/VBox/VMMDev.h \
     ${PATH_ROOT}/include/VBox/VMMDevCoreTypes.h=>include/VBox/VMMDevCoreTypes.h \
+    ${PATH_ROOT}/include/VBox/VBoxLnxModInline.h=>VBox/VBoxLnxModInline.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibInternal.h=>VBoxGuestR0LibInternal.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibGenericRequest.cpp=>VBoxGuestR0LibGenericRequest.c \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR0LibHGCM.cpp=>VBoxGuestR0LibHGCM.c \

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -76,11 +76,16 @@
     uint32_t        m_fMask;
     /** Array of callbacks. */
     NSMutableArray *m_pCallbacks;
+    /** AppNap preventing activity. */
+    id <NSObject>   m_activity;
 }
 - (id)init;
 - (void)sendEvent :(NSEvent *)theEvent;
 - (void)setCallback :(uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser;
 - (void)unsetCallback :(uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser;
+
+- (void)finishLaunching;
+- (void)terminate :(nullable id)sender;
 
 - (void)registerToNotificationOfWorkspace :(NSString *)pstrNotificationName;
 - (void)unregisterFromNotificationOfWorkspace :(NSString *)pstrNotificationName;
@@ -178,6 +183,38 @@
     for (CallbackData *pData in m_pCallbacks)
         fNewMask |= pData->fMask;
     m_fMask = fNewMask;
+}
+
+/** Standard handler called right after NSApp finished launching. */
+- (void)finishLaunching
+{
+    /* Call to base-class: */
+    [super finishLaunching];
+
+    if (UICocoaApplication::instance()->isPreventAppNap())
+    {
+        //printf("Start activity preventing AppNap!\n");
+        NSActivityOptions options = NSActivityUserInitiatedAllowingIdleSystemSleep;
+        NSString *pstrReason = @"VirtualBox napping is prohibited!";
+        m_activity = [[NSProcessInfo processInfo] beginActivityWithOptions:options
+                                                                    reason:pstrReason];
+        [m_activity retain];
+    }
+}
+
+/** Standard handler called right before NSApp starting termination. */
+- (void)terminate :(nullable id)sender
+{
+    if (UICocoaApplication::instance()->isPreventAppNap())
+    {
+        //printf("Finish activity preventing AppNap!\n");
+        [[NSProcessInfo processInfo] endActivity:m_activity];
+        [m_activity release];
+        m_activity = Nil;
+    }
+
+    /* Call to base-class: */
+    [super terminate: sender];
 }
 
 /** Registers to cocoa notification @a pstrNotificationName. */
@@ -294,18 +331,23 @@
 *********************************************************************************************************************************/
 
 /* static */
-UICocoaApplication* UICocoaApplication::s_pInstance = 0;
+UICocoaApplication *UICocoaApplication::s_pInstance = 0;
 
 /* static */
-UICocoaApplication* UICocoaApplication::instance()
+void UICocoaApplication::create(bool fPreventAppNap)
 {
     if (!s_pInstance)
-        s_pInstance = new UICocoaApplication;
+        s_pInstance = new UICocoaApplication(fPreventAppNap);
+}
 
+/* static */
+UICocoaApplication *UICocoaApplication::instance()
+{
     return s_pInstance;
 }
 
-UICocoaApplication::UICocoaApplication()
+UICocoaApplication::UICocoaApplication(bool fPreventAppNap)
+    : m_fPreventAppNap(fPreventAppNap)
 {
     /* Make sure our private NSApplication object is created: */
     m_pNative = (UICocoaApplicationPrivate*)[UICocoaApplicationPrivate sharedApplication];
@@ -326,6 +368,12 @@ UICocoaApplication::~UICocoaApplication()
 bool UICocoaApplication::isActive() const
 {
     return [m_pNative isActive];
+}
+
+bool UICocoaApplication::isDarkMode() const
+{
+    NativeNSStringRef pstrInterfaceMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+    return [pstrInterfaceMode isEqualToString :@"Dark"];
 }
 
 void UICocoaApplication::hide()

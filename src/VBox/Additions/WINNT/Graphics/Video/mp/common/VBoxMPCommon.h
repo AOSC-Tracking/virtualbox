@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -60,11 +60,13 @@ typedef HANDLE VBOXMPCMNREGISTRY;
 
 VP_STATUS VBoxMPCmnRegInit(IN PVBOXMP_DEVEXT pExt, OUT VBOXMPCMNREGISTRY *pReg);
 VP_STATUS VBoxMPCmnRegFini(IN VBOXMPCMNREGISTRY Reg);
-VP_STATUS VBoxMPCmnRegSetDword(IN VBOXMPCMNREGISTRY Reg, PWSTR pName, uint32_t Val);
-VP_STATUS VBoxMPCmnRegQueryDword(IN VBOXMPCMNREGISTRY Reg, PWSTR pName, uint32_t *pVal);
+VP_STATUS VBoxMPCmnRegSetDword(IN VBOXMPCMNREGISTRY Reg, PCWSTR pName, uint32_t Val);
+VP_STATUS VBoxMPCmnRegQueryDword(IN VBOXMPCMNREGISTRY Reg, PCWSTR pName, uint32_t *pVal);
 
 /* Pointer related */
 bool VBoxMPCmnUpdatePointerShape(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_ATTRIBUTES pAttrs, uint32_t cbLength);
+int VBoxMPCmnReportCursorPositionEx(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_POSITION pPos, uint32_t *pxHost, uint32_t *pyHost);
+int VBoxMPCmnReportCursorPosition(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_POSITION pPos);
 
 RT_C_DECLS_END
 

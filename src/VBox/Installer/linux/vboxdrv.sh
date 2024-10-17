@@ -1,9 +1,9 @@
 #! /bin/sh
-# Oracle VM VirtualBox
+# Oracle VirtualBox
 # Linux kernel module init script
 
 #
-# Copyright (C) 2006-2023 Oracle and/or its affiliates.
+# Copyright (C) 2006-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -85,10 +85,12 @@ else
     # Applies to Debian packages only (but shouldn't hurt elsewhere)
     exit 0
 fi
-VIRTUALBOX="${INSTALL_DIR}/VirtualBox"
 VBOXMANAGE="${INSTALL_DIR}/VBoxManage"
 BUILDINTMP="${MODULE_SRC}/build_in_tmp"
-if test -u "${VIRTUALBOX}"; then
+
+# If the VirtualBoxVM file has the set-uid bit set or if it doesn't exist, setup vboxdrv
+# in hardened mode.  Otherwise, do the developer mode using vboxusers for access control.
+if test -u "${INSTALL_DIR}/VirtualBoxVM" || test '!' -e "${INSTALL_DIR}/VirtualBoxVM"; then
     GROUP=root
     DEVICE_MODE=0600
 else

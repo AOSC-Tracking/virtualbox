@@ -1,4 +1,4 @@
-Source: virtualbox-7.0
+Source: virtualbox-7.1
 Section: contrib/misc
 Priority: optional
 Maintainer: Oracle Corporation <info@virtualbox.org>
@@ -14,7 +14,7 @@ Build-Depends: debhelper (>= 5), libz-dev, libssl-dev,
   libvulkan-dev
 XS-Python-Version: >= 2.4
 
-Package: virtualbox-7.0
+Package: virtualbox-7.1
 Architecture: i386 amd64
 Pre-Depends: debconf (>= 1.1) | debconf-2.0
 Depends: debconf (>= 0.5) | debconf-2.0, psmisc, adduser, libvulkan1,
@@ -31,8 +31,8 @@ Recommends: ${alsa}, ${pulse}, ${sdlttf}, kmod | kldutils | module-init-tools,
   pdf-viewer, libgl1
 Provides: virtualbox
 Replaces: virtualbox
-Conflicts: virtualbox, virtualbox-ose, virtualbox-qt, virtualbox-guest-additions-iso
-Description: Oracle VM VirtualBox
+Conflicts: virtualbox, virtualbox-dkms, virtualbox-ose, virtualbox-qt, virtualbox-guest-additions-iso
+Description: Oracle VirtualBox
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad
@@ -40,13 +40,13 @@ Description: Oracle VM VirtualBox
  software solution on the market.
 XB-Python-Version: ${python:Versions}
 
-Package: virtualbox-7.0-dbg
+Package: virtualbox-7.1-dbg
 Architecture: i386 amd64
-Depends: virtualbox-7.0 (= ${binary:Version})
+Depends: virtualbox-7.1 (= ${binary:Version})
 Provides: virtualbox-dbg
 Replaces: virtualbox-dbg
 Conflicts: virtualbox-dbg, virtualbox-ose-dbg, virtualbox-qt-dbg
-Description: Oracle VM VirtualBox debugging symbols
+Description: Oracle VirtualBox debugging symbols
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad

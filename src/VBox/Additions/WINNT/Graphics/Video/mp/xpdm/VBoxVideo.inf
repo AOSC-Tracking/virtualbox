@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2011-2023 Oracle and/or its affiliates.
+; Copyright (C) 2011-2024 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -54,7 +54,7 @@ VBoxVideo.Display  = 11 ; system32
 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
 
 [VBoxVideo.Miniport]
-VBoxVideo.sys,,,0x100
+VBoxVideo.sys,,,0x100      ; COPYFLG_PROTECTED_WINDOWS_DRIVER_FILE
 
 [VBoxVideo.Display]
 VBoxDisp.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
@@ -76,7 +76,7 @@ AddReg = vboxvideo_EventLog_AddReg
 HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll;%%SystemRoot%%\System32\drivers\VBoxVideo.sys"
 HKR,,TypesSupported,0x00010001,7
 
-[VBoxVideo.SoftwareSettings]
+[VBoxVideo_Install.SoftwareSettings]
 AddReg = vboxvideo_SoftwareDeviceSettings
 
 [vboxvideo_SoftwareDeviceSettings]
@@ -85,7 +85,7 @@ HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDisp
 HKR,, Acceleration.Level, %REG_DWORD%, 0
 HKR,, VgaCompatible, %REG_DWORD%, 0
 
-[VBoxVideo.OpenGLSoftwareSettings]
+[VBoxVideo_Install.OpenGLSoftwareSettings]
 
 ;x86   [SourceDisksNames]
 ;amd64 [SourceDisksNames.amd64]

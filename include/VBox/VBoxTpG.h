@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2012-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -228,7 +228,8 @@ typedef struct VTGDESCARGLIST
     uint8_t         cArgs;
     uint8_t         fHaveLargeArgs;
     uint8_t         abReserved[2];
-    VTGDESCARG      aArgs[1];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    VTGDESCARG      aArgs[RT_FLEXIBLE_ARRAY];
 } VTGDESCARGLIST;
 /** Pointer to a VTG argument list descriptor. */
 typedef VTGDESCARGLIST     *PVTGDESCARGLIST;

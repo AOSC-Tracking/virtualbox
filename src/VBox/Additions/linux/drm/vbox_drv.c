@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2013-2024 Oracle and/or its affiliates.
  * This file is based on ast_drv.c
  * Copyright 2012 Red Hat Inc.
  *
@@ -62,6 +62,8 @@
 #else /* !CONFIG_VGA_CONSOLE */
 # define VBOX_VIDEO_NOMODESET() 0
 #endif /* !CONFIG_VGA_CONSOLE */
+
+#include <VBox/VBoxLnxModInline.h>
 
 static int vbox_modeset = -1;
 
@@ -357,7 +359,9 @@ static struct drm_driver driver = {
 	.load = vbox_driver_load,
 	.unload = vbox_driver_unload,
 #endif
+#if RTLNX_VER_MAX(6,12,0)
 	.lastclose = vbox_driver_lastclose,
+#endif
 	.master_set = vbox_master_set,
 	.master_drop = vbox_master_drop,
 #if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
@@ -393,7 +397,7 @@ static struct drm_driver driver = {
 #endif
 	.gem_prime_import = drm_gem_prime_import,
 	.gem_prime_import_sg_table = vbox_gem_prime_import_sg_table,
-#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_RANGE(9,4, 9,99)
+#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_RANGE(9,4, 9,99) && !RTLNX_SUSE_MAJ_PREREQ(15, 6)
 	.gem_prime_mmap = vbox_gem_prime_mmap,
 #endif
 
@@ -413,6 +417,10 @@ static struct drm_driver driver = {
 
 static int __init vbox_init(void)
 {
+	/* Check if modue loading was disabled. */
+	if (!vbox_mod_should_load())
+		return -EINVAL;
+
 	printk("vboxvideo: loading version " VBOX_VERSION_STRING " r" __stringify(VBOX_SVN_REV) "\n");
 	if (VBOX_VIDEO_NOMODESET())
 	{

@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2009-2023 Oracle and/or its affiliates.
+# Copyright (C) 2009-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -41,6 +41,7 @@ VBOX_VBOXNETADP_SOURCES=" \
     ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
     ${PATH_ROOT}/include/iprt/asm-amd64-x86.h=>include/iprt/asm-amd64-x86.h \
     ${PATH_ROOT}/include/iprt/asm-math.h=>include/iprt/asm-math.h \
+    ${PATH_ROOT}/include/iprt/asm-mem.h=>include/iprt/asm-mem.h \
     ${PATH_ROOT}/include/iprt/assert.h=>include/iprt/assert.h \
     ${PATH_ROOT}/include/iprt/assertcompile.h=>include/iprt/assertcompile.h \
     ${PATH_ROOT}/include/iprt/avl.h=>include/iprt/avl.h \
@@ -86,6 +87,7 @@ VBOX_VBOXNETADP_SOURCES=" \
     ${PATH_ROOT}/include/VBox/sup.h=>include/VBox/sup.h \
     ${PATH_ROOT}/include/VBox/types.h=>include/VBox/types.h \
     ${PATH_ROOT}/include/VBox/SUPDrvMangling.h=>include/VBox/SUPDrvMangling.h \
+    ${PATH_ROOT}/include/VBox/VBoxLnxModInline.h=>include/VBox/VBoxLnxModInline.h \
     ${PATH_ROOT}/src/VBox/HostDrivers/VBoxNetAdp/linux/VBoxNetAdp-linux.c=>linux/VBoxNetAdp-linux.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/VBoxNetAdp/VBoxNetAdp.c=>VBoxNetAdp.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/VBoxNetAdp/VBoxNetAdpInternal.h=>VBoxNetAdpInternal.h \

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -1730,8 +1730,9 @@ static void ichac97R3StreamReset(PAC97STATE pThis, PAC97STREAM pStream, PAC97STR
 
     LogFunc(("[SD%RU8]\n", pStream->u8SD));
 
-    if (pStreamCC->State.pCircBuf)
-        RTCircBufReset(pStreamCC->State.pCircBuf);
+    /* Note: Do *not* reset the stream's circular buffer here, as the audio mixer still relies on
+     *       previously announced DMA data (via AudioMixerSinkDrainAndStop()) and processes it asynchronously.
+     *       Resetting the buffer here will cause a race condition.  See @bugref{10354}. */
 
     pStream->Regs.bdbar    = 0;
     pStream->Regs.civ      = 0;
@@ -2198,7 +2199,11 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
      */
     if (   pStreamCC->State.pCircBuf
         && RTCircBufSize(pStreamCC->State.pCircBuf) == cbCircBuf)
-        RTCircBufReset(pStreamCC->State.pCircBuf);
+    {
+        /* Note: Do *not* reset the stream's circular buffer here, as the audio mixer still relies on
+         *       previously announced DMA data (via AudioMixerSinkDrainAndStop()) and processes it asynchronously.
+         *       Resetting the buffer here will cause a race condition.  See @bugref{10354}. */
+    }
     else
     {
         if (pStreamCC->State.pCircBuf)

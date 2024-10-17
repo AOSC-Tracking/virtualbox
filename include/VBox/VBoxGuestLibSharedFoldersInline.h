@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -1502,10 +1502,11 @@ DECLINLINE(int) VbglR0SfHostReqReadLinkContigSimple(SHFLROOT idRoot, const char 
                                                                            + SHFLSTRING_HEADER_SIZE + (uint32_t)cchPath);
         if (pReq)
         {
+            char * const pszReqPath = pReq->StrPath.String.ach;
             pReq->StrPath.u16Length = (uint16_t)cchPath;
             pReq->StrPath.u16Size   = (uint16_t)cchPath + 1;
-            RT_BCOPY_UNFORTIFIED(pReq->StrPath.String.ach, pszPath, cchPath);
-            pReq->StrPath.String.ach[cchPath] = '\0';
+            RT_BCOPY_UNFORTIFIED(pszReqPath, pszPath, cchPath);
+            pszReqPath[cchPath] = '\0';
 
             {
                 int vrc = VbglR0SfHostReqReadLinkContig(idRoot, pvBuf, PhysBuffer, cbBuffer, pReq);

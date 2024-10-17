@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2012-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -30,6 +30,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "vbsf.h"
+#include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/dbg.h>
 
@@ -1123,19 +1124,16 @@ static NTSTATUS vbsfVerifyConnectionName(PUNICODE_STRING ConnectionName)
      */
     NTSTATUS Status = STATUS_BAD_NETWORK_NAME;
 
-    ULONG i;
-    PWCHAR pwc;
-    PWCHAR pwc1;
-
-    static PWCHAR spwszPrefix = L"\\Device\\VBoxMiniRdr\\;";
+    static WCHAR const s_wszPrefix[] = L"\\Device\\VBoxMiniRdr\\;";
 
     /* Unicode chars in the string. */
     ULONG cConnectionName = ConnectionName->Length / sizeof(WCHAR);
     ULONG cRemainingName;
 
     /* Check that the name starts with correct prefix. */
-    pwc1 = &spwszPrefix[0];
-    pwc = ConnectionName->Buffer;
+    WCHAR const *pwc1 = &s_wszPrefix[0];
+    WCHAR const *pwc  = ConnectionName->Buffer;
+    ULONG   i;
     for (i = 0; i < cConnectionName; i++, pwc1++, pwc++)
     {
         if (*pwc1 == 0 || *pwc == 0 || *pwc1 != *pwc)
@@ -1684,8 +1682,8 @@ extern "C" NTSTATUS NTAPI DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICOD
                     g_fHostFeatures = 0;
                 }
                 VbglR0SfHostReqQueryFeaturesSimple(&g_fSfFeatures, &g_uSfLastFunction);
-                LogRel(("VBoxSF: g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
-                        g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
+                LogRel(("VBoxSF: %s r%s g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
+                        RTBldCfgVersion(), RTBldCfgRevisionStr(), g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
 
                 if (VbglR0CanUsePhysPageList())
                 {
@@ -1826,15 +1824,16 @@ extern "C" NTSTATUS NTAPI DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICOD
                 VbglR0SfDisconnect(&g_SfClient);
             }
             else
-                LogRel(("VBOXSF: DriverEntry: Failed to connect to the host: %Rrc!\n", vrc));
+                LogRel(("VBOXSF: DriverEntry: Failed to connect to the host: %Rrc! (%s r%s)\n",
+                        vrc, RTBldCfgVersion(), RTBldCfgRevisionStr()));
             VbglR0SfTerm();
         }
         else
-            LogRel(("VBOXSF: DriverEntry: VbglR0SfInit! %Rrc!\n", vrc));
+            LogRel(("VBOXSF: DriverEntry: VbglR0SfInit! %Rrc! (%s r%s)\n", vrc, RTBldCfgVersion(), RTBldCfgRevisionStr()));
         RTR0Term();
     }
     else
-        RTLogRelPrintf("VBOXSF: DriverEntry: RTR0Init failed! %Rrc!\n", vrc);
+        RTLogRelPrintf("VBOXSF: DriverEntry: RTR0Init failed! %Rrc! (%s r%s)\n", vrc, RTBldCfgVersion(), RTBldCfgRevisionStr());
     return rcNt;
 }
 

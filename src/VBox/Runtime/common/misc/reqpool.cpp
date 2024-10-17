@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -395,6 +395,7 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
         if (pReq)
         {
             Assert(RTListIsEmpty(&pThread->IdleNode)); /* Must not be in the idle list. */
+            ASMAtomicDecU32(&pPool->cIdleThreads); /* Was already marked as idle above. */
             RTCritSectLeave(&pPool->CritSect);
 
             rtReqPoolThreadProcessRequest(pPool, pThread, pReq);
@@ -437,7 +438,10 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
         {
             uint64_t cNsIdle = RTTimeNanoTS() - pThread->uIdleNanoTs;
             if (cNsIdle >= pPool->cNsMinIdle)
+            {
+                ASMAtomicDecU32(&pPool->cIdleThreads); /* Was already marked as idle above. */
                 return rtReqPoolThreadExit(pPool, pThread, true /*fLocked*/);
+            }
         }
 
         if (RTListIsEmpty(&pThread->IdleNode))
@@ -578,7 +582,7 @@ DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
      * If there is an incoming worker thread already or we've reached the
      * maximum number of worker threads, we're done.
      */
-    if (   pPool->cIdleThreads > 0
+    if (   pPool->cIdleThreads >= pPool->cCurPendingRequests
         || pPool->cCurThreads >= pPool->cMaxThreads)
     {
         RTCritSectLeave(&pPool->CritSect);

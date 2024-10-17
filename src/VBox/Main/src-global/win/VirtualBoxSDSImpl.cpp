@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2015-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2015-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -609,7 +609,7 @@ STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, 
             else
             {
                 hrc = VBOX_E_IPRT_ERROR;
-                LogRel(("VirtualBoxSDS::LaunchVMProcess: launchVM failed: %Rhrc (%Rrc)\n", hrc));
+                LogRel(("VirtualBoxSDS::LaunchVMProcess: launchVM failed: %Rhrc (%Rrc)\n", hrc, vrc));
             }
         }
         catch (...)

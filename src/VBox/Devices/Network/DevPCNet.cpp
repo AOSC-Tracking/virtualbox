@@ -14,7 +14,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -3813,7 +3813,9 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioRead(PPDMDEVINS pDevIns, void *pvUs
             case 2:  rc = pcnetR3MmioReadU16(pDevIns, pThis, pThisCC, off, (uint16_t *)pv); break;
             case 4:  rc = pcnetR3MmioReadU32(pDevIns, pThis, pThisCC, off, (uint32_t *)pv); break;
             default:
+                memset(pv, 0, cb);
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetR3MmioRead: unsupported op size: address=%RGp cb=%u\n", off, cb);
+                break;
         }
         STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIORead), a);
     }
@@ -4391,7 +4393,8 @@ static DECLCALLBACK(int) pcnetR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     {
         /* older saved states contain the shared memory region which was never used for ages. */
         void *pvSharedMMIOR3;
-        rc = PDMDevHlpMmio2Create(pDevIns, pDevIns->apPciDevs[0], 2, _512K, 0, "PCnetSh", &pvSharedMMIOR3, &pThis->hMmio2Shared);
+        rc = PDMDevHlpMmio2Create(pDevIns, pDevIns->apPciDevs[0], 2 << 16, _512K, 0, "PCnetSh",
+                                  &pvSharedMMIOR3, &pThis->hMmio2Shared);
         if (RT_FAILURE(rc))
             rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                      N_("Failed to allocate the dummy shmem region for the PCnet device"));

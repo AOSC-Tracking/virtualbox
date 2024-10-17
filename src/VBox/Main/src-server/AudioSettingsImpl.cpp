@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2022-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2022-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -247,6 +247,16 @@ bool AudioSettings::i_canChangeSettings(void)
 }
 
 /**
+ * Returns a (weak) pointer of the audio setting's machine object.
+ *
+ * @returns Wweak pointer of the audio setting's machine object.
+ */
+Machine *AudioSettings::i_getMachine(void)
+{
+    return m->pMachine; // m->pMachine is const, needs no locking
+}
+
+/**
  * Gets called when the machine object needs to know that audio adapter settings
  * have been changed.
  *
@@ -255,7 +265,7 @@ bool AudioSettings::i_canChangeSettings(void)
 void AudioSettings::i_onAdapterChanged(IAudioAdapter *pAdapter)
 {
     AssertPtrReturnVoid(pAdapter);
-    m->pMachine->i_onAudioAdapterChange(pAdapter); // mParent is const, needs no locking
+    m->pMachine->i_onAudioAdapterChange(pAdapter); // m->pMachine is const, needs no locking
 }
 
 /**
@@ -271,7 +281,7 @@ void AudioSettings::i_onHostDeviceChanged(IHostAudioDevice *pDevice,
                                           bool fIsNew, AudioDeviceState_T enmState, IVirtualBoxErrorInfo *pErrInfo)
 {
     AssertPtrReturnVoid(pDevice);
-    m->pMachine->i_onHostAudioDeviceChange(pDevice, fIsNew, enmState, pErrInfo); // mParent is const, needs no locking
+    m->pMachine->i_onHostAudioDeviceChange(pDevice, fIsNew, enmState, pErrInfo); // m->pMachine is const, needs no locking
 }
 
 /**

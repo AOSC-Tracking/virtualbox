@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2016-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -539,6 +539,7 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                             xOrigin, yOrigin, u32Width, u32Height,
                             /* fPrimary = */ false, u32Offset, fBlank);
         SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
@@ -560,6 +561,7 @@ NTSTATUS SvgaScreenDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
     {
         SvgaCmdDestroyScreen(pvCmd, u32ScreenId);
         SvgaCommit(pSvga, cbSubmit);
+        SvgaFlush(pSvga);
     }
     else
     {
@@ -1070,6 +1072,12 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
             }
         } break;
 
+        case SVGA_3D_CMD_READBACK_GB_SURFACE:
+        {
+            SVGA3dCmdReadbackGBSurface *p = (SVGA3dCmdReadbackGBSurface *)pCommand;
+            Status = SvgaProcessSurface(pSvga, &p->sid, pHOA);
+        } break;
+
         /*
          * Unsupported commands, which might include a sid.
          * The VBox VMSVGA device does not implement them and most of them are not used by SVGA driver.
@@ -1083,7 +1091,6 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
         case SVGA_3D_CMD_LOGICOPS_CLEARTYPEBLEND:
         case SVGA_3D_CMD_DEFINE_GB_SURFACE:
         case SVGA_3D_CMD_DESTROY_GB_SURFACE:
-        case SVGA_3D_CMD_READBACK_GB_SURFACE:
         case SVGA_3D_CMD_READBACK_GB_IMAGE:
         case SVGA_3D_CMD_READBACK_GB_IMAGE_PARTIAL:
         case SVGA_3D_CMD_INVALIDATE_GB_IMAGE_PARTIAL:
@@ -2471,8 +2478,15 @@ NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
                          SVGACOTableType enmType,
                          uint32_t id)
 {
-    AssertReturn(enmType < RT_ELEMENTS(pSvgaContext->aCOT), STATUS_INVALID_PARAMETER);
-    PVMSVGACOT pCOT = &pSvgaContext->aCOT[enmType];
+    uint32_t idxCOTable;
+    if (enmType < SVGA_COTABLE_MAX)
+        idxCOTable = enmType;
+    else if (enmType >= VBSVGA_COTABLE_MIN && enmType < VBSVGA_COTABLE_MAX)
+        idxCOTable = SVGA_COTABLE_MAX + (enmType - VBSVGA_COTABLE_MIN);
+    else
+        AssertFailedReturn(STATUS_INVALID_PARAMETER);
+
+    PVMSVGACOT pCOT = &pSvgaContext->aCOT[idxCOTable];
 
     if (id < pCOT->cEntries)
         return STATUS_SUCCESS; /* Still large enough. */
@@ -2480,7 +2494,7 @@ NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
     AssertReturn(id < SVGA_COTABLE_MAX_IDS, STATUS_INVALID_PARAMETER);
 
     /* Allocate a new larger mob and inform the host. */
-    static uint32_t const s_acbEntry[SVGA_COTABLE_MAX] =
+    static uint32_t const s_acbEntry[] =
     {
         sizeof(SVGACOTableDXRTViewEntry),
         sizeof(SVGACOTableDXDSViewEntry),
@@ -2494,14 +2508,20 @@ NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
         sizeof(SVGACOTableDXQueryEntry),
         sizeof(SVGACOTableDXShaderEntry),
         sizeof(SVGACOTableDXUAViewEntry),
+        /* VirtualBox Context Object Tables */
+        sizeof(VBSVGACOTableDXVideoProcessorEntry),
+        sizeof(VBSVGACOTableDXVideoDecoderOutputViewEntry),
+        sizeof(VBSVGACOTableDXVideoDecoderEntry),
+        sizeof(VBSVGACOTableDXVideoProcessorInputViewEntry),
+        sizeof(VBSVGACOTableDXVideoProcessorOutputViewEntry),
     };
     AssertCompile(RT_ELEMENTS(pSvgaContext->aCOT) == RT_ELEMENTS(s_acbEntry));
 
-    uint32_t cbRequired = (id + 1) * s_acbEntry[enmType];
+    uint32_t cbRequired = (id + 1) * s_acbEntry[idxCOTable];
     cbRequired = RT_ALIGN_32(cbRequired, PAGE_SIZE);
 
     /* Try to double the current size. */
-    uint32_t cbCOT = pCOT->cEntries ? pCOT->cEntries * s_acbEntry[enmType] : PAGE_SIZE;
+    uint32_t cbCOT = pCOT->cEntries ? pCOT->cEntries * s_acbEntry[idxCOTable] : PAGE_SIZE;
     while (cbRequired > cbCOT)
         cbCOT *= 2;
 
@@ -2547,7 +2567,7 @@ NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
             pCmd->cid              = pSvgaContext->u32Cid;
             pCmd->mobid            = VMSVGAMOB_ID(pMob);
             pCmd->type             = enmType;
-            pCmd->validSizeInBytes = pCOT->cEntries * s_acbEntry[enmType];
+            pCmd->validSizeInBytes = pCOT->cEntries * s_acbEntry[idxCOTable];
             SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
         }
         else
@@ -2564,7 +2584,7 @@ NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
             pCmd->cid              = pSvgaContext->u32Cid;
             pCmd->mobid            = VMSVGAMOB_ID(pMob);
             pCmd->type             = enmType;
-            pCmd->validSizeInBytes = pCOT->cEntries * s_acbEntry[enmType];
+            pCmd->validSizeInBytes = pCOT->cEntries * s_acbEntry[idxCOTable];
             SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
         }
         else
@@ -2586,7 +2606,7 @@ NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
     SvgaCmdBufFlush(pSvga);
 
     pCOT->pMob = pMob;
-    pCOT->cEntries = cbCOT / s_acbEntry[enmType];
+    pCOT->cEntries = cbCOT / s_acbEntry[idxCOTable];
 
     return STATUS_SUCCESS;
 }

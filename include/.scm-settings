@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010-2023 Oracle and/or its affiliates.
+# Copyright (C) 2010-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -84,6 +84,7 @@
 /VBox/VBoxGuestLib.h:                   --license-mit
 /VBox/VBoxGuestLibSharedFolders.h:      --license-mit
 /VBox/VBoxGuestLibSharedFoldersInline.h: --license-mit
+/VBox/VBoxLnxModInline.h:               --license-mit
 /VBox/VMMDev.h:                         --license-mit
 /VBox/VMMDevCoreTypes.h:                --license-mit
 
@@ -110,3 +111,5 @@
 /VBox/*.h: --guard-relative-to-dir VBox --guard-prefix VBOX_INCLUDED_
 /iprt/sanitized/*: --guard-relative-to-dir iprt --guard-prefix IPRT_INCLUDED_ --treat-as h
 
+# /iprt/asmdefs-arm.mac needs to be treated as an C/C++ header file
+/iprt/asmdefs-arm.mac: --guard-relative-to-dir iprt --guard-prefix IPRT_INCLUDED_ --treat-as h

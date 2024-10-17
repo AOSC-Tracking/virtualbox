@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -59,7 +59,7 @@ DECLINLINE(bool) vscsiDeviceLunIsPresent(PVSCSIDEVICEINT pVScsiDevice, uint32_t 
  *
  * @returns Flag whether we could handle the request.
  * @param   pVScsiDevice    The virtual SCSI device instance.
- * @param   pVScsiReq       The SCSi request.
+ * @param   pVScsiReq       The SCSI request.
  * @param   prcReq          The final return value if the request was handled.
  */
 static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq,
@@ -67,22 +67,31 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
 {
     bool fProcessed = true;
 
+    LogFlowFunc(("CDB: %.*Rhxs Cmd: %s\n", pVScsiReq->cbCDB, pVScsiReq->pbCDB, SCSICmdText(pVScsiReq->pbCDB[0])));
+
+    if (!pVScsiReq->cbCDB)
+    {
+        *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                        SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+        return true;
+    }
+
     switch (pVScsiReq->pbCDB[0])
     {
         case SCSI_INQUIRY:
         {
             if (!vscsiDeviceLunIsPresent(pVScsiDevice, pVScsiReq->iLun))
             {
-                size_t cbData;
                 SCSIINQUIRYDATA ScsiInquiryReply;
 
+                uint16_t cbDataReq = scsiBE2H_U16(&pVScsiReq->pbCDB[3]);
                 vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
-                vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), scsiBE2H_U16(&pVScsiReq->pbCDB[3])));
+                vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), cbDataReq));
                 memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
                 ScsiInquiryReply.cbAdditional = 31;
                 ScsiInquiryReply.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN;
                 ScsiInquiryReply.u3PeripheralQualifier = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_NOT_CONNECTED_NOT_SUPPORTED;
-                cbData = RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, (uint8_t *)&ScsiInquiryReply, sizeof(SCSIINQUIRYDATA));
+                RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, (uint8_t *)&ScsiInquiryReply, sizeof(SCSIINQUIRYDATA));
                 *prcReq = vscsiReqSenseOkSet(&pVScsiDevice->VScsiSense, pVScsiReq);
             }
             else
@@ -92,6 +101,13 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_REPORT_LUNS:
         {
+            if (pVScsiReq->cbCDB < 10)
+            {
+                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+                break;
+            }
+
             /*
              * If allocation length is less than 16 bytes SPC compliant devices have
              * to return an error.
@@ -127,6 +143,13 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_REQUEST_SENSE:
         {
+            if (pVScsiReq->cbCDB < 5)
+            {
+                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+                break;
+            }
+
             vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
             vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
 
@@ -140,6 +163,13 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
 #if 0
         case SCSI_MAINTENANCE_IN:
         {
+            if (pVScsiReq->cbCDB < 8)
+            {
+                *prcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                   SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+                break;
+            }
+
             if (pVScsiReq->pbCDB[1] == SCSI_MAINTENANCE_IN_REPORT_SUPP_OPC)
             {
                 /*
@@ -374,7 +404,26 @@ VBOXDDU_DECL(int) VSCSIDeviceReqEnqueue(VSCSIDEVICE hVScsiDevice, VSCSIREQ hVScs
         if (vscsiDeviceLunIsPresent(pVScsiDevice, pVScsiReq->iLun))
         {
             PVSCSILUNINT pVScsiLun = pVScsiDevice->papVScsiLun[pVScsiReq->iLun];
-            rc = pVScsiLun->pVScsiLunDesc->pfnVScsiLunReqProcess(pVScsiLun, pVScsiReq);
+            PVSCSILUNDESC pVScsiLunDesc = pVScsiLun->pVScsiLunDesc;
+            uint8_t const bOpc = pVScsiReq->pbCDB[0];
+            uint8_t const cbCdbMin = pVScsiLunDesc->pacbCdbOpc[bOpc];
+
+            /* Fail if the opcode is not supported or the CDB is too short. */
+            if (   cbCdbMin != VSCSI_LUN_CDB_SZ_INVALID
+                && pVScsiReq->cbCDB >= cbCdbMin)
+                rc = pVScsiLunDesc->pfnVScsiLunReqProcess(pVScsiLun, pVScsiReq);
+            else
+            {
+                /*
+                 * CDB length is smaller than what the LUN expects, respond with an
+                 * ILLEGAL OPCODE error.
+                 */
+                vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                         SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+
+                vscsiDeviceReqComplete(pVScsiDevice, pVScsiReq,
+                                       SCSI_STATUS_CHECK_CONDITION, false, VINF_SUCCESS);
+            }
         }
         else
         {

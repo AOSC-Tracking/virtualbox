@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -71,6 +71,7 @@
 #include <VBox/com/array.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/vd-plugin.h>
+#include <VBox/version.h> /* VBOX_PUEL_PRODUCT */
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/message.h>
@@ -104,7 +105,7 @@ enum {
 # define S_ISTXT (S_ISVTX)
 #endif
 
-#define VBOX_EXTPACK                "Oracle VM VirtualBox Extension Pack"
+#define VBOX_EXTPACK                VBOX_PUEL_PRODUCT
 #define VERBOSE                     g_vboximgOpts.fVerbose
 
 #define SAFENULL(strPtr)   (strPtr ? strPtr : "")
@@ -254,7 +255,7 @@ briefUsage()
     );
     RTPrintf("\n"
       "vboximg-mount is a utility to make VirtualBox disk images available to the host\n"
-      "operating system for privileged or non-priviliged access. Any version of the\n"
+      "operating system for privileged or non-privileged access. Any version of the\n"
       "disk can be mounted from its available history of snapshots.\n"
       "\n"
       "If the user specifies a base image identifier using the --image option, only\n"
@@ -264,10 +265,10 @@ briefUsage()
       "\n"
       "The virtual disk is exposed as a device node within a FUSE-based filesystem\n"
       "that overlays the user-provided mount point. The FUSE filesystem consists of a\n"
-      "directory containing a number of files and possibly other directories:"
+      "directory containing a number of files and possibly other directories:\n"
       "    * vhdd:      Provides access to the raw disk image data as a flat image\n"
       "    * vol<id>:   Provides access to individual volumes on the accessed disk image\n"
-      "    * fs<id>:    Provides access to a supported filesystem without the need for a"
+      "    * fs<id>:    Provides access to a supported filesystem without the need for a\n"
       "                 host filesystem driver\n"
       "\n"
       "The directory will also contain a symbolic link which has the same basename(1)\n"
@@ -1002,7 +1003,7 @@ static int vboxImgMntImageSetup(struct fuse_args *args)
                 AccessMode_ReadOnly, false /* forceNewUuid */, pVDiskMedium.asOutParam()));
 
         if (FAILED(hrc))
-            return RTMsgErrorExitFailure("\nCould't find specified VirtualBox base or snapshot disk image:\n%s",
+            return RTMsgErrorExitFailure("\nCouldn't find specified VirtualBox base or snapshot disk image:\n%s",
                  g_vboximgOpts.pszImageUuidOrPath);
 
 

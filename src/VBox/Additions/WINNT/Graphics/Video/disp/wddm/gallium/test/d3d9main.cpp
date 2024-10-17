@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2017-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -200,8 +200,10 @@ HRESULT D3D9Test::initDirect3D9(int cDevices)
         mPP.BackBufferHeight           = 0;
         mPP.BackBufferFormat           = D3DFMT_UNKNOWN;
 #else
-        mPP.BackBufferWidth            = 640;
-        mPP.BackBufferHeight           = 480;
+        RECT clientRect;
+        GetClientRect(mHwnd, &clientRect);
+        mPP.BackBufferWidth            = clientRect.right;
+        mPP.BackBufferHeight           = clientRect.bottom;
         mPP.BackBufferFormat           = D3DFMT_X8R8G8B8;
 #endif
         mPP.BackBufferCount            = 1;

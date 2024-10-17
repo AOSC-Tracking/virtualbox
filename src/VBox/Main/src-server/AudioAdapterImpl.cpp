@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -233,6 +233,10 @@ HRESULT AudioAdapter::setEnabled(BOOL aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent->i_getMachine());
+    if (FAILED(adep.hrc())) return adep.hrc();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->fEnabled != RT_BOOL(aEnabled))
@@ -241,7 +245,7 @@ HRESULT AudioAdapter::setEnabled(BOOL aEnabled)
         m->bd->fEnabled = RT_BOOL(aEnabled);
         alock.release();
 
-        m->pParent->i_onSettingsChanged(); // mParent is const, needs no locking
+        m->pParent->i_onSettingsChanged(); // m->pParent is const, needs no locking
         m->pParent->i_onAdapterChanged(this);
     }
 
@@ -265,6 +269,10 @@ HRESULT AudioAdapter::setEnabledIn(BOOL aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
+    /* the machine needs to be mutable */
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pParent->i_getMachine());
+    if (FAILED(adep.hrc())) return adep.hrc();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (RT_BOOL(aEnabled) != m->bd->fEnabledIn)
@@ -274,7 +282,7 @@ HRESULT AudioAdapter::setEnabledIn(BOOL aEnabled)
 
         alock.release();
 
-        m->pParent->i_onSettingsChanged(); // mParent is const, needs no locking
+        m->pParent->i_onSettingsChanged(); // m->pParent is const, needs no locking
         m->pParent->i_onAdapterChanged(this);
     }
 
@@ -298,6 +306,10 @@ HRESULT AudioAdapter::setEnabledOut(BOOL aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
+    /* the machine needs to be mutable */
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pParent->i_getMachine());
+    if (FAILED(adep.hrc())) return adep.hrc();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (RT_BOOL(aEnabled) != m->bd->fEnabledOut)
@@ -307,7 +319,7 @@ HRESULT AudioAdapter::setEnabledOut(BOOL aEnabled)
 
         alock.release();
 
-        m->pParent->i_onSettingsChanged(); // mParent is const, needs no locking
+        m->pParent->i_onSettingsChanged(); // m->pParent is const, needs no locking
         m->pParent->i_onAdapterChanged(this);
     }
 
@@ -331,6 +343,10 @@ HRESULT AudioAdapter::setAudioDriver(AudioDriverType_T aAudioDriver)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
+    /* the machine needs to be mutable */
+    AutoMutableOrSavedStateDependency adep(m->pParent->i_getMachine());
+    if (FAILED(adep.hrc())) return adep.hrc();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hrc = S_OK;
@@ -344,7 +360,7 @@ HRESULT AudioAdapter::setAudioDriver(AudioDriverType_T aAudioDriver)
 
             alock.release();
 
-            m->pParent->i_onSettingsChanged(); // mParent is const, needs no locking
+            m->pParent->i_onSettingsChanged(); // m->pParent is const, needs no locking
         }
         else
         {
@@ -373,6 +389,10 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent->i_getMachine());
+    if (FAILED(adep.hrc())) return adep.hrc();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hrc = S_OK;
@@ -396,6 +416,9 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
             case AudioControllerType_HDA:
                 defaultCodec = AudioCodecType_STAC9221;
                 break;
+            case AudioControllerType_VirtioSound:
+                defaultCodec = AudioCodecType_Null;
+                break;
 
             default:
                 AssertMsgFailed(("Wrong audio controller type %d\n", aAudioController));
@@ -411,7 +434,7 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
 
             alock.release();
 
-            m->pParent->i_onSettingsChanged(); // mParent is const, needs no locking
+            m->pParent->i_onSettingsChanged(); // m->pParent is const, needs no locking
         }
     }
 
@@ -434,6 +457,10 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent->i_getMachine());
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -466,6 +493,12 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
             break;
         }
 
+        case AudioControllerType_VirtioSound:
+        {
+            hrc = S_OK; /* Don't return an error here, even if this is not implemented yet. Will confuse callers. */
+            break;
+        }
+
         default:
             AssertMsgFailed(("Wrong audio controller type %d\n",
                              m->bd->controllerType));
@@ -484,7 +517,7 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
 
         alock.release();
 
-        m->pParent->i_onSettingsChanged(); // mParent is const, needs no locking
+        m->pParent->i_onSettingsChanged(); // m->pParent is const, needs no locking
     }
 
     return hrc;
@@ -529,6 +562,10 @@ HRESULT AudioAdapter::setProperty(const com::Utf8Str &aKey, const com::Utf8Str &
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent->i_getMachine());
+    if (FAILED(adep.hrc())) return adep.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

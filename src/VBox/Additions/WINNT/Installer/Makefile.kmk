@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2023 Oracle and/or its affiliates.
+# Copyright (C) 2006-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -39,7 +39,6 @@ include $(PATH_SUB_CURRENT)/InstallHelper/Makefile.kmk
 # Globals
 #
 VBOX_PATH_WIN_ADD_INS_SRC := $(PATH_SUB_CURRENT)
-VBOX_PATH_ADDITIONS.win.x86 := $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
 VBOX_WITH_GUEST_INSTALL_HELPER := 1 # Use our guest install helper DLL.
 ## @todo VBOX_WIN_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/Installer/win
 
@@ -136,7 +135,7 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
    	extract-timestamp-root --self-signed-roots-from-system, 1)
   endif
 
-  if $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
+  if !$(intersects win, $(VBOX_WITH_CORP_CODE_SIGNING)) && $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
    $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha256-r3.cer,$(VBOX_PATH_ADDITIONS)/VBoxDrvInst.exe, \
    	extract-exe-signer-cert, 1)
    VBOX_GA_CERT_ROOT_SHA2_R3 := vbox-sha256-r3-root.cer
@@ -253,18 +252,16 @@ ifdef env.VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
 endif
 
 VBOX_WINDOWS_ADDITIONS_OTHER_FILES += $(addprefix $(PATH_STAGE_BIN)/additions/, \
-	$(VBOX_GA_CERT_ROOT_SHA1) \
-	$(VBOX_GA_CERT_ROOT_SHA1_TS) \
-	$(VBOX_GA_CERT_ROOT_SHA2) \
-	$(VBOX_GA_CERT_ROOT_SHA2_TS) \
-	$(VBOX_GA_CERT_ROOT_SHA2_R3) \
-	$(VBOX_GA_CERT_ROOT_SHA2_R3_TS))
+		$(VBOX_GA_CERT_ROOT_SHA1) \
+		$(VBOX_GA_CERT_ROOT_SHA1_TS) \
+		$(VBOX_GA_CERT_ROOT_SHA2) \
+		$(VBOX_GA_CERT_ROOT_SHA2_TS) \
+		$(VBOX_GA_CERT_ROOT_SHA2_R3) \
+		$(VBOX_GA_CERT_ROOT_SHA2_R3_TS))
 
 VB_WIN_ADD_NSIS_ENV := \
 	-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
 	-E 'PATH_TARGET=$(subst /,\,$(PATH_TARGET))' \
-	-E 'PATH_TARGET_X86=$(subst /,\,$(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/obj)' \
-	-E 'VBOX_PATH_ADDITIONS_WIN_X86=$(subst /,\,$(VBOX_PATH_ADDITIONS.win.x86))' \
 	-E 'VBOX_PATH_DIFX=$(subst /,\,$(VBOX_PATH_DIFX))' \
 	-E 'VBOX_VENDOR=$(VBOX_VENDOR)' \
 	-E 'VBOX_VENDOR_SHORT=$(VBOX_VENDOR_SHORT)' \
@@ -291,7 +288,7 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'KBUILD_TYPE=$(KBUILD_TYPE)' \
 	-E 'KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
 	$(foreach base, VBOX_GA_CERT_ROOT_SHA1 VBOX_GA_CERT_ROOT_SHA2 VBOX_GA_CERT_ROOT_SHA2_R3 \
-	,-E '$(base)=$(firstword $($(base)) none)' -E '$(base)_TS=$(firstword $($(base)_TS) none)')
+		,-E '$(base)=$(firstword $($(base)) none)' -E '$(base)_TS=$(firstword $($(base)_TS) none)')
 
 $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi \
@@ -318,9 +315,10 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(if $(VBOX_SIGNING_MODE),$(PATH_TARGET)/uninst.exe) \
 		$(if $(VBOX_WIN_ATTESTATION_SIGNING),$(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME)) \
 		$(VBOX_VERSION_STAMP) \
-		$$(VBoxDrvInst_1_STAGE_TARGET)
+		$$(VBoxDrvInst_1_STAGE_TARGET) \
+		| $(VBOX_SIGN_IMAGE_ORDERDEPS)
 	$(call MSG_L1,Creating $@, from $<)
-ifdef VBOX_WIN_ATTESTATION_SIGNING # Unpack the attestation signed drivers - this is an ugly has 'ing heck hack!
+ifdef VBOX_WIN_ATTESTATION_SIGNING # Unpack the attestation signed drivers - this is an ugly as 'ing heck hack!
 	$(TOOL_ZIP_UNPACK) -oj $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME) -d $(PATH_STAGE_BIN)/additions/
 endif
 	$(REDIRECT) -C $(VBOX_PATH_WIN_ADD_INS_SRC) \
@@ -334,7 +332,7 @@ endif
 			$(if $(VBOX_INSTALLER_ADD_LANGUAGES),'/DVBOX_INSTALLER_ADD_LANGUAGES=1') \
 			$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),'/DVBOX_BRAND_$(lang)_LICENSE_RTF=1') \
 			'$(subst /,\,$<)'
-	$(call VBOX_SIGN_FILE_FN,$@)
+	$(call VBOX_SIGN_IMAGE_FN,$@)
 
 
 ifdef VBOX_SIGNING_MODE
@@ -380,12 +378,13 @@ ifdef VBOX_SIGNING_MODE
 			'/DUNINSTALLER_ONLY=1' \
 			'$(subst /,\,$<)'
 
- $(PATH_TARGET)/uninst.exe: $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH)-uninst.exe | $$(dir $$@)
+ $(PATH_TARGET)/uninst.exe: \
+ 		$(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH)-uninst.exe | $$(dir $$@) $(VBOX_SIGN_IMAGE_ORDERDEPS)
 	$(call MSG_L1,Creating $@, from $<)
 	$(QUIET)$(RM) -f $@
 	-$(REDIRECT) -E __COMPAT_LAYER=RUNASINVOKER -- $<
 	$(TEST) -f $@
-	$(call VBOX_SIGN_FILE_FN,$@)
+	$(call VBOX_SIGN_IMAGE_FN,$@)
 
 endif # VBOX_SIGNING_MODE
 
@@ -397,7 +396,7 @@ if defined(VBOX_WIN_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && define
  $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME): \
  		$(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.zip
-	cd $(PATH_OUT)/repackadd && $(VBOX_RETRY) $(VBOX_WIN_ATTESTATION_SIGNING_EXE) "Oracle VM VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(VBOX_DRIVERS_PACK_NAME)"
+	cd $(PATH_OUT)/repackadd && $(VBOX_RETRY) $(VBOX_WIN_ATTESTATION_SIGNING_EXE) "VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(VBOX_DRIVERS_PACK_NAME)"
 
  #
  # This creates a .CAB file of the driver files that should be attestation signed.
