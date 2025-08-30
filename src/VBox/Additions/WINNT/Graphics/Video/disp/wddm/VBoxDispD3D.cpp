@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -38,7 +38,7 @@
 #include "VBoxDispD3D.h"
 #include "VBoxDispDbg.h"
 
-#include <Psapi.h>
+#include <iprt/win/psapi.h>
 
 #define VBOXDISP_IS_MODULE_FUNC(_pvModule, _cbModule, _pfn) ( \
            (((uintptr_t)(_pfn)) >= ((uintptr_t)(_pvModule))) \
@@ -105,15 +105,9 @@ static HRESULT vboxDispQueryAdapterInfo(D3DDDIARG_OPENADAPTER const *pOpenData, 
 static HRESULT vboxDispAdapterInit(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXWDDM_QAI *pAdapterInfo,
                                    PVBOXWDDMDISP_ADAPTER *ppAdapter)
 {
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    Assert(pAdapterInfo->cInfos >= 1);
-    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(RT_UOFFSETOF_DYN(VBOXWDDMDISP_ADAPTER,
-                                                                                         aHeads[pAdapterInfo->cInfos]));
-#else
     Assert(pAdapterInfo->cInfos == 0);
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof(VBOXWDDMDISP_ADAPTER));
-#endif
-    AssertReturn(pAdapter, E_OUTOFMEMORY);
+    AssertPtrReturn(pAdapter, E_OUTOFMEMORY);
 
     pAdapter->hAdapter    = pOpenData->hAdapter;
     pAdapter->uIfVersion  = pOpenData->Interface;
@@ -125,11 +119,6 @@ static HRESULT vboxDispAdapterInit(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXW
     pAdapter->AdapterInfo = *pAdapterInfo;
     pAdapter->f3D         =    RT_BOOL(pAdapterInfo->u32AdapterCaps & VBOXWDDM_QAI_CAP_3D)
                             && !vboxDispIsDDraw(pOpenData);
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    pAdapter->cHeads      = pAdapterInfo->cInfos;
-    for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
-        pAdapter->aHeads[i].Vhwa.Settings = pAdapterInfo->aInfos[i];
-#endif
 
     *ppAdapter = pAdapter;
     return S_OK;
@@ -162,15 +151,6 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER *pOpenData)
                 else
                     WARN(("VBoxDispD3DOpen failed, hr (%d)", hr));
             }
-#ifdef VBOX_WITH_VIDEOHWACCEL
-            else
-            {
-                /* 2D adapter. */
-                hr = VBoxDispD3DGlobal2DFormatsInit(pAdapter);
-                if (FAILED(hr))
-                    WARN(("VBoxDispD3DGlobal2DFormatsInit failed hr 0x%x", hr));
-            }
-#endif
         }
     }
 

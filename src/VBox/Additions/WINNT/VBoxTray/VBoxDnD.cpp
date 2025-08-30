@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2013-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -353,8 +353,9 @@ void VBoxDnDWnd::Destroy(void)
         if (RT_SUCCESS(rc))
             rc = rc2;
 #endif
-        OleUninitialize();
     }
+
+    OleUninitialize();
 
     if (!fSignalled)
     {
@@ -628,6 +629,8 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND a_hWnd, UINT a_uMsg, WPARAM a_wParam, 
                 {
                     VBoxTrayInfo("DnD: Received quit message, shutting down ...\n");
                     PostQuitMessage(0);
+                    rc = VINF_SUCCESS;
+                    break;
                 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -2065,3 +2068,4 @@ VBOXTRAYSVCDESC g_SvcDescDnD =
     vbtrDnDStop,
     vbtrDnDDestroy
 };
+

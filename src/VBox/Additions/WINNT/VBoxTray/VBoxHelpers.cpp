@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -70,7 +70,7 @@ static const char *vboxTrayGstFacilityStsToStr(VBoxGuestFacilityStatus faStatus,
 
 int VBoxTrayHlpReportStatus(VBoxGuestFacilityStatus statusCurrent)
 {
-    if (g_cVerbosity)
+    if (g_cVerbosity >= 4) /* Too annoying otherwise. */
         VBoxTrayHlpShowBalloonTip(vboxTrayGstFacilityStsToStr(statusCurrent, false /* fShort */),
                                   "Reporting status to host", RT_MS_5SEC);
 
@@ -490,7 +490,7 @@ RTEXITCODE VBoxTrayError(const char *pszFormat, ...)
     va_end(args);
 
     AssertPtr(psz);
-    LogRel(("Error: %s", psz));
+    LogRel(("*** Error: %s", psz));
 
     RTStrFree(psz);
 

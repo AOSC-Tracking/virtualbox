@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -53,10 +53,6 @@
 #include <VBoxDisplay.h>
 
 typedef struct _VBOXDISPDEV *PVBOXDISPDEV;
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-# include "VBoxDispVHWA.h"
-#endif
 
 /* 4bytes tag passed to EngAllocMem.
  * Note: chars are reverse order.

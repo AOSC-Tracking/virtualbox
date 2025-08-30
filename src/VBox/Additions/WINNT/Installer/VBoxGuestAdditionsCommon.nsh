@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2024 Oracle and/or its affiliates.
+; Copyright (C) 2006-2025 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -26,154 +26,111 @@
 ;
 
 
-!macro Common_CleanupObsoleteFiles un
 ;;
-; Removes common files we're no longer shipping.
+; Function which detects the environment we're currently running on.
 ;
-; During installation this step should be taken before copy files over in case
-; the list gets out of sync and we start shipping files on it.  That way it
-; doesn't much matter as the file will be restore afterwards.
+; Input:
+;   None
+; Output:
+;   None
 ;
-Function ${un}Common_CleanupObsoleteFiles
-  Delete /REBOOTOK "$INSTDIR\iexplore.ico"      ; Removed in r153662.
-FunctionEnd
-!macroend
-!insertmacro Common_CleanupObsoleteFiles ""
-!ifdef UNINSTALLER_ONLY
-  !insertmacro Common_CleanupObsoleteFiles "un."
-!else ifndef VBOX_SIGN_ADDITIONS
-  !insertmacro Common_CleanupObsoleteFiles "un."
+; This function sets the following global variables:
+;   - g_strWinVersion
+;   - g_strEarlyNTDrvInfix
+;   - g_strSystemDir
+;   - g_strSysWow64
+;   - g_strCurUser
+;
+!macro Common_DetectEnvironment un
+Function ${un}Common_DetectEnvironment
+  Push $0
+  Push $1
+  Push $2
+  Push $3
+  ${WinVerGetMajor} $0
+  ${WinVerGetMinor} $1
+  ${WinVerGetBuild} $2
+  StrCpy $g_strWinVersion "$0.$1.$2"
+  ${WinVerGetServicePackLevel} $3
+  ${If} $3 <> "0"
+    StrCpy $g_strWinVersion "$g_strWinVersion (Service Pack: $3)"
+  ${EndIf}
+
+  ; Init global variables that depends on the Windows version.
+  ${If} ${AtLeastWinVista}
+    StrCpy $g_strEarlyNTDrvInfix ""
+  ${Else}
+    StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
+  ${EndIf}
+
+  Call ${un}SetAppMode64
+
+  ; Get system directory.
+  StrCpy $g_strSystemDir "$SYSDIR"
+
+  ; We need a special directory set to SysWOW64 because some
+  ; shell operations don't support file redirection (yet).
+  StrCpy $g_strSysWow64 "$WINDIR\SysWOW64"
+
+  ; Retrieve current user name.
+  AccessControl::GetCurrentUserName
+  Pop $g_strCurUser
+
+  ${LogVerbose} "--------------------------------------------------------------------------------"
+  ${LogVerbose} "Detected environment:"
+  ${LogVerbose} "OS version: Windows $g_strWinVersion"
+  ${LogVerbose} "System directory: $g_strSystemDir"
+  ${LogVerbose} "Temp directory: $TEMP"
+  ${LogVerbose} "Current user: $g_strCurUser"
+  ${LogVerbose} "--------------------------------------------------------------------------------"
+
+!ifdef _DEBUG
+  ${LogVerbose} "Installer runs in debug mode"
 !endif
 
-Function Common_CopyFiles
+  Pop $3
+  Pop $2
+  Pop $1
+  Pop $0
+FunctionEnd
+!macroend
+!insertmacro Common_DetectEnvironment ""
+!insertmacro Common_DetectEnvironment "un."
+
+
+;;
+; Extracts all files to $INSTDIR.
+;
+; Input:
+;   None
+; Output:
+;   None
+;
+; Note: This is a worker function for the actual installation process to extract all required
+;       files beforehand into $INSTDIR before the actual (driver) installation, as well as
+;       when only extracting the installer files into a directory (via /extract).
+;
+Function Common_ExtractFiles
 
   SetOutPath "$INSTDIR"
   SetOverwrite on
 
+  ${LogVerbose} "Extracting files to: $INSTDIR"
+
 !ifdef VBOX_WITH_LICENSE_INSTALL_RTF
-  ; Copy license file (if any) into the installation directory
+  ; Copy license file (if any) into the installation directory.
   FILE "/oname=${LICENSE_FILE_RTF}" "$%VBOX_BRAND_LICENSE_RTF%"
 !endif
 
-  FILE "$%PATH_OUT%\bin\additions\VBoxDrvInst.exe"
-  FILE "$%PATH_OUT%\bin\additions\VBoxGuestInstallHelper.exe"
-
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.inf"
-!if $%KBUILD_TARGET_ARCH% == "x86"
-  ${If} $g_strEarlyNTDrvInfix != ""
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoEarlyNT.inf"
-  !ifdef VBOX_SIGN_ADDITIONS
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoEarlyNT.cat"
-  !endif
-  ${EndIf}
-!endif
-!ifdef VBOX_SIGN_ADDITIONS
-  ${If} $g_strWinVersion == "10"
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideo.cat"
-  ${Else}
-    FILE "/oname=VBoxVideo.cat" "$%PATH_OUT%\bin\additions\VBoxVideo-PreW10.cat"
-  ${EndIf}
-!endif
-
-FunctionEnd
-
-!ifndef UNINSTALLER_ONLY
-;;
-; Extract files to the install dir + arch.
-;
-Function ExtractFiles
-
-  ; @todo: Use a define for all the file specs to group the files per module
-  ; and keep the redundancy low
-
-  Push $0
-  StrCpy "$0" "$INSTDIR\$%KBUILD_TARGET_ARCH%"
-
-  ; Root files
-  SetOutPath "$0"
-!if $%VBOX_WITH_LICENSE_INSTALL_RTF% == "1"
-  FILE "/oname=${LICENSE_FILE_RTF}" "$%VBOX_BRAND_LICENSE_RTF%"
-!endif
-
-  ; Video driver
-  SetOutPath "$0\VBoxVideo"
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.sys"
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.inf"
-!if $%KBUILD_TARGET_ARCH% == "x86"
-  ${If} $g_strEarlyNTDrvInfix != ""
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoEarlyNT.inf"
-  !ifdef VBOX_SIGN_ADDITIONS
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoEarlyNT.cat"
-  !endif
-  ${EndIf}
-!endif
-!ifdef VBOX_SIGN_ADDITIONS
-  ${If} $g_strWinVersion == "10"
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideo.cat"
-  ${Else}
-    FILE "/oname=VBoxVideo.cat" "$%PATH_OUT%\bin\additions\VBoxVideo-PreW10.cat"
-  ${EndIf}
-!endif
-  FILE "$%PATH_OUT%\bin\additions\VBoxDisp.dll"
-
-!if $%VBOX_WITH_WDDM% == "1"
-  ; WDDM Video driver
-  SetOutPath "$0\VBoxWddm"
-
-  !ifdef VBOX_SIGN_ADDITIONS
-    ${If} $g_strWinVersion == "10"
-      FILE "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
-    ${Else}
-      FILE "/oname=VBoxWddm.cat" "$%PATH_OUT%\bin\additions\VBoxWddm-PreW10.cat"
-    ${EndIf}
-  !endif
-  FILE "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
-  FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
-  FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
-  !if $%VBOX_WITH_WDDM_DX% == "1"
-    FILE "$%PATH_OUT%\bin\additions\VBoxDX.dll"
-  !endif
-  !if $%VBOX_WITH_MESA3D% == "1"
-    FILE "$%PATH_OUT%\bin\additions\VBoxNine.dll"
-    FILE "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
-    FILE "$%PATH_OUT%\bin\additions\VBoxGL.dll"
-  !endif
-
-  !if $%KBUILD_TARGET_ARCH% == "amd64"
-    FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
-    !if $%VBOX_WITH_WDDM_DX% == "1"
-      FILE "$%PATH_OUT%\bin\additions\VBoxDX-x86.dll"
-    !endif
-    !if $%VBOX_WITH_MESA3D% == "1"
-      FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
-    !endif
-
-  !endif ; $%KBUILD_TARGET_ARCH% == "amd64"
-!endif ; $%VBOX_WITH_WDDM% == "1"
-
-  ; Mouse driver
-  SetOutPath "$0\VBoxMouse"
-  FILE "$%PATH_OUT%\bin\additions\VBoxMouse.sys"
-  FILE "$%PATH_OUT%\bin\additions\VBoxMouse.inf"
-!ifdef VBOX_SIGN_ADDITIONS
-  ${If} $g_strWinVersion == "10"
-    FILE "$%PATH_OUT%\bin\additions\VBoxMouse.cat"
-  ${Else}
-    FILE "/oname=VBoxMouse.cat" "$%PATH_OUT%\bin\additions\VBoxMouse-PreW10.cat"
-  ${EndIf}
-!endif
-
-!if $%KBUILD_TARGET_ARCH% == "x86"
-  SetOutPath "$0\VBoxMouse\NT4"
-  FILE "$%PATH_OUT%\bin\additions\VBoxMouseNT.sys"
-!endif
-
+  ;
   ; Guest driver
-  SetOutPath "$0\VBoxGuest"
+  ;
+  SetOutPath "$INSTDIR\VBoxGuest"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuest.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuest.inf"
+  FILE "$%PATH_OUT%\bin\additions\VBoxTray.exe"
+  FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe"
+  FILE "$%PATH_OUT%\bin\additions\VBoxHook.dll"
 !if $%KBUILD_TARGET_ARCH% == "x86"
   ${If} $g_strEarlyNTDrvInfix != ""
     FILE "$%PATH_OUT%\bin\additions\VBoxGuestEarlyNT.inf"
@@ -183,192 +140,232 @@ Function ExtractFiles
   ${EndIf}
 !endif
 !ifdef VBOX_SIGN_ADDITIONS
-  ${If} $g_strWinVersion == "10"
+  !if $%KBUILD_TARGET_ARCH% == "arm64"
+    FILE "$%PATH_OUT%\bin\additions\VBoxGuest.cat"
+  !else
+  ${If} ${AtLeastWin10}
     FILE "$%PATH_OUT%\bin\additions\VBoxGuest.cat"
   ${Else}
     FILE "/oname=VBoxGuest.cat" "$%PATH_OUT%\bin\additions\VBoxGuest-PreW10.cat"
   ${EndIf}
-!endif
-  FILE "$%PATH_OUT%\bin\additions\VBoxTray.exe"
-  FILE "$%PATH_OUT%\bin\additions\VBoxHook.dll"
-  FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe"
-
-  ; VBoxService
-  SetOutPath "$0\Bin"
-  FILE "$%PATH_OUT%\bin\additions\VBoxService.exe"
-
-  ; Shared Folders
-  SetOutPath "$0\VBoxSF"
-  FILE "$%PATH_OUT%\bin\additions\VBoxSF.sys"
-  FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP.dll"
-  !if $%KBUILD_TARGET_ARCH% == "amd64"
-    ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target
-    FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP-x86.dll"
   !endif
+!endif
 
-  ; Auto-Logon
-  SetOutPath "$0\AutoLogon"
+  ;
+  ; Mouse driver
+  ;
+  SetOutPath "$INSTDIR\VBoxMouse"
+  FILE "$%PATH_OUT%\bin\additions\VBoxMouse.sys"
+  FILE "$%PATH_OUT%\bin\additions\VBoxMouse.inf"
+!ifdef VBOX_SIGN_ADDITIONS
+  !if $%KBUILD_TARGET_ARCH% == "arm64"
+    FILE "$%PATH_OUT%\bin\additions\VBoxMouse.cat"
+  !else
+    ${If} ${AtLeastWin10}
+      FILE "$%PATH_OUT%\bin\additions\VBoxMouse.cat"
+    ${Else}
+      FILE "/oname=VBoxMouse.cat" "$%PATH_OUT%\bin\additions\VBoxMouse-PreW10.cat"
+    ${EndIf}
+  !endif
+!endif
+
+  ;
+  ; VBoxVideo driver
+  ;
+!if $%KBUILD_TARGET_ARCH% != "arm64" ;; @todo win.arm64: Make VBoxVideo and friends build on arm.
+  SetOutPath "$INSTDIR\VBoxVideo"
+  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.sys"
+  FILE "$%PATH_OUT%\bin\additions\VBoxDisp.dll"
+  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.inf"
+  !if $%KBUILD_TARGET_ARCH% == "x86"
+    ${If} $g_strEarlyNTDrvInfix != ""
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoEarlyNT.inf"
+      !ifdef VBOX_SIGN_ADDITIONS
+        FILE "$%PATH_OUT%\bin\additions\VBoxVideoEarlyNT.cat"
+      !endif
+    ${EndIf}
+  !endif ; $%KBUILD_TARGET_ARCH% == "x86"
+!endif ; $%KBUILD_TARGET_ARCH% != "arm64"
+!ifdef VBOX_SIGN_ADDITIONS
+  !if $%KBUILD_TARGET_ARCH% != "arm64" ;; @todo win.arm64: Ditto.
+    ${If} ${AtLeastWin10}
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideo.cat"
+    ${Else}
+      FILE "/oname=VBoxVideo.cat" "$%PATH_OUT%\bin\additions\VBoxVideo-PreW10.cat"
+    ${EndIf}
+  !endif
+!endif ; VBOX_SIGN_ADDITIONS
+
+  ;
+  ; VBoxWddm driver
+  ;
+!if $%VBOX_WITH_WDDM% == "1"
+  ${If}   $g_bWithWDDM == "true"
+  ${OrIf} $g_bOnlyExtract == "true"
+    ; WDDM Video driver
+    SetOutPath "$INSTDIR\VBoxWddm"
+    !ifdef VBOX_SIGN_ADDITIONS
+      !if $%KBUILD_TARGET_ARCH% == "arm64"
+        FILE "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
+      !else
+      ${If} ${AtLeastWin10}
+        FILE "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
+      ${Else}
+        FILE "/oname=VBoxWddm.cat" "$%PATH_OUT%\bin\additions\VBoxWddm-PreW10.cat"
+      ${EndIf}
+      !endif
+    !endif
+    FILE "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
+    FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
+    FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+    !if $%VBOX_WITH_WDDM_DX% == "1"
+      FILE "$%PATH_OUT%\bin\additions\VBoxDX.dll"
+    !endif
+    !if $%VBOX_WITH_MESA3D% == "1"
+      FILE "$%PATH_OUT%\bin\additions\VBoxNine.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxGL.dll"
+    !endif
+
+    !if $%KBUILD_TARGET_ARCH% == "amd64"
+      FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
+      !if $%VBOX_WITH_WDDM_DX% == "1"
+        FILE "$%PATH_OUT%\bin\additions\VBoxDX-x86.dll"
+      !endif
+      !if $%VBOX_WITH_MESA3D% == "1"
+        FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
+      !endif
+    !endif ; $%KBUILD_TARGET_ARCH% == "amd64"
+  ${EndIf} ; $g_bWithWDDM == "true"
+!endif ; $%VBOX_WITH_WDDM% == "1"
+
+  ;
+  ; Shared Folders driver
+  ;
+  ${If}   ${AtLeastWin2000} ; Only available for > NT4.
+  ${OrIf} $g_bOnlyExtract == "true"
+    SetOutPath "$INSTDIR\VBoxSF"
+    FILE "$%PATH_OUT%\bin\additions\VBoxSF.sys"
+    !if $%KBUILD_TARGET_ARCH% == "x86"
+      FILE "$%PATH_OUT%\bin\additions\VBoxSFW2K.sys"
+    !endif
+    FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP.dll"
+    !if $%KBUILD_TARGET_ARCH% == "amd64" ; Not available on arm64.
+      FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP-x86.dll"
+    !endif
+  ${EndIf}
+
+  ;
+  ; Credential providers
+  ;
+  SetOutPath "$INSTDIR\AutoLogon"
   FILE "$%PATH_OUT%\bin\additions\VBoxGINA.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxCredProv.dll"
 
-  ; Misc tools
-  SetOutPath "$0\Tools"
-  FILE "$%PATH_OUT%\bin\additions\VBoxDrvInst.exe"
+  ;
+  ; Certificate stuff
+  ;
+!ifdef VBOX_SIGN_ADDITIONS
+  ${If}   ${AtLeastWin2000} ; Only required for > NT4.
+  ${OrIf} $g_bOnlyExtract == "true"
+    SetOutPath "$INSTDIR\Cert"
+    FILE "$%PATH_OUT%\bin\additions\VBoxCertUtil.exe"
+    AccessControl::SetOnFile "$INSTDIR\Cert\VBoxCertUtil.exe" "(BU)" "GenericRead"
+  ${Endif}
+!endif
+
+  ;
+  ; Misc binaries
+  ;
+  SetOutPath "$INSTDIR\Bin"
+  ; Technically not needed, as VBoxService gets installed into System32, but
+  ; keep it in the installation directory as well for completeness.
+  FILE "$%PATH_OUT%\bin\additions\VBoxService.exe"
+  AccessControl::SetOnFile "$INSTDIR\Bin\VBoxService.exe" "(BU)" "GenericRead"
+
+  ;
+  ; Tools
+  ;
+  SetOutPath "$INSTDIR\Tools"
+  ${If} ${AtLeastWin2000} ; VBoxDrvInst only works with > NT4.
+    FILE "$%PATH_OUT%\bin\additions\VBoxDrvInst.exe"
+    AccessControl::SetOnFile "$INSTDIR\VBoxDrvInst.exe" "(BU)" "GenericRead"
+  ${EndIf}
   FILE "$%PATH_OUT%\bin\additions\VBoxGuestInstallHelper.exe"
+  AccessControl::SetOnFile "$INSTDIR\VBoxGuestInstallHelper.exe" "(BU)" "GenericRead"
 !ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
   FILE "$%PATH_OUT%\bin\additions\VBoxAudioTest.exe"
+  AccessControl::SetOnFile "$INSTDIR\VBoxAudioTest.exe" "(BU)" "GenericRead"
 !endif
-
-!if $%KBUILD_TARGET_ARCH% == "x86"
-  SetOutPath "$0\Tools\NT4"
-  FILE "$%PATH_OUT%\bin\additions\RegCleanup.exe"
-!endif
-
-  Pop $0
 
 FunctionEnd
-!endif ; UNINSTALLER_ONLY
 
-;;
-; Checks that the installer target architecture matches the host,
-; i.e. that we're not trying to install 32-bit binaries on a 64-bit
-; host from WOW64 mode.
-;
-!macro CheckArchitecture un
-Function ${un}CheckArchitecture
-
-  Push $0   ;; @todo r=bird: Why ??
-
-  System::Call "kernel32::GetCurrentProcess() i .s"
-  System::Call "kernel32::IsWow64Process(i s, *i .r0)"
-  ; R0 now contains 1 if we're a 64-bit process, or 0 if not
-
-!if $%KBUILD_TARGET_ARCH% == "amd64"
-  IntCmp $0 0 wrong_platform
-!else ; 32-bit
-  IntCmp $0 1 wrong_platform
-!endif
-
-  Push 0
-  Goto exit
-
-wrong_platform:
-
-  Push 1
-  Goto exit
-
-exit:
-
-FunctionEnd
-!macroend
-!ifndef UNINSTALLER_ONLY
-  !insertmacro CheckArchitecture ""
-  !insertmacro CheckArchitecture "un."
-!endif
-
-;
-; Macro for retrieving the Windows version this installer is running on.
-;
-; @return  Stack: Windows version string. Empty on error /
-;                 if not able to identify.
-;
-!macro GetWindowsVersionEx un
-Function ${un}GetWindowsVersionEx
-
-  Push $0
-  Push $1
-
-  ; Check if we are running on Windows 2000 or above
-  ; For other windows versions (> XP) it may be necessary to change winver.nsh
-  Call ${un}GetWindowsVersion
-  Pop $0         ; Windows Version
-
-  Push $0        ; The windows version string
-  Push "NT"      ; String to search for. W2K+ returns no string containing "NT"
-  Call ${un}StrStr
-  Pop $1
-
-  ${If} $1 == "" ; If empty -> not NT 3.XX or 4.XX
-    ; $0 contains the original version string
-  ${Else}
-    ; Ok we know it is NT. Must be a string like NT X.XX
-    Push $0        ; The windows version string
-    Push "4."      ; String to search for
-    Call ${un}StrStr
-    Pop $1
-    ${If} $1 == "" ; If empty -> not NT 4
-      ;; @todo NT <= 3.x ?
-      ; $0 contains the original version string
-    ${Else}
-      StrCpy $0 "NT4"
-    ${EndIf}
-  ${EndIf}
-
-  Pop $1
-  Exch $0
-
-FunctionEnd
-!macroend
-!ifndef UNINSTALLER_ONLY
-  !insertmacro GetWindowsVersionEx ""
-!endif
-!insertmacro GetWindowsVersionEx "un."
 
 !ifndef UNINSTALLER_ONLY
 !macro GetAdditionsVersion un
+;;
+; Retrieves the installed Guest Additions version.
+;
+; Input:
+;   None
+; Output:
+;   Will store the results in $g_strAddVerMaj, $g_strAddVerMin, $g_strAddVerBuild.
+;
 Function ${un}GetAdditionsVersion
 
   Push $0
   Push $1
 
-  ; Get additions version
-  ReadRegStr $0 HKLM "SOFTWARE\$%VBOX_VENDOR_SHORT%\VirtualBox Guest Additions" "Version"
+  ; Get additions version.
+  ReadRegStr $0 HKLM "${REGISTRY_KEY_PRODUCT_ROOT}" "Version"
 
-  ; Get revision
-  ReadRegStr $g_strAddVerRev HKLM "SOFTWARE\$%VBOX_VENDOR_SHORT%\VirtualBox Guest Additions" "Revision"
+  ; Get revision.
+  ReadRegStr $g_strAddVerRev HKLM "${REGISTRY_KEY_PRODUCT_ROOT}" "Revision"
 
-  ; Extract major version
-  Push "$0"       ; String
-  Push "."        ; SubString
-  Push ">"        ; SearchDirection
-  Push "<"        ; StrInclusionDirection
-  Push "0"        ; IncludeSubString
-  Push "0"        ; Loops
-  Push "0"        ; CaseSensitive
-  Call ${un}StrStrAdv
-  Pop $g_strAddVerMaj
+  ; Extract major version.
+  ; Param "$g_strAddVerMaj"   ; Result string
+  ; Param "$0"                ; String to search for
+  ; Param "."                 ; SubString
+  ; Param ">"                 ; SearchDirection
+  ; Param "<"                 ; StrInclusionDirection
+  ; Param "0"                 ; IncludeSubString
+  ; Param "0"                 ; Loops
+  ; Param "0"                 ; CaseSensitive
+  ${${un}StrStrAdv} "$g_strAddVerMaj" "$0" "." ">" "<" "0" "0" "0"
 
-  ; Extract minor version
-  Push "$0"       ; String
-  Push "."        ; SubString
-  Push ">"        ; SearchDirection
-  Push ">"        ; StrInclusionDirection
-  Push "0"        ; IncludeSubString
-  Push "0"        ; Loops
-  Push "0"        ; CaseSensitive
-  Call ${un}StrStrAdv
-  Pop $1          ; Got first part (e.g. "1.5")
+  ; Extract minor version.
+  ; Param "$1"                ; Result string
+  ; Param "$0"                ; String
+  ; Param "."                 ; SubString
+  ; Param ">"                 ; SearchDirection
+  ; Param ">"                 ; StrInclusionDirection
+  ; Param "0"                 ; IncludeSubString
+  ; Param "0"                 ; Loops
+  ; Param "0"                 ; CaseSensitive
+  ${${un}StrStrAdv} "$1" "$0" "." ">" ">" "0" "0" "0"
 
-  Push "$1"       ; String
-  Push "."        ; SubString
-  Push ">"        ; SearchDirection
-  Push "<"        ; StrInclusionDirection
-  Push "0"        ; IncludeSubString
-  Push "0"        ; Loops
-  Push "0"        ; CaseSensitive
-  Call ${un}StrStrAdv
-  Pop $g_strAddVerMin   ; Extracted second part (e.g. "5" from "1.5")
+  ; Param "$g_strAddVerMin"   ; Result string
+  ; Param "$1"                ; String
+  ; Param "."                 ; SubString
+  ; Param ">"                 ; SearchDirection
+  ; Param "<"                 ; StrInclusionDirection
+  ; Param "0"                 ; IncludeSubString
+  ; Param "0"                 ; Loops
+  ; Param "0"                 ; CaseSensitive
+  ${${un}StrStrAdv} "$g_strAddVerMin" "$1" "." ">" "<" "0" "0" "0"
 
-  ; Extract build number
-  Push "$0"       ; String
-  Push "."        ; SubString
-  Push "<"        ; SearchDirection
-  Push ">"        ; StrInclusionDirection
-  Push "0"        ; IncludeSubString
-  Push "0"        ; Loops
-  Push "0"        ; CaseSensitive
-  Call ${un}StrStrAdv
-  Pop $g_strAddVerBuild
+  ; Extract build number.
+  ; Param "$g_strAddVerBuild" ; Result string
+  ; Param "$0"                ; String
+  ; Param "."                 ; SubString
+  ; Param "<"                 ; SearchDirection
+  ; Param ">"                 ; StrInclusionDirection
+  ; Param "0"                 ; IncludeSubString
+  ; Param "0"                 ; Loops
+  ; Param "0"                 ; CaseSensitive
+  ${${un}StrStrAdv} "$g_strAddVerBuild" "$0" "." "<" ">" "0" "0" "0"
 
   Pop $1
   Pop $0
@@ -376,10 +373,19 @@ Function ${un}GetAdditionsVersion
 FunctionEnd
 !macroend
 !insertmacro GetAdditionsVersion ""
-; !insertmacro GetAdditionsVersion "un." - not used.
+!insertmacro GetAdditionsVersion "un."
 !endif ; UNINSTALLER_ONLY
 
+
 !macro StopVBoxService un
+;;
+; Stops VBoxService.
+;
+; Input:
+;   None
+; Output:
+;   None
+;
 Function ${un}StopVBoxService
 
   Push $0   ; Temp results
@@ -387,11 +393,11 @@ Function ${un}StopVBoxService
   Push $2   ; Image name of VBoxService
   Push $3   ; Safety counter
 
-  StrCpy $3 "0" ; Init counter
+  StrCpy $3 "0" ; Init counter.
   ${LogVerbose} "Stopping VBoxService ..."
 
   ${LogVerbose} "Stopping VBoxService via SCM ..."
-  ${If} $g_strWinVersion == "NT4"
+  ${If} ${AtMostWinNT4}
     nsExec::Exec '"$SYSDIR\net.exe" stop VBoxService'
   ${Else}
     nsExec::Exec '"$SYSDIR\sc.exe" stop VBoxService'
@@ -404,8 +410,8 @@ Function ${un}StopVBoxService
 
 exe_stop_loop:
 
-  IntCmp $3 10 exit      ; Only try this loop 10 times max
-  IntOp  $3 $3 + 1       ; Increment
+  IntCmp $3 10 exit      ; Only try this loop 10 times max.
+  IntOp  $3 $3 + 1       ; Increment.
 
 !ifdef _DEBUG
   ${LogVerbose} "Stopping attempt #$3"
@@ -433,6 +439,7 @@ FunctionEnd
 !macroend
 !insertmacro StopVBoxService ""
 !insertmacro StopVBoxService "un."
+
 
 !macro StopVBoxTray un
 Function ${un}StopVBoxTray
@@ -467,6 +474,7 @@ FunctionEnd
 !insertmacro StopVBoxTray ""
 !insertmacro StopVBoxTray "un."
 
+
 !macro StopVBoxMMR un
 Function ${un}StopVBoxMMR
 
@@ -500,63 +508,44 @@ FunctionEnd
 !insertmacro StopVBoxMMR ""
 !insertmacro StopVBoxMMR "un."
 
+
 !macro WriteRegBinR ROOT KEY NAME VALUE
   WriteRegBin "${ROOT}" "${KEY}" "${NAME}" "${VALUE}"
 !macroend
 
-!ifdef UNUSED_CODE ; Only used by unused Uninstall_RunExtUnInstaller function in VBoxguestAdditionsUninstallOld.nsh.
-!macro AbortShutdown un
-Function ${un}AbortShutdown
-
-  ${If} ${FileExists} "$g_strSystemDir\shutdown.exe"
-    ; Try to abort the shutdown
-    ${CmdExecute} "$\"$g_strSystemDir\shutdown.exe$\" -a" 'non-zero-exitcode=log'
-  ${Else}
-    ${LogVerbose} "Shutting down not supported: Binary $\"$g_strSystemDir\shutdown.exe$\" not found"
-  ${EndIf}
-
-FunctionEnd
-!macroend
-!insertmacro AbortShutdown ""
-!insertmacro AbortShutdown "un."
-!endif ; UNUSED_CODE
 
 ;;
 ; Sets $g_bCapDllCache, $g_bCapXPDM, $g_bWithWDDM and $g_bCapWDDM.
+;
+; Input:
+;   None
+; Output:
+;   None
 ;
 !macro CheckForCapabilities un
 Function ${un}CheckForCapabilities
 
   Push $0
 
-  ; Retrieve system mode and store result in
+  ; Retrieve system mode and store result in.
   System::Call 'user32::GetSystemMetrics(i ${SM_CLEANBOOT}) i .r0'
   StrCpy $g_iSystemMode $0
 
   ; Does the guest have a DLL cache?
-  ${If}   $g_strWinVersion == "NT4"     ; bird: NT4 doesn't have a DLL cache, WTP is 5.0 <= NtVersion < 6.0.
-  ${OrIf} $g_strWinVersion == "2000"
-  ${OrIf} $g_strWinVersion == "XP"
+  ${If}   ${IsWin2000}
+  ${OrIf} ${IsWinXP}
     StrCpy $g_bCapDllCache "true"
     ${LogVerbose}  "OS has a DLL cache"
   ${EndIf}
 
-  ${If}   $g_strWinVersion == "2000"
-  ${OrIf} $g_strWinVersion == "XP"
-  ${OrIf} $g_strWinVersion == "2003"
-  ${OrIf} $g_strWinVersion == "Vista"
-  ${OrIf} $g_strWinVersion == "7"
+  ${If} ${AtLeastWin2000}
     StrCpy $g_bCapXPDM "true"
     ${LogVerbose} "OS is XPDM driver capable"
   ${EndIf}
 
 !if $%VBOX_WITH_WDDM% == "1"
-  ; By default use the WDDM driver on Vista+
-  ${If}   $g_strWinVersion == "Vista"
-  ${OrIf} $g_strWinVersion == "7"
-  ${OrIf} $g_strWinVersion == "8"
-  ${OrIf} $g_strWinVersion == "8_1"
-  ${OrIf} $g_strWinVersion == "10"
+  ; By default use the WDDM driver on Vista+.
+  ${If} ${AtLeastWinVista}
     StrCpy $g_bWithWDDM "true"
     StrCpy $g_bCapWDDM "true"
     ${LogVerbose} "OS is WDDM driver capable"
@@ -572,11 +561,20 @@ FunctionEnd
 !endif
 !insertmacro CheckForCapabilities "un."
 
-; Switches (back) the path + registry view to
-; 32-bit mode (SysWOW64) on 64-bit guests
+
+;;
+; Switches (back) the path + registry view to 32-bit mode (SysWOW64)
+; for 64-bit Intel + ARM guests.
+;
+; Input:
+;   None
+; Output:
+;   None
+;
 !macro SetAppMode32 un
 Function ${un}SetAppMode32
-  !if $%KBUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% != "x86" ; amd64 + arm64
+    ${LogVerbose} "Setting application mode to 32-bit"
     ${EnableX64FSRedirection}
     SetRegView 32
   !endif
@@ -587,11 +585,22 @@ FunctionEnd
   !insertmacro SetAppMode32 "un."
 !endif
 
-; Because this NSIS installer is always built in 32-bit mode, we have to
-; do some tricks for the Windows paths + registry on 64-bit guests
+
+;;
+; Sets the installer's application mode.
+;
+; Because this NSIS installer is always built for x86 (32-bit), we have to
+; do some tricks for the Windows paths + registry on Intel + ARM 64-bit guests.
+;
+; Input:
+;   None
+; Output:
+;   None
+;
 !macro SetAppMode64 un
 Function ${un}SetAppMode64
-  !if $%KBUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% != "x86" ; amd64 + arm64
+    ${LogVerbose} "Setting application mode to 64-bit"
     ${DisableX64FSRedirection}
     SetRegView 64
   !endif
@@ -600,11 +609,15 @@ FunctionEnd
 !insertmacro SetAppMode64 ""
 !insertmacro SetAppMode64 "un."
 
-;
+
+;;
 ; Retrieves the vendor ("CompanyName" of FILEINFO structure)
 ; of a given file.
-; @return  Stack: Company name, or "" on error/if not found.
-; @param   Stack: File name to retrieve vendor for.
+;
+; Input:
+;   Stack[0]: File name to retrieve vendor for.
+; Output:
+;   Stack[0]: Company name, or "" on error/if not found.
 ;
 !macro GetFileVendor un
 Function ${un}GetFileVendor
@@ -639,10 +652,14 @@ FunctionEnd
 !insertmacro GetFileVendor ""
 !insertmacro GetFileVendor "un."
 
-;
+
+;;
 ; Retrieves the architecture of a given file.
-; @return  Stack: Architecture ("x86", "amd64") or error message.
-; @param   Stack: File name to retrieve architecture for.
+;
+; Input:
+;   Stack[0]: File name to retrieve architecture for.
+; Output:
+;   Stack[0]: Architecture ("x86", "amd64") or error message.
 ;
 !macro GetFileArchitecture un
 Function ${un}GetFileArchitecture
@@ -683,13 +700,17 @@ FunctionEnd
 !insertmacro GetFileArchitecture ""
 !insertmacro GetFileArchitecture "un."
 
-;
+
+;;
 ; Verifies a given file by checking its file vendor and target
 ; architecture.
-; @return  Stack: "0" if valid, "1" if not, "2" on error / not found.
-; @param   Stack: Architecture ("x86" or "amd64").
-; @param   Stack: Vendor.
-; @param   Stack: File name to verify.
+;
+; Input:
+;   Stack[0]: Architecture ("x86" or "amd64").
+;   Stack[1]: Vendor.
+;   Stack[2]: File name to verify.
+; Output:
+;   Stack[0]: "0" if valid, "1" if not, "2" on error / not found.
 ;
 !macro VerifyFile un
 Function ${un}VerifyFile
@@ -772,9 +793,11 @@ FunctionEnd
 !insertmacro VerifyFile ""
 !insertmacro VerifyFile "un."
 
-;
+
+;;
 ; Macro for accessing VerifyFile in a more convenient way by using
 ; a parameter list.
+;
 ; @return  Stack: "0" if valid, "1" if not, "2" on error / not found.
 ; @param   Un/Installer prefix; either "" or "un".
 ; @param   Name of file to verify.
@@ -800,9 +823,11 @@ FunctionEnd
 !macroend
 !define VerifyFileEx "!insertmacro VerifyFileEx"
 
-;
+
+;;
 ; Macro for copying a file only if the source file is verified
 ; to be from a certain vendor and architecture.
+;
 ; @return  Stack: "0" if copied, "1" if not, "2" on error / not found.
 ; @param   Un/Installer prefix; either "" or "un".
 ; @param   Name of file to verify and copy to destination.
@@ -845,8 +870,10 @@ FunctionEnd
 !macroend
 !define CopyFileEx "!insertmacro CopyFileEx"
 
-;
+
+;;
 ; Macro for installing a library/DLL.
+;
 ; @return  Stack: "0" if copied, "1" if not, "2" on error / not found.
 ; @param   Un/Installer prefix; either "" or "un".
 ; @param   Name of lib/DLL to copy to destination.
@@ -862,8 +889,10 @@ FunctionEnd
 !macroend
 !define InstallFileEx "!insertmacro InstallFileEx"
 
-;
+
+;;
 ; Macro for installing a library/DLL.
+;
 ; @return  Stack: "0" if copied, "1" if not, "2" on error / not found.
 ; @param   Un/Installer prefix; either "" or "un".
 ; @param   Name of lib/DLL to verify and copy to destination.
@@ -891,14 +920,16 @@ FunctionEnd
 !define InstallFileVerify "!insertmacro InstallFileVerify"
 
 
+;;
+; Function which restores formerly backed up Direct3D original files, which were replaced by
+; a VBox XPDM driver installation before. This might be necessary for upgrading a
+; XPDM installation to a WDDM one.
+;
+; @return  Stack: "0" if files were restored successfully; otherwise "1".
+;
 ; Note: We don't ship modified Direct3D files anymore, but we need to (try to)
 ;       restore the original (backed up) DLLs when upgrading from an old(er)
 ;       installation.
-;
-; Restores formerly backed up Direct3D original files, which were replaced by
-; a VBox XPDM driver installation before. This might be necessary for upgrading a
-; XPDM installation to a WDDM one.
-; @return  Stack: "0" if files were restored successfully; otherwise "1".
 ;
 !macro RestoreFilesDirect3D un
 Function ${un}RestoreFilesDirect3D
@@ -910,7 +941,7 @@ Function ${un}RestoreFilesDirect3D
   Push $0
 
   ; We need to switch to 64-bit app mode to handle the "real" 64-bit files in
-  ; "system32" on a 64-bit guest
+  ; "system32" on a 64-bit guest.
   Call ${un}SetAppMode64
 
   ${LogVerbose} "Restoring original D3D files ..."

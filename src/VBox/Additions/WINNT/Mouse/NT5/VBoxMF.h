@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -64,9 +64,11 @@ typedef struct _VBOXMOUSE_DEVEXT
     PDEVICE_OBJECT pdoParent;         /* Highest PDO in chain before we've attached our filter */
 
     BOOLEAN bHostMouse;               /* Indicates if we're filtering the chain with emulated i8042 PS/2 adapter */
+    BOOLEAN bNeedFullStateProtocol;   /* Whether VMMDEV_MOUSE_HOST_SUPPORTS_FULL_STATE_PROTOCOL is required. */
 
     INTERNAL_MOUSE_CONNECT_DATA OriginalConnectData; /* Original connect data intercepted in IOCTL_INTERNAL_MOUSE_CONNECT */
-    VMMDevReqMouseStatus       *pSCReq;              /* Preallocated request to use in pfnServiceCB */
+    VMMDevReqMouseStatusEx     *pSCReq;              /* Preallocated request to use in pfnServiceCB */
+    uint32_t                    fLastButtons;        /* Last reported state of mouse buttons for FULL_STATE_PROTOCOL. */
 
     IO_REMOVE_LOCK RemoveLock;
 } VBOXMOUSE_DEVEXT, *PVBOXMOUSE_DEVEXT;

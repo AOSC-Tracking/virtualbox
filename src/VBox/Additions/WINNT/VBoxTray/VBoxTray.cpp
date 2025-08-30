@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -81,8 +81,8 @@ static int vboxTrayGlMsgTaskbarCreated(WPARAM lParam, LPARAM wParam);
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-typedef BOOL (WINAPI *PFNALLOCCONSOLE)(VOID);
-typedef BOOL (WINAPI *PFNATTACHCONSOLE)(DWORD);
+typedef BOOL (WINAPI *PFNALLOCCONSOLE)(VOID)   RT_NOEXCEPT;
+typedef BOOL (WINAPI *PFNATTACHCONSOLE)(DWORD) RT_NOEXCEPT;
 
 
 /*********************************************************************************************************************************
@@ -284,6 +284,7 @@ static int vboxTrayServicesStart(PVBOXTRAYSVCENV pEnv)
     int rc = VINF_SUCCESS;
 
     size_t cServicesStarted = 0;
+    size_t cServicesFailed  = 0;
 
     for (unsigned i = 0; i < RT_ELEMENTS(g_aServices); i++)
     {
@@ -322,6 +323,7 @@ static int vboxTrayServicesStart(PVBOXTRAYSVCENV pEnv)
                     break;
 
                 default:
+                    cServicesFailed++;
                     VBoxTrayError("Failed to initialize service '%s', rc=%Rrc\n", pSvc->pDesc->pszName, rc2);
                     break;
             }
@@ -339,8 +341,8 @@ static int vboxTrayServicesStart(PVBOXTRAYSVCENV pEnv)
                     RTThreadUserWait(pSvc->hThread, 30 * 1000 /* Timeout in ms */);
                     if (pSvc->fShutdown)
                     {
+                        cServicesFailed++;
                         VBoxTrayError("Service '%s' failed to start!\n", pSvc->pDesc->pszName);
-                        rc = VERR_GENERAL_FAILURE;
                     }
                     else
                     {
@@ -356,14 +358,11 @@ static int vboxTrayServicesStart(PVBOXTRAYSVCENV pEnv)
                 }
             }
         }
-
-        if (RT_SUCCESS(rc))
-            rc = rc2;
     }
 
     VBoxTrayInfo("%zu/%zu service(s) started\n", cServicesStarted, RT_ELEMENTS(g_aServices));
-    if (RT_FAILURE(rc))
-        VBoxTrayInfo("Some service(s) reported errors when starting -- see log above\n");
+    if (cServicesFailed)
+        VBoxTrayError("%u service(s) reported errors when starting -- see log above\n", cServicesFailed);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -835,7 +834,7 @@ static int vboxTrayServiceMain(void)
 #endif
                                 if (msg.message == WM_QUIT)
                                 {
-                                    LogFunc(("Terminating ...\n"));
+                                    VBoxTrayInfo("Received quit event, terminating ...\n");
                                     SetEvent(g_hStopSem);
                                 }
                                 TranslateMessage(&msg);
@@ -876,15 +875,15 @@ static int vboxTrayAttachConsole(void)
 
     /* As we run with the WINDOWS subsystem, we need to either attach to or create an own console
      * to get any stdout / stderr output. */
-    bool fAllocConsole = false;
+    bool fTryAllocConsole = false;
     if (!g_pfnAttachConsole(ATTACH_PARENT_PROCESS))
-        fAllocConsole = true;
+        fTryAllocConsole = true; /* Attaching to console failed, try allocating an own console. */
 
-    if (fAllocConsole)
+    if (fTryAllocConsole)
     {
         AssertPtrReturn(g_pfnAllocConsole, VERR_NOT_AVAILABLE);
         if (!g_pfnAllocConsole())
-            VBoxTrayShowError("Unable to attach to or allocate a console!");
+            VBoxTrayShowError("Unable to attach to or allocate a console! Error: %#x", GetLastError());
         /* Continue running. */
     }
 
@@ -902,8 +901,11 @@ static int vboxTrayAttachConsole(void)
     RTFileFromNative(&hStdErr,  (RTHCINTPTR)GetStdHandle(STD_ERROR_HANDLE));
     RTStrmOpenFileHandle(hStdErr, "wt", 0, &g_pStdErr);
 
-    if (!fAllocConsole) /* When attaching to the parent console, make sure we start on a fresh line. */
+    if (!fTryAllocConsole) /* When attaching to the parent console, make sure we start on a fresh line. */
+    {
         RTPrintf("\n");
+        RTPrintf("Attaching %s to this console.\n", VBOX_VBOXTRAY_TITLE);
+    }
 
     g_fHasConsole = true;
 
@@ -916,6 +918,40 @@ static int vboxTrayAttachConsole(void)
 static void vboxTrayDetachConsole()
 {
     g_fHasConsole = false;
+}
+
+/**
+ * Console control event callback.
+ *
+ * @returns TRUE if handled, FALSE if not.
+ * @param   dwCtrlType      The control event type.
+ *
+ * @remarks This is generally called on a new thread, so we're racing every
+ *          other thread in the process.
+ */
+static BOOL WINAPI vboxTrayConsoleControlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
+{
+    int rc = VINF_SUCCESS;
+    bool fEventHandled = FALSE;
+    switch (dwCtrlType)
+    {
+        /* User pressed CTRL+C or CTRL+BREAK or an external event was sent
+         * via GenerateConsoleCtrlEvent(). */
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+        case CTRL_C_EVENT:
+            VBoxTrayVerbose(4, "ControlHandler: Received break/close event\n");
+            PostMessage(g_hwndToolWindow, WM_QUIT, 0, 0);
+            fEventHandled = TRUE;
+            break;
+        default:
+            break;
+        /** @todo Add other events here. */
+    }
+
+    if (RT_FAILURE(rc))
+        VBoxTrayError("ControlHandler: Event %ld handled with error rc=%Rrc\n", dwCtrlType, rc);
+    return fEventHandled;
 }
 
 /**
@@ -1196,88 +1232,100 @@ int main(int cArgs, char **papszArgs)
     if (RT_SUCCESS(rc))
     {
         rc = VBoxTrayLogCreate(szLogFile[0] ? szLogFile : NULL);
+        if (!RT_SUCCESS(rc))
+            LogFlowFunc(("VBoxTrayLogCreate failed, rc=%Rrc\n", rc));
+
+        rc = vboxTrayCreateToolWindow();
+        if (RT_SUCCESS(rc))
+            rc = vboxTrayCreateTrayIcon();
+
+        VBoxTrayHlpReportStatus(VBoxGuestFacilityStatus_PreInit);
+
         if (RT_SUCCESS(rc))
         {
-            VBoxTrayInfo("Verbosity level: %d\n", g_cVerbosity);
+            VBoxCapsInit();
 
-            rc = vboxTrayCreateToolWindow();
-            if (RT_SUCCESS(rc))
-                rc = vboxTrayCreateTrayIcon();
-
-            VBoxTrayHlpReportStatus(VBoxGuestFacilityStatus_PreInit);
-
-            if (RT_SUCCESS(rc))
+            rc = vboxStInit(g_hwndToolWindow);
+            if (!RT_SUCCESS(rc))
             {
-                VBoxCapsInit();
-
-                rc = vboxStInit(g_hwndToolWindow);
-                if (!RT_SUCCESS(rc))
-                {
-                    LogFlowFunc(("vboxStInit failed, rc=%Rrc\n", rc));
-                    /* ignore the St Init failure. this can happen for < XP win that do not support WTS API
-                     * in that case the session is treated as active connected to the physical console
-                     * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
-                    Assert(vboxStIsActiveConsole());
-                }
-
-                rc = vboxDtInit();
-                if (RT_FAILURE(rc))
-                {
-                    /* ignore the Dt Init failure. this can happen for < XP win that do not support WTS API
-                     * in that case the session is treated as active connected to the physical console
-                     * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
-                    Assert(vboxDtIsInputDesktop());
-                }
-
-                VBoxAcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, true);
-
-                vboxTraySetupSeamless();
-
-                rc = vboxTrayServiceMain();
-                /* Note: Do *not* overwrite rc in the following code, as this acts as the exit code. */
-
-                vboxTrayShutdownSeamless();
-
-                /* it should be safe to call vboxDtTerm even if vboxStInit above failed */
-                vboxDtTerm();
-
-                /* it should be safe to call vboxStTerm even if vboxStInit above failed */
-                vboxStTerm();
-
-                VBoxCapsTerm();
+                LogFlowFunc(("vboxStInit failed, rc=%Rrc\n", rc));
+                /* ignore the St Init failure. this can happen for < XP win that do not support WTS API
+                    * in that case the session is treated as active connected to the physical console
+                    * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
+                Assert(vboxStIsActiveConsole());
             }
 
-            vboxTrayRemoveTrayIcon();
-            vboxTrayDestroyToolWindow();
+            rc = vboxDtInit();
+            if (RT_FAILURE(rc))
+            {
+                /* ignore the Dt Init failure. this can happen for < XP win that do not support WTS API
+                    * in that case the session is treated as active connected to the physical console
+                    * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
+                Assert(vboxDtIsInputDesktop());
+            }
 
-            if (RT_SUCCESS(rc))
+            VBoxAcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, true);
 
-                VBoxTrayHlpReportStatus(VBoxGuestFacilityStatus_Terminated);
-            else
-                VBoxTrayHlpReportStatus(VBoxGuestFacilityStatus_Failed);
+            vboxTraySetupSeamless();
 
-            VBoxTrayInfo("VBoxTray terminated with %Rrc\n", rc);
+            /* Install console control handler. */
+            if (g_fHasConsole)
+            {
+                if (!SetConsoleCtrlHandler(vboxTrayConsoleControlHandler, TRUE /* Add handler */))
+                    VBoxTrayError("Unable to add console control handler, error=%ld\n", GetLastError());
+                /* Just skip this error, not critical. */
+            }
 
-            VBoxTrayLogDestroy();
+            rc = vboxTrayServiceMain();
+            /* Note: Do *not* overwrite rc in the following code, as this acts as the exit code. */
+
+            /* Uninstall console control handler. */
+            if (g_fHasConsole)
+            {
+                if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)NULL, FALSE /* Remove handler */))
+                    VBoxTrayError("Unable to remove console control handler, error=%ld\n", GetLastError());
+                /* Just skip this error, not critical. */
+            }
+
+            vboxTrayShutdownSeamless();
+
+            /* it should be safe to call vboxDtTerm even if vboxStInit above failed */
+            vboxDtTerm();
+
+            /* it should be safe to call vboxStTerm even if vboxStInit above failed */
+            vboxStTerm();
+
+            VBoxCapsTerm();
         }
+
+        vboxTrayRemoveTrayIcon();
+        vboxTrayDestroyToolWindow();
+
+        if (RT_SUCCESS(rc))
+            VBoxTrayHlpReportStatus(VBoxGuestFacilityStatus_Terminated);
+        else
+            VBoxTrayHlpReportStatus(VBoxGuestFacilityStatus_Failed);
 
         VbglR3Term();
     }
     else
     {
         /* Only show something if started in verbose mode.
-         * Otherwise just fail silently as we ever did. Needed in order to not break installs on non-VMs. */
+            * Otherwise just fail silently as we ever did. Needed in order to not break installs on non-VMs. */
         if (g_cVerbosity)
         {
             if (rc == VERR_OPEN_FAILED)
                 VBoxTrayShowError("Error opening a connection to the VBoxGuest.sys driver.\n\n"
-                                  "This might be due to not having the Windows Guest Additions installed\n"
-                                  "or that something went wrong when installing those.\n\n"
-                                  "Re-installing the Guest Additions might resolve the issue.\n");
+                                    "This might be due to not having the Windows Guest Additions installed\n"
+                                    "or that something went wrong when installing those.\n\n"
+                                    "Re-installing the Guest Additions might resolve the issue.\n");
             else
                 VBoxTrayShowError("VbglR3Init failed: %Rrc\n", rc);
         }
     }
+
+    VBoxTrayInfo("%s terminated with %Rrc\n", VBOX_VBOXTRAY_TITLE, rc);
+    VBoxTrayLogDestroy();
 
     vboxTrayDestroy();
 
@@ -1419,7 +1467,7 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
         case WM_DISPLAYCHANGE:
             ASMAtomicUoWriteU32(&g_fGuestDisplaysChanged, 1);
-            // No break or return is intentional here.
+            RT_FALL_THROUGH();
         case WM_VBOX_SEAMLESS_UPDATE:
         {
             if (VBoxCapsEntryIsEnabled(VBOXCAPS_ENTRY_IDX_SEAMLESS))
@@ -1470,3 +1518,4 @@ static void VBoxGrapicsSetSupported(BOOL fSupported)
 {
     VBoxConsoleCapSetSupported(VBOXCAPS_ENTRY_IDX_GRAPHICS, fSupported);
 }
+

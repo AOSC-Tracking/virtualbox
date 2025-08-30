@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -50,11 +50,8 @@
 # include "TimestampRootCerts.h"
 #endif
 
-
 #ifdef VBOX_SIGNING_MODE
 # if 1 /* Whether to use IPRT or Windows to verify the executable signatures. */
-/* This section is borrowed from RTSignTool.cpp */
-
 #  include <iprt/err.h>
 #  include <iprt/initterm.h>
 #  include <iprt/ldr.h>
@@ -62,6 +59,20 @@
 #  include <iprt/stream.h>
 #  include <iprt/crypto/pkcs7.h>
 #  include <iprt/crypto/store.h>
+# endif
+#endif
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+typedef BOOL (WINAPI *PFNISWOW64PROCESS)(HANDLE, PBOOL);
+typedef BOOL (WINAPI *PFNISWOW64PROCESS2)(HANDLE, USHORT *, USHORT *);
+
+
+#ifdef VBOX_SIGNING_MODE
+# if 1 /* Whether to use IPRT or Windows to verify the executable signatures. */
+/* This section is borrowed from RTSignTool.cpp */
 
 class CryptoStore
 {
@@ -292,7 +303,8 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINF
             PCRTCRPKCS7CONTENTINFO pContentInfo = (PCRTCRPKCS7CONTENTINFO)pInfo->pvSignature;
 
             if (pState->cVerbose > 0)
-                RTMsgInfo("Verifying '%s' signature #%u ...\n", pState->pszFilename, pInfo->iSignature + 1);
+                RTMsgInfo("(%RU64) Verifying '%s' signature #%u ...\n", RTTimeProgramMilliTS(),
+                          pState->pszFilename, pInfo->iSignature + 1);
 
 #  if 0
             /*
@@ -357,9 +369,9 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINF
                                                  && RTTimeSpecCompare(&TimeSpec, &aTimes[iTime].TimeSpec) != 0
                                                ? "at signing time" : aTimes[iTime].pszDesc;
                     if (pInfo->cSignatures == 1)
-                        RTMsgInfo("'%s' is valid %s%s.\n", pState->pszFilename, pszTime, pszNote);
+                        RTMsgInfo("(%RU64) '%s' is valid %s%s.\n", RTTimeProgramMilliTS(), pState->pszFilename, pszTime, pszNote);
                     else
-                        RTMsgInfo("'%s' signature #%u is valid %s%s.\n",
+                        RTMsgInfo("(%RU64) '%s' signature #%u is valid %s%s.\n", RTTimeProgramMilliTS(),
                                   pState->pszFilename, pInfo->iSignature + 1, pszTime, pszNote);
                     pState->cOkay++;
                     return VINF_SUCCESS;
@@ -399,7 +411,7 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINF
 static int CheckFileSignatureIprt(wchar_t const *pwszExePath)
 {
     RTR3InitExeNoArguments(RTR3INIT_FLAGS_STANDALONE_APP);
-    RTMsgInfo("Signing checking of '%ls'...\n", pwszExePath);
+    RTMsgInfo("(%RU64) Signing checking of '%ls'...\n", RTTimeProgramMilliTS(), pwszExePath);
 
     /* Initialize the state. */
     VERIFYEXESTATE State;
@@ -896,6 +908,60 @@ static BOOL IsWow64(void)
     return fIsWow64;
 }
 
+/**
+ * Detects the native host platform and returns the appropriate installer
+ * executable suffix for it.
+ *
+ * @returns Architecture stuff string.
+ */
+static const wchar_t *GetNativeArchInstallerSuffix(void)
+{
+    HMODULE const      hModKernel32 = GetModuleHandleW(L"kernel32.dll");
+    PFNISWOW64PROCESS2 pfnIsWow64Process2 = (PFNISWOW64PROCESS2)GetProcAddress(hModKernel32, "IsWow64Process2");
+    if (pfnIsWow64Process2)
+    {
+        USHORT usWowMachine  = IMAGE_FILE_MACHINE_UNKNOWN;
+        USHORT usHostMachine = IMAGE_FILE_MACHINE_UNKNOWN;
+        if (pfnIsWow64Process2(GetCurrentProcess(), &usWowMachine, &usHostMachine))
+        {
+            if (usHostMachine == IMAGE_FILE_MACHINE_AMD64)
+                return L"-amd64.exe";
+            if (usHostMachine == IMAGE_FILE_MACHINE_ARM64)
+                return L"-arm64.exe";
+            if (usHostMachine == IMAGE_FILE_MACHINE_I386)
+                return L"-x86.exe";
+            ErrorMsgSU("IsWow64Process2 return unknown host machine value: ", usHostMachine);
+        }
+        else
+            ErrorMsgLastErr("Unable to determine the process type! (#2)");
+    }
+    else
+    {
+        PFNISWOW64PROCESS pfnIsWow64Process = (PFNISWOW64PROCESS)GetProcAddress(hModKernel32, "IsWow64Process");
+        if (pfnIsWow64Process)
+        {
+            BOOL fIsWow64 = TRUE;
+            if (pfnIsWow64Process(GetCurrentProcess(), &fIsWow64))
+            {
+                if (fIsWow64)
+                    return L"-amd64.exe";
+            }
+            else
+                ErrorMsgLastErr("Unable to determine the process type!");
+        }
+    }
+
+#ifdef RT_ARCH_X86
+    return L"-x86.exe";
+#elif defined(RT_ARCH_AMD64)
+    return L"-amd64.exe";
+#elif defined(RT_ARCH_ARM64)
+    return L"-arm64.exe";
+#else
+# error "port me"
+#endif
+}
+
 static int WaitForProcess2(HANDLE hProcess)
 {
     /*
@@ -968,7 +1034,7 @@ int main()
 
     SetLastError(NO_ERROR);
     WCHAR wszExePath[MAX_PATH] = { 0 };
-    DWORD cwcExePath = GetModuleFileNameW(NULL, wszExePath, sizeof(wszExePath));
+    size_t cwcExePath = GetModuleFileNameW(NULL, wszExePath, sizeof(wszExePath));
     if (cwcExePath == 0 || cwcExePath >= sizeof(wszExePath))
         return ErrorMsgRcLastErrSUR(13, "GetModuleFileNameW failed: ", cwcExePath);
 
@@ -979,7 +1045,7 @@ int main()
     * Strip the extension off the module name and construct the arch specific
     * one of the real installer program.
     */
-    DWORD off = cwcExePath - 1;
+    size_t off = cwcExePath - 1;
     while (   off > 0
            && (   wszExePath[off] != '/'
                && wszExePath[off] != '\\'
@@ -994,7 +1060,7 @@ int main()
         off--;
     }
 
-    WCHAR const  *pwszSuff = IsWow64() ? L"-amd64.exe" : L"-x86.exe";
+    WCHAR const * const pwszSuff = GetNativeArchInstallerSuffix();
     int rc = RTUtf16Copy(&wszExePath[cwcExePath], RT_ELEMENTS(wszExePath) - cwcExePath, pwszSuff);
     if (RT_FAILURE(rc))
         return ErrorMsgRc(14, "Real installer name is too long!");

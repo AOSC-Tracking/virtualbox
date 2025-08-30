@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2017-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -2280,6 +2280,7 @@ HRESULT APIENTRY GaDdiOpenResource(HANDLE hDevice, D3DDDIARG_OPENRESOURCE *pReso
                 {
                     case VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE:
                         pRc->RcDesc.fFlags.Primary = 1;
+                        RT_FALL_THROUGH();
                     case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
                     case VBOXWDDM_ALLOC_TYPE_STD_STAGINGSURFACE:
                         pRc->RcDesc.enmFormat      = pWddmAllocInfo->SurfDesc.format;
@@ -2289,6 +2290,7 @@ HRESULT APIENTRY GaDdiOpenResource(HANDLE hDevice, D3DDDIARG_OPENRESOURCE *pReso
                     default:
                         AssertFailed();
                         hr = E_INVALIDARG;
+                        break;
                 }
             }
 #ifdef VBOX_WITH_VMSVGA3D_DX9
@@ -4943,12 +4945,6 @@ HRESULT APIENTRY GaDdiAdapterCloseAdapter(IN HANDLE hAdapter)
     {
         VBoxDispD3DGlobalClose(&pAdapter->D3D, &pAdapter->Formats);
     }
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    else
-    {
-        VBoxDispD3DGlobal2DFormatsTerm(pAdapter);
-    }
-#endif
 
     RTMemFree(pAdapter);
 
@@ -4961,21 +4957,6 @@ static D3DDDIQUERYTYPE const gVBoxQueryTypes[] = {
         D3DDDIQUERYTYPE_EVENT,
         D3DDDIQUERYTYPE_OCCLUSION
 };
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-static bool vboxVhwaHasCKeying(PVBOXWDDMDISP_ADAPTER pAdapter)
-{
-    for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
-    {
-        VBOXVHWA_INFO* pSettings = &pAdapter->aHeads[i].Vhwa.Settings;
-        if (   (pSettings->fFlags & VBOXVHWA_F_ENABLED)
-            && (   (pSettings->fFlags & VBOXVHWA_F_CKEY_DST)
-                || (pSettings->fFlags & VBOXVHWA_F_CKEY_SRC)))
-            return true;
-    }
-    return false;
-}
-#endif
 
 HRESULT APIENTRY GaDdiAdapterGetCaps(HANDLE hAdapter, const D3DDDIARG_GETCAPS *pData)
 {
@@ -4993,24 +4974,7 @@ HRESULT APIENTRY GaDdiAdapterGetCaps(HANDLE hAdapter, const D3DDDIARG_GETCAPS *p
             Assert(!VBOXDISPMODE_IS_3D(pAdapter));
             Assert(pData->DataSize == sizeof(DDRAW_CAPS));
             if (pData->DataSize >= sizeof(DDRAW_CAPS))
-            {
                 memset(pData->pData, 0, sizeof(DDRAW_CAPS));
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                if (!VBOXDISPMODE_IS_3D(pAdapter))
-                {
-                    if (vboxVhwaHasCKeying(pAdapter))
-                    {
-                        DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
-                        pCaps->Caps |= DDRAW_CAPS_COLORKEY;
-//                        pCaps->Caps2 |= DDRAW_CAPS2_FLIPNOVSYNC;
-                    }
-                }
-                else
-                {
-                    WARN(("D3DDDICAPS_DDRAW query for D3D mode!"));
-                }
-#endif
-            }
             else
                 hr = E_INVALIDARG;
             break;
@@ -5025,46 +4989,6 @@ HRESULT APIENTRY GaDdiAdapterGetCaps(HANDLE hAdapter, const D3DDDIARG_GETCAPS *p
                 DDRAW_MODE_SPECIFIC_CAPS *pCaps = (DDRAW_MODE_SPECIFIC_CAPS *)pData->pData;
                 /* Do not overwrite the first "Head" field, zero starting with the one following "Head", i.e. Caps. */
                 memset(&pCaps->Caps, 0, sizeof(DDRAW_MODE_SPECIFIC_CAPS) - RT_UOFFSETOF(DDRAW_MODE_SPECIFIC_CAPS, Caps));
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                if (!VBOXDISPMODE_IS_3D(pAdapter))
-                {
-                    VBOXVHWA_INFO *pSettings = &pAdapter->aHeads[pCaps->Head].Vhwa.Settings;
-                    if (pSettings->fFlags & VBOXVHWA_F_ENABLED)
-                    {
-                        pCaps->Caps |= MODE_CAPS_OVERLAY | MODE_CAPS_OVERLAYSTRETCH;
-
-                        if (pSettings->fFlags & VBOXVHWA_F_CKEY_DST)
-                        {
-                            pCaps->CKeyCaps |= MODE_CKEYCAPS_DESTOVERLAY
-                                    | MODE_CKEYCAPS_DESTOVERLAYYUV /* ?? */
-                                    ;
-                        }
-
-                        if (pSettings->fFlags & VBOXVHWA_F_CKEY_SRC)
-                        {
-                            pCaps->CKeyCaps |= MODE_CKEYCAPS_SRCOVERLAY
-                                    | MODE_CKEYCAPS_SRCOVERLAYCLRSPACE /* ?? */
-                                    | MODE_CKEYCAPS_SRCOVERLAYCLRSPACEYUV /* ?? */
-                                    | MODE_CKEYCAPS_SRCOVERLAYYUV /* ?? */
-                                    ;
-                        }
-
-                        pCaps->FxCaps = MODE_FXCAPS_OVERLAYSHRINKX
-                                | MODE_FXCAPS_OVERLAYSHRINKY
-                                | MODE_FXCAPS_OVERLAYSTRETCHX
-                                | MODE_FXCAPS_OVERLAYSTRETCHY;
-
-
-                        pCaps->MaxVisibleOverlays = pSettings->cOverlaysSupported;
-                        pCaps->MinOverlayStretch = 1;
-                        pCaps->MaxOverlayStretch = 32000;
-                    }
-                }
-                else
-                {
-                    WARN(("D3DDDICAPS_DDRAW_MODE_SPECIFIC query for D3D mode!"));
-                }
-#endif
             }
             else
                 hr = E_INVALIDARG;

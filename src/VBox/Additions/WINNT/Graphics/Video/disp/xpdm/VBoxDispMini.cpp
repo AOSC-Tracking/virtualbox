@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -286,24 +286,6 @@ int VBoxDispMPHGSMIQueryPortProcs(HANDLE hDriver, HGSMIQUERYCPORTPROCS *pPortPro
     LOGF_LEAVE();
     return VINF_SUCCESS;
 }
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-int VBoxDispMPVHWAQueryInfo(HANDLE hDriver, VHWAQUERYINFO *pInfo)
-{
-    DWORD dwrc;
-    ULONG cbReturned;
-    LOGF_ENTER();
-
-    memset(pInfo, 0, sizeof(VHWAQUERYINFO));
-    dwrc = EngDeviceIoControl(hDriver, IOCTL_VIDEO_VHWA_QUERY_INFO, NULL, 0,
-                              pInfo, sizeof(VHWAQUERYINFO), &cbReturned);
-    VBOX_CHECK_WINERR_RETRC(dwrc, VERR_DEV_IO_ERROR);
-    VBOX_WARN_IOCTLCB_RETRC("IOCTL_VIDEO_VHWA_QUERY_INFO", cbReturned, sizeof(VHWAQUERYINFO), VERR_DEV_IO_ERROR);
-
-    LOGF_LEAVE();
-    return VINF_SUCCESS;
-}
-#endif
 
 int VBoxDispMPSetColorRegisters(HANDLE hDriver, PVIDEO_CLUT pClut, DWORD cbClut)
 {

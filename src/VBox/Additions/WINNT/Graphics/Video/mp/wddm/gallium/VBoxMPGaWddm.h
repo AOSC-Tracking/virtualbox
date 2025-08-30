@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2016-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -124,6 +124,8 @@ NTSTATUS GaVidPnSourceCheckPos(PVBOXMP_DEVEXT pDevExt, UINT iSource);
 
 #ifdef VBOX_WITH_VMSVGA3D_DX
 bool SvgaIsDXSupported(PVBOXMP_DEVEXT pDevExt);
+void SvgaCursorSetVisibility(PVBOXMP_DEVEXT pDevExt, bool fVisible);
+void SvgaCursorUpdatePosition(PVBOXMP_DEVEXT pDevExt, int xPos, int yPos);
 NTSTATUS APIENTRY DxgkDdiDXCreateAllocation(CONST HANDLE hAdapter, DXGKARG_CREATEALLOCATION *pCreateAllocation);
 NTSTATUS APIENTRY DxgkDdiDXDestroyAllocation(CONST HANDLE hAdapter, CONST DXGKARG_DESTROYALLOCATION *pDestroyAllocation);
 NTSTATUS APIENTRY DxgkDdiDXDescribeAllocation(CONST HANDLE hAdapter, DXGKARG_DESCRIBEALLOCATION *pDescribeAllocation);

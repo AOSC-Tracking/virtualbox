@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2024 Oracle and/or its affiliates.
+; Copyright (C) 2006-2025 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -29,8 +29,10 @@ LangString VBOX_TEST ${LANG_FRENCH}                                 "Ceci est un
 
 LangString VBOX_NOADMIN ${LANG_FRENCH}                              "Vous avez besoin de droits d'administrateur pour (dés)installer $(^Name)!$\r$\nCe programme d'installation se terminera maintenant."
 
-LangString VBOX_NOTICE_ARCH_X86 ${LANG_FRENCH}                      "Cette application peut seulement être executée sur des systèmes Windows 32-bit. Veuillez installer la version 64-bit de $(^Name)!"
-LangString VBOX_NOTICE_ARCH_AMD64 ${LANG_FRENCH}                    "Cette application peut seulement être executée sur des systèmes Windows 64-bit. Veuillez installer la version 32-bit de $(^Name)!"
+;; @todo win.arm64: check spelling of the next three messages.
+LangString VBOX_NOTICE_ARCH_X86 ${LANG_FRENCH}                      "Cette application peut seulement être executée sur des systèmes Windows 32-bit x86. Veuillez installer la version correspondante de $(^Name)!"
+LangString VBOX_NOTICE_ARCH_AMD64 ${LANG_FRENCH}                    "Cette application peut seulement être executée sur des systèmes Windows 64-bit x86. Veuillez installer la version correspondante de $(^Name)!"
+LangString VBOX_NOTICE_ARCH_ARM64 ${LANG_FRENCH}                    "Cette application peut seulement être executée sur des systèmes Windows ARM64. Veuillez installer la version correspondante de $(^Name)!"
 LangString VBOX_NT4_NO_SP6 ${LANG_FRENCH}                           "Le programme d'installation a détécté que vous utilisez Windows NT4 sans Service Pack 6.$\r$\nNous vous conseillons d'installer ce Service Pack avant de continuer. Désirez vous cependant continuer?"
 
 LangString VBOX_PLATFORM_UNSUPPORTED ${LANG_FRENCH}                 "Les Additions invité ne sont pas encore supportés sur cette plateforme!"
@@ -40,6 +42,8 @@ LangString VBOX_SUN_ABORTED ${LANG_FRENCH}                          "Le programm
 
 LangString VBOX_INNOTEK_FOUND ${LANG_FRENCH}                        "Une ancienne version des Additions invité est installée dans cette machine virtuelle. Les Additions invité actuelles ne peuvent être installées avant que cette version ne soit désinstallée.$\r$\n$\r$\nVoulez-vous désinstaller l'ancienne version maintenant?"
 LangString VBOX_INNOTEK_ABORTED ${LANG_FRENCH}                      "Le programme ne peut pas continuer avec l'installation des Additions invité.$\r$\nVeuillez désinstaller d'abord les anciennes Additions!"
+
+LangString VBOX_INST_WELCOME_TITLE ${LANG_FRENCH}                   "Bienvenue sur le site de ${PRODUCT_NAME} Installation"
 
 LangString VBOX_UNINSTALL_START ${LANG_FRENCH}                      "Choisissez OK pour démarrer la désinstallation.$\r$\nLe processus nécessitera quelque temps et se déroulera en arrière-plan."
 LangString VBOX_UNINSTALL_REBOOT ${LANG_FRENCH}                     "Nous vous conseillons fortement de redémarer cette machine virtuelle avant d'installer la nouvelle version des Additions invité.$\r$\nVeuillez recommencer l'installation des Additions après le redémarrage.$\r$\n$\r$\nRedémarrer maintenant?"

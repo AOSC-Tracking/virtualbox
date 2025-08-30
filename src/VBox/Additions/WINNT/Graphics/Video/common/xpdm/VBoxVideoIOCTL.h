@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -155,13 +155,6 @@ typedef struct _HGSMIHANDLERENABLE
     uint8_t u8Channel;
 } HGSMIHANDLERENABLE;
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-/* Data returned by IOCTL_VIDEO_VHWA_QUERY_INFO. */
-typedef struct _VHWAQUERYINFO
-{
-    ULONG_PTR offVramBase;
-} VHWAQUERYINFO;
-#endif
 #pragma pack()
 
 /* IOCTL_VIDEO_QUERY_INFO */

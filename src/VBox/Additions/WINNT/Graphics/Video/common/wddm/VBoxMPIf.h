@@ -11,7 +11,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -135,6 +135,17 @@ typedef struct VBOXDXALLOCATIONDESC
         UINT                    DecoderBufferType;          /* D3D11_1DDI_VIDEO_DECODER_BUFFER_TYPE */
     } resourceInfo;
 } VBOXDXALLOCATIONDESC, *PVBOXDXALLOCATIONDESC;
+
+/// @todo Development define, remove. Support for requests to rename an allocation.
+#define DX_RENAME_ALLOCATION
+
+/* D3DDDI_PATCHLOCATIONLIST::DriverId */
+#define VBOXDXPATCHID_NULL        0
+#define VBOXDXPATCHID_SURFACE     ((UINT)VBOXDXALLOCATIONTYPE_SURFACE)
+#define VBOXDXPATCHID_SHADERS     ((UINT)VBOXDXALLOCATIONTYPE_SHADERS)
+#define VBOXDXPATCHID_CO          ((UINT)VBOXDXALLOCATIONTYPE_CO)
+#define VBOXDXPATCHID_INSTANCEMOB 1000
+
 #endif /* defined(VBOX_WITH_VMSVGA3D_DX) || defined(VBOXWDDMDISP) || defined(VBOX_WDDM_MINIPORT) || defined(VBOXGL) */
 
 /* create allocation func */
@@ -672,7 +683,7 @@ typedef struct VBOXWDDM_QAI
     VBOXVIDEO_HWTYPE    enmHwType;       /* Hardware type. Determines what kind of data is returned. */
     uint32_t            u32AdapterCaps;  /* VBOXWDDM_QAI_CAP_* */
     uint32_t            cInfos;          /* Number of initialized elements in aInfos (equal to number of guest
-                                          * displays). 0 if VBOX_WITH_VIDEOHWACCEL is not defined. */
+                                          * displays). Always 0 currently. */
     VBOXVHWA_INFO       aInfos[VBOX_VIDEO_MAX_SCREENS]; /* cInfos elements are initialized. */
     union
     {
@@ -826,6 +837,8 @@ DECLINLINE(uint32_t) vboxWddmFormatToFourcc(D3DDDIFORMAT enmFormat)
     return 0;
 }
 
+/** @todo r=bird: This is the same as RT_ALIGN. Best switch to using
+ *        RT_ALIGN_32, RT_ALIGN_64 and RT_ALIGN_T! */
 #define VBOXWDDM_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))
 
 DECLINLINE(UINT) vboxWddmCalcOffXru(UINT w, D3DDDIFORMAT enmFormat)

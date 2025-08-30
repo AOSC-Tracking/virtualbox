@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2024 Oracle and/or its affiliates.
+; Copyright (C) 2006-2025 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -29,8 +29,9 @@ LangString VBOX_TEST ${LANG_ENGLISH}                                "This is a t
 
 LangString VBOX_NOADMIN ${LANG_ENGLISH}                             "You need administrator rights to install or uninstall the $(^Name).$\r$\nThis application will exit now."
 
-LangString VBOX_NOTICE_ARCH_X86 ${LANG_ENGLISH}                     "This application only runs on 32-bit Windows systems. Please install the 64-bit version of $(^Name)!"
-LangString VBOX_NOTICE_ARCH_AMD64 ${LANG_ENGLISH}                   "This application only runs on 64-bit Windows systems. Please install the 32-bit version of $(^Name)!"
+LangString VBOX_NOTICE_ARCH_X86 ${LANG_ENGLISH}                     "This application only runs on 32-bit x86 Windows systems. Please pick the variant of the $(^Name) installer matching your guest OS!"
+LangString VBOX_NOTICE_ARCH_AMD64 ${LANG_ENGLISH}                   "This application only runs on 64-bit x86 Windows systems. Please pick the variant of the $(^Name) installer matching your guest OS!"
+LangString VBOX_NOTICE_ARCH_ARM64 ${LANG_ENGLISH}                   "This application only runs on ARM64 Windows systems. Please pick the variant of the $(^Name) installer matching your guest OS!"
 LangString VBOX_NT4_NO_SP6 ${LANG_ENGLISH}                          "You do not seem to have Service Pack 6 for Windows NT4 installed.$\r$\nWe recommend that you install it first. Do you wish to continue anyway?"
 
 LangString VBOX_PLATFORM_UNSUPPORTED ${LANG_ENGLISH}                "The VirtualBox Guest Additions cannot be installed on this version of Windows"
@@ -40,6 +41,8 @@ LangString VBOX_SUN_ABORTED ${LANG_ENGLISH}                         "The Virtual
 
 LangString VBOX_INNOTEK_FOUND ${LANG_ENGLISH}                       "An old version of the innotek VirtualBox Guest Additions is installed in this virtual machine. This must be uninstalled before the current Guest Additions can be installed.$\r$\n$\r$\nDo you wish to uninstall the old Guest Additions now?"
 LangString VBOX_INNOTEK_ABORTED ${LANG_ENGLISH}                     "The VirtualBox Guest Additions cannot be installed until the old version has been removed.  Please remove it and try again."
+
+LangString VBOX_INST_WELCOME_TITLE ${LANG_ENGLISH}                  "Welcome to the ${PRODUCT_NAME} Setup"
 
 LangString VBOX_UNINSTALL_START ${LANG_ENGLISH}                     "Press OK to start the uninstallation process. This may take some time to complete."
 LangString VBOX_UNINSTALL_REBOOT ${LANG_ENGLISH}                    "It is strongly recommended that you restart this virtual machine before installing the new version of the VirtualBox Guest Additions.$\r$\nPlease start the installation process again after restarting the machine.$\r$\n$\r$\nRestart now?"

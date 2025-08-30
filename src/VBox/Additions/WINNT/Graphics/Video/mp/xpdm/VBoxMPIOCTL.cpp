@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -645,32 +645,6 @@ BOOLEAN VBoxMPHgsmiHandlerEnable(PVBOXMP_DEVEXT pExt, HGSMIHANDLERENABLE *pChann
     LOGF_LEAVE();
     return fRc;
 }
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-/* Called for IOCTL_VIDEO_VHWA_QUERY_INFO.
- * Returns framebuffer offset.
- */
-BOOLEAN VBoxMPVhwaQueryInfo(PVBOXMP_DEVEXT pExt, VHWAQUERYINFO *pInfo, PSTATUS_BLOCK pStatus)
-{
-    BOOLEAN fRc = TRUE;
-    LOGF_ENTER();
-
-    if (VBoxCommonFromDeviceExt(pExt)->bHGSMI)
-    {
-        pInfo->offVramBase = (ULONG_PTR)pExt->ulFrameBufferOffset;
-
-        pStatus->Information = sizeof (VHWAQUERYINFO);
-    }
-    else
-    {
-        pStatus->Status = ERROR_INVALID_FUNCTION;
-        fRc=FALSE;
-    }
-
-    LOGF_LEAVE();
-    return fRc;
-}
-#endif
 
 BOOLEAN VBoxMPQueryRegistryFlags(PVBOXMP_DEVEXT pExt, ULONG *pulFlags, PSTATUS_BLOCK pStatus)
 {

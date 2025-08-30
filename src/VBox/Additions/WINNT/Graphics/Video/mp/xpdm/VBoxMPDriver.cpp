@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -46,18 +46,14 @@
 /** Legacy VGA resource list. */
 static VIDEO_ACCESS_RANGE  g_aVBoxLegacyVGAResources[] =
 {
-    /* RangeStart               Length      I  V  S  P
-                                            n  i  h  a
-                                            I  s  a  s
-                                            o  i  r  s
-                                            S  b  a  i
-                                            p  l  b  v
-                                            a  e  l  e
-                                            c     e
-                                            e          */
-    { {0x000003B0, 0x00000000}, 0x0000000C, 1, 1, 1, 0 }, /* VGA regs (0x3B0-0x3BB) */
-    { {0x000003C0, 0x00000000}, 0x00000020, 1, 1, 1, 0 }, /* VGA regs (0x3C0-0x3DF) */
-    { {0x000A0000, 0x00000000}, 0x00020000, 0, 0, 1, 0 }, /* Frame buffer (0xA0000-0xBFFFF) */
+    /*                                       RangeInIoSpace
+                                              | RangeVisible
+                                              |  | RangeShareable
+                                              |  |  | RangePassive
+             RangeStart          RangeLength  v  v  v  v             */
+    { {{0x000003B0, 0x00000000}}, 0x0000000C, 1, 1, 1, 0 }, /* VGA regs (0x3B0-0x3BB) */
+    { {{0x000003C0, 0x00000000}}, 0x00000020, 1, 1, 1, 0 }, /* VGA regs (0x3C0-0x3DF) */
+    { {{0x000A0000, 0x00000000}}, 0x00020000, 0, 0, 1, 0 }, /* Frame buffer (0xA0000-0xBFFFF) */
 };
 
 /* Card info for property dialog */
@@ -80,7 +76,7 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
     VP_STATUS rc;
     USHORT DispiId;
     ULONG cbVRAM = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
-    PHYSICAL_ADDRESS phVRAM = {0};
+    PHYSICAL_ADDRESS phVRAM = {{0,0}};
     ULONG ulApertureSize = 0;
 
     PAGED_CODE();
@@ -500,7 +496,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
             break;
         }
 
-        /* Called by the display driver when it recieves visible regions information. */
+        /* Called by the display driver when it receives visible regions information. */
         case IOCTL_VIDEO_VBOX_SETVISIBLEREGION:
         {
             STARTIO_IN(RTRECT, pRects);
@@ -559,17 +555,6 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
             /** @todo not implemented */
             break;
         }
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /* Returns framebuffer offset. */
-        case IOCTL_VIDEO_VHWA_QUERY_INFO:
-        {
-            STARTIO_OUT(VHWAQUERYINFO, pInfo);
-
-            bResult = VBoxMPVhwaQueryInfo(pExt, pInfo, pStatus);
-            break;
-        }
-#endif
 
         case IOCTL_VIDEO_VBOX_ISANYX:
         {
@@ -708,48 +693,6 @@ VBoxDrvResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
     return FALSE;
 }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-static VOID VBoxMPHGSMIDpc(IN PVOID  HwDeviceExtension, IN PVOID  Context)
-{
-    NOREF(Context);
-    PVBOXMP_DEVEXT pExt = (PVBOXMP_DEVEXT) HwDeviceExtension;
-
-    VBoxHGSMIProcessHostQueue(&VBoxCommonFromDeviceExt(pExt)->hostCtx);
-}
-
-static BOOLEAN
-VBoxDrvInterrupt(PVOID  HwDeviceExtension)
-{
-    PVBOXMP_DEVEXT pExt = (PVBOXMP_DEVEXT) HwDeviceExtension;
-
-    //LOGF_ENTER();
-
-    /* Check if it could be our IRQ*/
-    if (VBoxCommonFromDeviceExt(pExt)->hostCtx.pfHostFlags)
-    {
-        uint32_t flags = VBoxCommonFromDeviceExt(pExt)->hostCtx.pfHostFlags->u32HostFlags;
-        if ((flags & HGSMIHOSTFLAGS_IRQ) != 0)
-        {
-            /* queue a DPC*/
-            BOOLEAN bResult = pExt->pPrimary->u.primary.VideoPortProcs.pfnQueueDpc(pExt->pPrimary, VBoxMPHGSMIDpc, NULL);
-
-            if (!bResult)
-            {
-                LOG(("VideoPortQueueDpc failed!"));
-            }
-
-            /* clear the IRQ */
-            VBoxHGSMIClearIrq(&VBoxCommonFromDeviceExt(pExt)->hostCtx);
-            //LOGF_LEAVE();
-            return TRUE;
-        }
-    }
-
-    //LOGF_LEAVE();
-    return FALSE;
-}
-#endif
-
 /* Video Miniport Driver entry point */
 ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
 {
@@ -783,9 +726,6 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
 
     /*Optional callbacks*/
     vhwData.HwResetHw     = VBoxDrvResetHW;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    vhwData.HwInterrupt   = VBoxDrvInterrupt;
-#endif
 
     /*Our private storage space*/
     vhwData.HwDeviceExtensionSize = sizeof(VBOXMP_DEVEXT);

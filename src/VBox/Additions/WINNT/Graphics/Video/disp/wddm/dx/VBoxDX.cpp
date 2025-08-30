@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2022-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2022-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -29,6 +29,7 @@
 #include <iprt/errcore.h>
 #include <iprt/thread.h>
 #include <VBox/log.h>
+#include <VBox/cdefs.h> /* VBOX_STRICT */
 
 #include <iprt/win/windows.h>
 #include <iprt/win/d3dkmthk.h>
@@ -44,58 +45,58 @@
 #pragma pack()
 
 
-static uint32_t vboxDXGetSubresourceOffset(PVBOXDX_RESOURCE pResource, UINT Subresource)
+static uint32_t vboxDXGetSubresourceOffset(VBOXDXALLOCATIONDESC const *pAllocationDesc, UINT Subresource)
 {
     surf_size_struct baseLevelSize;
-    baseLevelSize.width  = pResource->AllocationDesc.surfaceInfo.size.width;
-    baseLevelSize.height = pResource->AllocationDesc.surfaceInfo.size.height;
-    baseLevelSize.depth  = pResource->AllocationDesc.surfaceInfo.size.depth;
+    baseLevelSize.width  = pAllocationDesc->surfaceInfo.size.width;
+    baseLevelSize.height = pAllocationDesc->surfaceInfo.size.height;
+    baseLevelSize.depth  = pAllocationDesc->surfaceInfo.size.depth;
 
-    uint32_t const numMipLevels = pResource->AllocationDesc.surfaceInfo.numMipLevels;
+    uint32_t const numMipLevels = pAllocationDesc->surfaceInfo.numMipLevels;
     uint32_t const face = Subresource / numMipLevels;
     uint32_t const mip = Subresource % numMipLevels;
-    return svga3dsurface_get_image_offset(pResource->AllocationDesc.surfaceInfo.format,
+    return svga3dsurface_get_image_offset(pAllocationDesc->surfaceInfo.format,
                                           baseLevelSize, numMipLevels, face, mip);
 }
 
 
-static uint32_t vboxDXGetSubresourceSize(PVBOXDX_RESOURCE pResource, UINT Subresource)
+static uint32_t vboxDXGetSubresourceSize(VBOXDXALLOCATIONDESC const *pAllocationDesc, UINT Subresource)
 {
     surf_size_struct baseLevelSize;
-    baseLevelSize.width  = pResource->AllocationDesc.surfaceInfo.size.width;
-    baseLevelSize.height = pResource->AllocationDesc.surfaceInfo.size.height;
-    baseLevelSize.depth  = pResource->AllocationDesc.surfaceInfo.size.depth;
+    baseLevelSize.width  = pAllocationDesc->surfaceInfo.size.width;
+    baseLevelSize.height = pAllocationDesc->surfaceInfo.size.height;
+    baseLevelSize.depth  = pAllocationDesc->surfaceInfo.size.depth;
 
-    uint32_t const numMipLevels = pResource->AllocationDesc.surfaceInfo.numMipLevels;
-    uint32_t const face = Subresource / numMipLevels;
+    uint32_t const numMipLevels = pAllocationDesc->surfaceInfo.numMipLevels;
+    /*uint32_t const face = Subresource / numMipLevels; - unused */
     uint32_t const mip = Subresource % numMipLevels;
 
-    const struct svga3d_surface_desc *desc = svga3dsurface_get_desc(pResource->AllocationDesc.surfaceInfo.format);
+    const struct svga3d_surface_desc *desc = svga3dsurface_get_desc(pAllocationDesc->surfaceInfo.format);
 
     surf_size_struct mipSize = svga3dsurface_get_mip_size(baseLevelSize, mip);
     return svga3dsurface_get_image_buffer_size(desc, &mipSize, 0);
 }
 
 
-static void vboxDXGetSubresourcePitch(PVBOXDX_RESOURCE pResource, UINT Subresource, UINT *pRowPitch, UINT *pDepthPitch)
+static void vboxDXGetSubresourcePitch(VBOXDXALLOCATIONDESC const *pAllocationDesc, UINT Subresource, UINT *pRowPitch, UINT *pDepthPitch)
 {
-    if (pResource->AllocationDesc.surfaceInfo.format == SVGA3D_BUFFER)
+    if (pAllocationDesc->surfaceInfo.format == SVGA3D_BUFFER)
     {
-        *pRowPitch = pResource->AllocationDesc.surfaceInfo.size.width;
+        *pRowPitch = pAllocationDesc->surfaceInfo.size.width;
         *pDepthPitch = *pRowPitch;
         return;
     }
 
-    uint32_t const numMipLevels = pResource->AllocationDesc.surfaceInfo.numMipLevels;
-    uint32_t const face = Subresource / numMipLevels;
+    uint32_t const numMipLevels = pAllocationDesc->surfaceInfo.numMipLevels;
+    /* uint32_t const face = Subresource / numMipLevels; - unused */
     uint32_t const mip = Subresource % numMipLevels;
 
     surf_size_struct baseLevelSize;
-    baseLevelSize.width  = pResource->AllocationDesc.surfaceInfo.size.width;
-    baseLevelSize.height = pResource->AllocationDesc.surfaceInfo.size.height;
-    baseLevelSize.depth  = pResource->AllocationDesc.surfaceInfo.size.depth;
+    baseLevelSize.width  = pAllocationDesc->surfaceInfo.size.width;
+    baseLevelSize.height = pAllocationDesc->surfaceInfo.size.height;
+    baseLevelSize.depth  = pAllocationDesc->surfaceInfo.size.depth;
 
-    const struct svga3d_surface_desc *desc = svga3dsurface_get_desc(pResource->AllocationDesc.surfaceInfo.format);
+    const struct svga3d_surface_desc *desc = svga3dsurface_get_desc(pAllocationDesc->surfaceInfo.format);
 
     surf_size_struct mipSize = svga3dsurface_get_mip_size(baseLevelSize, mip);
     surf_size_struct blocks;
@@ -106,10 +107,10 @@ static void vboxDXGetSubresourcePitch(PVBOXDX_RESOURCE pResource, UINT Subresour
 }
 
 
-static void vboxDXGetResourceBoxDimensions(PVBOXDX_RESOURCE pResource, UINT Subresource, SVGA3dBox *pBox,
+static void vboxDXGetResourceBoxDimensions(VBOXDXALLOCATIONDESC const *pAllocationDesc, UINT Subresource, SVGA3dBox *pBox,
                                            uint32_t *pOffPixel, uint32_t *pcbRow, uint32_t *pcRows, uint32_t *pDepth)
 {
-    if (pResource->AllocationDesc.surfaceInfo.format == SVGA3D_BUFFER)
+    if (pAllocationDesc->surfaceInfo.format == SVGA3D_BUFFER)
     {
         *pOffPixel = pBox->x;
         *pcbRow = pBox->w;
@@ -118,14 +119,14 @@ static void vboxDXGetResourceBoxDimensions(PVBOXDX_RESOURCE pResource, UINT Subr
         return;
     }
 
-    const struct svga3d_surface_desc *desc = svga3dsurface_get_desc(pResource->AllocationDesc.surfaceInfo.format);
+    const struct svga3d_surface_desc *desc = svga3dsurface_get_desc(pAllocationDesc->surfaceInfo.format);
 
     surf_size_struct baseLevelSize;
-    baseLevelSize.width  = pResource->AllocationDesc.surfaceInfo.size.width;
-    baseLevelSize.height = pResource->AllocationDesc.surfaceInfo.size.height;
-    baseLevelSize.depth  = pResource->AllocationDesc.surfaceInfo.size.depth;
+    baseLevelSize.width  = pAllocationDesc->surfaceInfo.size.width;
+    baseLevelSize.height = pAllocationDesc->surfaceInfo.size.height;
+    baseLevelSize.depth  = pAllocationDesc->surfaceInfo.size.depth;
 
-    uint32_t const numMipLevels = pResource->AllocationDesc.surfaceInfo.numMipLevels;
+    uint32_t const numMipLevels = pAllocationDesc->surfaceInfo.numMipLevels;
     uint32_t const mip = Subresource % numMipLevels;
 
     surf_size_struct mipSize = svga3dsurface_get_mip_size(baseLevelSize, mip);
@@ -137,7 +138,7 @@ static void vboxDXGetResourceBoxDimensions(PVBOXDX_RESOURCE pResource, UINT Subr
     surf_size_struct blocks;
     svga3dsurface_get_size_in_blocks(desc, &boxSize, &blocks);
 
-    *pOffPixel = svga3dsurface_get_pixel_offset(pResource->AllocationDesc.surfaceInfo.format,
+    *pOffPixel = svga3dsurface_get_pixel_offset(pAllocationDesc->surfaceInfo.format,
                                                 mipSize.width, mipSize.height,
                                                 pBox->x, pBox->y, pBox->z);
     *pcbRow = blocks.width * desc->pitch_bytes_per_block;
@@ -145,14 +146,15 @@ static void vboxDXGetResourceBoxDimensions(PVBOXDX_RESOURCE pResource, UINT Subr
     *pDepth = pBox->d;
 }
 
-static void vboxDXGetSubresourceBox(PVBOXDX_RESOURCE pResource, UINT Subresource, SVGA3dBox *pBox)
+
+static void vboxDXGetSubresourceBox(VBOXDXALLOCATIONDESC const *pAllocationDesc, UINT Subresource, SVGA3dBox *pBox)
 {
     surf_size_struct baseLevelSize;
-    baseLevelSize.width  = pResource->AllocationDesc.surfaceInfo.size.width;
-    baseLevelSize.height = pResource->AllocationDesc.surfaceInfo.size.height;
-    baseLevelSize.depth  = pResource->AllocationDesc.surfaceInfo.size.depth;
+    baseLevelSize.width  = pAllocationDesc->surfaceInfo.size.width;
+    baseLevelSize.height = pAllocationDesc->surfaceInfo.size.height;
+    baseLevelSize.depth  = pAllocationDesc->surfaceInfo.size.depth;
 
-    uint32_t const numMipLevels = pResource->AllocationDesc.surfaceInfo.numMipLevels;
+    uint32_t const numMipLevels = pAllocationDesc->surfaceInfo.numMipLevels;
     uint32_t const mip = Subresource % numMipLevels;
 
     surf_size_struct mipSize = svga3dsurface_get_mip_size(baseLevelSize, mip);
@@ -233,9 +235,10 @@ void vboxDXCommandBufferCommit(PVBOXDX_DEVICE pDevice)
 }
 
 
-void vboxDXStorePatchLocation(PVBOXDX_DEVICE pDevice, void *pvPatch, VBOXDXALLOCATIONTYPE enmAllocationType,
-                              D3DKMT_HANDLE hAllocation, uint32_t offAllocation, bool fWriteOperation)
+void vboxDXStorePatchLocation(PVBOXDX_DEVICE pDevice, void *pvPatch, PVBOXDXKMRESOURCE pKMResource,
+                              uint32_t offAllocation, bool fWriteOperation, uint32_t DriverId)
 {
+    D3DKMT_HANDLE hAllocation = vboxDXGetAllocation(pKMResource);
     if (!hAllocation)
         return;
 
@@ -270,11 +273,17 @@ void vboxDXStorePatchLocation(PVBOXDX_DEVICE pDevice, void *pvPatch, VBOXDXALLOC
     D3DDDI_PATCHLOCATIONLIST *pPatchLocation = &pDevice->pPatchLocationList[pDevice->cPatchLocations];
     pPatchLocation->AllocationIndex = idxAllocation;
     pPatchLocation->Value = 0;
-    pPatchLocation->DriverId = enmAllocationType;
+    pPatchLocation->DriverId = DriverId == 0
+                             ? pKMResource->AllocationDesc.enmAllocationType
+                             : DriverId;
     pPatchLocation->AllocationOffset = offAllocation;
     pPatchLocation->PatchOffset = (uintptr_t)pvPatch - (uintptr_t)pDevice->pCommandBuffer;
     pPatchLocation->SplitOffset = pDevice->cbCommandBuffer;
     ++pDevice->cPatchLocations;
+
+    /* Move the KM resource to the head of the resource list. */
+    RTListNodeRemove(&pKMResource->nodeResource);
+    RTListPrepend(&pDevice->listResources, &pKMResource->nodeResource);
 }
 
 
@@ -311,13 +320,13 @@ static void vboxDXEmitSetConstantBuffers(PVBOXDX_DEVICE pDevice)
             PVBOXDX_RESOURCE pResource = pCBS->apResource[i];
             if (pResource)
             {
-                D3DKMT_HANDLE const hAllocation = vboxDXGetAllocation(pResource);
+                PVBOXDXKMRESOURCE const pKMResource = vboxDXGetKMResource(pResource);
                 uint32 const offsetInBytes = pCBS->aFirstConstant[i] * (4 * sizeof(UINT));
                 uint32 const sizeInBytes = pCBS->aNumConstants[i] * (4 * sizeof(UINT));
                 LogFunc(("type %d, slot %d, off %d, size %d, cbAllocation %d",
-                         enmShaderType, i, offsetInBytes, sizeInBytes, pResource->AllocationDesc.cbAllocation));
+                         enmShaderType, i, offsetInBytes, sizeInBytes, pKMResource->AllocationDesc.cbAllocation));
 
-                vgpu10SetSingleConstantBuffer(pDevice, i, enmShaderType, hAllocation, offsetInBytes, sizeInBytes);
+                vgpu10SetSingleConstantBuffer(pDevice, i, enmShaderType, pKMResource, offsetInBytes, sizeInBytes);
             }
             else
                 vgpu10SetSingleConstantBuffer(pDevice, i, enmShaderType, 0, 0, 0);
@@ -347,14 +356,14 @@ static void vboxDXEmitSetVertexBuffers(PVBOXDX_DEVICE pDevice)
     PVBOXDXVERTEXBUFFERSSTATE pVBS = &pDevice->pipeline.VertexBuffers;
 
     /* Fetch allocation handles. */
-    D3DKMT_HANDLE aAllocations[SVGA3D_MAX_VERTEX_ARRAYS];
+    PVBOXDXKMRESOURCE aKMResources[SVGA3D_MAX_VERTEX_ARRAYS];
     for (unsigned i = pVBS->StartSlot; i < pVBS->StartSlot + pVBS->NumBuffers; ++i)
     {
         PVBOXDX_RESOURCE pResource = pVBS->apResource[i];
-        aAllocations[i] = vboxDXGetAllocation(pResource);
+        aKMResources[i] = vboxDXGetKMResource(pResource);
     }
 
-    vgpu10SetVertexBuffers(pDevice, pVBS->StartSlot, pVBS->NumBuffers, aAllocations,
+    vgpu10SetVertexBuffers(pDevice, pVBS->StartSlot, pVBS->NumBuffers, aKMResources,
                            &pVBS->aStrides[pVBS->StartSlot], &pVBS->aOffsets[pVBS->StartSlot]);
 
     /* Trim empty slots. */
@@ -379,9 +388,9 @@ static void vboxDXEmitSetIndexBuffer(PVBOXDX_DEVICE pDevice)
 {
     PVBOXDXINDEXBUFFERSTATE pIBS = &pDevice->pipeline.IndexBuffer;
 
-    D3DKMT_HANDLE const hAllocation = vboxDXGetAllocation(pIBS->pBuffer);
+    PVBOXDXKMRESOURCE const pKMResource = vboxDXGetKMResource(pIBS->pBuffer);
     SVGA3dSurfaceFormat const svgaFormat = vboxDXDxgiToSvgaFormat(pIBS->Format);
-    vgpu10SetIndexBuffer(pDevice, hAllocation, svgaFormat, pIBS->Offset);
+    vgpu10SetIndexBuffer(pDevice, pKMResource, svgaFormat, pIBS->Offset);
 }
 
 
@@ -520,6 +529,9 @@ SVGA3dSurfaceFormat vboxDXDxgiToSvgaFormat(DXGI_FORMAT enmDxgiFormat)
         case DXGI_FORMAT_V408:
         case DXGI_FORMAT_SAMPLER_FEEDBACK_MIN_MIP_OPAQUE:
         case DXGI_FORMAT_SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE:
+#ifdef NTDDI_WIN11_GE
+        case DXGI_FORMAT_A4B4G4R4_UNORM: /* Added in SDK w11/26100 or thereabouts. */
+#endif
         case DXGI_FORMAT_FORCE_UINT: /* warning */
             break;
     }
@@ -572,7 +584,102 @@ D3DDDIFORMAT vboxDXDxgiToDDIFormat(DXGI_FORMAT enmDxgiFormat)
 }
 
 
-static uint32_t vboxDXCalcResourceAllocationSize(PVBOXDX_RESOURCE pResource)
+PVBOXDXKMRESOURCE vboxDXAllocateKMResource(PVBOXDX_DEVICE pDevice, HANDLE hResource,
+                                           PFNVBOXDXINITALLOCATIONDESC pfnInitAllocationDesc,
+                                           void const *pvInitData, bool fZero)
+{
+    PVBOXDXKMRESOURCE pKMResource = (PVBOXDXKMRESOURCE)RTMemAllocZ(sizeof(VBOXDXKMRESOURCE));
+    AssertReturnStmt(pKMResource, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), NULL);
+
+    pfnInitAllocationDesc(&pKMResource->AllocationDesc, pvInitData);
+
+    D3DDDI_ALLOCATIONINFO2 ddiAllocationInfo;
+    RT_ZERO(ddiAllocationInfo);
+    ddiAllocationInfo.pPrivateDriverData    = &pKMResource->AllocationDesc;
+    ddiAllocationInfo.PrivateDriverDataSize = sizeof(pKMResource->AllocationDesc);
+    if (pKMResource->AllocationDesc.fPrimary)
+    {
+        ddiAllocationInfo.VidPnSourceId     = pKMResource->AllocationDesc.PrimaryDesc.VidPnSourceId;
+        ddiAllocationInfo.Flags.Primary     = 1;
+    }
+
+    D3DDDICB_ALLOCATE ddiAllocate;
+    RT_ZERO(ddiAllocate);
+    ddiAllocate.hResource        = hResource;
+    ddiAllocate.NumAllocations   = 1;
+    ddiAllocate.pAllocationInfo2 = &ddiAllocationInfo;
+
+    HRESULT hr = pDevice->pRTCallbacks->pfnAllocateCb(pDevice->hRTDevice.handle, &ddiAllocate);
+    LogFlowFunc(("pfnAllocateCb returned 0x%x, hKMResource 0x%X, hAllocation 0x%X", hr, ddiAllocate.hKMResource, ddiAllocationInfo.hAllocation));
+    AssertReturnStmt(SUCCEEDED(hr),
+                     vboxDXDeallocateKMResource(pDevice, pKMResource); vboxDXDeviceSetError(pDevice, hr),
+                     false);
+
+    pKMResource->hAllocation = ddiAllocationInfo.hAllocation;
+
+    if (fZero)
+    {
+        D3DDDICB_LOCK ddiLock;
+        RT_ZERO(ddiLock);
+        ddiLock.hAllocation = ddiAllocationInfo.hAllocation;
+        ddiLock.Flags.WriteOnly = 1;
+        hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
+        if (SUCCEEDED(hr))
+        {
+            memset(ddiLock.pData, 0, pKMResource->AllocationDesc.cbAllocation);
+
+            D3DDDICB_UNLOCK ddiUnlock;
+            ddiUnlock.NumAllocations = 1;
+            ddiUnlock.phAllocations = &ddiLock.hAllocation;
+            hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
+        }
+        AssertReturnStmt(SUCCEEDED(hr),
+                         vboxDXDeallocateKMResource(pDevice, pKMResource); vboxDXDeviceSetError(pDevice, hr),
+                         false);
+    }
+
+    return pKMResource;
+}
+
+
+PVBOXDXKMRESOURCE vboxDXOpenKMResource(PVBOXDX_DEVICE pDevice, D3DKMT_HANDLE hAllocation,
+                                       VBOXDXALLOCATIONDESC const *pDesc)
+{
+    PVBOXDXKMRESOURCE pKMResource = (PVBOXDXKMRESOURCE)RTMemAllocZ(sizeof(VBOXDXKMRESOURCE));
+    AssertReturnStmt(pKMResource, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), NULL);
+
+    pKMResource->hAllocation = hAllocation;
+    pKMResource->AllocationDesc = *pDesc;
+    pKMResource->flags.fOpened = 1;
+    return pKMResource;
+}
+
+
+void vboxDXDeallocateKMResource(PVBOXDX_DEVICE pDevice, PVBOXDXKMRESOURCE pKMResource)
+{
+    if (pKMResource)
+    {
+        Assert(!pKMResource->flags.fOpened);
+
+        if (pKMResource->hAllocation)
+        {
+            D3DDDICB_DEALLOCATE ddiDeallocate;
+            RT_ZERO(ddiDeallocate);
+            //ddiDeallocate.hResource    = NULL;
+            ddiDeallocate.NumAllocations = 1;
+            ddiDeallocate.HandleList     = &pKMResource->hAllocation;
+
+            HRESULT hr = pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
+            LogFlowFunc(("pfnDeallocateCb returned 0x%x, hAllocation 0x%x", hr, pKMResource->hAllocation));
+            AssertStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
+        }
+
+        RTMemFree(pKMResource);
+    }
+}
+
+
+static uint32_t vboxDXCalcResourceAllocationSize(VBOXDXALLOCATIONDESC const *pAllocationDesc)
 {
     /* The allocation holds the entire resource:
      *   (miplevel[0], ..., miplevel[MipLevels - 1])[0],
@@ -580,15 +687,15 @@ static uint32_t vboxDXCalcResourceAllocationSize(PVBOXDX_RESOURCE pResource)
      * (  miplevel[0], ..., miplevel[MipLevels - 1])[ArraySize - 1]
      */
     surf_size_struct base_level_size;
-    base_level_size.width  = pResource->AllocationDesc.surfaceInfo.size.width;
-    base_level_size.height = pResource->AllocationDesc.surfaceInfo.size.height;
-    base_level_size.depth  = pResource->AllocationDesc.surfaceInfo.size.depth;
+    base_level_size.width  = pAllocationDesc->surfaceInfo.size.width;
+    base_level_size.height = pAllocationDesc->surfaceInfo.size.height;
+    base_level_size.depth  = pAllocationDesc->surfaceInfo.size.depth;
 
-    return svga3dsurface_get_serialized_size_extended(pResource->AllocationDesc.surfaceInfo.format,
+    return svga3dsurface_get_serialized_size_extended(pAllocationDesc->surfaceInfo.format,
                                                       base_level_size,
-                                                      pResource->AllocationDesc.surfaceInfo.numMipLevels,
-                                                      pResource->AllocationDesc.surfaceInfo.arraySize,
-                                                      pResource->AllocationDesc.surfaceInfo.multisampleCount);
+                                                      pAllocationDesc->surfaceInfo.numMipLevels,
+                                                      pAllocationDesc->surfaceInfo.arraySize,
+                                                      pAllocationDesc->surfaceInfo.multisampleCount);
 }
 
 
@@ -690,16 +797,11 @@ static D3D10DDIRESOURCE_TYPE vboxDXSurfaceFlagsToResourceDimension(SVGA3dSurface
 }
 
 
-int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATERESOURCE *pCreateResource)
+static void resourceAllocationDesc(VBOXDXALLOCATIONDESC *pDesc, void const *pvInitData)
 {
-    /* Store data which might be needed later. */
-    pResource->ResourceDimension = pCreateResource->ResourceDimension;
-    pResource->Usage             = (D3D10_DDI_RESOURCE_USAGE)pCreateResource->Usage;
-    for (UINT i = 0; i < pCreateResource->MipLevels; ++i)
-        pResource->aMipInfoList[i] = pCreateResource->pMipInfoList[i];
+    const D3D11DDIARG_CREATERESOURCE *pCreateResource = (const D3D11DDIARG_CREATERESOURCE *)pvInitData;
 
     /* Init surface information which will be used by the miniport to define the surface. */
-    VBOXDXALLOCATIONDESC *pDesc = &pResource->AllocationDesc;
     pDesc->surfaceInfo.surfaceFlags       = vboxDXCalcSurfaceFlags(pCreateResource);
     pDesc->surfaceInfo.format             = vboxDXDxgiToSvgaFormat(pCreateResource->Format);
     pDesc->surfaceInfo.numMipLevels       = pCreateResource->MipLevels;
@@ -736,12 +838,37 @@ int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATER
 
     /* Finally set the allocation type and compute the size. */
     pDesc->enmAllocationType = VBOXDXALLOCATIONTYPE_SURFACE;
-    pDesc->cbAllocation = vboxDXCalcResourceAllocationSize(pResource);
+    pDesc->cbAllocation = vboxDXCalcResourceAllocationSize(pDesc);
+}
 
-    /* Init remaining fields. */
+
+bool vboxDXCreateResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
+                          const D3D11DDIARG_CREATERESOURCE *pCreateResource)
+{
+    bool const fZero = pCreateResource->pInitialDataUP == NULL
+                    && (   pCreateResource->Usage == D3D10_DDI_USAGE_DYNAMIC
+                        || pCreateResource->Usage == D3D10_DDI_USAGE_STAGING);
+
+    pResource->pKMResource = vboxDXAllocateKMResource(pDevice, pResource->hRTResource.handle,
+                                                      resourceAllocationDesc, pCreateResource, fZero);
+    if (!pResource->pKMResource)
+    {
+        /* Might be not enough memory due to temporary staging buffers. */
+        vboxDXFlush(pDevice, true);
+        pResource->pKMResource = vboxDXAllocateKMResource(pDevice, pResource->hRTResource.handle,
+                                                          resourceAllocationDesc, pCreateResource, fZero);
+    }
+
+    if (!pResource->pKMResource)
+        return false;
+
+    pResource->ResourceDimension = pCreateResource->ResourceDimension;
+    pResource->Usage             = (D3D10_DDI_RESOURCE_USAGE)pCreateResource->Usage;
+    for (UINT i = 0; i < pCreateResource->MipLevels; ++i)
+        pResource->aMipInfoList[i] = pCreateResource->pMipInfoList[i];
     pResource->cSubresources = pCreateResource->MipLevels * pCreateResource->ArraySize;
-    pResource->pKMResource = NULL;
     pResource->uMap = 0;
+
     RTListInit(&pResource->listSRV);
     RTListInit(&pResource->listRTV);
     RTListInit(&pResource->listDSV);
@@ -750,95 +877,19 @@ int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATER
     RTListInit(&pResource->listVPIV);
     RTListInit(&pResource->listVPOV);
 
-    return VINF_SUCCESS;
-}
+    pResource->pKMResource->resource.pResource = pResource;
 
-
-static HRESULT dxAllocate(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, D3DKMT_HANDLE *phAllocation)
-{
-    D3DDDI_ALLOCATIONINFO2 ddiAllocationInfo;
-    RT_ZERO(ddiAllocationInfo);
-    //ddiAllocationInfo.pSystemMem            = 0;
-    ddiAllocationInfo.pPrivateDriverData    = &pResource->AllocationDesc;
-    ddiAllocationInfo.PrivateDriverDataSize = sizeof(pResource->AllocationDesc);
-    if (pResource->AllocationDesc.fPrimary)
-    {
-        ddiAllocationInfo.VidPnSourceId     = pResource->AllocationDesc.PrimaryDesc.VidPnSourceId;
-        ddiAllocationInfo.Flags.Primary     = pResource->AllocationDesc.fPrimary;
-    }
-
-    D3DDDICB_ALLOCATE ddiAllocate;
-    RT_ZERO(ddiAllocate);
-    //ddiAllocate.pPrivateDriverData    = NULL;
-    //ddiAllocate.PrivateDriverDataSize = 0;
-    ddiAllocate.hResource             = pResource->hRTResource.handle;
-    ddiAllocate.NumAllocations        = 1;
-    ddiAllocate.pAllocationInfo2      = &ddiAllocationInfo;
-
-    HRESULT hr = pDevice->pRTCallbacks->pfnAllocateCb(pDevice->hRTDevice.handle, &ddiAllocate);
-    LogFlowFunc((" pfnAllocateCb returned %d, hKMResource 0x%X, hAllocation 0x%X", hr, ddiAllocate.hKMResource, ddiAllocationInfo.hAllocation));
-
-    if (SUCCEEDED(hr))
-        *phAllocation = ddiAllocationInfo.hAllocation;
-
-    return hr;
-}
-
-
-bool vboxDXCreateResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
-                          const D3D11DDIARG_CREATERESOURCE *pCreateResource)
-{
-    pResource->pKMResource = (PVBOXDXKMRESOURCE)RTMemAllocZ(sizeof(VBOXDXKMRESOURCE));
-    AssertReturnStmt(pResource->pKMResource, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), false);
-
-    D3DKMT_HANDLE hAllocation = 0;
-    HRESULT hr = dxAllocate(pDevice, pResource, &hAllocation);
-    if (FAILED(hr))
-    {
-        /* Might be not enough memory due to temporary staging buffers. */
-        vboxDXFlush(pDevice, true);
-        hr = dxAllocate(pDevice, pResource, &hAllocation);
-    }
-    AssertReturnStmt(SUCCEEDED(hr), RTMemFree(pResource->pKMResource); vboxDXDeviceSetError(pDevice, hr), false);
-
-    pResource->pKMResource->pResource = pResource;
-    pResource->pKMResource->hAllocation = hAllocation;
     RTListAppend(&pDevice->listResources, &pResource->pKMResource->nodeResource);
 
     if (pCreateResource->pInitialDataUP)
     {
         /* Upload the data to the resource. */
-        for (unsigned i = 0; i < pResource->cSubresources; ++i)
+        for (UINT i = 0; i < pResource->cSubresources; ++i)
             vboxDXResourceUpdateSubresourceUP(pDevice, pResource, i, NULL,
                                               pCreateResource->pInitialDataUP[i].pSysMem,
                                               pCreateResource->pInitialDataUP[i].SysMemPitch,
                                               pCreateResource->pInitialDataUP[i].SysMemSlicePitch, 0);
 
-    }
-    else
-    {
-        /** @todo Test Lock/Unlock. Not sure if memset is really necessary. */
-        if (   pResource->Usage == D3D10_DDI_USAGE_DYNAMIC
-            || pResource->Usage == D3D10_DDI_USAGE_STAGING)
-        {
-            /* Zero the allocation. */
-            D3DDDICB_LOCK ddiLock;
-            RT_ZERO(ddiLock);
-            ddiLock.hAllocation = vboxDXGetAllocation(pResource);
-            ddiLock.Flags.WriteOnly = 1;
-            hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
-            if (SUCCEEDED(hr))
-            {
-                memset(ddiLock.pData, 0, pResource->AllocationDesc.cbAllocation);
-
-                hAllocation = vboxDXGetAllocation(pResource);
-
-                D3DDDICB_UNLOCK ddiUnlock;
-                ddiUnlock.NumAllocations = 1;
-                ddiUnlock.phAllocations = &hAllocation;
-                hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
-            }
-        }
     }
 
     return true;
@@ -853,23 +904,21 @@ bool vboxDXOpenResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
     AssertReturnStmt(pOpenResource->pOpenAllocationInfo2[0].PrivateDriverDataSize == sizeof(VBOXDXALLOCATIONDESC),
                      vboxDXDeviceSetError(pDevice, E_INVALIDARG), false);
 
-    pResource->pKMResource = (PVBOXDXKMRESOURCE)RTMemAllocZ(sizeof(VBOXDXKMRESOURCE));
-    AssertReturnStmt(pResource->pKMResource, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), false);
+    pResource->pKMResource = vboxDXOpenKMResource(pDevice, pOpenResource->pOpenAllocationInfo2[0].hAllocation,
+                                                  (VBOXDXALLOCATIONDESC *)pOpenResource->pOpenAllocationInfo2[0].pPrivateDriverData);
+    if (!pResource->pKMResource)
+        return false;
 
-    VBOXDXALLOCATIONDESC const *pDesc = (VBOXDXALLOCATIONDESC *)pOpenResource->pOpenAllocationInfo2[0].pPrivateDriverData;
+    VBOXDXALLOCATIONDESC const *pDesc = vboxDXGetAllocationDesc(pResource);
 
     /* Restore resource data. */
     pResource->ResourceDimension = vboxDXSurfaceFlagsToResourceDimension(pDesc->surfaceInfo.surfaceFlags);
     pResource->Usage             = vboxDXSurfaceFlagsToResourceUsage(pDesc->surfaceInfo.surfaceFlags);
     for (UINT i = 0; i < pDesc->surfaceInfo.numMipLevels; ++i)
         RT_ZERO(pResource->aMipInfoList[i]);
-
-    pResource->AllocationDesc = *pDesc;
-    pResource->AllocationDesc.resourceInfo.MiscFlags |= D3D10_DDI_RESOURCE_MISC_SHARED;
-
-    /* Init remaining fields. */
     pResource->cSubresources = pDesc->surfaceInfo.numMipLevels * pDesc->surfaceInfo.arraySize;
-    pResource->uMap             = 0;
+    pResource->uMap = 0;
+
     RTListInit(&pResource->listSRV);
     RTListInit(&pResource->listRTV);
     RTListInit(&pResource->listDSV);
@@ -878,9 +927,10 @@ bool vboxDXOpenResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
     RTListInit(&pResource->listVPIV);
     RTListInit(&pResource->listVPOV);
 
-    pResource->pKMResource->pResource = pResource;
-    pResource->pKMResource->hAllocation = pOpenResource->pOpenAllocationInfo2[0].hAllocation;
+    pResource->pKMResource->resource.pResource = pResource;
+
     RTListAppend(&pDevice->listResources, &pResource->pKMResource->nodeResource);
+
     return true;
 }
 
@@ -907,27 +957,19 @@ void vboxDXDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
     /* Remove from the list of active resources. */
     RTListNodeRemove(&pResource->pKMResource->nodeResource);
 
-    if (pResource->AllocationDesc.fPrimary)
+    if (pResource->pKMResource->AllocationDesc.fPrimary)
     {
         /* Delete immediately. */
-        D3DDDICB_DEALLOCATE ddiDeallocate;
-        RT_ZERO(ddiDeallocate);
-        //ddiDeallocate.hResource      = NULL;
-        ddiDeallocate.NumAllocations = 1;
-        ddiDeallocate.HandleList     = &pResource->pKMResource->hAllocation;
-
-        HRESULT hr = pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
-        LogFlowFunc(("pfnDeallocateCb returned %d", hr));
-        AssertStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
-
-        RTMemFree(pResource->pKMResource);
+        vboxDXDeallocateKMResource(pDevice, pResource->pKMResource);
+        pResource->pKMResource = 0;
     }
     else
     {
-        if (!RT_BOOL(pResource->AllocationDesc.resourceInfo.MiscFlags & D3D10_DDI_RESOURCE_MISC_SHARED))
+        if (   !pResource->pKMResource->flags.fOpened
+            && !RT_BOOL(pResource->pKMResource->AllocationDesc.resourceInfo.MiscFlags & D3D10_DDI_RESOURCE_MISC_SHARED))
         {
             /* Set the resource for deferred destruction. */
-            pResource->pKMResource->pResource = NULL;
+            pResource->pKMResource->resource.pResource = NULL;
             RTListAppend(&pDevice->listDestroyedResources, &pResource->pKMResource->nodeResource);
         }
         else
@@ -1503,14 +1545,14 @@ void vboxDXDrawAuto(PVBOXDX_DEVICE pDevice)
 void vboxDXDrawIndexedInstancedIndirect(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT AlignedByteOffsetForArgs)
 {
     vboxDXSetupPipeline(pDevice);
-    vgpu10DrawIndexedInstancedIndirect(pDevice, vboxDXGetAllocation(pResource), AlignedByteOffsetForArgs);
+    vgpu10DrawIndexedInstancedIndirect(pDevice, vboxDXGetKMResource(pResource), AlignedByteOffsetForArgs);
 }
 
 
 void vboxDXDrawInstancedIndirect(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT AlignedByteOffsetForArgs)
 {
     vboxDXSetupPipeline(pDevice);
-    vgpu10DrawInstancedIndirect(pDevice, vboxDXGetAllocation(pResource), AlignedByteOffsetForArgs);
+    vgpu10DrawInstancedIndirect(pDevice, vboxDXGetKMResource(pResource), AlignedByteOffsetForArgs);
 }
 
 
@@ -1528,121 +1570,84 @@ void vboxDXSetScissorRects(PVBOXDX_DEVICE pDevice, UINT NumRects, UINT ClearRect
 }
 
 
-static void vboxDXDestroyCOAllocation(PVBOXDX_DEVICE pDevice, PVBOXDXCOALLOCATION pCOAllocation)
+static void vboxDXDestroyCOAllocation(PVBOXDX_DEVICE pDevice, PVBOXDXKMRESOURCE pCOAllocation)
 {
     if (pCOAllocation)
     {
-        if (pCOAllocation->hCOAllocation)
-        {
-            D3DDDICB_DEALLOCATE ddiDeallocate;
-            RT_ZERO(ddiDeallocate);
-            ddiDeallocate.NumAllocations = 1;
-            ddiDeallocate.HandleList     = &pCOAllocation->hCOAllocation;
+        Assert(pCOAllocation->AllocationDesc.enmAllocationType == VBOXDXALLOCATIONTYPE_CO);
 
-            HRESULT hr = pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
-            LogFlowFunc(("pfnDeallocateCb returned %d", hr));
-            AssertStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
-
-            pCOAllocation->hCOAllocation = 0;
-        }
-
-        RTMemFree(pCOAllocation);
+        /* Remove from the global list of resources. */
+        RTListNodeRemove(&pCOAllocation->nodeResource);
+        vboxDXDeallocateKMResource(pDevice, pCOAllocation);
     }
 }
 
 
-static bool vboxDXCreateCOAllocation(PVBOXDX_DEVICE pDevice, RTLISTANCHOR *pList, PVBOXDXCOALLOCATION *ppCOAllocation, uint32_t cbAllocation)
+static void coAllocationDesc(VBOXDXALLOCATIONDESC *pDesc, void const *pvInitData)
 {
-    PVBOXDXCOALLOCATION pCOAllocation = (PVBOXDXCOALLOCATION)RTMemAllocZ(sizeof(VBOXDXCOALLOCATION));
-    AssertReturnStmt(pCOAllocation, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), false);
+    pDesc->enmAllocationType = VBOXDXALLOCATIONTYPE_CO; /* Context Object allocation. */
+    pDesc->cbAllocation      = *(uint32_t *)pvInitData;
+}
 
-    VBOXDXALLOCATIONDESC desc;
-    RT_ZERO(desc);
-    desc.enmAllocationType = VBOXDXALLOCATIONTYPE_CO;
-    desc.cbAllocation      = cbAllocation;
 
-    D3DDDI_ALLOCATIONINFO2 ddiAllocationInfo;
-    RT_ZERO(ddiAllocationInfo);
-    ddiAllocationInfo.pPrivateDriverData    = &desc;
-    ddiAllocationInfo.PrivateDriverDataSize = sizeof(desc);
-
-    D3DDDICB_ALLOCATE ddiAllocate;
-    RT_ZERO(ddiAllocate);
-    ddiAllocate.NumAllocations   = 1;
-    ddiAllocate.pAllocationInfo2 = &ddiAllocationInfo;
-
-    HRESULT hr = pDevice->pRTCallbacks->pfnAllocateCb(pDevice->hRTDevice.handle, &ddiAllocate);
-    LogFlowFunc(("pfnAllocateCb returned %d, hKMResource 0x%X, hAllocation 0x%X", hr, ddiAllocate.hKMResource, ddiAllocationInfo.hAllocation));
-    AssertReturnStmt(SUCCEEDED(hr),
-                     vboxDXDestroyCOAllocation(pDevice, pCOAllocation); vboxDXDeviceSetError(pDevice, hr), false);
-
-    pCOAllocation->hCOAllocation = ddiAllocationInfo.hAllocation;
-
-    D3DDDICB_LOCK ddiLock;
-    RT_ZERO(ddiLock);
-    ddiLock.hAllocation = ddiAllocationInfo.hAllocation;
-    ddiLock.Flags.WriteOnly = 1;
-    hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
-    if (SUCCEEDED(hr))
-    {
-        memset(ddiLock.pData, 0, cbAllocation);
-
-        D3DDDICB_UNLOCK ddiUnlock;
-        ddiUnlock.NumAllocations = 1;
-        ddiUnlock.phAllocations = &ddiAllocationInfo.hAllocation;
-        hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
-    }
-    AssertReturnStmt(SUCCEEDED(hr),
-                     vboxDXDestroyCOAllocation(pDevice, pCOAllocation); vboxDXDeviceSetError(pDevice, hr), false);
-
-    pCOAllocation->cbAllocation = cbAllocation;
+static bool vboxDXCreateCOAllocation(PVBOXDX_DEVICE pDevice, RTLISTANCHOR *pList, PVBOXDXKMRESOURCE *ppCOAllocation, uint32_t cbAllocation)
+{
+    PVBOXDXKMRESOURCE pCOAllocation = vboxDXAllocateKMResource(pDevice, 0, coAllocationDesc, &cbAllocation, true);
+    if (!pCOAllocation)
+        return false;
 
     /* Initially the allocation contains one big free block and zero sized free blocks. */
-    pCOAllocation->aOffset[0] = 0;
-    for (unsigned i = 1; i < RT_ELEMENTS(pCOAllocation->aOffset); ++i)
-        pCOAllocation->aOffset[i] = cbAllocation;
+    pCOAllocation->co.aOffset[0] = 0;
+    for (unsigned i = 1; i < RT_ELEMENTS(pCOAllocation->co.aOffset); ++i)
+        pCOAllocation->co.aOffset[i] = cbAllocation;
 
-    RTListAppend(pList, &pCOAllocation->nodeAllocationsChain);
+    /* Add to the chain of COAs. */
+    RTListAppend(pList, &pCOAllocation->co.nodeAllocationsChain);
+
+    /* Add to the global list of resources. */
+    RTListAppend(&pDevice->listResources, &pCOAllocation->nodeResource);
 
     *ppCOAllocation = pCOAllocation;
     return true;
 }
 
-#define IS_CO_BLOCK_FREE(_a, _i) (((_a)->u64Bitmap & (1ULL << (_i))) == 0)
-#define IS_CO_BLOCK_USED(_a, _i) (((_a)->u64Bitmap & (1ULL << (_i))) != 0)
-#define SET_CO_BLOCK_FREE(_a, _i) (((_a)->u64Bitmap &= ~(1ULL << (_i))))
-#define SET_CO_BLOCK_USED(_a, _i) (((_a)->u64Bitmap |= (1ULL << (_i))))
+#define IS_CO_BLOCK_FREE(_a, _i) (((_a)->co.u64Bitmap & (1ULL << (_i))) == 0)
+#define IS_CO_BLOCK_USED(_a, _i) (((_a)->co.u64Bitmap & (1ULL << (_i))) != 0)
+#define SET_CO_BLOCK_FREE(_a, _i) (((_a)->co.u64Bitmap &= ~(1ULL << (_i))))
+#define SET_CO_BLOCK_USED(_a, _i) (((_a)->co.u64Bitmap |= (1ULL << (_i))))
 
-static bool vboxDXCOABlockAlloc(PVBOXDXCOALLOCATION pCOAllocation, uint32_t cb, uint32_t *poff)
+static bool vboxDXCOABlockAlloc(PVBOXDXKMRESOURCE pCOAllocation, uint32_t cb, uint32_t *poff)
 {
+    Assert(pCOAllocation->AllocationDesc.enmAllocationType == VBOXDXALLOCATIONTYPE_CO);
+
     //DEBUG_BREAKPOINT_TEST();
     /* Search for a big enough free block. The last block is a special case. */
     unsigned i = 0;
-    for (; i < RT_ELEMENTS(pCOAllocation->aOffset) - 1; ++i)
+    for (; i < RT_ELEMENTS(pCOAllocation->co.aOffset) - 1; ++i)
     {
         if (   IS_CO_BLOCK_FREE(pCOAllocation, i)
-            && pCOAllocation->aOffset[i + 1] - pCOAllocation->aOffset[i] >= cb)
+            && pCOAllocation->co.aOffset[i + 1] - pCOAllocation->co.aOffset[i] >= cb)
         {
             /* Found one. */
             SET_CO_BLOCK_USED(pCOAllocation, i);
 
             /* If the next block is free, then add the remaining space to it. */
             if (IS_CO_BLOCK_FREE(pCOAllocation, i + 1))
-                pCOAllocation->aOffset[i + 1] = pCOAllocation->aOffset[i] + cb;
+                pCOAllocation->co.aOffset[i + 1] = pCOAllocation->co.aOffset[i] + cb;
 
-            *poff = pCOAllocation->aOffset[i];
+            *poff = pCOAllocation->co.aOffset[i];
             return true;
         }
     }
 
     /* Last block. */
     if (   IS_CO_BLOCK_FREE(pCOAllocation, i)
-        && pCOAllocation->cbAllocation - pCOAllocation->aOffset[i] >= cb)
+        && pCOAllocation->AllocationDesc.cbAllocation - pCOAllocation->co.aOffset[i] >= cb)
     {
         /* Found one. */
         SET_CO_BLOCK_USED(pCOAllocation, i);
 
-        *poff = pCOAllocation->aOffset[i];
+        *poff = pCOAllocation->co.aOffset[i];
         return true;
     }
 
@@ -1650,12 +1655,14 @@ static bool vboxDXCOABlockAlloc(PVBOXDXCOALLOCATION pCOAllocation, uint32_t cb, 
 }
 
 
-static void vboxDXCOABlockFree(PVBOXDXCOALLOCATION pCOAllocation, uint32_t offBlock)
+static void vboxDXCOABlockFree(PVBOXDXKMRESOURCE pCOAllocation, uint32_t offBlock)
 {
+    Assert(pCOAllocation->AllocationDesc.enmAllocationType == VBOXDXALLOCATIONTYPE_CO);
+
     //DEBUG_BREAKPOINT_TEST();
-    for (unsigned i = 0; i < RT_ELEMENTS(pCOAllocation->aOffset); ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(pCOAllocation->co.aOffset); ++i)
     {
-        if (pCOAllocation->aOffset[i] == offBlock)
+        if (pCOAllocation->co.aOffset[i] == offBlock)
         {
             Assert(IS_CO_BLOCK_USED(pCOAllocation, i));
             SET_CO_BLOCK_FREE(pCOAllocation, i);
@@ -1667,42 +1674,81 @@ static void vboxDXCOABlockFree(PVBOXDXCOALLOCATION pCOAllocation, uint32_t offBl
 }
 
 
-static bool vboxDXEnsureShaderAllocation(PVBOXDX_DEVICE pDevice)
+static void shadersAllocationDesc(VBOXDXALLOCATIONDESC *pDesc, void const *pvInitData)
 {
-    if (!pDevice->hShaderAllocation)
+    pDesc->enmAllocationType = VBOXDXALLOCATIONTYPE_SHADERS;
+    pDesc->cbAllocation      = *(uint32_t *)pvInitData;
+}
+
+
+static uint32_t vboxdxNumberOfShadersAllocations(PVBOXDX_DEVICE pDevice)
+{
+    uint32_t cAllocations = 0;
+    PVBOXDXKMRESOURCE pIter;
+    RTListForEach(&pDevice->listShadersAllocations, pIter, VBOXDXKMRESOURCE, shaders.nodeAllocationsChain)
+        ++cAllocations;
+    return cAllocations;
+}
+
+
+static PVBOXDXKMRESOURCE vboxdxShadersAllocationFromOffset(PVBOXDX_DEVICE pDevice, uint32_t off)
+{
+    uint32_t offStart = 0;
+    PVBOXDXKMRESOURCE pIter;
+    RTListForEach(&pDevice->listShadersAllocations, pIter, VBOXDXKMRESOURCE, shaders.nodeAllocationsChain)
     {
-        VBOXDXALLOCATIONDESC desc;
-        RT_ZERO(desc);
-        desc.enmAllocationType = VBOXDXALLOCATIONTYPE_SHADERS;
-        desc.cbAllocation      = SVGA3D_MAX_SHADER_MEMORY_BYTES;
+        offStart += VBOXDX_SHADER_ALLOCATION_SIZE;
+        if (off < offStart)
+            return pIter;
+    }
+    return NULL;
+}
 
-        D3DDDI_ALLOCATIONINFO2 ddiAllocationInfo;
-        RT_ZERO(ddiAllocationInfo);
-        //ddiAllocationInfo.pSystemMem            = 0;
-        ddiAllocationInfo.pPrivateDriverData    = &desc;
-        ddiAllocationInfo.PrivateDriverDataSize = sizeof(desc);
-        //ddiAllocationInfo.VidPnSourceId         = 0;
-        //ddiAllocationInfo.Flags.Value           = 0;
 
-        D3DDDICB_ALLOCATE ddiAllocate;
-        RT_ZERO(ddiAllocate);
-        //ddiAllocate.pPrivateDriverData    = NULL;
-        //ddiAllocate.PrivateDriverDataSize = 0;
-        //ddiAllocate.hResource             = 0;
-        ddiAllocate.NumAllocations        = 1;
-        ddiAllocate.pAllocationInfo2      = &ddiAllocationInfo;
+static uint32_t vboxdxFindPlaceForShader(PVBOXDX_DEVICE pDevice, PVBOXDXSHADER pShader)
+{
+    uint32_t const cbShaderTotal = pShader->cbShader + pShader->cbSignatures;
 
-        HRESULT hr = pDevice->pRTCallbacks->pfnAllocateCb(pDevice->hRTDevice.handle, &ddiAllocate);
-        LogFlowFunc((" pfnAllocateCb returned %d, hKMResource 0x%X, hAllocation 0x%X", hr, ddiAllocate.hKMResource, ddiAllocationInfo.hAllocation));
-        AssertReturnStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr), false);
+    uint32_t offShader = SVGA3D_INVALID_ID; /* Offset in shaders allocations where to place the new shader. */
 
-        pDevice->hShaderAllocation  = ddiAllocationInfo.hAllocation;
-        pDevice->cbShaderAllocation = SVGA3D_MAX_SHADER_MEMORY_BYTES;
-        pDevice->cbShaderAvailable  = SVGA3D_MAX_SHADER_MEMORY_BYTES;
-        pDevice->offShaderFree      = 0;
+    /* First try to place the new shader right after the last shader in the same allocation. */
+    uint32_t offFree = 0;
+    PVBOXDXSHADER pLastShader = RTListGetLast(&pDevice->listShaders, VBOXDXSHADER, node);
+    if (pLastShader)
+    {
+        offFree = pLastShader->offShader + pLastShader->cbShader + pLastShader->cbSignatures;
+        uint32_t const cbRemaining = VBOXDX_SHADER_ALLOCATION_SIZE - offFree % VBOXDX_SHADER_ALLOCATION_SIZE;
+
+        if (cbRemaining >= cbShaderTotal)
+            offShader = offFree; /* Enough space. */
     }
 
-    return true;
+    if (offShader == SVGA3D_INVALID_ID)
+    {
+        /* There is no space in the allocation where the currently last shader resides.
+         * Check if there is an allocation after it. */
+        offFree = RT_ALIGN_32(offFree, VBOXDX_SHADER_ALLOCATION_SIZE); /* Offset of the start of subsequent allocation. */
+
+        uint32_t cShadersAllocations = vboxdxNumberOfShadersAllocations(pDevice);
+        if (offFree / VBOXDX_SHADER_ALLOCATION_SIZE >= cShadersAllocations)
+        {
+            /* Allocate a new shaders allocation and place the new shader at the beginning of it. */
+            uint32_t const cbAllocation = VBOXDX_SHADER_ALLOCATION_SIZE;
+            PVBOXDXKMRESOURCE pShadersAllocation = vboxDXAllocateKMResource(pDevice, 0, shadersAllocationDesc,
+                                                                            &cbAllocation, false);
+            AssertReturnStmt(pShadersAllocation, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), SVGA3D_INVALID_ID);
+
+            RTListAppend(&pDevice->listShadersAllocations, &pShadersAllocation->shaders.nodeAllocationsChain);
+
+            /* Add to the global list of resources. */
+            RTListAppend(&pDevice->listResources, &pShadersAllocation->nodeResource);
+        }
+
+        /* Place the new shader at the beginning of subsequent allocation. */
+        offShader = offFree;
+    }
+
+    return offShader;
 }
 
 
@@ -1732,6 +1778,11 @@ void vboxDXCreateShader(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, 
                         const D3D11_1DDIARG_SIGNATURE_ENTRY2* pOutputSignature, UINT NumOutputSignatureEntries,
                         const D3D11_1DDIARG_SIGNATURE_ENTRY2* pPatchConstantSignature, UINT NumPatchConstantSignatureEntries)
 {
+    AssertReturnVoidStmt(   NumInputSignatureEntries <= 4096 /* An arbitrary large value. */
+                         && NumOutputSignatureEntries <= 4096
+                         && NumPatchConstantSignatureEntries <= 4096,
+                         vboxDXDeviceSetError(pDevice, E_INVALIDARG));
+
     /* CreateGeometryShaderWithStreamOutput sometimes passes pShaderCode == NULL. */
     pShader->enmShaderType = enmShaderType;
     pShader->cbShader = pShaderCode ? pShaderCode[1] * sizeof(UINT) : 0;
@@ -1739,6 +1790,13 @@ void vboxDXCreateShader(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, 
        + NumInputSignatureEntries * sizeof(SVGA3dDXShaderSignatureEntry)
        + NumOutputSignatureEntries * sizeof(SVGA3dDXShaderSignatureEntry)
        + NumPatchConstantSignatureEntries * sizeof(SVGA3dDXShaderSignatureEntry);
+    AssertReturnVoidStmt(   pShader->cbShader < VBOXDX_SHADER_ALLOCATION_SIZE
+                         && pShader->cbSignatures < VBOXDX_SHADER_ALLOCATION_SIZE,
+                         vboxDXDeviceSetError(pDevice, E_INVALIDARG));
+
+    uint32_t const cbShaderTotal = pShader->cbShader + pShader->cbSignatures;
+    AssertReturnVoidStmt(cbShaderTotal <= VBOXDX_SHADER_ALLOCATION_SIZE,
+                         vboxDXDeviceSetError(pDevice, E_INVALIDARG));
 
     if (pShader->enmShaderType == SVGA3D_SHADERTYPE_GS)
     {
@@ -1754,33 +1812,22 @@ void vboxDXCreateShader(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, 
         pShader->offShader = SVGA3D_INVALID_ID;
         pShader->pu32Bytecode = NULL;
         pShader->pSignatures = NULL;
+        pShader->pShadersAllocation = NULL;
         return;
     }
 
     int rc = RTHandleTableAlloc(pDevice->hHTShader, pShader, &pShader->uShaderId);
     AssertRCReturnVoidStmt(rc, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY));
 
-    if (!vboxDXEnsureShaderAllocation(pDevice))
-    {
-        RTHandleTableFree(pDevice->hHTShader, pShader->uShaderId);
-        return;
-    }
+    /*
+     * Find a place for the shader in a shaders allocation.
+     */
+    pShader->offShader = vboxdxFindPlaceForShader(pDevice, pShader);
+    AssertReturnVoidStmt(pShader->offShader != SVGA3D_INVALID_ID,
+                         RTHandleTableFree(pDevice->hHTShader, pShader->uShaderId));
 
-    uint32_t const cbShaderTotal = pShader->cbShader + pShader->cbSignatures;
-    if (pDevice->cbShaderAllocation - pDevice->offShaderFree < cbShaderTotal)
-    {
-        if (pDevice->cbShaderAvailable < cbShaderTotal)
-        {
-            /** @todo Unbind some shaders until there is enough space for the new shader. */
-            DEBUG_BREAKPOINT_TEST();
-        }
-        Assert(pDevice->cbShaderAvailable < cbShaderTotal);
+    pShader->pShadersAllocation = vboxdxShadersAllocationFromOffset(pDevice, pShader->offShader);
 
-        /** @todo Pack shaders in order to have one free area in the end of the allocation. */
-        DEBUG_BREAKPOINT_TEST();
-    }
-
-    pShader->offShader = pDevice->offShaderFree;
     pShader->pu32Bytecode = (uint32_t *)&pShader[1];
     pShader->pSignatures = (SVGA3dDXSignatureHeader *)((uint8_t *)pShader->pu32Bytecode + pShader->cbShader);
 
@@ -1819,12 +1866,12 @@ void vboxDXCreateShader(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, 
 
     D3DDDICB_LOCK ddiLock;
     RT_ZERO(ddiLock);
-    ddiLock.hAllocation = pDevice->hShaderAllocation;
+    ddiLock.hAllocation = vboxDXGetAllocation(pShader->pShadersAllocation);
     ddiLock.Flags.WriteOnly = 1;
     HRESULT hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
     if (SUCCEEDED(hr))
     {
-        uint8_t *pu8 = (uint8_t *)ddiLock.pData + pShader->offShader;
+        uint8_t *pu8 = (uint8_t *)ddiLock.pData + pShader->offShader % VBOXDX_SHADER_ALLOCATION_SIZE;
 
         memcpy(pu8, pShader->pu32Bytecode, pShader->cbShader);
         pu8 += pShader->cbShader;
@@ -1833,7 +1880,7 @@ void vboxDXCreateShader(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, 
 
         D3DDDICB_UNLOCK ddiUnlock;
         ddiUnlock.NumAllocations = 1;
-        ddiUnlock.phAllocations = &pDevice->hShaderAllocation;
+        ddiUnlock.phAllocations = &ddiLock.hAllocation;
         hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
     }
     AssertReturnVoidStmt(SUCCEEDED(hr),
@@ -1842,11 +1889,8 @@ void vboxDXCreateShader(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, 
 
     RTListAppend(&pDevice->listShaders, &pShader->node);
 
-    pDevice->cbShaderAvailable -= cbShaderTotal;
-    pDevice->offShaderFree     += cbShaderTotal;
-
     vgpu10DefineShader(pDevice, pShader->uShaderId, pShader->enmShaderType, cbShaderTotal);
-    vgpu10BindShader(pDevice, pShader->uShaderId, pDevice->hShaderAllocation, pShader->offShader);
+    vgpu10BindShader(pDevice, pShader->uShaderId, pShader->pShadersAllocation, pShader->offShader % VBOXDX_SHADER_ALLOCATION_SIZE);
 }
 
 
@@ -1875,8 +1919,8 @@ void vboxDXCreateStreamOutput(PVBOXDX_DEVICE pDevice, PVBOXDXSHADER pShader,
     /* Allocate mob space for declarations. */
     pShader->gs.cbOutputStreamDecls = pShader->gs.NumEntries * sizeof(*pOutputStreamDecl);
     pShader->gs.pCOAllocation = NULL;
-    PVBOXDXCOALLOCATION pIter;
-    RTListForEach(&pDevice->listCOAStreamOutput, pIter, VBOXDXCOALLOCATION, nodeAllocationsChain)
+    PVBOXDXKMRESOURCE pIter;
+    RTListForEach(&pDevice->listCOAStreamOutput, pIter, VBOXDXKMRESOURCE, co.nodeAllocationsChain)
     {
         if (vboxDXCOABlockAlloc(pIter, pShader->gs.cbOutputStreamDecls, &pShader->gs.offStreamOutputDecls))
         {
@@ -1899,7 +1943,7 @@ void vboxDXCreateStreamOutput(PVBOXDX_DEVICE pDevice, PVBOXDXSHADER pShader,
 
     D3DDDICB_LOCK ddiLock;
     RT_ZERO(ddiLock);
-    ddiLock.hAllocation = pShader->gs.pCOAllocation->hCOAllocation;
+    ddiLock.hAllocation = vboxDXGetAllocation(pShader->gs.pCOAllocation);
     ddiLock.Flags.WriteOnly = 1;
     HRESULT hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
     if (SUCCEEDED(hr))
@@ -1922,17 +1966,17 @@ void vboxDXCreateStreamOutput(PVBOXDX_DEVICE pDevice, PVBOXDXSHADER pShader,
 
         D3DDDICB_UNLOCK ddiUnlock;
         ddiUnlock.NumAllocations = 1;
-        ddiUnlock.phAllocations = &pShader->gs.pCOAllocation->hCOAllocation;
+        ddiUnlock.phAllocations = &ddiLock.hAllocation;
         hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
     }
     AssertReturnVoidStmt(SUCCEEDED(hr),
-                         vboxDXHandleFree(pDevice->hHTShader, &pShader->uShaderId);
+                         vboxDXHandleFree(pDevice->hHTStreamOutput, &pShader->gs.uStreamOutputId);
                          vboxDXDeviceSetError(pDevice, hr));
 
     /* Inform host. */
     vgpu10DefineStreamOutputWithMob(pDevice, pShader->gs.uStreamOutputId, pShader->gs.NumEntries, pShader->gs.NumStrides,
                                     pShader->gs.BufferStridesInBytes, pShader->gs.RasterizedStream);
-    vgpu10BindStreamOutput(pDevice, pShader->gs.uStreamOutputId, pShader->gs.pCOAllocation->hCOAllocation,
+    vgpu10BindStreamOutput(pDevice, pShader->gs.uStreamOutputId, pShader->gs.pCOAllocation,
                            pShader->gs.offStreamOutputDecls, pShader->gs.cbOutputStreamDecls);
 }
 
@@ -1958,10 +2002,6 @@ void vboxDXDestroyShader(PVBOXDX_DEVICE pDevice, PVBOXDXSHADER pShader)
         vgpu10BindShader(pDevice, pShader->uShaderId, 0, 0);
         vgpu10DestroyShader(pDevice, pShader->uShaderId);
         vboxDXDeviceFlushCommands(pDevice);
-
-        /* Take the freed space into account. */
-        uint32_t const cbShaderTotal = pShader->cbShader + pShader->cbSignatures;
-        pDevice->cbShaderAvailable += cbShaderTotal;
 
         RTListNodeRemove(&pShader->node);
         RTHandleTableFree(pDevice->hHTShader, pShader->uShaderId);
@@ -2021,7 +2061,7 @@ static VMSVGAQUERYINFO const *getQueryInfo(D3D10DDI_QUERY Query)
 }
 
 
-#ifdef DEBUG
+#ifdef VBOX_STRICT
 static bool isBeginDisabled(D3D10DDI_QUERY q)
 {
     return q == D3D10DDI_QUERY_EVENT
@@ -2049,8 +2089,8 @@ void vboxDXCreateQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, D3D10DDI_QUE
     /* Allocate mob space for this query. */
     pQuery->pCOAllocation = NULL;
     uint32_t const cbAlloc = (pQuery->Query != D3D10DDI_QUERY_EVENT ? sizeof(uint32_t) : 0) + pQueryInfo->cbDataSvga;
-    PVBOXDXCOALLOCATION pIter;
-    RTListForEach(&pDevice->listCOAQuery, pIter, VBOXDXCOALLOCATION, nodeAllocationsChain)
+    PVBOXDXKMRESOURCE pIter;
+    RTListForEach(&pDevice->listCOAQuery, pIter, VBOXDXKMRESOURCE, co.nodeAllocationsChain)
     {
         if (vboxDXCOABlockAlloc(pIter, cbAlloc, &pQuery->offQuery))
         {
@@ -2077,7 +2117,7 @@ void vboxDXCreateQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, D3D10DDI_QUE
     {
         D3DDDICB_LOCK ddiLock;
         RT_ZERO(ddiLock);
-        ddiLock.hAllocation = pQuery->pCOAllocation->hCOAllocation;
+        ddiLock.hAllocation = vboxDXGetAllocation(pQuery->pCOAllocation);
         ddiLock.Flags.WriteOnly = 1;
         HRESULT hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
         if (SUCCEEDED(hr))
@@ -2086,13 +2126,13 @@ void vboxDXCreateQuery(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, D3D10DDI_QUE
 
             D3DDDICB_UNLOCK ddiUnlock;
             ddiUnlock.NumAllocations = 1;
-            ddiUnlock.phAllocations = &pQuery->pCOAllocation->hCOAllocation;
+            ddiUnlock.phAllocations = &ddiLock.hAllocation;
             hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
         }
         AssertReturnVoidStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
 
         vgpu10DefineQuery(pDevice, pQuery->uQueryId, pQuery->svga.queryType, pQuery->svga.flags);
-        vgpu10BindQuery(pDevice, pQuery->uQueryId, pQuery->pCOAllocation->hCOAllocation);
+        vgpu10BindQuery(pDevice, pQuery->uQueryId, pQuery->pCOAllocation);
         vgpu10SetQueryOffset(pDevice, pQuery->uQueryId, pQuery->offQuery);
     }
 }
@@ -2140,7 +2180,7 @@ void vboxDXQueryEnd(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
     if (pQuery->Query == D3D10DDI_QUERY_EVENT)
     {
         pQuery->u64Value = ASMAtomicIncU64(&pDevice->u64MobFenceValue);
-        vgpu10MobFence64(pDevice, pQuery->u64Value, pQuery->pCOAllocation->hCOAllocation, pQuery->offQuery);
+        vgpu10MobFence64(pDevice, pQuery->u64Value, pQuery->pCOAllocation, pQuery->offQuery);
         return;
     }
 
@@ -2161,7 +2201,7 @@ void vboxDXQueryGetData(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, VOID* pData
 
         D3DDDICB_LOCK ddiLock;
         RT_ZERO(ddiLock);
-        ddiLock.hAllocation = pQuery->pCOAllocation->hCOAllocation;
+        ddiLock.hAllocation = vboxDXGetAllocation(pQuery->pCOAllocation);
         ddiLock.Flags.ReadOnly = 1;
         HRESULT hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
         if (SUCCEEDED(hr))
@@ -2170,7 +2210,7 @@ void vboxDXQueryGetData(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, VOID* pData
 
             D3DDDICB_UNLOCK ddiUnlock;
             ddiUnlock.NumAllocations = 1;
-            ddiUnlock.phAllocations = &pQuery->pCOAllocation->hCOAllocation;
+            ddiUnlock.phAllocations = &ddiLock.hAllocation;
             hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
         }
         AssertReturnVoidStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
@@ -2199,7 +2239,7 @@ void vboxDXQueryGetData(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, VOID* pData
 
     D3DDDICB_LOCK ddiLock;
     RT_ZERO(ddiLock);
-    ddiLock.hAllocation = pQuery->pCOAllocation->hCOAllocation;
+    ddiLock.hAllocation = vboxDXGetAllocation(pQuery->pCOAllocation);
     ddiLock.Flags.ReadOnly = 1;
     HRESULT hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
     if (SUCCEEDED(hr))
@@ -2211,7 +2251,7 @@ void vboxDXQueryGetData(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery, VOID* pData
 
         D3DDDICB_UNLOCK ddiUnlock;
         ddiUnlock.NumAllocations = 1;
-        ddiUnlock.phAllocations = &pQuery->pCOAllocation->hCOAllocation;
+        ddiUnlock.phAllocations = &ddiLock.hAllocation;
         hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
     }
     AssertReturnVoidStmt(SUCCEEDED(hr), RTMemTmpFree(pvResult); vboxDXDeviceSetError(pDevice, hr));
@@ -2378,9 +2418,9 @@ void vboxDXSetIndexBuffer(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pBuffer, DXGI
 
 
 void vboxDXSoSetTargets(PVBOXDX_DEVICE pDevice, uint32_t NumTargets,
-                        D3DKMT_HANDLE *paAllocations, uint32_t *paOffsets, uint32_t *paSizes)
+                        PVBOXDXKMRESOURCE *papKMResources, uint32_t *paOffsets, uint32_t *paSizes)
 {
-    vgpu10SoSetTargets(pDevice, NumTargets, paAllocations, paOffsets, paSizes);
+    vgpu10SoSetTargets(pDevice, NumTargets, papKMResources, paOffsets, paSizes);
 }
 
 
@@ -2392,6 +2432,9 @@ static bool vboxDXDynamicOrStagingUpdateUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOU
     AssertReturnStmt(   pDstResource->Usage == D3D10_DDI_USAGE_DYNAMIC
                      || pDstResource->Usage == D3D10_DDI_USAGE_STAGING,
                      vboxDXDeviceSetError(pDevice, E_INVALIDARG), false);
+
+    VBOXDXALLOCATIONDESC const *pDstAllocationDesc = vboxDXGetAllocationDesc(pDstResource);
+    AssertReturn(pDstAllocationDesc, false);
 
     SVGA3dBox destBox;
     if (pDstBox)
@@ -2405,22 +2448,22 @@ static bool vboxDXDynamicOrStagingUpdateUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOU
     }
     else
     {
-        vboxDXGetSubresourceBox(pDstResource, DstSubresource, &destBox);
+        vboxDXGetSubresourceBox(pDstAllocationDesc, DstSubresource, &destBox);
     }
 
     uint32_t offPixel;
     uint32_t cbRow;
     uint32_t cRows;
     uint32_t Depth;
-    vboxDXGetResourceBoxDimensions(pDstResource, DstSubresource, &destBox, &offPixel, &cbRow, &cRows, &Depth);
+    vboxDXGetResourceBoxDimensions(pDstAllocationDesc, DstSubresource, &destBox, &offPixel, &cbRow, &cRows, &Depth);
 
     UINT DstRowPitch;
     UINT DstDepthPitch;
-    vboxDXGetSubresourcePitch(pDstResource, DstSubresource, &DstRowPitch, &DstDepthPitch);
+    vboxDXGetSubresourcePitch(pDstAllocationDesc, DstSubresource, &DstRowPitch, &DstDepthPitch);
 
     /* The allocation contains all subresources, so get subresource offset too. */
-    offPixel += vboxDXGetSubresourceOffset(pDstResource, DstSubresource);
-    //uint32_t const cbSubresource = vboxDXGetSubresourceSize(pDstResource, DstSubresource);
+    offPixel += vboxDXGetSubresourceOffset(pDstAllocationDesc, DstSubresource);
+    //uint32_t const cbSubresource = vboxDXGetSubresourceSize(pDstAllocationDesc, DstSubresource);
 
     D3DDDICB_LOCK ddiLock;
     RT_ZERO(ddiLock);
@@ -2441,18 +2484,16 @@ static bool vboxDXDynamicOrStagingUpdateUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOU
             }
         }
 
-        D3DKMT_HANDLE const hAllocation = vboxDXGetAllocation(pDstResource);
-
         D3DDDICB_UNLOCK ddiUnlock;
         ddiUnlock.NumAllocations = 1;
-        ddiUnlock.phAllocations = &hAllocation;
+        ddiUnlock.phAllocations = &ddiLock.hAllocation;
         hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
         if (SUCCEEDED(hr))
         {
             /* Inform the host that the resource has been updated. */
             SVGA3dBox box;
-            vboxDXGetSubresourceBox(pDstResource, DstSubresource, &box);
-            vgpu10UpdateSubResource(pDevice, vboxDXGetAllocation(pDstResource), DstSubresource, &box);
+            vboxDXGetSubresourceBox(pDstAllocationDesc, DstSubresource, &box);
+            vgpu10UpdateSubResource(pDevice, vboxDXGetKMResource(pDstResource), DstSubresource, &box);
             return true;
         }
     }
@@ -2485,11 +2526,9 @@ static bool vboxDXUpdateStagingBufferUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
             }
         }
 
-        D3DKMT_HANDLE const hAllocation = vboxDXGetAllocation(pBuffer);
-
         D3DDDICB_UNLOCK ddiUnlock;
         ddiUnlock.NumAllocations = 1;
-        ddiUnlock.phAllocations = &hAllocation;
+        ddiUnlock.phAllocations = &ddiLock.hAllocation;
         hr = pDevice->pRTCallbacks->pfnUnlockCb(pDevice->hRTDevice.handle, &ddiUnlock);
         if (SUCCEEDED(hr))
             return true;
@@ -2533,12 +2572,9 @@ static PVBOXDX_RESOURCE vboxDXCreateStagingBuffer(PVBOXDX_DEVICE pDevice, UINT c
     createResource.TextureLayout      = D3DWDDM2_0DDI_TL_UNDEFINED;
 
     pStagingResource->hRTResource.handle = 0; /* This resource has not been created by D3D runtime. */
-    int rc = vboxDXInitResourceData(pStagingResource, &createResource);
-    if (RT_SUCCESS(rc))
-    {
-        if (vboxDXCreateResource(pDevice, pStagingResource, &createResource))
-            return pStagingResource;
-    }
+    if (vboxDXCreateResource(pDevice, pStagingResource, &createResource))
+        return pStagingResource;
+
     RTMemFree(pStagingResource);
     vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY);
     return NULL;
@@ -2596,10 +2632,13 @@ void vboxDXResourceUpdateSubresourceUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE 
      * A simple approach for now: allocate a staging buffer for each upload and delete the buffers after a flush.
      */
 
+    VBOXDXALLOCATIONDESC const *pDstAllocationDesc = vboxDXGetAllocationDesc(pDstResource);
+    AssertReturnVoid(pDstAllocationDesc);
+
     /*
      * Allocate a staging buffer big enough to hold the entire subresource.
      */
-    uint32_t const cbStagingBuffer = vboxDXGetSubresourceSize(pDstResource, DstSubresource);
+    uint32_t const cbStagingBuffer = vboxDXGetSubresourceSize(pDstAllocationDesc, DstSubresource);
     PVBOXDX_RESOURCE pStagingBuffer = vboxDXCreateStagingBuffer(pDevice, cbStagingBuffer);
     if (!pStagingBuffer)
         return;
@@ -2618,17 +2657,17 @@ void vboxDXResourceUpdateSubresourceUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE 
         destBox.d = pDstBox->back - pDstBox->front;
     }
     else
-        vboxDXGetSubresourceBox(pDstResource, DstSubresource, &destBox);
+        vboxDXGetSubresourceBox(pDstAllocationDesc, DstSubresource, &destBox);
 
     uint32_t offPixel;
     uint32_t cbRow;
     UINT cRows;
     UINT Depth;
-    vboxDXGetResourceBoxDimensions(pDstResource, DstSubresource, &destBox, &offPixel, &cbRow, &cRows, &Depth);
+    vboxDXGetResourceBoxDimensions(pDstAllocationDesc, DstSubresource, &destBox, &offPixel, &cbRow, &cRows, &Depth);
 
     UINT cbRowPitch;
     UINT cbDepthPitch;
-    vboxDXGetSubresourcePitch(pDstResource, DstSubresource, &cbRowPitch, &cbDepthPitch);
+    vboxDXGetSubresourcePitch(pDstAllocationDesc, DstSubresource, &cbRowPitch, &cbDepthPitch);
 
     if (!vboxDXUpdateStagingBufferUP(pDevice, pStagingBuffer,
                                      offPixel, cbRow, cRows, cbRowPitch, Depth, cbDepthPitch,
@@ -2646,16 +2685,16 @@ void vboxDXResourceUpdateSubresourceUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE 
     box.w = cbStagingBuffer;
     box.h = 1;
     box.d = 1;
-    vgpu10UpdateSubResource(pDevice, vboxDXGetAllocation(pStagingBuffer), 0, &box);
+    vgpu10UpdateSubResource(pDevice, vboxDXGetKMResource(pStagingBuffer), 0, &box);
 
     /* Issue SVGA_3D_CMD_DX_TRANSFER_FROM_BUFFER */
     uint32 srcOffset = offPixel;
     uint32 srcPitch = cbRowPitch;
     uint32 srcSlicePitch = cbDepthPitch;
-    vgpu10TransferFromBuffer(pDevice, vboxDXGetAllocation(pStagingBuffer), srcOffset, srcPitch, srcSlicePitch,
-                             vboxDXGetAllocation(pDstResource), DstSubresource, destBox);
+    vgpu10TransferFromBuffer(pDevice, vboxDXGetKMResource(pStagingBuffer), srcOffset, srcPitch, srcSlicePitch,
+                             vboxDXGetKMResource(pDstResource), DstSubresource, destBox);
 
-    RTListPrepend(&pDevice->listStagingResources, &pStagingBuffer->pKMResource->nodeStaging);
+    RTListPrepend(&pDevice->listStagingResources, &pStagingBuffer->pKMResource->resource.nodeStaging);
 }
 
 #ifndef D3DERR_WASSTILLDRAWING
@@ -2665,10 +2704,17 @@ void vboxDXResourceUpdateSubresourceUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE 
 void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT Subresource,
                        D3D10_DDI_MAP DDIMap, UINT Flags, D3D10DDI_MAPPED_SUBRESOURCE *pMappedSubResource)
 {
+    D3DKMT_HANDLE const hAllocation = vboxDXGetAllocation(pResource);
+    AssertReturnVoidStmt(hAllocation, vboxDXDeviceSetError(pDevice, E_INVALIDARG));
+
     /** @todo Need to take into account various variants Dynamic/Staging/ Discard/NoOverwrite, etc. */
     Assert(pResource->uMap == 0); /* Must not be already mapped */
 
-    if (dxIsAllocationInUse(pDevice, vboxDXGetAllocation(pResource)))
+#ifndef DX_RENAME_ALLOCATION
+    if (dxIsAllocationInUse(pDevice, hAllocation))
+#else
+    if (dxIsAllocationInUse(pDevice, hAllocation) && DDIMap != D3D10_DDI_MAP_WRITE_NOOVERWRITE)
+#endif
     {
         vboxDXFlush(pDevice, true);
 
@@ -2682,7 +2728,7 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
     /* Readback for read access. */
     if (DDIMap == D3D10_DDI_MAP_READ || DDIMap == D3D10_DDI_MAP_READWRITE)
     {
-        vgpu10ReadbackSubResource(pDevice, vboxDXGetAllocation(pResource), Subresource);
+        vgpu10ReadbackSubResource(pDevice, vboxDXGetKMResource(pResource), Subresource);
         vboxDXFlush(pDevice, true);
         /* DXGK now knows that the allocation is in use. So pfnLockCb waits until the data is ready. */
     }
@@ -2692,13 +2738,22 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
     do
     {
         RT_ZERO(ddiLock);
-        ddiLock.hAllocation = vboxDXGetAllocation(pResource);
+        ddiLock.hAllocation = hAllocation;
         ddiLock.Flags.ReadOnly =   DDIMap == D3D10_DDI_MAP_READ;
         ddiLock.Flags.WriteOnly =  DDIMap == D3D10_DDI_MAP_WRITE
                                 || DDIMap == D3D10_DDI_MAP_WRITE_DISCARD
                                 || DDIMap == D3D10_DDI_MAP_WRITE_NOOVERWRITE;
         ddiLock.Flags.DonotWait = RT_BOOL(Flags & D3D10_DDI_MAP_FLAG_DONOTWAIT);
+#ifndef DX_RENAME_ALLOCATION
         /// @todo ddiLock.Flags.Discard = DDIMap == D3D10_DDI_MAP_WRITE_DISCARD;
+#else
+        if (DDIMap == D3D10_DDI_MAP_WRITE_NOOVERWRITE)
+        {
+            ddiLock.Flags.IgnoreSync = 1;
+            ddiLock.Flags.DonotWait = 1;
+        }
+        ddiLock.Flags.Discard = DDIMap == D3D10_DDI_MAP_WRITE_DISCARD;
+#endif
         /** @todo Other flags? */
 
         hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
@@ -2719,12 +2774,23 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
         /* "If the Discard bit-field flag is set in the Flags member, the video memory manager creates
          * a new instance of the allocation and returns a new handle that represents the new instance."
          */
+#ifndef DX_RENAME_ALLOCATION
         if (DDIMap == D3D10_DDI_MAP_WRITE_DISCARD)
             pResource->pKMResource->hAllocation = ddiLock.hAllocation;
+#else
+        if (   DDIMap == D3D10_DDI_MAP_WRITE_DISCARD
+            && pResource->pKMResource->hAllocation != ddiLock.hAllocation)
+        {
+            pResource->pKMResource->hAllocation = ddiLock.hAllocation;
+            vgpu10BindGBSurface(pDevice, vboxDXGetKMResource(pResource));
+        }
+#endif
 
-        uint32_t const offSubresource = vboxDXGetSubresourceOffset(pResource, Subresource);
+        VBOXDXALLOCATIONDESC const *pAllocationDesc = vboxDXGetAllocationDesc(pResource);
+
+        uint32_t const offSubresource = vboxDXGetSubresourceOffset(pAllocationDesc, Subresource);
         pMappedSubResource->pData = (uint8_t *)ddiLock.pData + offSubresource;
-        vboxDXGetSubresourcePitch(pResource, Subresource, &pMappedSubResource->RowPitch, &pMappedSubResource->DepthPitch);
+        vboxDXGetSubresourcePitch(pAllocationDesc, Subresource, &pMappedSubResource->RowPitch, &pMappedSubResource->DepthPitch);
 
         pResource->DDIMap = DDIMap;
     }
@@ -2736,6 +2802,7 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
 void vboxDXResourceUnmap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT Subresource)
 {
     D3DKMT_HANDLE const hAllocation = vboxDXGetAllocation(pResource);
+    AssertReturnVoidStmt(hAllocation, vboxDXDeviceSetError(pDevice, E_INVALIDARG));
 
     D3DDDICB_UNLOCK ddiUnlock;
     ddiUnlock.NumAllocations = 1;
@@ -2744,13 +2811,14 @@ void vboxDXResourceUnmap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UIN
     if (SUCCEEDED(hr))
     {
         if (   pResource->DDIMap == D3D10_DDI_MAP_WRITE
+            || pResource->DDIMap == D3D10_DDI_MAP_READWRITE
             || pResource->DDIMap == D3D10_DDI_MAP_WRITE_DISCARD
             || pResource->DDIMap == D3D10_DDI_MAP_WRITE_NOOVERWRITE)
         {
             /* Inform the host that the resource has been updated. */
             SVGA3dBox box;
-            vboxDXGetSubresourceBox(pResource, Subresource, &box);
-            vgpu10UpdateSubResource(pDevice, vboxDXGetAllocation(pResource), Subresource, &box);
+            vboxDXGetSubresourceBox(vboxDXGetAllocationDesc(pResource), Subresource, &box);
+            vgpu10UpdateSubResource(pDevice, vboxDXGetKMResource(pResource), Subresource, &box);
         }
 
         pResource->uMap = 0;
@@ -2826,7 +2894,7 @@ void vboxDXCreateShaderResourceView(PVBOXDX_DEVICE pDevice, PVBOXDXSHADERRESOURC
             return;
     }
 
-    vgpu10DefineShaderResourceView(pDevice, pShaderResourceView->uShaderResourceViewId, vboxDXGetAllocation(pShaderResourceView->pResource),
+    vgpu10DefineShaderResourceView(pDevice, pShaderResourceView->uShaderResourceViewId, vboxDXGetKMResource(pShaderResourceView->pResource),
                                    pShaderResourceView->svga.format, pShaderResourceView->svga.resourceDimension,
                                    &pShaderResourceView->svga.desc);
 
@@ -2891,7 +2959,7 @@ void vboxDXCreateRenderTargetView(PVBOXDX_DEVICE pDevice, PVBOXDXRENDERTARGETVIE
             return;
     }
 
-    vgpu10DefineRenderTargetView(pDevice, pRenderTargetView->uRenderTargetViewId, vboxDXGetAllocation(pRenderTargetView->pResource),
+    vgpu10DefineRenderTargetView(pDevice, pRenderTargetView->uRenderTargetViewId, vboxDXGetKMResource(pRenderTargetView->pResource),
                                  pRenderTargetView->svga.format, pRenderTargetView->svga.resourceDimension,
                                  &pRenderTargetView->svga.desc);
 
@@ -2960,7 +3028,7 @@ void vboxDXCreateDepthStencilView(PVBOXDX_DEVICE pDevice, PVBOXDXDEPTHSTENCILVIE
     }
     pDepthStencilView->svga.flags = pDepthStencilView->Flags;
 
-    vgpu10DefineDepthStencilView(pDevice, pDepthStencilView->uDepthStencilViewId, vboxDXGetAllocation(pDepthStencilView->pResource),
+    vgpu10DefineDepthStencilView(pDevice, pDepthStencilView->uDepthStencilViewId, vboxDXGetKMResource(pDepthStencilView->pResource),
                                  pDepthStencilView->svga.format, pDepthStencilView->svga.resourceDimension,
                                  pDepthStencilView->svga.mipSlice, pDepthStencilView->svga.firstArraySlice,
                                  pDepthStencilView->svga.arraySize, pDepthStencilView->svga.flags);
@@ -3006,6 +3074,20 @@ void vboxDXSetRenderTargets(PVBOXDX_DEVICE pDevice, PVBOXDXDEPTHSTENCILVIEW pDep
 
     for (unsigned i = 0; i < ClearSlots; ++i)
         pDevice->pipeline.apRenderTargetViews[NumRTVs + i] = NULL;
+
+    /* 'ClearSlots' does not cover all previously bound RTs sometimes.
+     * "The range of render target surfaces between the number that NumViews specifies
+     *  and the maximum number of render target surfaces that are allowed is required
+     *  to contain all NULL or unbound values."
+     */
+    for (unsigned i = NumRTVs + ClearSlots; i < SVGA3D_MAX_SIMULTANEOUS_RENDER_TARGETS; ++i)
+    {
+        if (pDevice->pipeline.apRenderTargetViews[i])
+        {
+            ClearSlots = i - NumRTVs + 1;
+            pDevice->pipeline.apRenderTargetViews[i] = NULL;
+        }
+    }
 
     pDevice->pipeline.pDepthStencilView = pDepthStencilView;
 
@@ -3077,7 +3159,7 @@ void vboxDXSetConstantBuffers(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShader
         pCBS->apResource[StartSlot + i] = pResource;
         if (pResource)
         {
-            uint32_t const cMaxConstants = pResource->AllocationDesc.cbAllocation / (4 * sizeof(UINT));
+            uint32_t const cMaxConstants = pResource->pKMResource->AllocationDesc.cbAllocation / (4 * sizeof(UINT));
             uint32_t const FirstConstant = pFirstConstant ? pFirstConstant[i] : 0;
             uint32_t NumConstants = pNumConstants ? pNumConstants[i] : cMaxConstants;
             AssertReturnVoidStmt(FirstConstant < cMaxConstants,
@@ -3097,7 +3179,7 @@ void vboxDXSetConstantBuffers(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShader
         }
         LogFunc(("type %d, slot %d, first %d, num %d, cbAllocation %d",
                  enmShaderType, StartSlot + i, pCBS->aFirstConstant[StartSlot + i], pCBS->aNumConstants[StartSlot + i],
-                 pResource ? pResource->AllocationDesc.cbAllocation : -1));
+                 pResource ? pResource->pKMResource->AllocationDesc.cbAllocation : -1));
     }
 
     /* Join the current range and the new range. */
@@ -3134,17 +3216,17 @@ void vboxDXResourceCopyRegion(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResou
     }
     else
     {
-        vboxDXGetSubresourceBox(pSrcResource, SrcSubresource, &srcBox);
+        vboxDXGetSubresourceBox(vboxDXGetAllocationDesc(pSrcResource), SrcSubresource, &srcBox);
     }
 
-    vgpu10ResourceCopyRegion(pDevice, vboxDXGetAllocation(pDstResource), DstSubresource,
-                              DstX, DstY, DstZ, vboxDXGetAllocation(pSrcResource), SrcSubresource, srcBox);
+    vgpu10ResourceCopyRegion(pDevice, vboxDXGetKMResource(pDstResource), DstSubresource,
+                              DstX, DstY, DstZ, vboxDXGetKMResource(pSrcResource), SrcSubresource, srcBox);
 }
 
 
 void vboxDXResourceCopy(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, PVBOXDX_RESOURCE pSrcResource)
 {
-    vgpu10ResourceCopy(pDevice, vboxDXGetAllocation(pDstResource), vboxDXGetAllocation(pSrcResource));
+    vgpu10ResourceCopy(pDevice, vboxDXGetKMResource(pDstResource), vboxDXGetKMResource(pSrcResource));
 }
 
 
@@ -3152,8 +3234,8 @@ void vboxDXResourceResolveSubresource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE p
                                       PVBOXDX_RESOURCE pSrcResource, UINT SrcSubresource, DXGI_FORMAT ResolveFormat)
 {
     SVGA3dSurfaceFormat const copyFormat = vboxDXDxgiToSvgaFormat(ResolveFormat);
-    vgpu10ResolveCopy(pDevice, vboxDXGetAllocation(pDstResource), DstSubresource,
-                      vboxDXGetAllocation(pSrcResource), SrcSubresource, copyFormat);
+    vgpu10ResolveCopy(pDevice, vboxDXGetKMResource(pDstResource), DstSubresource,
+                      vboxDXGetKMResource(pSrcResource), SrcSubresource, copyFormat);
 }
 
 static void vboxDXUndefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
@@ -3238,7 +3320,7 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
     {
         if (!pShaderResourceView->fDefined)
         {
-            vgpu10DefineShaderResourceView(pDevice, pShaderResourceView->uShaderResourceViewId, vboxDXGetAllocation(pShaderResourceView->pResource),
+            vgpu10DefineShaderResourceView(pDevice, pShaderResourceView->uShaderResourceViewId, vboxDXGetKMResource(pShaderResourceView->pResource),
                                            pShaderResourceView->svga.format, pShaderResourceView->svga.resourceDimension,
                                            &pShaderResourceView->svga.desc);
             pShaderResourceView->fDefined = true;
@@ -3250,7 +3332,7 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
     {
         if (!pRenderTargetView->fDefined)
         {
-            vgpu10DefineRenderTargetView(pDevice, pRenderTargetView->uRenderTargetViewId, vboxDXGetAllocation(pRenderTargetView->pResource),
+            vgpu10DefineRenderTargetView(pDevice, pRenderTargetView->uRenderTargetViewId, vboxDXGetKMResource(pRenderTargetView->pResource),
                                          pRenderTargetView->svga.format, pRenderTargetView->svga.resourceDimension,
                                          &pRenderTargetView->svga.desc);
             pRenderTargetView->fDefined = true;
@@ -3262,7 +3344,7 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
     {
         if (!pDepthStencilView->fDefined)
         {
-            vgpu10DefineDepthStencilView(pDevice, pDepthStencilView->uDepthStencilViewId, vboxDXGetAllocation(pDepthStencilView->pResource),
+            vgpu10DefineDepthStencilView(pDevice, pDepthStencilView->uDepthStencilViewId, vboxDXGetKMResource(pDepthStencilView->pResource),
                                          pDepthStencilView->svga.format, pDepthStencilView->svga.resourceDimension,
                                          pDepthStencilView->svga.mipSlice, pDepthStencilView->svga.firstArraySlice,
                                          pDepthStencilView->svga.arraySize, pDepthStencilView->svga.flags);
@@ -3275,7 +3357,7 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
     {
         if (!pUnorderedAccessView->fDefined)
         {
-            vgpu10DefineUAView(pDevice, pUnorderedAccessView->uUnorderedAccessViewId, vboxDXGetAllocation(pUnorderedAccessView->pResource),
+            vgpu10DefineUAView(pDevice, pUnorderedAccessView->uUnorderedAccessViewId, vboxDXGetKMResource(pUnorderedAccessView->pResource),
                                pUnorderedAccessView->svga.format, pUnorderedAccessView->svga.resourceDimension,
                                pUnorderedAccessView->svga.desc);
             pUnorderedAccessView->fDefined = true;
@@ -3288,7 +3370,7 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
         if (!pVDOV->fDefined)
         {
             vgpu10DefineVideoDecoderOutputView(pDevice, pVDOV->uVideoDecoderOutputViewId,
-                                               vboxDXGetAllocation(pVDOV->pResource),
+                                               vboxDXGetKMResource(pVDOV->pResource),
                                                pVDOV->svga.desc);
             pVDOV->fDefined = true;
         }
@@ -3300,7 +3382,7 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
         if (!pVPIV->fDefined)
         {
             vgpu10DefineVideoProcessorInputView(pDevice, pVPIV->uVideoProcessorInputViewId,
-                                                vboxDXGetAllocation(pVPIV->pResource),
+                                                vboxDXGetKMResource(pVPIV->pResource),
                                                 pVPIV->svga.ContentDesc, pVPIV->svga.VPIVDesc);
             pVPIV->fDefined = true;
         }
@@ -3312,7 +3394,7 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
         if (!pVPOV->fDefined)
         {
             vgpu10DefineVideoProcessorOutputView(pDevice, pVPOV->uVideoProcessorOutputViewId,
-                                                 vboxDXGetAllocation(pVPOV->pResource),
+                                                 vboxDXGetKMResource(pVPOV->pResource),
                                                  pVPOV->svga.ContentDesc, pVPOV->svga.VPOVDesc);
             pVPOV->fDefined = true;
         }
@@ -3589,7 +3671,7 @@ void vboxDXCreateUnorderedAccessView(PVBOXDX_DEVICE pDevice, PVBOXDXUNORDEREDACC
             return;
     }
 
-    vgpu10DefineUAView(pDevice, pUnorderedAccessView->uUnorderedAccessViewId, vboxDXGetAllocation(pUnorderedAccessView->pResource),
+    vgpu10DefineUAView(pDevice, pUnorderedAccessView->uUnorderedAccessViewId, vboxDXGetKMResource(pUnorderedAccessView->pResource),
                        pUnorderedAccessView->svga.format, pUnorderedAccessView->svga.resourceDimension,
                        pUnorderedAccessView->svga.desc);
 
@@ -3676,13 +3758,13 @@ void vboxDXDispatch(PVBOXDX_DEVICE pDevice, UINT ThreadGroupCountX, UINT ThreadG
 void vboxDXDispatchIndirect(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT AlignedByteOffsetForArgs)
 {
     vboxDXSetupPipeline(pDevice);
-    vgpu10DispatchIndirect(pDevice, vboxDXGetAllocation(pResource), AlignedByteOffsetForArgs);
+    vgpu10DispatchIndirect(pDevice, vboxDXGetKMResource(pResource), AlignedByteOffsetForArgs);
 }
 
 
 void vboxDXCopyStructureCount(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstBuffer, UINT DstAlignedByteOffset, PVBOXDXUNORDEREDACCESSVIEW pSrcView)
 {
-    vgpu10CopyStructureCount(pDevice, pSrcView->uUnorderedAccessViewId, vboxDXGetAllocation(pDstBuffer), DstAlignedByteOffset);
+    vgpu10CopyStructureCount(pDevice, pSrcView->uUnorderedAccessViewId, vboxDXGetKMResource(pDstBuffer), DstAlignedByteOffset);
 }
 
 
@@ -3695,7 +3777,7 @@ HRESULT vboxDXBlt(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT Ds
     AssertReturn(Flags.Resolve == 0, DXGI_ERROR_INVALID_CALL); /** @todo Multisampled resources. */
 
     SVGA3dBox boxSrc;
-    vboxDXGetSubresourceBox(pSrcResource, SrcSubresource, &boxSrc); /* Entire subresource. */
+    vboxDXGetSubresourceBox(vboxDXGetAllocationDesc(pSrcResource), SrcSubresource, &boxSrc); /* Entire subresource. */
 
     SVGA3dBox boxDest;
     boxDest.x = DstLeft;
@@ -3707,7 +3789,7 @@ HRESULT vboxDXBlt(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT Ds
 
     SVGA3dDXPresentBltMode mode = 0;
 
-    vgpu10PresentBlt(pDevice, vboxDXGetAllocation(pSrcResource), SrcSubresource, vboxDXGetAllocation(pDstResource), DstSubresource,
+    vgpu10PresentBlt(pDevice, vboxDXGetKMResource(pSrcResource), SrcSubresource, vboxDXGetKMResource(pDstResource), DstSubresource,
                      boxSrc, boxDest, mode);
     return S_OK;
 }
@@ -3744,12 +3826,12 @@ static void dxDeallocateStagingResources(PVBOXDX_DEVICE pDevice)
 {
     /* Move staging resources to the deferred destruction queue. */
     PVBOXDXKMRESOURCE pKMResource, pNextKMResource;
-    RTListForEachSafe(&pDevice->listStagingResources, pKMResource, pNextKMResource, VBOXDXKMRESOURCE, nodeStaging)
+    RTListForEachSafe(&pDevice->listStagingResources, pKMResource, pNextKMResource, VBOXDXKMRESOURCE, resource.nodeStaging)
     {
-        RTListNodeRemove(&pKMResource->nodeStaging);
+        RTListNodeRemove(&pKMResource->resource.nodeStaging);
 
-        PVBOXDX_RESOURCE pStagingResource = pKMResource->pResource;
-        pKMResource->pResource = NULL;
+        PVBOXDX_RESOURCE pStagingResource = pKMResource->resource.pResource;
+        pKMResource->resource.pResource = NULL;
 
         Assert(pStagingResource->pKMResource == pKMResource);
 
@@ -3769,18 +3851,7 @@ static void dxDestroyDeferredResources(PVBOXDX_DEVICE pDevice)
     RTListForEachSafe(&pDevice->listDestroyedResources, pKMResource, pNext, VBOXDXKMRESOURCE, nodeResource)
     {
         RTListNodeRemove(&pKMResource->nodeResource);
-
-        D3DDDICB_DEALLOCATE ddiDeallocate;
-        RT_ZERO(ddiDeallocate);
-        //ddiDeallocate.hResource      = NULL;
-        ddiDeallocate.NumAllocations = 1;
-        ddiDeallocate.HandleList     = &pKMResource->hAllocation;
-
-        HRESULT hr = pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
-        LogFlowFunc(("pfnDeallocateCb returned %d", hr));
-        AssertStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
-
-        RTMemFree(pKMResource);
+        vboxDXDeallocateKMResource(pDevice, pKMResource);
     }
 }
 
@@ -3877,7 +3948,7 @@ static int vboxDXDeviceCreateObjects(PVBOXDX_DEVICE pDevice)
     AssertRCReturn(rc, rc);
 
     rc = RTHandleTableCreateEx(&pDevice->hHTShaderResourceView, /* fFlags */ 0, /* uBase */ 0,
-                               SVGA3D_MAX_SHADERIDS, NULL, NULL);
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
     AssertRCReturn(rc, rc);
 
     rc = RTHandleTableCreateEx(&pDevice->hHTRenderTargetView, /* fFlags */ 0, /* uBase */ 0,
@@ -3924,6 +3995,7 @@ static int vboxDXDeviceCreateObjects(PVBOXDX_DEVICE pDevice)
     RTListInit(&pDevice->listDestroyedResources);
     RTListInit(&pDevice->listStagingResources);
     RTListInit(&pDevice->listShaders);
+    RTListInit(&pDevice->listShadersAllocations);
     RTListInit(&pDevice->listQueries);
     RTListInit(&pDevice->listCOAQuery);
     RTListInit(&pDevice->listCOAStreamOutput);
@@ -4060,7 +4132,10 @@ void vboxDXDestroyDevice(PVBOXDX_DEVICE pDevice)
 
     PVBOXDXKMRESOURCE pKMResource, pNextKMResource;
     RTListForEachSafe(&pDevice->listResources, pKMResource, pNextKMResource, VBOXDXKMRESOURCE, nodeResource)
-        vboxDXDestroyResource(pDevice, pKMResource->pResource);
+    {
+        if (pKMResource->AllocationDesc.enmAllocationType == VBOXDXALLOCATIONTYPE_SURFACE)
+            vboxDXDestroyResource(pDevice, pKMResource->resource.pResource);
+    }
 
     dxDestroyDeferredResources(pDevice);
 
@@ -4072,24 +4147,16 @@ void vboxDXDestroyDevice(PVBOXDX_DEVICE pDevice)
     RTListForEachSafe(&pDevice->listQueries, pQuery, pNextQuery, VBOXDXQUERY, nodeQuery)
         vboxDXDestroyQuery(pDevice, pQuery);
 
-    PVBOXDXCOALLOCATION pCOA, pNextCOA;
-    RTListForEachSafe(&pDevice->listCOAQuery, pCOA, pNextCOA, VBOXDXCOALLOCATION, nodeAllocationsChain)
+    PVBOXDXKMRESOURCE pCOA, pNextCOA;
+    RTListForEachSafe(&pDevice->listCOAQuery, pCOA, pNextCOA, VBOXDXKMRESOURCE, co.nodeAllocationsChain)
         vboxDXDestroyCOAllocation(pDevice, pCOA);
-    RTListForEachSafe(&pDevice->listCOAStreamOutput, pCOA, pNextCOA, VBOXDXCOALLOCATION, nodeAllocationsChain)
+    RTListForEachSafe(&pDevice->listCOAStreamOutput, pCOA, pNextCOA, VBOXDXKMRESOURCE, co.nodeAllocationsChain)
         vboxDXDestroyCOAllocation(pDevice, pCOA);
 
-    if (pDevice->hShaderAllocation)
+    RTListForEachSafe(&pDevice->listResources, pKMResource, pNextKMResource, VBOXDXKMRESOURCE, nodeResource)
     {
-        D3DDDICB_DEALLOCATE ddiDeallocate;
-        RT_ZERO(ddiDeallocate);
-        ddiDeallocate.NumAllocations = 1;
-        ddiDeallocate.HandleList     = &pDevice->hShaderAllocation;
-
-        HRESULT hr = pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
-        LogFlowFunc(("pfnDeallocateCb returned %d", hr));
-        AssertStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
-
-        pDevice->hShaderAllocation = 0;
+        RTListNodeRemove(&pKMResource->nodeResource);
+        vboxDXDeallocateKMResource(pDevice, pKMResource);
     }
 
     D3DDDICB_DESTROYCONTEXT ddiDestroyContext;

@@ -1,4 +1,4 @@
-# $Id: header.kmk 3608 2024-09-09 14:53:00Z bird $
+# $Id: header.kmk 3677 2025-07-28 21:33:39Z bird $
 ## @file
 # kBuild - File included at top of a makefile.
 #
@@ -79,7 +79,7 @@ endif
 # The revision in which this file was last modified.
 # This can be useful when using development versions of kBuild.
 #
-KMK_REVISION := $(patsubst %:,,  $Rev: 3608 $  )
+KMK_REVISION := $(patsubst %:,,  $Rev: 3677 $  )
 
 
 #
@@ -197,8 +197,8 @@ KBUILD_BLD_TYPES := release profile debug
 # build types. (PORTME)
 #
 KBUILD_OSES      := darwin dos dragonfly freebsd gnuhurd gnukfbsd gnuknbsd haiku l4 linux netbsd nt openbsd os2 solaris win os-agnostic
-KBUILD_ARCHES    := x86 amd64 noarch alpha arm32 arm64 hppa32 hppa64 ia64 m68k mips32 mips64 ppc32 ppc64 riscv32 riscv64 s390 s390x sh32 sh64 sparc32 sparc64 x32
-KBUILD_ARCHES_64 := amd64 alpha arm64 hppa64 ia64 mips64 ppc64 riscv64 s390x sh64 sparc64 x32
+KBUILD_ARCHES    := x86 amd64 noarch alpha arm32 arm64 hppa32 hppa64 ia64 m68k loongarch64 mips32 mips64 ppc32 ppc64 riscv32 riscv64 s390 s390x sh32 sh64 sparc32 sparc64 x32
+KBUILD_ARCHES_64 := amd64 alpha arm64 hppa64 ia64 loongarch64 mips64 ppc64 riscv64 s390x sh64 sparc64 x32
 KBUILD_ARCHES_32 := x86 arm32 hppa32 m68k mips32 ppc32 riscv32 s390 sh32 sparc32
 
 
@@ -521,8 +521,8 @@ ifndef KBUILD_DEVTOOLS
 endif
 KBUILD_DEVTOOLS_TRG ?= $(KBUILD_DEVTOOLS)/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)
 KBUILD_DEVTOOLS_HST ?= $(KBUILD_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)
-KBUILD_DEVTOOLS_TRG_NOARCH ?= $(KBUILD_DEVTOOLS)/$(KBUILD_TARGET).noarch
-KBUILD_DEVTOOLS_HST_NOARCH ?= $(KBUILD_DEVTOOLS)/$(KBUILD_HOST).noarch
+KBUILD_DEVTOOLS_TRG_NOARCH ?= $(KBUILD_DEVTOOLS)/$(KBUILD_TARGET)
+KBUILD_DEVTOOLS_HST_NOARCH ?= $(KBUILD_DEVTOOLS)/$(KBUILD_HOST)
 
 if1of ($(KBUILD_TARGET_ARCH), amd64 hppa64 mips64 ppc64 s390x sparc64)
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
@@ -793,6 +793,10 @@ ASH         := $(KBUILD_BIN_PATH)/kmk_ash$(HOSTSUFF_EXE)
 MAKESHELL   := $(ASH)
 SHELL       := $(ASH)
 export SHELL MAKESHELL
+
+# We do not pick up IFS from either the environment nor the command line, as
+# that could lead to trouble...
+override IFS:=
 
 # Symlinking is problematic on some platforms...
 LN_SYMLINK  := $(LN) -s
@@ -1076,6 +1080,40 @@ endif
 # @param 1     recipe name
 KB_FN_AUTO_CMD_DEPS = $(call KB_FN_AUTO_CMD_DEPS_EX,$1,$1.auto-dep)
 
+##
+# Call this (evalcall) this to explictly load tool by name.
+#
+# @param 1    	The tool name
+define KB_FN_LOAD_TOOL
+ifndef TOOL_$(1)
+ TOOL_$(1)_KMK_FILE := $(firstword $(foreach path, $(KBUILD_TOOL_PATHS) $(KBUILD_PATH)/tools $(KBUILD_DEFAULT_PATHS), $(wildcard $(path)/$(1).kmk)))
+ ifeq ($(TOOL_$(1)_KMK_FILE),)
+  $(error kBuild: Cannot find include file for the tool '$(1)'! Searched: $(KBUILD_TOOL_PATHS) $(KBUILD_PATH)/tools $(KBUILD_DEFAULT_PATHS))
+ endif
+ include $(TOOL_$(1)_KMK_FILE)
+ ifndef TOOL_$(1)
+  $(warning kBuild: TOOL_$(1) was not defined by $(TOOL_$(1)_KMK_FILE)!)
+ endif
+endif
+endef
+
+##
+# Call this (evalcall) this to explictly load an SDK by name.
+#
+# @param 1    	The SDK name
+define KB_FN_LOAD_SDK
+ifndef SDK_$(1)
+ SDK_$(1)_KMK_FILE := $(firstword $(foreach path, $(KBUILD_SDK_PATHS) $(KBUILD_PATH)/sdks $(KBUILD_DEFAULT_PATHS), $(wildcard $(path)/$(1).kmk)))
+ ifeq ($(SDK_$(1)_KMK_FILE),)
+  $(error kBuild: Cannot find include file for the SDK '$(1)'! Searched: $(KBUILD_SDK_PATHS) $(KBUILD_PATH)/sdks $(KBUILD_DEFAULT_PATHS))
+ endif
+ include $(SDK_$(1)_KMK_FILE)
+ ifndef SDK_$(1)
+  $(warning kBuild: SDK_$(1) was not defined by $(SDK_$(1)_KMK_FILE)!)
+ endif
+endif
+endef
+
 
 #
 # Initialize some of the globals which the Config.kmk and
@@ -1183,11 +1221,11 @@ PROPS_ACCUMULATE_R_LNK := $(filter-out ARFLAGS LDFLAGS EXEC_IFFLAGS FETCHFLAGS U
 PROPS_ACCUMULATE_L := \
 	SDKS USES SOURCES EXEC_SOURCES SRC_HANDLERS INTERMEDIATES \
 	INCS CINCS CXXINCS PCHINCS OBJCINCS OBJCXXINCS ASINCS RCINCS \
-	LIBS LIBPATH \
+	EARLY_LIBS LIBS LATE_LIBS LIBPATH \
 	DIRS BLDDIRS CLEAN
 ## PROPS_ACCUMULATE_L_LNK
 # Subset of PROPS_ACCUMULATE_L which applies to all linkable targets.
-PROPS_ACCUMULATE_L_LNK := $(filter-out LIBS LIBPATH EXEC_SOURCES DIRS, $(PROPS_ACCUMULATE_L))
+PROPS_ACCUMULATE_L_LNK := $(filter-out EARLY_LIBS LIBS LATE_LIBS LIBPATH EXEC_SOURCES DIRS, $(PROPS_ACCUMULATE_L))
 
 ## PROPS_ALL
 # List of all the properties.
@@ -1198,7 +1236,7 @@ PROPS_ALL = $(PROPS_SINGLE) $(PROPS_DEFERRED) $(PROPS_ACCUMULATE_L) $(PROPS_ACCU
 PROPS_PROGRAMS_SINGLE        := $(PROPS_SINGLE_LNK) LDTOOL EXESUFF
 PROPS_PROGRAMS_DEFERRED      := $(PROPS_DEFERRED)
 PROPS_PROGRAMS_ACCUMULATE_R  := $(PROPS_ACCUMULATE_R_LNK) LDFLAGS
-PROPS_PROGRAMS_ACCUMULATE_L  := $(PROPS_ACCUMULATE_L_LNK) LIBS LIBPATH
+PROPS_PROGRAMS_ACCUMULATE_L  := $(PROPS_ACCUMULATE_L_LNK) EARLY_LIBS LIBS LATE_LIBS LIBPATH
 ## @}
 
 ## @name Properties valid on libraries (LIBRARIES and IMPORT_LIBS)
@@ -1214,7 +1252,7 @@ PROPS_LIBRARIES_ACCUMULATE_L := $(PROPS_ACCUMULATE_L_LNK)
 PROPS_DLLS_SINGLE            := $(PROPS_SINGLE_LNK) LDTOOL DLLSUFF LIBSUFF
 PROPS_DLLS_DEFERRED          := $(PROPS_DEFERRED)
 PROPS_DLLS_ACCUMULATE_R      := $(PROPS_ACCUMULATE_R_LNK) LDFLAGS
-PROPS_DLLS_ACCUMULATE_L      := $(PROPS_ACCUMULATE_L_LNK) LIBS LIBPATH
+PROPS_DLLS_ACCUMULATE_L      := $(PROPS_ACCUMULATE_L_LNK) EARLY_LIBS LIBS LATE_LIBS LIBPATH
 ## @}
 
 ## @name Properties valid on system modules (SYSMODS)
@@ -1222,7 +1260,7 @@ PROPS_DLLS_ACCUMULATE_L      := $(PROPS_ACCUMULATE_L_LNK) LIBS LIBPATH
 PROPS_SYSMODS_SINGLE         := $(PROPS_SINGLE_LNK) LDTOOL SYSSUFF
 PROPS_SYSMODS_DEFERRED       := $(PROPS_DEFERRED)
 PROPS_SYSMODS_ACCUMULATE_R   := $(PROPS_ACCUMULATE_R_LNK) LDFLAGS
-PROPS_SYSMODS_ACCUMULATE_L   := $(PROPS_ACCUMULATE_L_LNK) LIBS LIBPATH
+PROPS_SYSMODS_ACCUMULATE_L   := $(PROPS_ACCUMULATE_L_LNK) EARLY_LIBS LIBS LATE_LIBS LIBPATH
 ## @}
 
 ## @name Properties valid on misc binaries (MISCBINS)
@@ -1230,7 +1268,7 @@ PROPS_SYSMODS_ACCUMULATE_L   := $(PROPS_ACCUMULATE_L_LNK) LIBS LIBPATH
 PROPS_MISCBINS_SINGLE        := $(PROPS_SINGLE_LNK) LDTOOL BINSUFF
 PROPS_MISCBINS_DEFERRED      := $(PROPS_DEFERRED)
 PROPS_MISCBINS_ACCUMULATE_R  := $(PROPS_ACCUMULATE_R_LNK) LDFLAGS
-PROPS_MISCBINS_ACCUMULATE_L  := $(PROPS_ACCUMULATE_L_LNK) LIBS LIBPATH
+PROPS_MISCBINS_ACCUMULATE_L  := $(PROPS_ACCUMULATE_L_LNK) EARLY_LIBS LIBS LATE_LIBS LIBPATH
 ## @}
 
 ## @name Properties valid on installs (INSTALLS)

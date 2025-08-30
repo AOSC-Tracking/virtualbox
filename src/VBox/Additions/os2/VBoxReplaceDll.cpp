@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2013-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -54,7 +54,7 @@ static int usage(const char *argv0)
            "Tells the kernel to cache the specified DLLs in memory and close the\n"
            "files on disk, allowing new DLL versions to be installed.\n"
            "\n"
-           "Copyright (C) 2013-" VBOX_C_YEAR " Oracle Corporation\n",
+           "Copyright (C) 2013-" VBOX_C_YEAR " Oracle and/or its affiliates.\n",
            argv0);
     return 0;
 }
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
             else if (   !strcmp(argv[i], "--version")
                      || !strcmp(argv[i], "-V") )
             {
-                printf("$Revision: 164827 $\n");
+                printf("$Revision: 170188 $\n");
                 return 0;
             }
             else

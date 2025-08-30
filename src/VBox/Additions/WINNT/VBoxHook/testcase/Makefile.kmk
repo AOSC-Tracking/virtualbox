@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2024 Oracle and/or its affiliates.
+# Copyright (C) 2006-2025 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -42,6 +42,7 @@ ifdef VBOX_WITH_TESTCASES
  tstHook_LIBS    = $(PATH_STAGE_LIB)/VBoxHook.lib
  tstHook_VBOX_IMPORT_CHECKER.win.x86  = $(NO_SUCH_VARIABLE)
  tstHook_VBOX_IMPORT_CHECKER.win.amd64 = $(NO_SUCH_VARIABLE)
+ tstHook_VBOX_IMPORT_CHECKER.win.arm64 = $(NO_SUCH_VARIABLE)
 
 endif # VBOX_WITH_TESTCASES
 

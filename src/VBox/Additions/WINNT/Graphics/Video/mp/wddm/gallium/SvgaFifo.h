@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2016-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -33,10 +33,12 @@
 
 #include "Svga.h"
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 NTSTATUS SvgaFifoInit(PVBOXWDDM_EXT_VMSVGA pSvga);
 
 void *SvgaFifoReserve(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbReserve);
 void SvgaFifoCommit(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual);
+#endif /* defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) */
 
 NTSTATUS SvgaCmdBufInit(PVBOXWDDM_EXT_VMSVGA pSvga);
 NTSTATUS SvgaCmdBufDestroy(PVBOXWDDM_EXT_VMSVGA pSvga);
@@ -48,20 +50,25 @@ void *SvgaCmdBuf3dCmdReserve(PVBOXWDDM_EXT_VMSVGA pSvga, SVGAFifo3dCmdId enmCmd,
 void *SvgaCmdBufFifoCmdReserve(PVBOXWDDM_EXT_VMSVGA pSvga, SVGAFifoCmdId enmCmd, uint32_t cbReserve);
 void *SvgaCmdBufReserve(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbReserve, uint32_t idDXContext);
 void  SvgaCmdBufCommit(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual);
+void  SvgaCmdBufCommitWithCompletionCallback(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual, PFNCBCOMPLETION pfn, void const *pv, uint32_t cb);
 void  SvgaCmdBufFlush(PVBOXWDDM_EXT_VMSVGA pSvga);
 void  SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga);
-void SvgaCmdBufSetCompletionCallback(PVBOXWDDM_EXT_VMSVGA pSvga, PFNCBCOMPLETION pfn, void const *pv, uint32_t cb);
 bool SvgaCmdBufIsIdle(PVBOXWDDM_EXT_VMSVGA pSvga);
 
+NTSTATUS SvgaCmdBufAllocMiniport(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbBuffer, uint32_t idFence, PVMSVGACB *ppCB);
 NTSTATUS SvgaCmdBufAllocUMD(PVBOXWDDM_EXT_VMSVGA pSvga, PHYSICAL_ADDRESS DmaBufferPhysicalAddress,
-                            uint32_t cbBuffer, uint32_t cbCommands, uint32_t idDXContext, PVMSVGACB *ppCB);
-NTSTATUS SvgaCmdBufSubmitUMD(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB);
+                            uint32_t cbCommands, uint32_t idDXContext, uint32_t idFence, PVMSVGACB *ppCB);
+NTSTATUS SvgaCmdBufSubmit(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB);
 
 DECLINLINE(void *) SvgaReserve(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbReserve, uint32_t idDXContext = SVGA3D_INVALID_ID)
 {
     if (pSvga->pCBState)
         return SvgaCmdBufReserve(pSvga, cbReserve, idDXContext);
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     return SvgaFifoReserve(pSvga, cbReserve);
+#else
+    AssertFailedReturn(NULL);
+#endif
 }
 
 DECLINLINE(void) SvgaCommit(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual)
@@ -71,7 +78,9 @@ DECLINLINE(void) SvgaCommit(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual)
         SvgaCmdBufCommit(pSvga, cbActual);
         return;
     }
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     SvgaFifoCommit(pSvga, cbActual);
+#endif
 }
 
 DECLINLINE(void) SvgaFlush(PVBOXWDDM_EXT_VMSVGA pSvga)

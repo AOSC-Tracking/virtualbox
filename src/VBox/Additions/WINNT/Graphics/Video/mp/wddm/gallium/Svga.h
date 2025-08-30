@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2016-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -33,6 +33,7 @@
 
 #include "VBoxMPGaUtils.h"
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
 #include <iprt/list.h>
@@ -110,6 +111,7 @@ typedef struct VMSVGACB
     RTLISTNODE           nodeQueue;                /* For a queue where the buffer is currently resides. */
     VMSVGACBTYPE         enmType;                  /* Type of the buffer. */
     uint32_t             idDXContext;              /* DX context of the buffer or SVGA3D_INVALID_ID. */
+    uint32_t             idFence;                  /* SubmissionFenceId. */
     uint32_t             cbBuffer;                 /* Total size. */
     uint32_t             cbCommand;                /* Size of commands. */
     uint32_t             cbReservedCmdHeader;      /* Reserved for the command header. */
@@ -149,6 +151,8 @@ typedef struct VMSVGACBCONTEXT
     RTLISTANCHOR         QueueSubmitted;           /* Buffers which are being processed by the host. */
     uint32_t             cSubmitted;               /* How many buffers were submitted to the host.
                                                     * Less than SVGA_CB_MAX_QUEUED_PER_CONTEXT */
+    uint32_t             cCompleted;               /* Used by SvgaCmdBufProcess to count how many buffers
+                                                    * were completed by the host */
 } VMSVGACBCONTEXT, *PVMSVGACBCONTEXT;
 
 typedef struct VMSVGACBSTATE
@@ -163,9 +167,20 @@ typedef struct VMSVGACBSTATE
 /* Guest Backed Object: a set of locked pages and a page table for the host to access. */
 typedef struct VMSVGAGBO
 {
+    int32_t volatile            cRefs;                      /* Reference count */
+    struct
+    {
+        uint32_t                fMdl : 1;
+        uint32_t                reserved : 31;
+    }                           flags;
     uint32_t                    cbGbo;                      /* Size of gbo in bytes. */
     uint32_t                    cPTPages;                   /* How many pages are required to hold PPN64 page table. */
     SVGAMobFormat               enmMobFormat;               /* Page table format. */
+    union                                                   /* Backing memory. */
+    {
+        PMDL                    pMdl;
+        RTR0MEMOBJ              hMemObj;
+    };
     PPN64                       base;                       /* Page which contains the page table. */
     RTR0MEMOBJ                  hMemObjPT;                  /* Page table pages. */
 } VMSVGAGBO, *PVMSVGAGBO;
@@ -173,33 +188,33 @@ typedef struct VMSVGAGBO
 /* Contexts + One shaders mob per context + surfaces. */
 #define SVGA3D_MAX_MOBS (SVGA3D_MAX_CONTEXT_IDS + SVGA3D_MAX_CONTEXT_IDS + SVGA3D_MAX_SURFACE_IDS)
 
-/* Memory OBject: a gbo with an id, possibly bound to an allocation. */
-typedef struct VMSVGAMOB
-{
-    AVLU32NODECORE              core;                       /* AVL entry. Key is mobid, allocated by the miniport. */
-    HANDLE                      hAllocation;                /* Allocation which is bound to the mob. */
-    VMSVGAGBO                   gbo;                        /* Gbo for this mob. */
-    RTR0MEMOBJ                  hMemObj;                    /* The guest memory if allocated by miniport. */
-    uint32_t                    u64MobFence;                /* Free by the guest when the host reports this fence value. */
-    RTLISTNODE                  node;                       /* VBOXWDDM_EXT_VMSVGA::listMobDeferredDestruction */
-} VMSVGAMOB, *PVMSVGAMOB;
-
-#define VMSVGAMOB_ID(a_pMob) ((a_pMob)->core.Key)
-
 typedef struct VMSVGAOT
 {
-    VMSVGAGBO                   gbo;
-    RTR0MEMOBJ                  hMemObj;
+    PVMSVGAGBO                  pGbo;
     uint32_t                    cEntries;                   /* How many objects can be stored in the OTable. */
 } VMSVGAOT, *PVMSVGAOT;
 
 /* VMSVGA specific part of Gallium device extension. */
 typedef struct VBOXWDDM_EXT_VMSVGA
 {
-    /** First IO port. SVGA_*_PORT are relative to it. */
-    RTIOPORT ioportBase;
-    /** Pointer to FIFO MMIO region. */
-    volatile uint32_t *pu32FIFO;
+    union
+    {
+        struct
+        {
+            /** First IO port. SVGA_*_PORT are relative to it. */
+            RTIOPORT ioportBase;
+            /** Pointer to FIFO MMIO region. */
+            volatile uint32_t *pu32FIFO;
+        };
+        struct
+        {
+            /** MMIO base address. SVGA_REG_* are relative to it. */
+            volatile uint32_t *pu32MMIO;
+        };
+    } hw;
+
+    /** Whether MMIO (hw.pu32MMIO) must be used instead of port IO. */
+    bool fMMIO;
 
     /**
      * Hardware capabilities.
@@ -212,6 +227,7 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     uint32_t u32GmrMaxIds;    /** SVGA_REG_GMR_MAX_IDS */
     uint32_t u32GmrMaxPages;  /** SVGA_REG_GMRS_MAX_PAGES */
     uint32_t u32MemorySize;   /** SVGA_REG_MEMORY_SIZE */
+    uint32_t u32MaxMobSize;   /** SVGA_REG_MOB_MAX_SIZE */
     uint32_t u32MaxTextureWidth;  /** SVGA3D_DEVCAP_MAX_TEXTURE_WIDTH */
     uint32_t u32MaxTextureHeight; /** SVGA3D_DEVCAP_MAX_TEXTURE_HEIGHT */
 
@@ -260,16 +276,19 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 
     VMSVGAOT aOT[SVGA_OTABLE_DX_MAX];
 
-    PVMSVGAMOB pMiniportMob; /* Used by miniport to communicate with the device. */
+    /* Used by miniport to communicate with the device. */
+    PVMSVGAGBO pMiniportGbo;
+    SVGAMobId mobidMiniport;
     struct VMSVGAMINIPORTMOB volatile *pMiniportMobData; /* Pointer to the miniport mob content. */
 
     uint64_t volatile u64MobFence;
     RTLISTANCHOR listMobDeferredDestruction; /* Mob to be deleted after. */
+    int32_t volatile cQueuedWorkItems;
 
 #ifdef DEBUG
     /* Statistics. */
+    uint32_t volatile cAllocatedGbos;
     uint32_t volatile cAllocatedMobs;
-    uint32_t volatile cAllocatedMobPages;
     uint32_t volatile cAllocatedGmrs;
     uint32_t volatile cAllocatedGmrPages;
 #endif
@@ -289,6 +308,9 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 
     /** Bitmap of used MOB ids. Bit 0 - context id 0, etc. */
     uint32_t au32MobBits[(SVGA3D_MAX_MOBS + 31) / 32];
+
+    /** Bitmap of used screen target ids. Bit 0 - stid 0, etc. */
+    uint32_t au32ScreenTargetBits[(64 + 31) / 32]; /// @todo VBOX_VIDEO_MAX_SCREENS
 } VBOXWDDM_EXT_VMSVGA;
 typedef struct VBOXWDDM_EXT_VMSVGA *PVBOXWDDM_EXT_VMSVGA;
 
@@ -299,7 +321,7 @@ typedef struct VMSVGAMINIPORTMOB
 
 typedef struct VMSVGACOT
 {
-    PVMSVGAMOB              pMob;                       /* COTable mob. */
+    SVGAMobId               mobid;                      /* COTable mob. */
     uint32_t                cEntries;                   /* How many objects can be stored in the COTable. */
 } VMSVGACOT, *PVMSVGACOT;
 
@@ -405,6 +427,20 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                           bool fBlank);
 NTSTATUS SvgaScreenDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
                            uint32_t u32ScreenId);
+
+NTSTATUS Svga3dDefineGBScreenTarget(PVBOXWDDM_EXT_VMSVGA pSvga,
+                                    uint32_t stid,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    int32_t xRoot,
+                                    int32_t yRoot,
+                                    SVGAScreenTargetFlags flags,
+                                    uint32_t dpi);
+NTSTATUS Svga3dDestroyGBScreenTarget(PVBOXWDDM_EXT_VMSVGA pSvga,
+                                     uint32_t stid);
+NTSTATUS Svga3dBindGBScreenTarget(PVBOXWDDM_EXT_VMSVGA pSvga,
+                                  uint32_t stid,
+                                  uint32_t sid);
 
 NTSTATUS SvgaContextCreate(PVBOXWDDM_EXT_VMSVGA pSvga,
                            uint32_t u32Cid);
@@ -598,6 +634,12 @@ NTSTATUS SvgaMobIdAlloc(PVBOXWDDM_EXT_VMSVGA pSvga,
 NTSTATUS SvgaMobIdFree(PVBOXWDDM_EXT_VMSVGA pSvga,
                        uint32_t u32MobId);
 
+NTSTATUS SvgaScreenTargetIdAlloc(PVBOXWDDM_EXT_VMSVGA pSvga,
+                                 uint32_t *pu32ScreenTargetId);
+
+NTSTATUS SvgaScreenTargetIdFree(PVBOXWDDM_EXT_VMSVGA pSvga,
+                                uint32_t u32ScreenTargetId);
+
 NTSTATUS SvgaDXContextCreate(PVBOXWDDM_EXT_VMSVGA pSvga,
                              uint32_t u32Cid);
 
@@ -620,29 +662,58 @@ NTSTATUS SvgaDebugCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
                               uint32_t cbSource);
 #endif
 
-NTSTATUS SvgaGboInit(VMSVGAGBO *pGbo, uint32_t cPages);
-void SvgaGboFree(VMSVGAGBO *pGbo);
-NTSTATUS SvgaGboFillPageTableForMDL(PVMSVGAGBO pGbo,
-                                    PMDL pMdl,
-                                    uint32_t MdlOffset);
-NTSTATUS SvgaGboFillPageTableForMemObj(PVMSVGAGBO pGbo,
-                                       RTR0MEMOBJ hMemObj);
+NTSTATUS SvgaGboCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
+                       PVMSVGAGBO *ppGbo,
+                       uint32_t cbGbo,
+                       const char *pszTag);
+NTSTATUS SvgaGboCreateForMdl(VBOXWDDM_EXT_VMSVGA *pSvga,
+                             PVMSVGAGBO *ppGbo,
+                             SIZE_T NumberOfPages,
+                             PMDL pMdl,
+                             ULONG MdlOffset);
+void SvgaGboFree(VBOXWDDM_EXT_VMSVGA *pSvga,
+                 VMSVGAGBO *pGbo);
+
+DECLINLINE(void) SvgaGboReference(PVMSVGAGBO pGbo)
+{
+    if (pGbo)
+    {
+        int32_t const c = ASMAtomicIncS32(&pGbo->cRefs);
+        Assert(c > 0); RT_NOREF(c);
+    }
+}
+
+DECLINLINE(void) SvgaGboUnreference(VBOXWDDM_EXT_VMSVGA *pSvga,
+                                    PVMSVGAGBO *ppGbo)
+{
+    if (*ppGbo)
+    {
+        int32_t const c = ASMAtomicDecS32(&(*ppGbo)->cRefs);
+        Assert(c >= 0);
+        if (c == 0)
+            SvgaGboFree(pSvga, *ppGbo);
+        *ppGbo = NULL;
+    }
+}
 
 void SvgaMobFree(VBOXWDDM_EXT_VMSVGA *pSvga,
-                 PVMSVGAMOB pMob);
-PVMSVGAMOB SvgaMobQuery(VBOXWDDM_EXT_VMSVGA *pSvga,
-                        uint32_t mobid);
-NTSTATUS SvgaMobCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
-                       PVMSVGAMOB *ppMob,
-                       uint32_t cMobPages,
-                       HANDLE hAllocation);
-NTSTATUS SvgaMobSetMemObj(PVMSVGAMOB pMob,
-                          RTR0MEMOBJ hMemObj);
+                 SVGAMobId *pMobid);
+NTSTATUS SvgaMobAlloc(VBOXWDDM_EXT_VMSVGA *pSvga,
+                      SVGAMobId *pMobid,
+                      PVMSVGAGBO pGbo);
+void *SvgaMobAddress(VBOXWDDM_EXT_VMSVGA *pSvga,
+                     SVGAMobId mobid);
+NTSTATUS SvgaMobDefine(VBOXWDDM_EXT_VMSVGA *pSvga,
+                       SVGAMobId mobid,
+                       void *pvCmd,
+                       uint32_t cbReserved,
+                       uint32_t *pcbCmd);
 NTSTATUS SvgaMobDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
-                        PVMSVGAMOB pMob,
+                        SVGAMobId mobid,
                         void *pvCmd,
                         uint32_t cbReserved,
                         uint32_t *pcbCmd);
+void SvgaDeferredMobDestruction(PVBOXWDDM_EXT_VMSVGA pSvga);
 
 NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
                          PVMSVGACONTEXT pSvgaContext,

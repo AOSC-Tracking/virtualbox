@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -72,9 +72,17 @@
 typedef struct VBOXDISPIF_OP
 {
     PCVBOXDISPIF pIf;
-    VBOXDISPKMT_ADAPTER Adapter;
-    VBOXDISPKMT_DEVICE Device;
-    VBOXDISPKMT_CONTEXT Context;
+#ifdef VBOX_WITH_WDDM
+    union
+    {
+        struct
+        {
+            VBOXDISPKMT_ADAPTER Adapter;
+            VBOXDISPKMT_DEVICE Device;
+            VBOXDISPKMT_CONTEXT Context;
+        } wddm;
+    } u;
+#endif
 } VBOXDISPIF_OP;
 
 /*
@@ -117,24 +125,24 @@ static DWORD vboxDispIfWddmResizeDisplay2(PCVBOXDISPIF const pIf, DISPLAY_DEVICE
 static DWORD vboxDispIfResizePerform(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup,
                                      DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes);
 static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, UINT cIds, UINT *pIds, BOOL fEnable);
-static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp);
+static DWORD vboxDispIfResizeStartedOpWDDM(VBOXDISPIF_OP *pOp);
 
 static void vboxDispIfWddmDcLogRel(VBOXDISPIF_WDDM_DISPCFG const *pCfg, UINT fFlags)
 {
-    LogRel(("Display config: Flags = 0x%08X\n", fFlags));
+    LogRel2(("Display config: Flags = 0x%08X\n", fFlags));
 
-    LogRel(("PATH_INFO[%d]:\n", pCfg->cPathInfoArray));
+    LogRel2(("PATH_INFO[%d]:\n", pCfg->cPathInfoArray));
     for (uint32_t i = 0; i < pCfg->cPathInfoArray; ++i)
     {
         DISPLAYCONFIG_PATH_INFO *p = &pCfg->pPathInfoArray[i];
 
-        LogRel(("%d: flags 0x%08x\n", i, p->flags));
+        LogRel2(("%d: flags 0x%08x\n", i, p->flags));
 
-        LogRel(("  sourceInfo: adapterId 0x%08x:%08x, id %u, modeIdx %d, statusFlags 0x%08x\n",
+        LogRel2(("  sourceInfo: adapterId 0x%08x:%08x, id %u, modeIdx %d, statusFlags 0x%08x\n",
                 p->sourceInfo.adapterId.HighPart, p->sourceInfo.adapterId.LowPart,
                 p->sourceInfo.id, p->sourceInfo.modeInfoIdx, p->sourceInfo.statusFlags));
 
-        LogRel(("  targetInfo: adapterId 0x%08x:%08x, id %u, modeIdx %d,\n"
+        LogRel2(("  targetInfo: adapterId 0x%08x:%08x, id %u, modeIdx %d,\n"
                 "              ot %d, r %d, s %d, rr %d/%d, so %d, ta %d, statusFlags 0x%08x\n",
                 p->targetInfo.adapterId.HighPart, p->targetInfo.adapterId.LowPart,
                 p->targetInfo.id, p->targetInfo.modeInfoIdx,
@@ -148,23 +156,23 @@ static void vboxDispIfWddmDcLogRel(VBOXDISPIF_WDDM_DISPCFG const *pCfg, UINT fFl
               ));
     }
 
-    LogRel(("MODE_INFO[%d]:\n", pCfg->cModeInfoArray));
+    LogRel2(("MODE_INFO[%d]:\n", pCfg->cModeInfoArray));
     for (uint32_t i = 0; i < pCfg->cModeInfoArray; ++i)
     {
         DISPLAYCONFIG_MODE_INFO *p = &pCfg->pModeInfoArray[i];
 
-        LogRel(("%d: adapterId 0x%08x:%08x, id %u\n",
+        LogRel2(("%d: adapterId 0x%08x:%08x, id %u\n",
                 i, p->adapterId.HighPart, p->adapterId.LowPart, p->id));
 
         if (p->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE)
         {
-            LogRel(("  src %ux%u, fmt %d, @%dx%d\n",
+            LogRel2(("  src %ux%u, fmt %d, @%dx%d\n",
                     p->sourceMode.width, p->sourceMode.height, p->sourceMode.pixelFormat,
                     p->sourceMode.position.x, p->sourceMode.position.y));
         }
         else if (p->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET)
         {
-            LogRel(("  tgt pr 0x%RX64, hSyncFreq %d/%d, vSyncFreq %d/%d, active %ux%u, total %ux%u, std %d, so %d\n",
+            LogRel2(("  tgt pr 0x%RX64, hSyncFreq %d/%d, vSyncFreq %d/%d, active %ux%u, total %ux%u, std %d, so %d\n",
                     p->targetMode.targetVideoSignalInfo.pixelRate,
                     p->targetMode.targetVideoSignalInfo.hSyncFreq.Numerator, p->targetMode.targetVideoSignalInfo.hSyncFreq.Denominator,
                     p->targetMode.targetVideoSignalInfo.vSyncFreq.Numerator, p->targetMode.targetVideoSignalInfo.vSyncFreq.Denominator,
@@ -175,7 +183,7 @@ static void vboxDispIfWddmDcLogRel(VBOXDISPIF_WDDM_DISPCFG const *pCfg, UINT fFl
         }
         else
         {
-            LogRel(("  Invalid infoType %u(0x%08x)\n", p->infoType, p->infoType));
+            LogRel2(("  Invalid infoType %u(0x%08x)\n", p->infoType, p->infoType));
         }
     }
 }
@@ -642,40 +650,42 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
     return ERROR_SUCCESS;
 }
 
-static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
+#ifdef VBOX_WITH_WDDM
+static DWORD vboxDispIfOpBeginWddm(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
 {
     pOp->pIf = pIf;
 
-    HRESULT hr = vboxDispKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &pOp->Adapter);
+    HRESULT hr = VBoxWddmKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &pOp->u.wddm.Adapter);
     if (SUCCEEDED(hr))
     {
-        hr = vboxDispKmtCreateDevice(&pOp->Adapter, &pOp->Device);
+        hr = vboxDispKmtCreateDevice(&pOp->u.wddm.Adapter, &pOp->u.wddm.Device);
         if (SUCCEEDED(hr))
         {
-            hr = vboxDispKmtCreateContext(&pOp->Device, &pOp->Context, VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE,
+            hr = vboxDispKmtCreateContext(&pOp->u.wddm.Device, &pOp->u.wddm.Context, VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE,
                     NULL, 0ULL);
             if (SUCCEEDED(hr))
                 return ERROR_SUCCESS;
             else
                 WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
 
-            vboxDispKmtDestroyDevice(&pOp->Device);
+            vboxDispKmtDestroyDevice(&pOp->u.wddm.Device);
         }
         else
             WARN(("VBoxTray: vboxDispKmtCreateDevice failed hr 0x%x", hr));
 
-        vboxDispKmtCloseAdapter(&pOp->Adapter);
+        VBoxWddmKmtCloseAdapter(&pOp->u.wddm.Adapter);
     }
 
     return ERROR_NOT_SUPPORTED;
 }
 
-static VOID vboxDispIfOpEnd(VBOXDISPIF_OP *pOp)
+static VOID vboxDispIfOpEndWddm(VBOXDISPIF_OP *pOp)
 {
-    vboxDispKmtDestroyContext(&pOp->Context);
-    vboxDispKmtDestroyDevice(&pOp->Device);
-    vboxDispKmtCloseAdapter(&pOp->Adapter);
+    vboxDispKmtDestroyContext(&pOp->u.wddm.Context);
+    vboxDispKmtDestroyDevice(&pOp->u.wddm.Device);
+    VBoxWddmKmtCloseAdapter(&pOp->u.wddm.Adapter);
 }
+#endif /* VBOX_WITH_WDDM */
 
 /* display driver interface abstraction for XPDM & WDDM
  * with WDDM we can not use ExtEscape to communicate with our driver
@@ -843,7 +853,7 @@ static DWORD vboxDispIfEscapeWDDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, i
 {
     DWORD winEr = ERROR_SUCCESS;
     VBOXDISPKMT_ADAPTER Adapter;
-    HRESULT hr = vboxDispKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &Adapter);
+    HRESULT hr = VBoxWddmKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &Adapter);
     if (!SUCCEEDED(hr))
     {
         WARN(("VBoxTray: vboxDispKmtOpenAdapter failed hr 0x%x\n", hr));
@@ -869,7 +879,7 @@ static DWORD vboxDispIfEscapeWDDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, i
         winEr = ERROR_GEN_FAILURE;
     }
 
-    vboxDispKmtCloseAdapter(&Adapter);
+    VBoxWddmKmtCloseAdapter(&Adapter);
 
     return winEr;
 }
@@ -1394,7 +1404,7 @@ static DWORD vboxDispIfWaitDisplayDataInited(VBOXDISPIF_OP *pOp)
         Sleep(100);
 
         D3DKMT_POLLDISPLAYCHILDREN PollData = {0};
-        PollData.hAdapter = pOp->Adapter.hAdapter;
+        PollData.hAdapter = pOp->u.wddm.Adapter.hAdapter;
         PollData.NonDestructiveOnly = 1;
         NTSTATUS Status = pOp->pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTPollDisplayChildren(&PollData);
         if (Status != 0)
@@ -1442,7 +1452,7 @@ static DWORD vboxDispIfUpdateModesWDDM(VBOXDISPIF_OP *pOp, uint32_t u32TargetId,
     EscData.Size = *pSize;
 
     D3DKMT_ESCAPE EscapeData = {0};
-    EscapeData.hAdapter = pOp->Adapter.hAdapter;
+    EscapeData.hAdapter = pOp->u.wddm.Adapter.hAdapter;
 #ifdef VBOX_DISPIF_WITH_OPCONTEXT
     /* win8.1 does not allow context-based escapes for display-only mode */
     EscapeData.hDevice = pOp->Device.hDevice;
@@ -1482,7 +1492,7 @@ static DWORD vboxDispIfTargetConnectivityWDDM(VBOXDISPIF_OP *pOp, uint32_t u32Ta
 
     D3DKMT_ESCAPE EscapeData;
     RT_ZERO(EscapeData);
-    EscapeData.hAdapter = pOp->Adapter.hAdapter;
+    EscapeData.hAdapter = pOp->u.wddm.Adapter.hAdapter;
     EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
     EscapeData.Flags.HardwareAccess = 1;
     EscapeData.pPrivateDriverData = &PrivateData;
@@ -1563,7 +1573,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
 
     VBOXDISPIF_OP Op;
 
-    winEr = vboxDispIfOpBegin(pIf, &Op);
+    winEr = vboxDispIfOpBeginWddm(pIf, &Op);
     if (winEr != NO_ERROR)
     {
         WARN(("VBoxTray: vboxDispIfOpBegin failed winEr 0x%x", winEr));
@@ -1596,7 +1606,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
                 vboxRecommendVidPN.aTargets[cElements].iSource = -1;
         }
 
-        ddiArgInvalidateVidPN.hAdapter = Op.Adapter.hAdapter;
+        ddiArgInvalidateVidPN.hAdapter = Op.u.wddm.Adapter.hAdapter;
         ddiArgInvalidateVidPN.pPrivateDriverData = &vboxRecommendVidPN;
         ddiArgInvalidateVidPN.PrivateDriverDataSize = sizeof (vboxRecommendVidPN);
 
@@ -1630,7 +1640,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
         winEr = NO_ERROR;
     }
 
-    vboxDispIfOpEnd(&Op);
+    vboxDispIfOpEndWddm(&Op);
 
     return winEr;
 }
@@ -1790,7 +1800,7 @@ static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, 
     return winEr;
 }
 
-BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, const VMMDevDisplayDef *paDispDef)
+BOOL VBoxDispIfResizeDisplayWin7Wddm(PCVBOXDISPIF const pIf, uint32_t cDispDef, const VMMDevDisplayDef *paDispDef)
 {
     const VMMDevDisplayDef *pDispDef;
     uint32_t i;
@@ -1810,7 +1820,7 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
     }
 
     VBOXDISPIF_OP Op;
-    DWORD winEr = vboxDispIfOpBegin(pIf, &Op);
+    DWORD winEr = vboxDispIfOpBeginWddm(pIf, &Op);
     if (winEr != ERROR_SUCCESS)
     {
         WARN(("VBoxTray: vboxDispIfOpBegin failed winEr 0x%x", winEr));
@@ -1837,7 +1847,7 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
         }
     }
 
-    vboxDispIfOpEnd(&Op);
+    vboxDispIfOpEndWddm(&Op);
 
     if (winEr != ERROR_SUCCESS)
         return (winEr == ERROR_SUCCESS);
@@ -1848,6 +1858,31 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
     {
         WARN(("VBoxTray: vboxDispIfWddmDcCreate failed winEr 0x%x", winEr));
         return (winEr == ERROR_SUCCESS);
+    }
+
+    if (pDispDefPrimary == NULL)
+    {
+        /* Try to keep the current primary display by finding it. */
+        for (i = 0; i < cDispDef; ++i)
+        {
+            int const iPath = vboxDispIfWddmDcSearchPath(&DispCfg, i, i);
+            if (iPath < 0)
+                continue;
+
+            DISPLAYCONFIG_PATH_INFO *pPathInfo = &DispCfg.pPathInfoArray[iPath];
+            if (pPathInfo->flags & DISPLAYCONFIG_PATH_ACTIVE)
+            {
+                UINT const iSrcMode = pPathInfo->sourceInfo.modeInfoIdx;
+                DISPLAYCONFIG_SOURCE_MODE *pSrcMode = &DispCfg.pModeInfoArray[iSrcMode].sourceMode;
+                if (   pSrcMode->position.x == 0
+                    && pSrcMode->position.y == 0)
+                {
+                     /* "The source surface that is positioned at (0, 0) is considered the primary." */
+                     pDispDefPrimary = &paDispDef[i];
+                     break;
+                }
+            }
+        }
     }
 
     for (i = 0; i < cDispDef; ++i)
@@ -1937,8 +1972,10 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
                  * in the modeInfoArray array once."
                  * Try to find the source mode.
                  */
-                DISPLAYCONFIG_MODE_INFO *pSrcModeInfo = NULL;
-                int iSrcModeInfo = -1;
+                DISPLAYCONFIG_MODE_INFO *pSrcModeInfo = NULL, *pTgtModeInfo = NULL;
+                int iSrcModeInfo = -1, iTgtModeInfo = -1;
+                int cModeInfoNew = 0;
+
                 for (UINT j = 0; j < DispCfg.cModeInfoArray; ++j)
                 {
                     if (   DispCfg.pModeInfoArray[j].infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE
@@ -1950,12 +1987,29 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
                     }
                 }
 
-                if (pSrcModeInfo == NULL)
+                for (UINT j = 0; j < DispCfg.cModeInfoArray; ++j)
                 {
-                    /* No mode yet. Add the new mode to the ModeInfo array. */
+                    if (   DispCfg.pModeInfoArray[j].infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET
+                        && DispCfg.pModeInfoArray[j].id == pDispDef->idDisplay)
+                    {
+                        pTgtModeInfo = &DispCfg.pModeInfoArray[j];
+                        iTgtModeInfo = (int)j;
+                        break;
+                    }
+                }
+
+                if (pSrcModeInfo == NULL)
+                    cModeInfoNew++;
+
+                if (pTgtModeInfo == NULL)
+                    cModeInfoNew++;
+
+                if (cModeInfoNew > 0)
+                {
                     DISPLAYCONFIG_MODE_INFO *paModeInfo = (DISPLAYCONFIG_MODE_INFO *)RTMemRealloc(DispCfg.pModeInfoArray,
-                                                                                                    (DispCfg.cModeInfoArray + 1)
+                                                                                                    (DispCfg.cModeInfoArray + cModeInfoNew)
                                                                                                   * sizeof(paModeInfo[0]));
+
                     if (!paModeInfo)
                     {
                         WARN(("VBoxTray:(WDDM) Unable to re-allocate DispCfg.pModeInfoArray\n"));
@@ -1963,26 +2017,53 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
                     }
 
                     DispCfg.pModeInfoArray = paModeInfo;
-                    DispCfg.cModeInfoArray += 1;
 
-                    iSrcModeInfo = DispCfg.cModeInfoArray - 1;
-                    pSrcModeInfo = &DispCfg.pModeInfoArray[iSrcModeInfo];
-                    RT_ZERO(*pSrcModeInfo);
+                    if (pSrcModeInfo == NULL)
+                    {
+                        iSrcModeInfo = DispCfg.cModeInfoArray;
+                        pSrcModeInfo = &paModeInfo[iSrcModeInfo];
+                        DispCfg.cModeInfoArray++;
 
-                    pSrcModeInfo->infoType  = DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE;
-                    pSrcModeInfo->id        = pDispDef->idDisplay;
-                    pSrcModeInfo->adapterId = DispCfg.pModeInfoArray[0].adapterId;
+                        RT_ZERO(*pSrcModeInfo);
+                        pSrcModeInfo->infoType  = DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE;
+                        pSrcModeInfo->id        = pDispDef->idDisplay;
+                        pSrcModeInfo->adapterId = DispCfg.pModeInfoArray[0].adapterId;
+                    }
+
+                    if (pTgtModeInfo == NULL)
+                    {
+                        iTgtModeInfo = DispCfg.cModeInfoArray;
+                        pTgtModeInfo = &paModeInfo[iTgtModeInfo];
+                        DispCfg.cModeInfoArray++;
+
+                        RT_ZERO(*pTgtModeInfo);
+                        pTgtModeInfo->infoType  = DISPLAYCONFIG_MODE_INFO_TYPE_TARGET;
+                        pTgtModeInfo->id        = pDispDef->idDisplay;
+                        pTgtModeInfo->adapterId = DispCfg.pModeInfoArray[0].adapterId;
+
+                        pTgtModeInfo->targetMode.targetVideoSignalInfo.pixelRate = 0xfffffffe;
+                        pTgtModeInfo->targetMode.targetVideoSignalInfo.hSyncFreq.Numerator = 0xfffffffe;
+                        pTgtModeInfo->targetMode.targetVideoSignalInfo.hSyncFreq.Denominator = 0xfffffffe;
+                        pTgtModeInfo->targetMode.targetVideoSignalInfo.vSyncFreq.Numerator = 0xfffffffe;
+                        pTgtModeInfo->targetMode.targetVideoSignalInfo.vSyncFreq.Denominator = 0xfffffffe;
+                        pTgtModeInfo->targetMode.targetVideoSignalInfo.videoStandard = 255;
+                        pTgtModeInfo->targetMode.targetVideoSignalInfo.scanLineOrdering = DISPLAYCONFIG_SCANLINE_ORDERING_PROGRESSIVE;
+                    }
                 }
 
                 /* Update the source mode information. */
                 if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_CX)
                 {
                     pSrcModeInfo->sourceMode.width = pDispDef->cx;
+                    pTgtModeInfo->targetMode.targetVideoSignalInfo.activeSize.cx =
+                    pTgtModeInfo->targetMode.targetVideoSignalInfo.totalSize.cx = pDispDef->cx;
                 }
 
                 if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_CY)
                 {
                     pSrcModeInfo->sourceMode.height = pDispDef->cy;
+                    pTgtModeInfo->targetMode.targetVideoSignalInfo.activeSize.cy =
+                    pTgtModeInfo->targetMode.targetVideoSignalInfo.totalSize.cy = pDispDef->cy;
                 }
 
                 if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_BPP)
@@ -2019,11 +2100,7 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
                 pPathInfo->sourceInfo.modeInfoIdx = iSrcModeInfo;
 
                 Assert(pPathInfo->targetInfo.id == pDispDef->idDisplay);
-                /* "If the index value is DISPLAYCONFIG_PATH_MODE_IDX_INVALID ..., this indicates
-                 * the mode information is not being specified. It is valid for the path plus source mode ...
-                 * information to be specified for a given path."
-                 */
-                pPathInfo->targetInfo.modeInfoIdx      = DISPLAYCONFIG_PATH_MODE_IDX_INVALID;
+                pPathInfo->targetInfo.modeInfoIdx      = iTgtModeInfo;
                 pPathInfo->targetInfo.outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15;
                 pPathInfo->targetInfo.rotation         = DISPLAYCONFIG_ROTATION_IDENTITY;
                 pPathInfo->targetInfo.scaling          = DISPLAYCONFIG_SCALING_PREFERRED;
@@ -2059,6 +2136,11 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
         WARN(("VBoxTray:(WDDM) pfnSetDisplayConfig Failed to VALIDATE winEr %d.\n", winEr));
         vboxDispIfWddmDcLogRel(&DispCfg, fSetFlags);
         fSetFlags |= SDC_ALLOW_CHANGES;
+    }
+    else
+    {
+        Log(("VBoxTray:(WDDM) pfnSetDisplayConfig Ok to VALIDATE.\n"));
+        vboxDispIfWddmDcLogRel(&DispCfg, fSetFlags);
     }
 
     winEr = vboxDispIfWddmDcSet(&DispCfg, fSetFlags | SDC_SAVE_TO_DATABASE | SDC_APPLY);
@@ -2352,6 +2434,9 @@ static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL f
 
 DWORD VBoxDispIfResizeModes(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
 {
+#ifndef VBOX_WITH_WDDM
+    RT_NOREF(iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+#endif
     switch (pIf->enmMode)
     {
         case VBOXDISPIF_MODE_XPDM_NT4:
@@ -2388,6 +2473,7 @@ DWORD VBoxDispIfCancelPendingResize(PCVBOXDISPIF const pIf)
     }
 }
 
+#ifdef VBOX_WITH_WDDM
 static DWORD vboxDispIfConfigureTargetsWDDM(VBOXDISPIF_OP *pOp, uint32_t *pcConnected)
 {
     VBOXDISPIFESCAPE EscapeHdr = {0};
@@ -2395,7 +2481,7 @@ static DWORD vboxDispIfConfigureTargetsWDDM(VBOXDISPIF_OP *pOp, uint32_t *pcConn
     EscapeHdr.u32CmdSpecific = 0;
 
     D3DKMT_ESCAPE EscapeData = {0};
-    EscapeData.hAdapter = pOp->Adapter.hAdapter;
+    EscapeData.hAdapter = pOp->u.wddm.Adapter.hAdapter;
 #ifdef VBOX_DISPIF_WITH_OPCONTEXT
     /* win8.1 does not allow context-based escapes for display-only mode */
     EscapeData.hDevice = pOp->Device.hDevice;
@@ -2417,12 +2503,12 @@ static DWORD vboxDispIfConfigureTargetsWDDM(VBOXDISPIF_OP *pOp, uint32_t *pcConn
     return Status;
 }
 
-static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
+static DWORD vboxDispIfResizeStartedOpWDDM(VBOXDISPIF_OP *pOp)
 {
     DWORD NumDevices = VBoxDisplayGetCount();
     if (NumDevices == 0)
     {
-        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: Zero devices found\n"));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: Zero devices found\n"));
         return ERROR_GEN_FAILURE;
     }
 
@@ -2434,19 +2520,19 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
     DWORD winEr = VBoxDisplayGetConfig(NumDevices, &DevPrimaryNum, &DevNum, paDisplayDevices, paDeviceModes);
     if (winEr != NO_ERROR)
     {
-        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: VBoxGetDisplayConfig failed, %d\n", winEr));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: VBoxGetDisplayConfig failed, %d\n", winEr));
         return winEr;
     }
 
     if (NumDevices != DevNum)
-        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: NumDevices(%d) != DevNum(%d)\n", NumDevices, DevNum));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: NumDevices(%d) != DevNum(%d)\n", NumDevices, DevNum));
 
 
     uint32_t cConnected = 0;
     winEr = vboxDispIfConfigureTargetsWDDM(pOp, &cConnected);
     if (winEr != NO_ERROR)
     {
-        WARN(("VBoxTray: vboxDispIfConfigureTargetsWDDM failed winEr 0x%x\n", winEr));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM failed winEr 0x%x\n", winEr));
         return winEr;
     }
 
@@ -2458,17 +2544,17 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
 
     winEr = vboxDispIfWaitDisplayDataInited(pOp);
     if (winEr != NO_ERROR)
-        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: vboxDispIfWaitDisplayDataInited failed winEr 0x%x\n", winEr));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: vboxDispIfWaitDisplayDataInited failed winEr 0x%x\n", winEr));
 
     DWORD NewNumDevices = VBoxDisplayGetCount();
     if (NewNumDevices == 0)
     {
-        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: Zero devices found\n"));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: Zero devices found\n"));
         return ERROR_GEN_FAILURE;
     }
 
     if (NewNumDevices != NumDevices)
-        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: NumDevices(%d) != NewNumDevices(%d)\n", NumDevices, NewNumDevices));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: NumDevices(%d) != NewNumDevices(%d)\n", NumDevices, NewNumDevices));
 
     DISPLAY_DEVICE *paNewDisplayDevices = (DISPLAY_DEVICE *)alloca (sizeof (DISPLAY_DEVICE) * NewNumDevices);
     DEVMODE *paNewDeviceModes = (DEVMODE *)alloca (sizeof (DEVMODE) * NewNumDevices);
@@ -2478,12 +2564,12 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
     winEr = VBoxDisplayGetConfig(NewNumDevices, &NewDevPrimaryNum, &NewDevNum, paNewDisplayDevices, paNewDeviceModes);
     if (winEr != NO_ERROR)
     {
-        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: VBoxGetDisplayConfig failed for new devices, %d\n", winEr));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: VBoxGetDisplayConfig failed for new devices, %d\n", winEr));
         return winEr;
     }
 
     if (NewNumDevices != NewDevNum)
-        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: NewNumDevices(%d) != NewDevNum(%d)\n", NewNumDevices, NewDevNum));
+        WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: NewNumDevices(%d) != NewDevNum(%d)\n", NewNumDevices, NewDevNum));
 
     DWORD minDevNum = RT_MIN(DevNum, NewDevNum);
     UINT *pIds = (UINT*)alloca (sizeof (UINT) * minDevNum);
@@ -2517,35 +2603,35 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
         {
             winEr = vboxDispIfWddmResizeDisplayVista(paNewDeviceModes, paNewDisplayDevices, NewDevNum, i, FALSE, TRUE);
             if (winEr != NO_ERROR)
-                WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: vboxDispIfWddmResizeDisplayVista failed winEr 0x%x\n", winEr));
+                WARN(("VBoxTray: vboxDispIfResizeStartedOpWDDM: vboxDispIfWddmResizeDisplayVista failed winEr 0x%x\n", winEr));
         }
     }
 
     return winEr;
 }
 
-
 static DWORD vboxDispIfResizeStartedWDDM(PCVBOXDISPIF const pIf)
 {
     VBOXDISPIF_OP Op;
 
-    DWORD winEr = vboxDispIfOpBegin(pIf, &Op);
+    DWORD winEr = vboxDispIfOpBeginWddm(pIf, &Op);
     if (winEr != NO_ERROR)
     {
         WARN(("VBoxTray: vboxDispIfOpBegin failed winEr 0x%x\n", winEr));
         return winEr;
     }
 
-    winEr = vboxDispIfResizeStartedWDDMOp(&Op);
+    winEr = vboxDispIfResizeStartedOpWDDM(&Op);
     if (winEr != NO_ERROR)
     {
         WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp failed winEr 0x%x\n", winEr));
     }
 
-    vboxDispIfOpEnd(&Op);
+    vboxDispIfOpEndWddm(&Op);
 
     return winEr;
 }
+#endif /* VBOX_WITH_WDDM */
 
 DWORD VBoxDispIfResizeStarted(PCVBOXDISPIF const pIf)
 {
@@ -2690,10 +2776,11 @@ DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_
     return err;
 }
 
+#ifdef VBOX_WITH_WDDM
 static DWORD vboxDispIfSeamlessCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAMLESS *pSeamless, HANDLE hEvent)
 {
     RT_NOREF(hEvent);
-    HRESULT hr = vboxDispKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &pSeamless->modeData.wddm.Adapter);
+    HRESULT hr = VBoxWddmKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &pSeamless->modeData.wddm.Adapter);
     if (SUCCEEDED(hr))
     {
 #ifndef VBOX_DISPIF_WITH_OPCONTEXT
@@ -2713,7 +2800,7 @@ static DWORD vboxDispIfSeamlessCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEA
         else
             WARN(("VBoxTray: vboxDispKmtCreateDevice failed hr 0x%x", hr));
 
-        vboxDispKmtCloseAdapter(&pSeamless->modeData.wddm.Adapter);
+        VBoxWddmKmtCloseAdapter(&pSeamless->modeData.wddm.Adapter);
 #endif /* VBOX_DISPIF_WITH_OPCONTEXT */
     }
 
@@ -2726,7 +2813,7 @@ static DWORD vboxDispIfSeamlessTermWDDM(VBOXDISPIF_SEAMLESS *pSeamless)
     vboxDispKmtDestroyContext(&pSeamless->modeData.wddm.Context);
     vboxDispKmtDestroyDevice(&pSeamless->modeData.wddm.Device);
 #endif
-    vboxDispKmtCloseAdapter(&pSeamless->modeData.wddm.Adapter);
+    VBoxWddmKmtCloseAdapter(&pSeamless->modeData.wddm.Adapter);
 
     return NO_ERROR;
 }
@@ -2751,6 +2838,7 @@ static DWORD vboxDispIfSeamlessSubmitWDDM(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDI
     WARN(("VBoxTray: pfnD3DKMTEscape Seamless failed Status 0x%x\n", Status));
     return Status;
 }
+#endif /* VBOX_WITH_WDDM */
 
 DWORD VBoxDispIfSeamlessCreate(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAMLESS *pSeamless, HANDLE hEvent)
 {
@@ -2771,6 +2859,9 @@ DWORD VBoxDispIfSeamlessCreate(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAMLESS *pSea
             break;
     }
 
+#ifndef VBOX_WITH_WDDM
+    RT_NOREF(hEvent);
+#endif
     WARN(("VBoxTray: VBoxDispIfSeamlessCreate: invalid mode %d\n", pIf->enmMode));
     return ERROR_INVALID_PARAMETER;
 }

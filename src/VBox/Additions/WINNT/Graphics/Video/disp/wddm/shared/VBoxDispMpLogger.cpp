@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2012-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2012-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -77,11 +77,11 @@ static PVBOXDISPMPLOGGER vboxDispMpLoggerGet()
             /* we are on Vista+
              * check if we can Open Adapter, i.e. WDDM driver is installed */
             VBOXDISPKMT_ADAPTER Adapter;
-            hr = vboxDispKmtOpenAdapter(&g_VBoxDispMpLogger.KmtCallbacks, &Adapter);
+            hr = VBoxWddmKmtOpenAdapter(&g_VBoxDispMpLogger.KmtCallbacks, &Adapter);
             if (hr == S_OK)
             {
                 ASMAtomicWriteU32((volatile uint32_t *)&g_VBoxDispMpLogger.enmState, VBOXDISPMPLOGGER_STATE_INITIALIZED);
-                vboxDispKmtCloseAdapter(&Adapter);
+                VBoxWddmKmtCloseAdapter(&Adapter);
                 return &g_VBoxDispMpLogger;
             }
             vboxDispKmtCallbacksTerm(&g_VBoxDispMpLogger.KmtCallbacks);
@@ -124,7 +124,7 @@ VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(const char *pszString)
         return;
 
     VBOXDISPKMT_ADAPTER Adapter;
-    HRESULT hr = vboxDispKmtOpenAdapter(&pLogger->KmtCallbacks, &Adapter);
+    HRESULT hr = VBoxWddmKmtOpenAdapter(&pLogger->KmtCallbacks, &Adapter);
     if (hr == S_OK)
     {
         uint32_t cbString = (uint32_t)strlen(pszString) + 1;
@@ -156,7 +156,7 @@ VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(const char *pszString)
         {
             BP_WARN();
         }
-        hr = vboxDispKmtCloseAdapter(&Adapter);
+        hr = VBoxWddmKmtCloseAdapter(&Adapter);
         if(hr != S_OK)
         {
             BP_WARN();
@@ -192,7 +192,7 @@ static void vboxDispMpLoggerDumpBuf(void *pvBuf, uint32_t cbBuf, VBOXDISPIFESCAP
         return;
 
     VBOXDISPKMT_ADAPTER Adapter;
-    HRESULT hr = vboxDispKmtOpenAdapter(&pLogger->KmtCallbacks, &Adapter);
+    HRESULT hr = VBoxWddmKmtOpenAdapter(&pLogger->KmtCallbacks, &Adapter);
     if (hr == S_OK)
     {
         uint32_t cbCmd = RT_UOFFSETOF_DYN(VBOXDISPIFESCAPE_DBGDUMPBUF, aBuf[cbBuf]);
@@ -227,7 +227,7 @@ static void vboxDispMpLoggerDumpBuf(void *pvBuf, uint32_t cbBuf, VBOXDISPIFESCAP
         {
             BP_WARN();
         }
-        hr = vboxDispKmtCloseAdapter(&Adapter);
+        hr = VBoxWddmKmtCloseAdapter(&Adapter);
         if(hr != S_OK)
         {
             BP_WARN();

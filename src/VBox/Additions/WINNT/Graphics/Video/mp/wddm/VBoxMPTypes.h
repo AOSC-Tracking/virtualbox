@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -91,8 +91,8 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 
 typedef struct _VBOXWDDM_POINTER_INFO
 {
-    uint32_t xPos;
-    uint32_t yPos;
+    int32_t xPos;
+    int32_t yPos;
     union
     {
         VIDEO_POINTER_ATTRIBUTES data;
@@ -103,19 +103,11 @@ typedef struct _VBOXWDDM_POINTER_INFO
 typedef struct _VBOXWDDM_GLOBAL_POINTER_INFO
 {
     /** Last updated X position. */
-    uint32_t iLastPosX;
+    int32_t iLastPosX;
     /** Last updated Y position. */
-    uint32_t iLastPosY;
+    int32_t iLastPosY;
     uint32_t iLastReportedScreen;
 } VBOXWDDM_GLOBAL_POINTER_INFO, *PVBOXWDDM_GLOBAL_POINTER_INFO;
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-typedef struct VBOXWDDM_VHWA
-{
-    VBOXVHWA_INFO Settings;
-    volatile uint32_t cOverlaysCreated;
-} VBOXWDDM_VHWA;
-#endif
 
 typedef struct VBOXWDDM_ADDR
 {
@@ -152,14 +144,6 @@ typedef struct VBOXWDDM_SOURCE
     BOOLEAN bVisible;
     BOOLEAN bBlankedByPowerOff;
     VBOXVBVAINFO Vbva;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* @todo: in our case this seems more like a target property,
-     * but keep it here for now */
-    VBOXWDDM_VHWA Vhwa;
-    volatile uint32_t cOverlays;
-    LIST_ENTRY OverlayList;
-    KSPIN_LOCK OverlayListLock;
-#endif
     KSPIN_LOCK AllocationLock;
     POINT VScreenPos;
     VBOXWDDM_POINTER_INFO PointerInfo;
@@ -184,15 +168,27 @@ typedef struct VBOXWDDM_TARGET
     bool fDisabled;
 } VBOXWDDM_TARGET, *PVBOXWDDM_TARGET;
 
+#ifdef VBOX_WITH_VMSVGA3D_DX
+# ifdef DX_RENAME_ALLOCATION
+/** @todo Implement unlimited renaming list: an AVL tree instead of aInstances array. */
+#  define DX_MAX_RENAMING_LIST_LENGTH 16
+
+struct DX_ALLOCATION_INSTANCE
+{
+    uint32_t            mobid;                      /* For surfaces and shaders. */
+    SIZE_T              OffsetInPages;              /* Address of the allocation within segment.
+                                                     * DXGK believes that the allocation is here. */
+    struct VMSVGAGBO   *pGbo;                       /* Guest memory for this allocation. */
+};
+# endif /* DX_RENAME_ALLOCATION */
+#endif /* VBOX_WITH_VMSVGA3D_DX */
+
 /* allocation */
 //#define VBOXWDDM_ALLOCATIONINDEX_VOID (~0U)
 typedef struct VBOXWDDM_ALLOCATION
 {
     VBOXWDDM_ALLOC_TYPE enmType;
     D3DDDI_RESOURCEFLAGS fRcFlags;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    VBOXVHWA_SURFHANDLE hHostHandle;
-#endif
     BOOLEAN fDeleted;
     BOOLEAN bVisible;
     BOOLEAN bAssigned;
@@ -222,16 +218,15 @@ typedef struct VBOXWDDM_ALLOCATION
     {
         VBOXDXALLOCATIONDESC    desc;
         uint32_t                sid;                        /* For surfaces. */
+#ifndef DX_RENAME_ALLOCATION
         uint32_t                mobid;                      /* For surfaces and shaders. */
         uint32_t                SegmentId;                  /* Segment of the allocation. */
-        union
-        {
-            PMDL                pMDL;                       /* Guest backing for aperture segment 2. */
-            struct
-            {
-                struct VMSVGAMOB *pMob;                     /* Mob for the pages (including RTR0MEMOBJ). */
-            } gb; /** @todo remove the struct */
-        };
+        struct VMSVGAGBO       *pGbo;                       /* Guest memory for this allocation. */
+#else
+        uint32_t                SegmentId;                  /* Segment of the allocation. */
+        int32_t                 idxLastCreatedInstance;     /* Index of last created instance in aInstances. */
+        DX_ALLOCATION_INSTANCE  aInstances[DX_MAX_RENAMING_LIST_LENGTH];
+#endif
     } dx;
 #endif /* VBOX_WITH_VMSVGA3D_DX */
 } VBOXWDDM_ALLOCATION, *PVBOXWDDM_ALLOCATION;

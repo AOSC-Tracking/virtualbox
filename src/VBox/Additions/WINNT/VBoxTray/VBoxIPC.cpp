@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2010-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -275,12 +275,12 @@ DECLCALLBACK(int) vbtrIPCInit(const PVBOXTRAYSVCENV pEnv, void **ppvInstance)
 /**
  * @interface_method_impl{VBOXTRAYSVCDESC,pfnStop}
  */
-DECLCALLBACK(void) VBoxIPCStop(void *pvInstance)
+DECLCALLBACK(int) vbtrIPCStop(void *pvInstance)
 {
     /* Can be NULL if VBoxIPCInit failed. */
     if (!pvInstance)
-        return;
-    AssertPtrReturnVoid(pvInstance);
+        return VINF_SUCCESS;
+    AssertPtrReturn(pvInstance, VERR_INVALID_POINTER);
 
      VBoxTrayInfo("IPC: Stopping worker thread ...\n");
 
@@ -310,7 +310,11 @@ DECLCALLBACK(void) VBoxIPCStop(void *pvInstance)
                 /* Keep going. */
             }
         }
+
+        RTCritSectLeave(&pCtx->CritSect);
     }
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -468,7 +472,7 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThreadSelf, void *pvSess
             break;
         }
         else
-            VBoxTrayError("IPC: Session %#x: Waiting for session data failed with rc=%Rrc\n", hSession, rc);
+            VBoxTrayVerbose(1, "*** Error: IPC: Session %#x: Waiting for session data failed with rc=%Rrc\n", hSession, rc);
     }
 
     VBoxTrayVerbose(1, "IPC: Session thread %#x ended with rc=%Rrc\n", hSession, rc);
@@ -569,8 +573,8 @@ static int vboxIPCSessionStop(PVBOXIPCSESSION pSession)
  */
 DECLCALLBACK(int) vbtrIPCWorker(void *pvInstance, bool volatile *pfShutdown)
 {
-    AssertPtr(pvInstance);
-    LogFlowFunc(("pvInstance=%p\n", pvInstance));
+    AssertPtrReturn(pvInstance, VERR_INVALID_PARAMETER);
+    LogFunc(("pvInstance=%p\n", pvInstance));
 
     /*
      * Tell the control thread that it can continue
@@ -641,6 +645,7 @@ VBOXTRAYSVCDESC g_SvcDescIPC =
     vbtrIPCOption,
     vbtrIPCInit,
     vbtrIPCWorker,
-    NULL /* pfnStop */,
+    vbtrIPCStop,
     vbtrIPCDestroy
 };
+

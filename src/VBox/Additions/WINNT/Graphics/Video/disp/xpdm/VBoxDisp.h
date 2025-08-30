@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -141,10 +141,6 @@ typedef struct _VBOXDISPDEV
 
 #ifdef VBOX_WITH_DDRAW
     VBOXDDLOCKINFO ddpsLock;                 /* Primary surface DirectDraw lock information */
-#endif
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    VBOXDISPVHWAINFO  vhwa;                  /* VHWA Info */
 #endif
 
     BOOL bBitmapCacheDisabled;

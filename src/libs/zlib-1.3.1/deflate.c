@@ -47,7 +47,7 @@
  *
  */
 
-/* @(#) $Id: deflate.c $ */
+/* @(#) $Id$ */
 
 #include "deflate.h"
 

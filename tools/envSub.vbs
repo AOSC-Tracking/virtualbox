@@ -4,7 +4,7 @@
 '
 
 '
-' Copyright (C) 2006-2024 Oracle and/or its affiliates.
+' Copyright (C) 2006-2025 Oracle and/or its affiliates.
 '
 ' This file is part of VirtualBox base platform packages, as
 ' available from https://www.virtualbox.org.
@@ -89,7 +89,16 @@ function Main()
    strRootDir = g_objFileSys.GetParentFolderName(strScriptDir)
 
    dim strRealArch
-   strRealArch = Trim(EnvGet("PROCESSOR_ARCHITEW6432"))
+
+   ' Clutch for running the Windows/amd64 SlickEdit version on arm64 to get the architecture right.
+   if EnvGet("VSLICKPATH") <> "" then
+      strProcessorId = Trim(UCase(EnvGet("PROCESSOR_IDENTIFIER")))
+      if InStr(strProcessorId, UCase("ARMV8")) > 0 then
+         strRealArch = "arm64"
+      end if
+   end if
+
+   if strRealArch = "" then strRealArch = Trim(EnvGet("PROCESSOR_ARCHITEW6432"))
    if strRealArch = "" then strRealArch = Trim(EnvGet("PROCESSOR_ARCHITECTURE"))
    if strRealArch = "" then strRealArch = "amd64"
    strRealArch = LCase(strRealArch)
@@ -120,6 +129,21 @@ function Main()
    dim strHost, strHostArch
    strHost        = EnvGetDefValid("KBUILD_HOST",        "win", arrTargetAndHosts)
    strHostArch    = EnvGetDefValid("KBUILD_HOST_ARCH",   strRealArch, arrArchitectures)
+
+   dim strAltHostArch
+   strAltHostArch = ""
+   if strHostArch = "arm64" then
+      strAltHostArch = "amd64"
+   end if
+
+   ' Where to look for host related tools.
+   dim arrArchToolsSuffixes : arrArchToolsSuffixes = Array("", strHostArch & ".")
+   if strAltHostArch <> "" then
+      arrArchToolsSuffixes = ArrayAppend(arrArchToolsSuffixes, strAltHostArch & ".")
+   end if
+   if strHostArch <> "x86" and strAltHostArch <> "x86" then
+      arrArchToolsSuffixes = ArrayAppend(arrArchToolsSuffixes, ".x86")
+   end if
 
    '
    ' Parse arguments.
@@ -266,6 +290,7 @@ function Main()
       ' Add the kbuild wrapper directory to the end of the path, these take
       ' precedence over the dated gnuwin32 stuff.
       EnvAppendPathItem "Path", DosSlashes(strPathkBuild & "\bin\win." & strHostArch & "\wrappers"), ";"
+      if strAltHostArch <> "" then EnvAppendPathItem "Path", DosSlashes(strPathkBuild & "\bin\win." & strAltHostArch & "\wrappers"), ";"
 
       ' Add some gnuwin32 tools to the end of the path.
       EnvAppendPathItem "Path", DosSlashes(strPathDevTools & "\win.x86\gnuwin32\r1\bin"), ";"
@@ -273,8 +298,8 @@ function Main()
       ' Add the newest debugger we can find to the front of the path.
       dim strDir, blnStop
       bldExitLoop = false
-      for each str1 in arrArchitectures
-         strDir = strPathDevTools & "\win." & str1 & "\sdk"
+      for each str1 in arrArchToolsSuffixes
+         strDir = strPathDevTools & "\win" & str1 & "\sdk"
          for each strSubDir in GetSubdirsStartingWithRVerSorted(strDir, "v")
             if FileExists(strDir & "\" & strSubDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch) & "\windbg.exe") then
                EnvPrependPathItem "Path", DosSlashes(strDir & "\" & strSubDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch)), ";"
@@ -285,13 +310,13 @@ function Main()
          if bldExitLoop then exit for
       next
 
-      ' Add VCC to the end of the path.
+      ' Add VCC and Llvm to the end of the path.
       dim str2, strDir2, arrVccOldBinDirs
       arrVccOldBinDirs = Array("\bin\" & strHostArch & "_" & strTargetArch, "\bin\" & strTargetArch, "\bin")
       bldExitLoop = false
-      for each str1 in Array("amd64", "x86")
-         for each strDir in GetSubdirsStartingWithRVerSorted(strPathDevTools & "\win." & str1 & "\vcc", "v")
-            strDir = strPathDevTools & "\win." & str1 & "\vcc\" & strDir
+      for each str1 in Array("", ".amd64", ".x86")
+         for each strDir in GetSubdirsStartingWithRVerSorted(strPathDevTools & "\win" & str1 & "\vcc", "v")
+            strDir = strPathDevTools & "\win" & str1 & "\vcc\" & strDir
             if DirExists(strDir & "\Tools\MSVC") then
                for each strDir2 in GetSubdirsStartingWithRVerSorted(strDir & "\Tools\MSVC", "1")
                   strDir2 = strDir & "\Tools\MSVC\" & strDir2 & "\bin\Host" & XlateArchitectureToWin(strHostArch) _
@@ -305,6 +330,16 @@ function Main()
                      exit for
                   end if
                next
+               if bldExitLoop and DirExists(strDir & "\Tools\Llvm\") then
+                  if strHostArch = "x86" then
+                     strDir2 = strDir & "\Tools\Llvm\bin"
+                  else
+                     strDir2 = strDir & "\Tools\Llvm\" & XlateArchitectureToWin(strHostArch) & "\bin"
+                  end if
+                  if DirExists(strDir2) then
+                     EnvAppendPathItem "Path", DosSlashes(strDir2), ";"
+                  end if
+               end if
             elseif DirExists(strDir & "\bin") then
                for each str2 in arrVccOldBinDirs
                   if FileExists(strDir & str2 & "\cl.exe") then
@@ -335,11 +370,13 @@ function Main()
    EnvPrependPathItem "Path", DosSlashes(strOutDir & "\bin"), ";"
 
    ' Add kbuild binary directory to the front the the path.
+   if strAltHostArch <> "" then EnvPrependPathItem "Path", DosSlashes(strPathkBuild & "\bin\win." & strAltHostArch), ";"
    EnvPrependPathItem "Path", DosSlashes(strPathkBuild & "\bin\win." & strHostArch), ";"
 
    ' Finally, add the relevant tools/**/bin directories to the front of the path.
    EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\bin"), ";"
    if strHostArch = "amd64" then EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\win.x86\bin"), ";"
+   if strAltHostArch <> ""  then EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\win." & strAltHostArch & "\bin"), ";"
    EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\win." & strHostArch) & "\bin", ";"
 
    '

@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2024 Oracle and/or its affiliates.
+# Copyright (C) 2006-2025 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -51,27 +51,13 @@ endif
 
 
 #
-# RegCleanup - A NT4 post-install registry cleanup helper preventing the
-#              display config dialog from popping up on subsequent reboots.
-#
-PROGRAMS += RegCleanup
-RegCleanup_TEMPLATE     := VBoxGuestR3Exe
-RegCleanup_BLD_TRG_ARCH := x86
-RegCleanup_DEFS         := _WIN32_WINNT=0x0400
-RegCleanup_SOURCES      := \
-	RegCleanup.cpp \
-	RegCleanup.rc
-RegCleanup_VBOX_IMPORT_CHECKER.win.x86 := nt4
-
-
-#
 # The Guest Additions variant of VBoxDrvInst.
 #
 VBOX_PATH_GH_INSTALLATION_SRC := $(PATH_ROOT)/src/VBox/GuestHost/installation
 
 PROGRAMS.win += VBoxDrvInstGuest
 VBoxDrvInstGuest_TEMPLATE = VBoxGuestR3Exe
-VBoxDrvInstGuest_DEFS     = _WIN32_WINNT=0x0400 _UNICODE UNICODE VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxDrvInstGuest_DEFS     = _UNICODE UNICODE VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxDrvInstGuest_NAME    := VBoxDrvInst
 VBoxDrvInstGuest_SOURCES  = \
 	$(VBOX_PATH_GH_INSTALLATION_SRC)/VBoxWinDrvCommon.cpp \
@@ -98,7 +84,20 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
 	$(VBOX_RTSIGNTOOL) $3 --signature-index $4 --input "$$<" --output "$$@"
  endef
 
- if !defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && !$(intersects win all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+ if !defined(VBOX_CERTIFICATE_SUBJECT_NAME) && !$(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
+  # No SHA1 cert at all, no weird Plan B style signing, just the SHA2 cert.
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha256.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+  	extract-exe-signer-cert, 0)
+  VBOX_GA_CERT_ROOT_SHA2 := vbox-sha256-root.cer
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA2),$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+  	extract-signer-root --self-signed-roots-from-system, 0)
+  ifdef VBOX_TSA_SHA2_URL_ARGS
+   VBOX_GA_CERT_ROOT_SHA2_TS := vbox-sha256-timestamp-root.cer
+   $(evalcall2 def_VBoxAdditionsInstCertFiles,$(VBOX_GA_CERT_ROOT_SHA2_TS),$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
+   	extract-timestamp-root --self-signed-roots-from-system, 0)
+  endif
+ else if !defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && !$(intersects win all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+  # No SHA2 signing, just the SHA1 cert.
   $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
   	extract-exe-signer-cert, 0)
   VBOX_GA_CERT_ROOT_SHA1 := vbox-root.cer
@@ -110,6 +109,7 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
    	extract-timestamp-root --self-signed-roots-from-system, 0)
   endif
  else
+  # Dual signing, both SHA1 and SHA2 driver cert, plus maybe SHA2 userland cert.
   $(evalcall2 def_VBoxAdditionsInstCertFiles,vbox-sha1.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys, \
   	extract-exe-signer-cert, 0)
   VBOX_GA_CERT_ROOT_SHA1 := vbox-sha1-root.cer
@@ -160,12 +160,15 @@ VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES := \
 	$(PATH_STAGE_BIN)/additions/VBoxMouse.inf \
 	$(PATH_STAGE_BIN)/additions/VBoxMouse.sys \
 	\
-	$(PATH_STAGE_BIN)/additions/VBoxVideo.inf \
-	$(PATH_STAGE_BIN)/additions/VBoxVideo.sys \
-	$(PATH_STAGE_BIN)/additions/VBoxDisp.dll \
-	\
 	$(PATH_STAGE_BIN)/additions/VBoxSF.sys \
 	$(PATH_STAGE_BIN)/additions/VBoxMRXNP.dll
+
+ifneq ($(KBUILD_TARGET_ARCH),arm64) ## @todo win.arm64: Make VBoxVideo build.
+ VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
+ 	$(PATH_STAGE_BIN)/additions/VBoxVideo.inf \
+ 	$(PATH_STAGE_BIN)/additions/VBoxVideo.sys \
+ 	$(PATH_STAGE_BIN)/additions/VBoxDisp.dll
+endif
 
 ifeq ($(KBUILD_TARGET_ARCH),amd64) # 32-bit network provider DLLs for 32-bit apps running on a 64-bit system
  VBOX_WINDOWS_ADDITIONS_ATTESTATION_SIGNED_FILES += \
@@ -181,11 +184,14 @@ endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
  	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
- 	$(PATH_STAGE_BIN)/additions/VBoxVideo-PreW10.cat \
  	$(PATH_STAGE_BIN)/additions/VBoxGuest.cat \
- 	$(PATH_STAGE_BIN)/additions/VBoxGuest-PreW10.cat \
- 	$(PATH_STAGE_BIN)/additions/VBoxMouse.cat \
- 	$(PATH_STAGE_BIN)/additions/VBoxMouse-PreW10.cat
+ 	$(PATH_STAGE_BIN)/additions/VBoxMouse.cat
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+  VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
+  	$(PATH_STAGE_BIN)/additions/VBoxVideo-PreW10.cat \
+  	$(PATH_STAGE_BIN)/additions/VBoxGuest-PreW10.cat \
+  	$(PATH_STAGE_BIN)/additions/VBoxMouse-PreW10.cat
+ endif
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
   	$(PATH_STAGE_BIN)/additions/VBoxGuestEarlyNT.cat \
@@ -196,7 +202,6 @@ endif
 VBOX_WINDOWS_ADDITIONS_OTHER_FILES := \
 	$(PATH_STAGE_BIN)/additions/VBoxService.exe \
 	$(PATH_STAGE_BIN)/additions/VBoxHook.dll \
-	$(PATH_STAGE_BIN)/additions/RegCleanup.exe \
 	$(PATH_STAGE_BIN)/additions/VBoxDrvInst.exe
 
 ifeq ($(KBUILD_TARGET_ARCH),x86)
@@ -287,6 +292,11 @@ VB_WIN_ADD_NSIS_ENV := \
 	$(foreach base, VBOX_GA_CERT_ROOT_SHA1 VBOX_GA_CERT_ROOT_SHA2 VBOX_GA_CERT_ROOT_SHA2_R3 \
 		,-E '$(base)=$(firstword $($(base)) none)' -E '$(base)_TS=$(firstword $($(base)_TS) none)')
 
+# Notes on SetCompressor: solid + lzma w/ 16MB dict reduced the amd64 installer
+#   from 16280616 to 7679592 bytes, or by ~53%.  For x86 we use a smaller
+#   dictionary (the default) since ancient windows VMs doesn't require a lot of
+#   memory and the VMs might have a lot of RAM configured.  Size reduction is
+#   from 9530296 to 5056096 bytes / by ~47%. (4 MB dict: 5948856 bytes / 38%)
 $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsCommon.nsh \
@@ -298,10 +308,6 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsW2KXP.nsh \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsVista.nsh \
 		$(PATH_SUB_CURRENT)/dumplog.nsh \
-		$(PATH_SUB_CURRENT)/ReplaceDLL.nsh \
-		$(PATH_SUB_CURRENT)/servicepack.nsh \
-		$(PATH_SUB_CURRENT)/strstr.nsh \
-		$(PATH_SUB_CURRENT)/winver.nsh \
 		$(PATH_SUB_CURRENT)/Languages/English.nsh \
 		$(PATH_SUB_CURRENT)/Languages/German.nsh \
 		$(PATH_SUB_CURRENT)/Languages/French.nsh \
@@ -320,7 +326,9 @@ ifdef VBOX_WIN_ATTESTATION_SIGNING # Unpack the attestation signed drivers - thi
 endif
 	$(REDIRECT) -C $(VBOX_PATH_WIN_ADD_INS_SRC) \
 		$(VB_WIN_ADD_NSIS_ENV) \
-		-- $(EXEC_X86_WIN32) $(VBOX_PATH_NSIS)/makensis.exe /NOCD /V2 \
+		-- $(EXEC_X86_WIN32) $(VBOX_PATH_NSIS)/makensis.exe /NOCD /V3 \
+			"/XSetCompressor /SOLID lzma" "/XSetCompressorDictSize $(if-expr $(KBUILD_TARGET_ARCH) == x86,4,16)" \
+			$(if-expr defined(VBOX_WITH_NATIVE_NSIS_INSTALLER),"/XTarget $(KBUILD_TARGET_ARCH)-unicode",) \
 			$(if $(VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST),'/DVBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST=1') \
 			$(if $(VBOX_SIGNING_MODE),'/DEXTERNAL_UNINSTALLER=1') \
                        $(if-expr defined(VBOX_SIGN_ADDITIONS) && defined(VBOX_SIGNING_MODE), \
@@ -351,10 +359,6 @@ ifdef VBOX_SIGNING_MODE
  		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsW2KXP.nsh \
  		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsVista.nsh \
  		$(PATH_SUB_CURRENT)/dumplog.nsh \
- 		$(PATH_SUB_CURRENT)/ReplaceDLL.nsh \
- 		$(PATH_SUB_CURRENT)/servicepack.nsh \
- 		$(PATH_SUB_CURRENT)/strstr.nsh \
- 		$(PATH_SUB_CURRENT)/winver.nsh \
  		$(PATH_SUB_CURRENT)/Languages/English.nsh \
  		$(PATH_SUB_CURRENT)/Languages/German.nsh \
  		$(PATH_SUB_CURRENT)/Languages/French.nsh \
@@ -369,6 +373,7 @@ ifdef VBOX_SIGNING_MODE
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_WIN_ADD_INS_SRC) \
 		$(VB_WIN_ADD_NSIS_ENV) \
 		-- $(EXEC_X86_WIN32) $(VBOX_PATH_NSIS)/makensis.exe /NOCD /V2 \
+			$(if-expr defined(VBOX_WITH_NATIVE_NSIS_INSTALLER),"/XTarget $(KBUILD_TARGET_ARCH)-unicode",) \
 			$(if $(VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST),'/DVBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST=1') \
 			$(if $(VBOX_SIGN_ADDITIONS),'/DVBOX_SIGN_ADDITIONS=1') \
 			$(if $(VBOX_WITH_VBOX_LEGACY_TS_CA),'/DVBOX_WITH_VBOX_LEGACY_TS_CA=1') \
@@ -394,8 +399,13 @@ if defined(VBOX_WIN_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && define
  #
  $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME): \
  		$(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
-	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.zip
-	cd $(PATH_OUT)/repackadd && $(VBOX_RETRY) $(VBOX_WIN_ATTESTATION_SIGNING_EXE) "VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(VBOX_DRIVERS_PACK_NAME)"
+	$(RM_EXT) -f -- $(PATH_OUT)/repackadd/*.zip
+	cd $(PATH_OUT)/repackadd \
+		&& $(VBOX_RETRY) $(VBOX_WIN_ATTESTATION_SIGNING_EXE) \
+			"VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" \
+			"$(KBUILD_TARGET_ARCH)" \
+			"r$(VBOX_SVN_REV)" \
+			"$(VBOX_DRIVERS_PACK_NAME)"
 
  #
  # This creates a .CAB file of the driver files that should be attestation signed.
@@ -412,8 +422,8 @@ if defined(VBOX_WIN_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && define
 	$(call VBOX_SIGN_EV_FILE_FN,$@)
 endif # VBOX_WIN_ATTESTATION_SIGNING && VBOX_SIGNING_MODE && VBOX_SIGN_ADDITIONS
 
-
 #
+
 # Repackaging scripts and files.
 #
 INSTALLS += RePackScriptsAdd
@@ -470,9 +480,6 @@ RePackScriptsAddResources_SOURCES = \
 	$(PATH_ROOT)/doc/License-gpl-3.0.rtf \
 	VBoxGuestAdditions.nsi \
 	dumplog.nsh \
-	ReplaceDLL.nsh \
-	servicepack.nsh \
-	strstr.nsh \
 	VBoxGuestAdditionsCommon.nsh \
 	VBoxGuestAdditionsExternal.nsh \
 	VBoxGuestAdditionsLog.nsh \
@@ -481,7 +488,6 @@ RePackScriptsAddResources_SOURCES = \
 	VBoxGuestAdditionsUninstallOld.nsh \
 	VBoxGuestAdditionsVista.nsh \
 	VBoxGuestAdditionsW2KXP.nsh \
-	winver.nsh \
 	ISO/AUTORUN.INF \
 	ISO/NT3xReadme.txt \
 	\

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -496,6 +496,7 @@ NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO
     return Status;
 }
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 void vboxWddmDisplaySettingsCheckPos(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
     POINT Pos = {0};
@@ -516,6 +517,7 @@ void vboxWddmDisplaySettingsCheckPos(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRE
 
     vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
 }
+#endif
 
 NTSTATUS vboxWddmRegDrvFlagsSet(PVBOXMP_DEVEXT pDevExt, DWORD fVal)
 {
@@ -981,7 +983,7 @@ NTSTATUS vboxVideoAMgrCreate(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr
         AssertNtStatusSuccess(Status);
         if (Status == STATUS_SUCCESS)
         {
-            PHYSICAL_ADDRESS PhysicalAddress = {0};
+            PHYSICAL_ADDRESS PhysicalAddress = {{0,0}};
             PhysicalAddress.QuadPart = VBoxCommonFromDeviceExt(pDevExt)->phVRAM.QuadPart + offData;
             pMgr->pvData = (uint8_t*)MmMapIoSpace(PhysicalAddress, cbData, MmNonCached);
             Assert(pMgr->pvData);
@@ -1270,6 +1272,75 @@ NTSTATUS vboxWddmDrvCfgInit(PUNICODE_STRING pRegStr)
 
     if (g_RefreshRate == 0 || g_RefreshRate > 240)
         g_RefreshRate = VBOXWDDM_DEFAULT_REFRESH_RATE;
+
+    ZwClose(hKey);
+
+    return Status;
+}
+
+NTSTATUS vboxWddmLoggerCreate(PUNICODE_STRING pRegStr)
+{
+    HANDLE hKey;
+    OBJECT_ATTRIBUTES ObjAttr;
+
+    InitializeObjectAttributes(&ObjAttr, pRegStr, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+
+    NTSTATUS Status = ZwOpenKey(&hKey, GENERIC_READ, &ObjAttr);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("ZwOpenKey for settings key failed, Status 0x%x", Status));
+        return Status;
+    }
+
+    union
+    {
+        KEY_VALUE_PARTIAL_INFORMATION   PartialInfo;
+        uint8_t                         abPadding[sizeof(KEY_VALUE_PARTIAL_INFORMATION) + sizeof(WCHAR) * 64];
+        uint64_t                        uAlign;
+    } uBuf;
+
+    UNICODE_STRING ValueName;
+    ULONG cbActual = 0;
+
+    RtlInitUnicodeString(&ValueName, L"VBOXWDDM_RELEASE_LOG");
+    Status = ZwQueryValueKey(hKey, &ValueName, KeyValuePartialInformation, &uBuf, sizeof(uBuf) - sizeof(WCHAR), &cbActual);
+
+    if (!NT_SUCCESS(Status))
+    {
+        ZwClose(hKey);
+        return Status;
+    }
+
+    if (uBuf.PartialInfo.Type != REG_SZ)
+    {
+        ZwClose(hKey);
+        return Status;
+    }
+
+    UNICODE_STRING Value;
+    Value.Buffer = (WCHAR *)uBuf.PartialInfo.Data;
+    Value.Length = uBuf.PartialInfo.DataLength;
+    if (Value.Length >= sizeof(WCHAR) && Value.Buffer[Value.Length / sizeof(WCHAR) - 1] == '\0')
+        Value.Length -= sizeof(WCHAR);
+    Value.MaximumLength = Value.Length + sizeof(WCHAR);
+    Value.Buffer[uBuf.PartialInfo.DataLength / sizeof(WCHAR)] = '\0';
+
+    ANSI_STRING ansiValue;
+
+    Status = RtlUnicodeStringToAnsiString(&ansiValue, &Value, TRUE);
+
+    if (Status == STATUS_SUCCESS)
+    {
+        static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+        PRTLOGGER pRelLogger; // +drv_miniport.e.l.l2 is expected
+        int rc = RTLogCreate(&pRelLogger, 0 /*fFlags*/, ansiValue.Buffer, "VBOXWDDM_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                        RTLOGDEST_USER, NULL);
+
+        if (RT_SUCCESS(rc))
+            RTLogRelSetDefaultInstance(pRelLogger);
+
+        RtlFreeAnsiString(&ansiValue);
+    }
 
     ZwClose(hKey);
 

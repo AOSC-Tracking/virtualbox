@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2016-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -37,6 +37,7 @@
 #include <iprt/thread.h>
 #include <iprt/x86.h>
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 NTSTATUS SvgaFifoInit(PVBOXWDDM_EXT_VMSVGA pSvga)
 {
 // ASMBreakpoint();
@@ -59,7 +60,6 @@ NTSTATUS SvgaFifoInit(PVBOXWDDM_EXT_VMSVGA pSvga)
            u32EnableState, u32ConfigDone, u32TracesState));
 
     SVGARegWrite(pSvga, SVGA_REG_ENABLE, SVGA_REG_ENABLE_ENABLE | SVGA_REG_ENABLE_HIDE);
-    SVGARegWrite(pSvga, SVGA_REG_TRACES, 0);
 
     uint32_t offMin = 4;
     if (pSvga->u32Caps & SVGA_CAP_EXTENDED_FIFO)
@@ -81,8 +81,6 @@ NTSTATUS SvgaFifoInit(PVBOXWDDM_EXT_VMSVGA pSvga)
     SVGAFifoWrite(pSvga, SVGA_FIFO_STOP, offMin);
     SVGAFifoWrite(pSvga, SVGA_FIFO_BUSY, 0);
     ASMCompilerBarrier();
-
-    SVGARegWrite(pSvga, SVGA_REG_CONFIG_DONE, 1);
 
     pFifo->u32FifoCaps = SVGAFifoRead(pSvga, SVGA_FIFO_CAPABILITIES);
 
@@ -196,7 +194,7 @@ void *SvgaFifoReserve(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbReserve)
 
 static void svgaFifoPingHost(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t u32Reason)
 {
-    if (ASMAtomicCmpXchgU32(&pSvga->pu32FIFO[SVGA_FIFO_BUSY], 1, 0))
+    if (ASMAtomicCmpXchgU32(&pSvga->hw.pu32FIFO[SVGA_FIFO_BUSY], 1, 0))
     {
         SVGARegWrite(pSvga, SVGA_REG_SYNC, u32Reason);
     }
@@ -252,6 +250,7 @@ void SvgaFifoCommit(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual)
 
     ExReleaseFastMutex(&pFifo->FifoMutex);
 }
+#endif /* defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) */
 
 
 /*
@@ -434,6 +433,7 @@ static NTSTATUS svgaCBAlloc(PVMSVGACBSTATE pCBState, VMSVGACBTYPE enmType, uint3
     RT_ZERO(pCB->nodeQueue);
     pCB->enmType = enmType;
     pCB->idDXContext = idDXContext;
+    pCB->idFence = 0;
     pCB->cbReservedCmdHeader = 0;
     pCB->cbReservedCmd = 0;
     pCB->u32ReservedCmd = 0;
@@ -441,10 +441,13 @@ static NTSTATUS svgaCBAlloc(PVMSVGACBSTATE pCBState, VMSVGACBTYPE enmType, uint3
     {
         pCB->cbBuffer = RT_ALIGN_32(cbRequired, PAGE_SIZE);
         pCB->cbCommand = 0;
-        Status = svgaCBAllocPage(&pCB->commands.page, pCB->cbBuffer);
-        AssertReturnStmt(NT_SUCCESS(Status),
-                         GaMemFree(pCB),
-                         STATUS_INSUFFICIENT_RESOURCES);
+        if (pCB->cbBuffer)
+        {
+            Status = svgaCBAllocPage(&pCB->commands.page, pCB->cbBuffer);
+            AssertReturnStmt(NT_SUCCESS(Status),
+                             GaMemFree(pCB),
+                             STATUS_INSUFFICIENT_RESOURCES);
+        }
     }
     else
     {
@@ -494,10 +497,12 @@ static NTSTATUS svgaCBSubmit(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
     SVGACBHeader *pCBHeader = pCB->pCBHeader;
     pCBHeader->status      = SVGA_CB_STATUS_NONE;
     pCBHeader->errorOffset = 0;
-    if (pCB->enmType != VMSVGACB_UMD)
-        pCBHeader->id      = 0;
+    /* The old driver sent 1 in the low dword of the 'id' field for UMD buffers.
+     * The host will now check the high dword: if bit 0 is 1, the low dword is fence id. */
+    if (pCB->idFence)
+        pCBHeader->id      = RT_MAKE_U64(pCB->idFence, 1);
     else
-        pCBHeader->id      = 1; /* An arbitrary not zero value. SVGA_DC_CMD_PREEMPT will preempt such buffers. */
+        pCBHeader->id      = 0;
     if (pCB->idDXContext != SVGA3D_INVALID_ID)
         pCBHeader->flags   = SVGA_CB_FLAG_DX_CONTEXT;
     else
@@ -510,7 +515,7 @@ static NTSTATUS svgaCBSubmit(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
     pCBHeader->offset      = 0;
     pCBHeader->dxContext   = pCB->idDXContext;
     RT_ZERO(pCBHeader->mustBeZero);
-    Assert(pCBHeader->ptr.pa != 0);
+    Assert(pCBHeader->ptr.pa != 0 || pCBHeader->length == 0);
 
     /* Select appropriate comamnd buffer context. */
     SVGACBContext CBContext;
@@ -722,6 +727,33 @@ void SvgaCmdBufCommit(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual)
 }
 
 
+/** Commit space for the current command in the current miniport command buffer
+ *  and attach a completion callback to the command buffer.
+ *
+ * @param pSvga            The device instance.
+ * @param cbActual         Actual size of the command data. Must be not greater than the reserved size.
+ * @param pfn              Callback to invoke when the command buffer has been processed by the host.
+ * @param pv               Callback parameters.
+ * @param cb               Size of callback parameters.
+ */
+void SvgaCmdBufCommitWithCompletionCallback(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbActual,
+    PFNCBCOMPLETION pfn, void const *pv, uint32_t cb)
+{
+    PVMSVGACBSTATE pCBState = pSvga->pCBState;
+
+    VMSVGACBCOMPLETION *p = (VMSVGACBCOMPLETION *)RTMemAlloc(sizeof(VMSVGACBCOMPLETION) + cb);
+    AssertReturnVoidStmt(p, ExReleaseFastMutex(&pCBState->CBCurrentMutex));
+
+    p->pfn = pfn;
+    p->cb = cb;
+    memcpy(&p[1], pv, cb);
+
+    RTListAppend(&pCBState->pCBCurrent->listCompletion, &p->nodeCompletion);
+
+    SvgaCmdBufCommit(pSvga, cbActual);
+}
+
+
 /** Submit the current miniport command buffer to the host.
  * If the buffer contains no command data, then this function does nothing.
  *
@@ -747,24 +779,35 @@ void SvgaCmdBufFlush(PVBOXWDDM_EXT_VMSVGA pSvga)
 }
 
 
-NTSTATUS SvgaCmdBufSubmitUMD(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
+NTSTATUS SvgaCmdBufSubmit(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACB pCB)
 {
-    AssertReturn(pCB && pCB->enmType == VMSVGACB_UMD, STATUS_INVALID_PARAMETER);
     return svgaCBSubmit(pSvga, pCB);
 }
 
 
 NTSTATUS SvgaCmdBufAllocUMD(PVBOXWDDM_EXT_VMSVGA pSvga, PHYSICAL_ADDRESS DmaBufferPhysicalAddress,
-                            uint32_t cbBuffer, uint32_t cbCommands, uint32_t idDXContext, PVMSVGACB *ppCB)
+                            uint32_t cbCommands, uint32_t idDXContext, uint32_t idFence, PVMSVGACB *ppCB)
 {
     PVMSVGACBSTATE pCBState = pSvga->pCBState;
-    NTSTATUS Status = svgaCBAlloc(pCBState, VMSVGACB_UMD, idDXContext, cbBuffer, ppCB);
+    NTSTATUS Status = svgaCBAlloc(pCBState, VMSVGACB_UMD, idDXContext, 0, ppCB);
+    AssertReturn(NT_SUCCESS(Status), Status);
+    GALOG(("CB: %p, cbCommands %d\n", *ppCB, cbCommands));
+
+    (*ppCB)->idFence = idFence;
+    (*ppCB)->cbCommand = cbCommands;
+    (*ppCB)->commands.DmaBufferPhysicalAddress = DmaBufferPhysicalAddress;
+    return STATUS_SUCCESS;
+}
+
+
+NTSTATUS SvgaCmdBufAllocMiniport(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t cbBuffer, uint32_t idFence, PVMSVGACB *ppCB)
+{
+    PVMSVGACBSTATE pCBState = pSvga->pCBState;
+    NTSTATUS Status = svgaCBAlloc(pCBState, VMSVGACB_MINIPORT, SVGA3D_INVALID_ID, cbBuffer, ppCB);
     AssertReturn(NT_SUCCESS(Status), Status);
     GALOG(("CB: %p, cbBuffer %d\n", *ppCB, cbBuffer));
 
-    (*ppCB)->cbBuffer = cbBuffer;
-    (*ppCB)->cbCommand = cbCommands;
-    (*ppCB)->commands.DmaBufferPhysicalAddress = DmaBufferPhysicalAddress;
+    (*ppCB)->idFence = idFence;
     return STATUS_SUCCESS;
 }
 
@@ -798,7 +841,9 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
     for (unsigned i = 0; i < RT_ELEMENTS(pCBState->aCBContexts); ++i)
     {
         PVMSVGACBCONTEXT pCBCtx = &pCBState->aCBContexts[i];
+
         PVMSVGACB pIter, pNext;
+        pCBCtx->cCompleted = 0;
         RTListForEachSafe(&pCBCtx->QueueSubmitted, pIter, pNext, VMSVGACB, nodeQueue)
         {
             /* Buffers are processed sequentially, so if this one has not been processed,
@@ -810,7 +855,7 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
             /* Remove the command buffer from the submitted queue and add to the local queue. */
             RTListNodeRemove(&pIter->nodeQueue);
             RTListAppend(&listCompleted, &pIter->nodeQueue);
-            --pCBCtx->cSubmitted;
+            ++pCBCtx->cCompleted;
         }
 
         /* Try to submit pending buffers. */
@@ -866,6 +911,21 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
                 break;
         }
     }
+
+    /* Decrement 'cSubmitted' after freeing completed command buffers
+     * in order to make sure that SvgaCmdBufIsIdle returns true only
+     * if there are no buffers being processed.
+     */
+    KeAcquireSpinLock(&pCBState->SpinLock, &OldIrql);
+    for (unsigned i = 0; i < RT_ELEMENTS(pCBState->aCBContexts); ++i)
+    {
+        PVMSVGACBCONTEXT pCBCtx = &pCBState->aCBContexts[i];
+        if (pCBCtx->cCompleted <= pCBCtx->cSubmitted)
+            pCBCtx->cSubmitted -= pCBCtx->cCompleted;
+        else
+            AssertFailedStmt(pCBCtx->cSubmitted = 0);
+    }
+    KeReleaseSpinLock(&pCBState->SpinLock, OldIrql);
 }
 
 
@@ -889,22 +949,6 @@ bool SvgaCmdBufIsIdle(PVBOXWDDM_EXT_VMSVGA pSvga)
     KeReleaseSpinLock(&pCBState->SpinLock, OldIrql);
 
     return fIdle;
-}
-
-
-void SvgaCmdBufSetCompletionCallback(PVBOXWDDM_EXT_VMSVGA pSvga, PFNCBCOMPLETION pfn, void const *pv, uint32_t cb)
-{
-    VMSVGACBCOMPLETION *p = (VMSVGACBCOMPLETION *)RTMemAlloc(sizeof(VMSVGACBCOMPLETION) + cb);
-    AssertReturnVoid(p);
-
-    p->pfn = pfn;
-    p->cb = cb;
-    memcpy(&p[1], pv, cb);
-
-    PVMSVGACBSTATE pCBState = pSvga->pCBState;
-    ExAcquireFastMutex(&pCBState->CBCurrentMutex);
-    RTListAppend(&pCBState->pCBCurrent->listCompletion, &p->nodeCompletion);
-    ExReleaseFastMutex(&pCBState->CBCurrentMutex);
 }
 
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -378,7 +378,6 @@ static int InstallWinVerifyTrustInterceptorInSetupApi(void)
             /*
              * Scan the symbol names.
              */
-            uint32_t const    cbHdrs      = pNtHdrs->OptionalHeader.SizeOfHeaders;
             uint32_t * const  pauNameRvas = (uint32_t  *)&pchRva2Ptr[paEntries[iImp].ImportNameTableRVA];
             uintptr_t * const paIat       = (uintptr_t *)&pchRva2Ptr[paEntries[iImp].ImportAddressTableRVA];
             for (uint32_t iSym = 0; pauNameRvas[iSym] != NULL; iSym++)
@@ -760,9 +759,16 @@ static int InstallNt4VideoDriverInner(WCHAR const * const pwszDriverDir, HDEVINF
      *          - SP_BACKUP_QUEUE_PARAMS_W
      *          - SP_INF_SIGNER_INFO_W,
      *       but we only make use of SP_DRVINFO_DATA_W.
+     *
+     *       The newer SP_DRVINFO_DATA_W version was introduced with Windows
+     *       2000, so this only affects x86.
      */
     SetLastError(NO_ERROR);
+#if defined(RT_ARCH_X86)
     SP_DRVINFO_DATA_V1_W drvInfoData = { sizeof(drvInfoData) };
+#else
+    SP_DRVINFO_DATA_W drvInfoData = { sizeof(drvInfoData) };
+#endif
     if (!SetupDiEnumDriverInfoW(hDevInfo, NULL, SPDIT_CLASSDRIVER, 0, &drvInfoData))
         return ErrorMsgLastErr("SetupDiEnumDriverInfoW");
 
@@ -2224,6 +2230,30 @@ static int handleRegistryDelete(unsigned cArgs, wchar_t **papwszArgs)
     return EXIT_OK;
 }
 
+/** Handles 'nt4 installcleanup'. */
+static int handleNT4InstallCleanup(unsigned cArgs, wchar_t **papwszArgs)
+{
+    RT_NOREF(cArgs, papwszArgs);
+
+    OSVERSIONINFOW VerInfo = { sizeof(VerInfo), 0 };
+    GetVersionExW(&VerInfo);
+    if (   VerInfo.dwPlatformId   != VER_PLATFORM_WIN32_NT
+        || VerInfo.dwMajorVersion != 4)
+    {
+        return ErrorMsg("This command only runs on NT4.");
+    }
+
+    /*
+     * Deletes the "InvalidDisplay" key which causes the display
+     * applet to be started on every boot. For some reason this key
+     * isn't removed after setting the proper resolution and even not when
+     * doing a driver re-install.
+     */
+    RegDeleteKeyW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\InvalidDisplay");
+    RegDeleteKeyW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\NewDisplay");
+
+    return EXIT_OK;
+}
 
 /** Handles 'version' and its aliases. */
 static int handleVersion(unsigned cArgs, wchar_t **papwszArgs)
@@ -2269,6 +2299,8 @@ static int handleHelp(unsigned cArgs, wchar_t **papwszArgs)
              "    VBoxGuestInstallHelper registry addlistitem <root> <sub-key> <value-name> <to-add>\r\n"
              "        [position [dup|no-dup]]\r\n"
              "    VBoxGuestInstallHelper registry dellistitem <root> <sub-key> <value-name> <to-remove>\r\n"
+             "NT4:\r\n"
+             "    VBoxGuestInstallHelper nt4 installcleanup\r\n"
              "\r\n"
              "Standard options:\r\n"
              "    VBoxGuestInstallHelper [help|--help|/help|-h|/h|-?|/h] [...]\r\n"
@@ -2301,6 +2333,7 @@ int wmain(int argc, wchar_t **argv)
         { "service",        "delete",               1,  1, handleServiceDelete },
         { "netprovider",    "add",                  1,  2, handleNetProviderAdd },
         { "netprovider",    "remove",               1,  2, handleNetProviderRemove },
+        { "nt4",            "installcleanup",       0,  0, handleNT4InstallCleanup },
         { "registry",       "addlistitem",          4,  6, handleRegistryAddListItem },
         { "registry",       "dellistitem",          4,  4, handleRegistryDelListItem },
         { "registry",       "addmultisz",           4,  4, handleRegistryAddMultiSz },
@@ -2396,3 +2429,4 @@ int main(int argc, char **argv)
     return wmain(argc, papwszArgs);
 }
 #endif
+

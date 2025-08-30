@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -29,6 +29,94 @@
 #include "VBoxMPVidPn.h"
 #include "common/VBoxMPCommon.h"
 
+#if !(defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+/*
+ * ARM does not have these functions at this time.
+ */
+int32_t ASMBitFirstClear(const volatile void *pvBitmap, uint32_t cBits)
+{
+    cBits = RT_ALIGN_32(cBits, 32);
+
+    const volatile uint32_t *pau32Bitmap = (const volatile uint32_t *)pvBitmap;
+    while (cBits != 0)
+    {
+        unsigned iBit = 0;
+        for (unsigned i = 0; i < 32; ++i)
+        {
+            if (!_bittest((long *)pau32Bitmap, i))
+            {
+                iBit = i + 1;
+                break;
+            }
+        }
+
+        if (iBit > 0)
+        {
+            /* Found. iBit is 1..32. This function must return a 0 based bit index. */
+            return (int32_t)((pau32Bitmap - (uint32_t *)pvBitmap) * 32 + iBit - 1);
+        }
+
+        ++pau32Bitmap;
+        cBits -= 32;
+    }
+
+    return -1;
+}
+
+int32_t ASMBitFirstSet(const volatile void *pvBitmap, uint32_t cBits)
+{
+    cBits = RT_ALIGN_32(cBits, 32);
+
+    const volatile uint32_t *pau32Bitmap = (const volatile uint32_t *)pvBitmap;
+    while (cBits != 0)
+    {
+        unsigned iBit = ASMBitFirstSetU32(*pau32Bitmap);
+        if (iBit > 0)
+        {
+            /* Found. iBit is 1..32. This function must return a 0 based bit index. */
+            return (int32_t)((pau32Bitmap - (uint32_t *)pvBitmap) * 32 + iBit - 1);
+        }
+
+        ++pau32Bitmap;
+        cBits -= 32;
+    }
+
+    return -1;
+}
+
+int ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
+{
+    const volatile uint32_t *pau32Bitmap = (const volatile uint32_t RT_FAR *)pvBitmap;
+    int                             iBit = ++iBitPrev & 31;
+    if (iBit)
+    {
+        /*
+         * Inspect the 32-bit word containing the unaligned bit.
+         */
+        uint32_t  u32 = pau32Bitmap[iBitPrev / 32] >> iBit;
+
+        unsigned long ulBit = 0;
+        if (_BitScanForward(&ulBit, u32))
+            return ulBit + iBitPrev;
+
+        /*
+         * Skip ahead and see if there is anything left to search.
+         */
+        iBitPrev |= 31;
+        iBitPrev++;
+        if (cBits <= (uint32_t)iBitPrev)
+            return -1;
+    }
+
+    /*
+     * 32-bit aligned search, let ASMBitFirstSet do the dirty work.
+     */
+    iBit = ASMBitFirstSet(&pau32Bitmap[iBitPrev / 32], cBits - iBitPrev);
+    if (iBit >= 0)
+        iBit += iBitPrev;
+    return iBit;
+}
+#endif /* !(defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) */
 
 static NTSTATUS vboxVidPnCheckMonitorModes(PVBOXMP_DEVEXT pDevExt, uint32_t u32Target, const CR_SORTARRAY *pSupportedTargetModes = NULL);
 
@@ -1328,7 +1416,7 @@ NTSTATUS VBoxVidPnRecommendMonitorModes(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRE
 
 NTSTATUS VBoxVidPnUpdateModes(PVBOXMP_DEVEXT pDevExt, uint32_t u32TargetId, const RTRECTSIZE *pSize)
 {
-    LOGF(("ENTER u32TargetId(%d) mode(%d x %d)", u32TargetId, pSize->cx, pSize->cy));
+    LogRel2((VBOX_VIDEO_LOG_NAME ": VBoxVidPnUpdateModes u32TargetId(%d) mode(%d x %d)\n", u32TargetId, pSize->cx, pSize->cy));
 
     if (u32TargetId >= (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
     {

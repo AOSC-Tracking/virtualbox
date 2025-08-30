@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2016-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -182,6 +182,9 @@ NTSTATUS GaContextCreate(PVBOXWDDM_EXT_GA pGaDevExt,
     PVMSVGACONTEXT pSvgaContext = (PVMSVGACONTEXT)GaMemAllocZero(sizeof(VMSVGACONTEXT));
     AssertReturn(pSvgaContext, STATUS_INSUFFICIENT_RESOURCES);
 
+    pSvgaContext->u32Cid = SVGA3D_INVALID_ID;
+    for (unsigned i = 0; i < RT_ELEMENTS(pSvgaContext->aCOT); ++i)
+        pSvgaContext->aCOT[i].mobid = SVGA3D_INVALID_ID;
     pSvgaContext->fDXContext = RT_BOOL(pInfo->u.vmsvga.u32Flags & VBOXWDDM_F_GA_CONTEXT_VGPU10);
 
     uint32_t u32Cid;
@@ -235,7 +238,7 @@ NTSTATUS GaContextDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
         for (unsigned i = 0; i < RT_ELEMENTS(pSvgaContext->aCOT); ++i)
         {
             PVMSVGACOT pCOT = &pSvgaContext->aCOT[i];
-            if (pCOT->pMob)
+            if (pCOT->mobid != SVGA3D_INVALID_ID)
             {
                 void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DX_SET_COTABLE, sizeof(SVGA3dCmdDXSetCOTable), SVGA3D_INVALID_ID);
                 if (pvCmd)
@@ -256,15 +259,15 @@ NTSTATUS GaContextDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
                 }
 
                 uint32_t cbRequired = 0;
-                SvgaMobDestroy(pSvga, pCOT->pMob, NULL, 0, &cbRequired);
+                SvgaMobDestroy(pSvga, SVGA3D_INVALID_ID, NULL, 0, &cbRequired);
                 pvCmd = SvgaCmdBufReserve(pSvga, cbRequired, SVGA3D_INVALID_ID);
                 if (pvCmd)
                 {
-                    SvgaMobDestroy(pSvga, pCOT->pMob, pvCmd, cbRequired, &cbRequired);
+                    SvgaMobDestroy(pSvga, pCOT->mobid, pvCmd, cbRequired, &cbRequired);
                     SvgaCmdBufCommit(pSvga, cbRequired);
                 }
 
-                pCOT->pMob = NULL;
+                pCOT->mobid = SVGA3D_INVALID_ID;
             }
         }
 
@@ -477,7 +480,14 @@ static void gaReportFence(PVBOXMP_DEVEXT pDevExt)
     AssertReturnVoid(pSvga);
 
     /* Read the last completed fence from the device. */
-    const uint32_t u32Fence = SVGAFifoRead(pSvga, SVGA_FIFO_FENCE);
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    const uint32_t u32Fence = pSvga->fMMIO
+                            ? SVGARegRead(pSvga, SVGA_REG_FENCE)
+                            : SVGAFifoRead(pSvga, SVGA_FIFO_FENCE);
+#else
+    Assert(pSvga->fMMIO);
+    const uint32_t u32Fence = SVGARegRead(pSvga, SVGA_REG_FENCE);
+#endif
     GALOG(("Fence %u\n", u32Fence));
 
     if (u32Fence == ASMAtomicReadU32(&pGaDevExt->u32PreemptionFenceId))
@@ -1394,7 +1404,6 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
          */
         Assert(cbPrivateData == 0);
         Assert(pSubmitCommand->Flags.Paging);
-        LogRelMax(16, ("WDDM: empty buffer: cbPrivateData %d, flags 0x%x\n", cbPrivateData, pSubmitCommand->Flags.Value));
     }
 
     GARENDERDATA const *pRenderData = (GARENDERDATA *)pvPrivateData;
@@ -1438,7 +1447,9 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
         ++pRenderData;
     }
 
-    if (cbDmaBufferSubmission)
+    bool fFenceSubmitted = false;
+    /* Allow to send empty "fence only" buffers if the host supports fence id in a buffer header. */
+    if (cbDmaBufferSubmission || RT_BOOL(pGaDevExt->hw.pSvga->u32Caps & SVGA_CAP_CMD_BUFFERS_2))
     {
         if (pGaDevExt->hw.pSvga->pCBState)
         {
@@ -1448,17 +1459,21 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
             PHYSICAL_ADDRESS phys = pSubmitCommand->DmaBufferPhysicalAddress;
             phys.QuadPart += pSubmitCommand->DmaBufferSubmissionStartOffset;
 
+            uint32_t const SubmissionFenceId = RT_BOOL(pGaDevExt->hw.pSvga->u32Caps & SVGA_CAP_CMD_BUFFERS_2)
+                                             ? pSubmitCommand->SubmissionFenceId
+                                             : 0;
             PVMSVGACB pCB;
             NTSTATUS Status = SvgaCmdBufAllocUMD(pGaDevExt->hw.pSvga, phys,
-                                                 pSubmitCommand->DmaBufferSize - pSubmitCommand->DmaBufferSubmissionStartOffset,
-                                                 cbDmaBufferSubmission, cid, &pCB);
+                                                 cbDmaBufferSubmission, cid, SubmissionFenceId, &pCB);
             GALOG(("Allocated UMD buffer %p\n", pCB));
             if (NT_SUCCESS(Status))
             {
-                Status = SvgaCmdBufSubmitUMD(pGaDevExt->hw.pSvga, pCB);
-                Assert(NT_SUCCESS(Status)); RT_NOREF(Status);
+                Status = SvgaCmdBufSubmit(pGaDevExt->hw.pSvga, pCB);
+                if (NT_SUCCESS(Status))
+                    fFenceSubmitted = SubmissionFenceId != 0;
             }
         }
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         else
         {
             Assert(pSubmitCommand->DmaBufferSegmentId == 0);
@@ -1484,9 +1499,16 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
                 }
             }
         }
+#endif
     }
 
     ASMAtomicWriteU32(&pGaDevExt->u32LastSubmittedFenceId, pSubmitCommand->SubmissionFenceId);
+
+    if (fFenceSubmitted)
+    {
+        GALOG(("done %d\n", pSubmitCommand->SubmissionFenceId));
+        return STATUS_SUCCESS;
+    }
 
     /* Submit the fence. */
     if (pGaDevExt->hw.pSvga->pCBState)
@@ -1527,7 +1549,7 @@ BOOLEAN GaDxgkDdiInterruptRoutine(const PVOID MiniportDeviceContext,
         return FALSE;
     }
 
-    const uint32_t u32IrqStatus = SVGAPortRead(pSvga, SVGA_IRQSTATUS_PORT);
+    const uint32_t u32IrqStatus = SVGAReadIRQStatus(pSvga);
     if (!u32IrqStatus)
     {
         /* Not a VMSVGA interrupt, "return FALSE immediately". */
@@ -1535,13 +1557,13 @@ BOOLEAN GaDxgkDdiInterruptRoutine(const PVOID MiniportDeviceContext,
     }
 
     /* "Dismiss the interrupt on the adapter." */
-    SVGAPortWrite(pSvga, SVGA_IRQSTATUS_PORT, u32IrqStatus);
+    SVGAWriteIRQStatus(pSvga, u32IrqStatus);
     GALOG(("u32IrqStatus = 0x%08X\n", u32IrqStatus));
 
     /* Check what happened. */
     if (u32IrqStatus & SVGA_IRQFLAG_ANY_FENCE)
     {
-        /* A SVGA_CMD_FENCE command has been processed by the device. */
+        /* A fence has been processed by the device. */
         gaReportFence(pDevExt);
     }
 
@@ -1562,36 +1584,9 @@ static void dxDeferredMobDestruction(PVOID IoObject, PVOID Context, PIO_WORKITEM
     IoFreeWorkItem(IoWorkItem);
 
     PVBOXWDDM_EXT_VMSVGA pSvga = (PVBOXWDDM_EXT_VMSVGA)Context;
-    if (pSvga->pMiniportMobData)
-    {
-        uint64_t const u64MobFence = ASMAtomicReadU64(&pSvga->pMiniportMobData->u64MobFence);
+    SvgaDeferredMobDestruction(pSvga);
 
-        /* Move mobs which were deleted by the host to the local list under the lock. */
-        RTLISTANCHOR listDestroyedMobs;
-        RTListInit(&listDestroyedMobs);
-
-        KIRQL OldIrql;
-        SvgaHostObjectsLock(pSvga, &OldIrql);
-
-        PVMSVGAMOB pIter, pNext;
-        RTListForEachSafe(&pSvga->listMobDeferredDestruction, pIter, pNext, VMSVGAMOB, node)
-        {
-            if (gaFenceCmp64(pIter->u64MobFence, u64MobFence) <= 0)
-            {
-                RTListNodeRemove(&pIter->node);
-                RTListAppend(&listDestroyedMobs, &pIter->node);
-            }
-        }
-
-        SvgaHostObjectsUnlock(pSvga, OldIrql);
-
-        RTListForEachSafe(&listDestroyedMobs, pIter, pNext, VMSVGAMOB, node)
-        {
-            /* Delete the data. SvgaMobFree deallocates pIter. */
-            RTListNodeRemove(&pIter->node);
-            SvgaMobFree(pSvga, pIter);
-        }
-    }
+    ASMAtomicDecS32(&pSvga->cQueuedWorkItems);
 }
 
 
@@ -1676,9 +1671,6 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
         }
     }
 
-    if (ASMAtomicCmpXchgBool(&pSvga->fCommandBufferIrq, false, true) && pSvga->pCBState)
-        SvgaCmdBufProcess(pSvga);
-
     /*
      * Deferred MOB destruction.
      */
@@ -1691,8 +1683,17 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
         /* Deallocate memory in a worker thread at PASSIVE_LEVEL. */
         PIO_WORKITEM pWorkItem = IoAllocateWorkItem(pDevExt->pPDO);
         if (pWorkItem)
+        {
+            ASMAtomicIncS32(&pSvga->cQueuedWorkItems);
             IoQueueWorkItemEx(pWorkItem, dxDeferredMobDestruction, DelayedWorkQueue, pSvga);
+        }
     }
+
+    /* Dispose completed buffers.
+     * Must be done as last step to avoid race with cQueuedWorkItems when unloading the driver.
+     */
+    if (ASMAtomicCmpXchgBool(&pSvga->fCommandBufferIrq, false, true) && pSvga->pCBState)
+        SvgaCmdBufProcess(pSvga);
 }
 
 typedef struct GAPREEMPTCOMMANDCBCTX
@@ -1761,14 +1762,24 @@ NTSTATUS APIENTRY GaDxgkDdiPreemptCommand(const HANDLE hAdapter,
             Assert(pGaDevExt->u32PreemptionFenceId == 0);
             ASMAtomicWriteU32(&pGaDevExt->u32PreemptionFenceId, pPreemptCommand->PreemptionFenceId);
 
-            struct
+            if (RT_BOOL(pGaDevExt->hw.pSvga->u32Caps & SVGA_CAP_CMD_BUFFERS_2))
             {
-                uint32_t id;
-                uint32_t fence;
-            } fence;
-            fence.id = SVGA_CMD_FENCE;
-            fence.fence = pPreemptCommand->PreemptionFenceId;
-            Status = SvgaCmdBufSubmitMiniportCommand(pGaDevExt->hw.pSvga, &fence, sizeof(fence));
+                PVMSVGACB pCB;
+                Status = SvgaCmdBufAllocMiniport(pGaDevExt->hw.pSvga, 0, pPreemptCommand->PreemptionFenceId, &pCB);
+                if (NT_SUCCESS(Status))
+                    Status = SvgaCmdBufSubmit(pGaDevExt->hw.pSvga, pCB);
+            }
+            else
+            {
+                struct
+                {
+                    uint32_t id;
+                    uint32_t fence;
+                } fence;
+                fence.id = SVGA_CMD_FENCE;
+                fence.fence = pPreemptCommand->PreemptionFenceId;
+                Status = SvgaCmdBufSubmitMiniportCommand(pGaDevExt->hw.pSvga, &fence, sizeof(fence));
+            }
         }
         else
         {
@@ -2115,6 +2126,21 @@ static void vboxWddmRectCopy(void *pvDst, uint32_t cbDstBytesPerPixel, uint32_t 
     uint8_t const *pu8Src = (uint8_t *)pvSrc;
     pu8Src += pRect->top * cbSrcPitch + pRect->left * cbSrcBytesPerPixel;
 
+#if defined(RT_ARCH_ARM64)
+    /* memcpy uses st1 [v,v,v,v],[x] instruction, which crashes if address is not 128 bit aligned. */
+    for (INT y = pRect->top; y < pRect->bottom; ++y)
+    {
+        uint32_t *d = (uint32_t *)pu8Dst;
+        uint32_t const *s = (uint32_t *)pu8Src;
+        for (INT x = pRect->left; x < pRect->right; ++x)
+        {
+            *d++ = *s++;
+        }
+
+        pu8Dst += cbDstPitch;
+        pu8Src += cbSrcPitch;
+    }
+#else
     uint32_t const cbLine = (pRect->right - pRect->left) * cbDstBytesPerPixel;
     for (INT y = pRect->top; y < pRect->bottom; ++y)
     {
@@ -2122,6 +2148,7 @@ static void vboxWddmRectCopy(void *pvDst, uint32_t cbDstBytesPerPixel, uint32_t 
         pu8Dst += cbDstPitch;
         pu8Src += cbSrcPitch;
     }
+#endif
 }
 
 static NTSTATUS gaSourceBlitToScreen(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_SOURCE *pSource, RECT const *pRect)

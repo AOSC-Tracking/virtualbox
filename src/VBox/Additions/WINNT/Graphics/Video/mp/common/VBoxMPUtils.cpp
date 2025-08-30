@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -183,6 +183,31 @@ bool VBoxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint3
     LOG(("width: %d, height: %d, bpp: %d -> %s", width, height, bpp, (bRC == 1) ? "OK" : "FALSE"));
 
     return bRC;
+}
+
+uint32_t VBoxGetHostGraphicsCap(uint32_t capIndex)
+{
+    uint32_t u32Result = 0;
+
+    VMMDevGetHostGraphicsCapability *req = NULL;
+    int rc = VbglR0GRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevGetHostGraphicsCapability), VMMDevReq_GetHostGraphicsCapability);
+    if (RT_SUCCESS(rc))
+    {
+        req->capIndex = capIndex;
+
+        rc = VbglR0GRPerform(&req->header);
+        if (RT_SUCCESS(rc))
+            u32Result = req->capValue;
+        else
+            WARN(("ERROR querying host graphics cap %d from VMMDev. rc = %d", capIndex, rc));
+
+        VbglR0GRFree(&req->header);
+    }
+    else
+        LOG(("ERROR allocating request, rc = %d", rc));
+
+    LOG(("capIndex: %d -> 0x%x", capIndex, u32Result));
+    return u32Result;
 }
 
 bool VBoxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint32_t *pDisplayId)

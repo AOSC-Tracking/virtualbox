@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010-2024 Oracle and/or its affiliates.
+# Copyright (C) 2010-2025 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -36,4 +36,6 @@
 /envSub.cmd: --treat-as batch --del-action copyright-* --add-action copyright-c-style
 /pylintrc: --treat-as plaintext
 /bashrc:   --treat-as shell
+/parfait*.conf: --treat-as rc
+/parfait-vbox-baseline.conf|/parfait-vbox-exclude.conf: --no-update-license --external-copyright
 

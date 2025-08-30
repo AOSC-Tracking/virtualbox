@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2011-2024 Oracle and/or its affiliates.
+; Copyright (C) 2011-2025 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -33,6 +33,7 @@ Class=Display
 DriverPackageType=PlugAndPlay
 ;edit-DriverVer=02/26/2010,1.00.0000
 ;cat CatalogFile = VBoxWddm.cat
+PnpLockdown=1
 
 [DestinationDirs]
 DefaultDestDir=11
@@ -51,6 +52,7 @@ FeatureScore = F8
 Include = msdv.inf
 ;x86   CopyFiles = VBoxWDDM.Miniport, VBoxWDDM.Display
 ;amd64 CopyFiles = VBoxWDDM.Miniport, VBoxWDDM.Display, VBoxWDDM.Display_wow64
+;arm64 CopyFiles = VBoxWDDM.Miniport, VBoxWDDM.Display
 AddReg = VBoxWDDM_SoftwareDeviceSettings
 ;todo: clear XPDM driver settings: DelReg = VBoxWDDM_RemoveDeviceSettings
 

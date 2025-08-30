@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -156,21 +156,17 @@ typedef struct _VBOXMP_DEVEXT
    DWORD dwDrvCfgFlags;
 
    BOOLEAN f3DEnabled;
-   BOOLEAN fCmdVbvaEnabled;
+   BOOLEAN fCmdVbvaEnabled; /** @todo r=andy Remove this too for @bugref{10756}? */
    BOOLEAN fComplexTopologiesEnabled;
 
    VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 
    VBOXVTLIST CtlList;
    VBOXVTLIST DmaCmdList;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-   VBOXVTLIST VhwaCmdList;
-#endif
+
    BOOLEAN bNotifyDxDpc;
 
    BOOLEAN fDisableTargetUpdate;
-
-
 
    BOOL bVSyncTimerEnabled;
    volatile uint32_t fVSyncInVBlank;

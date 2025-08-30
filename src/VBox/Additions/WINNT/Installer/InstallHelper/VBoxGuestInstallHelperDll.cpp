@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011-2024 Oracle and/or its affiliates.
+ * Copyright (C) 2011-2025 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -231,10 +231,11 @@ static int vboxConnectToVBoxTray(RTLOCALIPCSESSION *phSession)
 
 
 /**
- * Retrieves a file's architecture (x86 or amd64).
+ * Retrieves a file's architecture.
  *
- * Outputs "x86", "amd64" or an error message (if not found/invalid) on stack.
- *
+ * @retval  "x86" on the stack for a 32-bit x86 file.
+ * @retval  "amd64" on the stack for a 64-bit x86_64 file.
+ * @retval  "arm64" on the stack for a 64-bit ARM file.
  * @param   hwndParent          Window handle of parent.
  * @param   string_size         Size of variable string.
  * @param   variables           The actual variable string.
@@ -268,6 +269,10 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, W
 
                         case RTLDRARCH_AMD64:
                             VBOX_PUSH_STRING_LITERAL(stacktop, "amd64");
+                            break;
+
+                        case RTLDRARCH_ARM64:
+                            VBOX_PUSH_STRING_LITERAL(stacktop, "arm64");
                             break;
 
                         default:
