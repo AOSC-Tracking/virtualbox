@@ -4509,6 +4509,11 @@
         <comment>TpmType</comment>
         <translation>2.0</translation>
     </message>
+    <message>
+        <source>Intel 82583V Gigabit Network Connection [EXPERIMENTAL]</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDefaultMachineFolderEditor</name>
@@ -12979,6 +12984,26 @@
         <source>Password must match</source>
         <translation>La password deve corrispondere</translation>
     </message>
+    <message>
+        <source>The user name cannot contain following characters: / \ [ ] : | &lt; &gt; + = ; , ? * % @</source>
+        <translation>Il nome utente non può contenere i seguenti caratteri: / \ [ ] : | &lt; &gt; + = ; , ? * % @</translation>
+    </message>
+    <message>
+        <source>The user name cannot be &apos;NONE&apos;</source>
+        <translation>Il nome utente non può essere &apos;NONE&apos;</translation>
+    </message>
+    <message>
+        <source>The user name cannot be longer than 20 characters</source>
+        <translation>Il nome utente non può essere più lungo di 20 caratteri</translation>
+    </message>
+    <message>
+        <source>The user name includes invalid characters</source>
+        <translation>Il nome utente contiene caratteri non validi</translation>
+    </message>
+    <message>
+        <source>The user name cannot be longer than 32 characters</source>
+        <translation>Il nome utente non può essere più lungo di 32 caratteri</translation>
+    </message>
 </context>
 <context>
     <name>UIVMActivityMonitorPaneContainer</name>
@@ -14850,7 +14875,7 @@
     </message>
     <message>
         <source>The ISO is attached to the VM, so you can install the OS automatically</source>
-        <translation type="unfinished">L&apos;ISO è collegata alla MV, quindi puoi installare il sistema operativo automaticamente</translation>
+        <translation>L&apos;ISO è collegata alla MV, quindi puoi installare il sistema operativo automaticamente</translation>
     </message>
     <message>
         <source>VirtualBox can&apos;t install an OS from the selected ISO. OS cannot be determined, the guest OS will need to be installed manually.</source>

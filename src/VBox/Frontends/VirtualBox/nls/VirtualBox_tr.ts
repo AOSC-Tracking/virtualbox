@@ -4502,6 +4502,11 @@
         <comment>TpmType</comment>
         <translation>2.0</translation>
     </message>
+    <message>
+        <source>Intel 82583V Gigabit Network Connection [EXPERIMENTAL]</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDefaultMachineFolderEditor</name>
@@ -12959,6 +12964,26 @@
     <message>
         <source>Password must match</source>
         <translation>Parola eşleşmek zorunda</translation>
+    </message>
+    <message>
+        <source>The user name cannot contain following characters: / \ [ ] : | &lt; &gt; + = ; , ? * % @</source>
+        <translation>Kullanıcı adı şu karakterleri içeremez: / \ [ ] : | &lt; &gt; + = ; , ? * % @</translation>
+    </message>
+    <message>
+        <source>The user name cannot be &apos;NONE&apos;</source>
+        <translation>Kullanıcı adı &apos;NONE&apos; olamaz</translation>
+    </message>
+    <message>
+        <source>The user name cannot be longer than 20 characters</source>
+        <translation>Kullanıcı adı 20 karakterden daha uzun olamaz</translation>
+    </message>
+    <message>
+        <source>The user name includes invalid characters</source>
+        <translation>Kullanıcı adı geçersiz karakterler içeriyor</translation>
+    </message>
+    <message>
+        <source>The user name cannot be longer than 32 characters</source>
+        <translation>Kullanıcı adı 32 karakterden daha uzun olamaz</translation>
     </message>
 </context>
 <context>

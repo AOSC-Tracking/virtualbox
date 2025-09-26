@@ -149,7 +149,10 @@ static int rtR0MemKernelCopyLnxWorker(void *pvDst, void const *pvSrc, size_t cb)
     if (!cb)
         return VINF_SUCCESS;
 
-    __asm__ __volatile__ ("cld\n"
+    __asm__ __volatile__ (
+#  if RTLNX_VER_MAX(6,0,0) /* Do not use CLD for recent kernels since it triggers objtool warning. */
+                          "cld\n"
+#  endif
                           "1:\n\t"
                           "rep; movsb\n"
                           "2:\n\t"

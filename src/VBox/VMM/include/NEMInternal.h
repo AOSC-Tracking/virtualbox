@@ -253,6 +253,8 @@ typedef struct NEM
 # ifdef VBOX_VMM_TARGET_ARMV8
     bool                        fHypercallExit : 1;
     bool                        fGpaAccessFaultExit : 1;
+    /** Flag whether Hyper-V supports PAC. */
+    bool                        fPacSupported : 1;
     /** Cache line flush size as a power of two. */
     uint8_t                     cPhysicalAddressWidth;
 # elif defined(VBOX_VMM_TARGET_X86)
@@ -674,6 +676,16 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatImportOnReturn;
     STAMCOUNTER                 StatImportOnReturnSkipped;
     STAMCOUNTER                 StatQueryCpuTick;
+# ifdef VBOX_VMM_TARGET_ARMV8
+    STAMCOUNTER                 StatExitCanceled;
+    STAMCOUNTER                 StatExitVTimerActivated;
+    STAMCOUNTER                 StatExitExcpDataAbort;
+    STAMCOUNTER                 StatExitExcpSysInsn;
+    STAMCOUNTER                 StatExitExcpHvcSmcInsn;
+    STAMCOUNTER                 StatExitExcpWfxInsn;
+    STAMCOUNTER                 StatExitExcpBrkInsn;
+    STAMCOUNTER                 StatExitExcpSsFromLowerEl;
+#endif
 # ifdef VBOX_WITH_STATISTICS
     STAMPROFILEADV              StatProfGstStateImport;
     STAMPROFILEADV              StatProfGstStateExport;

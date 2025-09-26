@@ -30,7 +30,7 @@ along with this program; if not, see <https://www.gnu.org/licenses>.
 
 SPDX-License-Identifier: GPL-3.0-only
 """
-__version__ = "$Revision: 170160 $"
+__version__ = "$Revision: 170452 $"
 
 # Standard python imports.
 import re;
@@ -45,6 +45,25 @@ def assertJsonAttribsInSet(dJson, oAttribSet):
     #assert set(dJson) == oAttribSet, '%s - %s' % (set(dJson) ^ oAttribSet, dJson,);
     assert len(dJson) == len(oAttribSet) and sum(sKey in oAttribSet for sKey in dJson), \
            '%s - %s' % (set(dJson) ^ oAttribSet, dJson,);
+
+def enumerateWithLookahead(oIterable, idxStart = 0):
+    """ enumerate() variant that yields index, value and a final-element indicator. """
+    oIter = iter(oIterable);
+
+    # Look ahead.
+    try:
+        oCur = next(oIter);
+    except StopIteration:
+        return
+
+    # Work thru the rest of the elements.
+    for oNext in oIter:
+        yield idxStart, oCur, False;
+        oCur = oNext;
+        idxStart += 1;
+
+    # Yield the final element with the final-element indicator set to True.
+    yield idxStart, oCur, True;
 
 
 #
@@ -85,8 +104,9 @@ class ArmAstBase(object):
     ksModeConstraints   = 'contraints';
     ksModeValuesOnly    = 'values-only'; # Value and EquationValue
 
-    def __init__(self, sType):
-        self.sType = sType;
+    def __init__(self, sType, sComment = None):
+        self.sType    = sType;
+        self.sComment = sComment;
 
     khAttribSetBinaryOp = frozenset(['_type', 'left', 'op', 'right']);
     @staticmethod
@@ -354,6 +374,17 @@ class ArmAstBase(object):
         self.walk(callback, dResult);
         return dResult['ret'];
 
+    @staticmethod
+    def formatInExprComment(sExpr, sComment, sLang = None, cchMaxWidth = 120):
+        if sComment:
+            if sLang in ('C', None):
+                ## @todo Wrap comment and deal with newlines.
+                return sExpr + ' /* %s */' % (sComment,);
+            _ = cchMaxWidth;
+        return sExpr;
+
+
+
     #
     # Convenience matching routines, matching node type and type specific value.
     #
@@ -449,8 +480,8 @@ class ArmAstLeafBase(ArmAstBase):
 
     This implements the transformation and walking methods.
     """
-    def __init__(self, sType):
-        ArmAstBase.__init__(self, ArmAstBase.ksTypeField);
+    def __init__(self, sType, sComment = None):
+        ArmAstBase.__init__(self, ArmAstBase.ksTypeField, sComment);
 
     def walk(self, fnCallback, oCallbackArg = None, fDepthFirst = True):
         _ = fDepthFirst;
@@ -466,8 +497,8 @@ class ArmAstLeafBase(ArmAstBase):
 
 class ArmAstValuesBase(ArmAstBase):
     """ Base class for a node with a value list (aoValues). """
-    def __init__(self, sType, aoValues):
-        ArmAstBase.__init__(self, sType);
+    def __init__(self, sType, aoValues, sComment = None):
+        ArmAstBase.__init__(self, sType, sComment);
         self.aoValues = aoValues;
 
     def isSame(self, oOther):
@@ -499,6 +530,7 @@ class ArmAstBinaryOp(ArmAstBase):
     ksOpTypeSet          = 'set';
     ksOpTypeConstraints  = 'constraints';
     ksOpTypeBitwise      = 'bitwise';
+    ksOpTypeShift        = 'vbox-shift';
     kdOps = {
         '||':  ksOpTypeLogical,
         '&&':  ksOpTypeLogical,
@@ -517,6 +549,9 @@ class ArmAstBinaryOp(ArmAstBase):
         'OR':  ksOpTypeBitwise,
         '-->': ksOpTypeConstraints,    # implies that the right hand side is true when left hand side is.
         '<->': ksOpTypeConstraints,    # bidirectional version of -->, i.e. it follows strictly in both directions.
+        # These aren't part of the Arm AST.
+        '<<':  ksOpTypeShift,
+        '>>':  ksOpTypeShift,
     };
     kdOpsToC = {
         '||':  '||',
@@ -536,6 +571,8 @@ class ArmAstBinaryOp(ArmAstBase):
         'OR':  '|',
         #'-->': ksOpTypeConstraints,
         #'<->': ksOpTypeConstraints,
+        '<<':  '<<',
+        '>>':  '>>',
     };
 
     ## This is operators that can be grouped by toStringEx.
@@ -558,6 +595,8 @@ class ArmAstBinaryOp(ArmAstBase):
         'OR':  { 'OR', },
         '-->': { '-->', },
         '<->': { '<->', },
+        '<<':  { '<<', '>>', },
+        '>>':  { '<<', '>>', },
     };
 
     ## Operator precedency, lower means higher importance.
@@ -571,6 +610,8 @@ class ArmAstBinaryOp(ArmAstBase):
         '>=':   9,
         '<=':   9,
         'IN':   9,
+        '>>':   7,
+        '<<':   7,
         '+':    6,
         '-':    6,
         'MOD':  5,
@@ -594,8 +635,8 @@ class ArmAstBinaryOp(ArmAstBase):
     };
 
 
-    def __init__(self, oLeft, sOp, oRight, fConstraints = False):
-        ArmAstBase.__init__(self, ArmAstBase.ksTypeBinaryOp);
+    def __init__(self, oLeft, sOp, oRight, fConstraints = False, sComment = None):
+        ArmAstBase.__init__(self, ArmAstBase.ksTypeBinaryOp, sComment);
         assert sOp in ArmAstBinaryOp.kdOps and (fConstraints or ArmAstBinaryOp.kdOps[sOp] != ArmAstBinaryOp.ksOpTypeConstraints),\
                'sOp="%s"' % (sOp,);
         self.oLeft  = oLeft;
@@ -610,7 +651,7 @@ class ArmAstBinaryOp(ArmAstBase):
             self.oRight = oLeft;
 
     def clone(self):
-        return ArmAstBinaryOp(self.oLeft.clone(), self.sOp, self.oRight.clone());
+        return ArmAstBinaryOp(self.oLeft.clone(), self.sOp, self.oRight.clone(), fConstraints = True, sComment = self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstBinaryOp):
@@ -655,6 +696,19 @@ class ArmAstBinaryOp(ArmAstBase):
         # Just wrap it in double boolean negation for now.
         return ArmAstUnaryOp('!', ArmAstUnaryOp('!', oNode));
 
+    @staticmethod
+    def isSameExprInBranch(oExpr, oSubTree, sOp, fSkipImmediate = False):
+        """
+        Helper for checking whether oExpr is in the oSubTree sub-tree at the
+        equal level (thus sOp).
+        This will recurse.
+        """
+        if not fSkipImmediate and oExpr.isSame(oSubTree):
+            return True;
+        if isinstance(oSubTree, ArmAstBinaryOp) and oSubTree.sOp == sOp:
+            return (   ArmAstBinaryOp.isSameExprInBranch(oExpr, oSubTree.oLeft,  sOp)
+                    or ArmAstBinaryOp.isSameExprInBranch(oExpr, oSubTree.oRight, sOp) );
+        return False;
 
     def transform(self, fnCallback, fEliminationAllowed, oCallbackArg, aoStack):
         # Recurse first.
@@ -679,6 +733,11 @@ class ArmAstBinaryOp(ArmAstBase):
                     return fnCallback(self._transformEnsureBool(self.oRight), fEliminationAllowed, oCallbackArg, aoStack);
                 if self.oRight.isBoolAndFalse() or self.oRight.isMatchingIntegerOrValue(0):
                     return fnCallback(self._transformEnsureBool(self.oLeft), fEliminationAllowed, oCallbackArg, aoStack);
+                # Simplify: sameexpr || sameexpr => sameexpr
+                if self.isSameExprInBranch(self.oLeft, self.oRight, self.sOp):
+                    return fnCallback(self._transformEnsureBool(self.oRight), fEliminationAllowed, oCallbackArg, aoStack);
+                if self.isSameExprInBranch(self.oRight, self.oLeft, self.sOp, fSkipImmediate = True):
+                    return fnCallback(self._transformEnsureBool(self.oLeft), fEliminationAllowed, oCallbackArg, aoStack);
 
             elif self.sOp == '&&':
                 if (   self.oLeft.isBoolAndFalse()
@@ -692,30 +751,77 @@ class ArmAstBinaryOp(ArmAstBase):
                     return fnCallback(self._transformEnsureBool(self.oRight), fEliminationAllowed, oCallbackArg, aoStack);
                 if self.oRight.isBoolAndTrue() or self.oRight.getIntegerOrValue() not in (None, 0):
                     return fnCallback(self._transformEnsureBool(self.oLeft), fEliminationAllowed, oCallbackArg, aoStack);
+                # Simplify: sameexpr && sameexpr => sameexpr
+                if self.isSameExprInBranch(self.oLeft, self.oRight, self.sOp):
+                    return fnCallback(self._transformEnsureBool(self.oRight), fEliminationAllowed, oCallbackArg, aoStack);
+                if self.isSameExprInBranch(self.oRight, self.oLeft, self.sOp, fSkipImmediate = True):
+                    return fnCallback(self._transformEnsureBool(self.oLeft), fEliminationAllowed, oCallbackArg, aoStack);
+
 
             else:
                 iLeft = self.oLeft.getIntegerOrValue();
                 if iLeft is None and isinstance(self.oLeft, ArmAstBool):
                     iLeft = 1 if self.oLeft.fValue else 0;
-                if iLeft is not None:
 
-                    iRight = self.oRight.getIntegerOrValue();
-                    if iRight is None and isinstance(self.oRight, ArmAstBool):
-                        iRight = 1 if self.oRight.fValue else 0;
-                    if iRight is not None:
-                        if self.sOp == '==':
-                            return fnCallback(ArmAstBool(iLeft == iRight), fEliminationAllowed, oCallbackArg, aoStack);
-                        if self.sOp == '!=':
-                            return fnCallback(ArmAstBool(iLeft != iRight), fEliminationAllowed, oCallbackArg, aoStack);
-                        if self.sOp == '>':
-                            return fnCallback(ArmAstBool(iLeft >  iRight), fEliminationAllowed, oCallbackArg, aoStack);
-                        if self.sOp == '>=':
-                            return fnCallback(ArmAstBool(iLeft >= iRight), fEliminationAllowed, oCallbackArg, aoStack);
-                        if self.sOp == '<':
-                            return fnCallback(ArmAstBool(iLeft <  iRight), fEliminationAllowed, oCallbackArg, aoStack);
-                        if self.sOp == '<=':
-                            return fnCallback(ArmAstBool(iLeft <= iRight), fEliminationAllowed, oCallbackArg, aoStack);
-                        ## @todo we could do +, -, div, mod, mult here, but need to consider the width of the result...
+                iRight = self.oRight.getIntegerOrValue();
+                if iRight is None and isinstance(self.oRight, ArmAstBool):
+                    iRight = 1 if self.oRight.fValue else 0;
+
+                fLeftIs0  = iLeft  is not None and iLeft  == 0; # pylint & python 3.13 both complains about iLeft is 0. Sigh.
+                fRightIs0 = iRight is not None and iRight == 0;
+                if fLeftIs0 or fRightIs0:
+                    # Simplify: something & 0 => 0
+                    if self.sOp == 'AND':
+                        return fnCallback(self.oLeft if fLeftIs0 else self.oRight, fEliminationAllowed, oCallbackArg, aoStack);
+                    # Simplification: something + 0 => something;  0 + something => something
+                    if self.sOp == '+':
+                        return fnCallback(self.oRight if fLeftIs0 else self.oLeft, fEliminationAllowed, oCallbackArg, aoStack);
+                    # Simplification: something - 0 => something.
+                    if self.sOp == '-' and fRightIs0:
+                        return fnCallback(self.oLeft, fEliminationAllowed, oCallbackArg, aoStack);
+
+                if iLeft is not None and iRight is not None:
+                    # Simplication: int comp-op int -> bool result.
+                    if self.sOp == '==':
+                        return fnCallback(ArmAstBool(iLeft == iRight), fEliminationAllowed, oCallbackArg, aoStack);
+                    if self.sOp == '!=':
+                        return fnCallback(ArmAstBool(iLeft != iRight), fEliminationAllowed, oCallbackArg, aoStack);
+                    if self.sOp == '>':
+                        return fnCallback(ArmAstBool(iLeft >  iRight), fEliminationAllowed, oCallbackArg, aoStack);
+                    if self.sOp == '>=':
+                        return fnCallback(ArmAstBool(iLeft >= iRight), fEliminationAllowed, oCallbackArg, aoStack);
+                    if self.sOp == '<':
+                        return fnCallback(ArmAstBool(iLeft <  iRight), fEliminationAllowed, oCallbackArg, aoStack);
+                    if self.sOp == '<=':
+                        return fnCallback(ArmAstBool(iLeft <= iRight), fEliminationAllowed, oCallbackArg, aoStack);
+
+                    # Simplication: int <AND|OR> int -> int result.
+                    if self.sOp in {'AND', 'OR' }:
+                        cBitsWidth = max(self.oLeft.getWidth(), self.oRight.getWidth());
+                        if self.sOp == 'AND':
+                            iResult = iLeft & iRight;
+                        else:
+                            iResult = iLeft | iRight;
+                        cBitsWidth = max(cBitsWidth, iResult.bit_length())
+                        return fnCallback(ArmAstInteger(iResult, cBitsWidth), fEliminationAllowed, oCallbackArg, aoStack);
+
+                    ## @todo we could do +, -, div, mod, mult here, but need to consider the width of the result...
+
+                if iLeft is not None and self.sOp == 'IN' and isinstance(self.oRight, ArmAstSet):
+                    # Simplification: int IN (val, val) -> true/false
+                    aoValues = self.oRight.aoValues;
+                    idxValue = 0;
+                    while idxValue < len(aoValues):
+                        oValue = aoValues[idxValue];
+                        if isinstance(oValue, (ArmAstValue, ArmAstInteger)):
+                            (fValue, _, fWildcard, _) = oValue.getValueDetails();
+                            if (iLeft & ~fWildcard) == fValue:
+                                return fnCallback(ArmAstBool(True), fEliminationAllowed, oCallbackArg, aoStack);
+                        else:
+                            break;
+                        idxValue += 1;
+                    if idxValue == len(aoValues):
+                        return fnCallback(ArmAstBool(False), fEliminationAllowed, oCallbackArg, aoStack);
 
             return fnCallback(self, fEliminationAllowed, oCallbackArg, aoStack);
 
@@ -794,6 +900,13 @@ class ArmAstBinaryOp(ArmAstBase):
             iCurOpPrio = iNextOpPrio;
             idx       += 2;
 
+        # Add comment.
+        if self.sComment:
+            sComment = self.formatInExprComment('', self.sComment, sLang, cchMaxWidth); ## @todo this is a bit crude...
+            if sComment:
+                sRetSameLine  += sComment;
+                sRetMultiLine += sComment;
+
         # Pick which string to return.
         if len(sRetSameLine) <= cchMaxWidth and '\n' not in sRetSameLine:
             return sRetSameLine;
@@ -862,7 +975,7 @@ class ArmAstBinaryOp(ArmAstBase):
 
         raise Exception('Unsupported binary operator: %s (%s)' % (self.sOp, self.toString(),));
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         sOpType = self.kdOps[self.sOp];
         if sOpType in (self.ksOpTypeCompare, self.ksOpTypeLogical, self.ksOpTypeSet):
@@ -896,14 +1009,14 @@ class ArmAstUnaryOp(ArmAstBase):
         'NOT': '~',
     };
 
-    def __init__(self, sOp, oExpr):
-        ArmAstBase.__init__(self, ArmAstBase.ksTypeUnaryOp);
+    def __init__(self, sOp, oExpr, sComment = None):
+        ArmAstBase.__init__(self, ArmAstBase.ksTypeUnaryOp, sComment);
         assert sOp in ArmAstUnaryOp.kdOps, 'sOp=%s' % (sOp,);
         self.sOp   = sOp;
         self.oExpr = oExpr;
 
     def clone(self):
-        return ArmAstUnaryOp(self.sOp, self.oExpr.clone());
+        return ArmAstUnaryOp(self.sOp, self.oExpr.clone(), self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstUnaryOp):
@@ -967,28 +1080,32 @@ class ArmAstUnaryOp(ArmAstBase):
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
         if ArmAstUnaryOp.needParentheses(self.oExpr):
-            return '%s(%s)' % (self.getOpForLang(self.sOp, sLang, False), self.oExpr.toStringEx(sLang, cchMaxWidth),);
-        return '%s%s' % (self.getOpForLang(self.sOp, sLang, True), self.oExpr.toStringEx(sLang, cchMaxWidth),);
+            sRet = '%s(%s)' % (self.getOpForLang(self.sOp, sLang, False), self.oExpr.toStringEx(sLang, cchMaxWidth),);
+        else:
+            sRet = '%s%s' % (self.getOpForLang(self.sOp, sLang, True), self.oExpr.toStringEx(sLang, cchMaxWidth),);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         if ArmAstUnaryOp.needParentheses(self.oExpr):
             return '%s(%s)' % (self.getOpForLang(self.sOp, 'C', False), self.oExpr.toCExpr(oHelper));
         return '%s%s' % (self.getOpForLang(self.sOp, 'C', True), self.oExpr.toCExpr(oHelper));
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         if self.kdOps[self.sOp] == self.ksOpTypeLogical:
             return 1; # boolean result.
         return self.oExpr.getWidth(oHelper);
 
 
 class ArmAstSlice(ArmAstBase):
-    def __init__(self, oFrom, oTo):
-        ArmAstBase.__init__(self, ArmAstBase.ksTypeSlice);
+    def __init__(self, oFrom, oTo, sComment = None):
+        ArmAstBase.__init__(self, ArmAstBase.ksTypeSlice, sComment);
         self.oFrom = oFrom; # left
         self.oTo   = oTo;   # right
 
     def clone(self):
-        return ArmAstSlice(self.oFrom.clone(), self.oTo.clone());
+        return ArmAstSlice(self.oFrom.clone(), self.oTo.clone(), self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstSlice):
@@ -1009,26 +1126,29 @@ class ArmAstSlice(ArmAstBase):
         return fnCallback(self, fEliminationAllowed, oCallbackArg, aoStack);
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        return '[%s:%s]' % (self.oFrom.toStringEx(sLang, cchMaxWidth), self.oTo.toStringEx(sLang, cchMaxWidth));
+        sRet = '[%s:%s]' % (self.oFrom.toStringEx(sLang, cchMaxWidth), self.oTo.toStringEx(sLang, cchMaxWidth),);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         raise Exception('not implemented');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         raise Exception('not implemented');
 
 
 class ArmAstSquareOp(ArmAstBase):
-    def __init__(self, oVar, aoValues):
-        ArmAstBase.__init__(self, ArmAstBase.ksTypeSquareOp);
+    def __init__(self, oVar, aoValues, sComment = None):
+        ArmAstBase.__init__(self, ArmAstBase.ksTypeSquareOp, sComment);
         assert isinstance(oVar, ArmAstBase);
         self.oVar     = oVar;
         self.aoValues = aoValues;
 
     def clone(self):
-        return ArmAstSquareOp(self.oVar.clone(), [oValue.clone() for oValue in self.aoValues]);
+        return ArmAstSquareOp(self.oVar.clone(), [oValue.clone() for oValue in self.aoValues], self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstSquareOp):
@@ -1057,17 +1177,19 @@ class ArmAstSquareOp(ArmAstBase):
         return None;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        sVar  = self.oVar.toStringEx(sLang, cchMaxWidth);
+        sVar = self.oVar.toStringEx(sLang, cchMaxWidth);
         if not isinstance(self.oVar, (ArmAstIdentifier, ArmAstField,)):
             sVar = '(%s)' % (sVar);
-        return '%s<%s>' % (sVar,
-                           ','.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]),);
+        sRet = '%s<%s>' % (sVar, ','.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]),);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         raise Exception('ArmAstSquareOp does not support conversion to C expression: %s' % (self.toString()));
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return -1;
 
@@ -1094,33 +1216,39 @@ class ArmAstSquareOp(ArmAstBase):
 
 
 class ArmAstTuple(ArmAstValuesBase):
-    def __init__(self, aoValues):
-        ArmAstValuesBase.__init__(self, ArmAstBase.ksTypeTuple, aoValues);
+    def __init__(self, aoValues, sComment = None):
+        ArmAstValuesBase.__init__(self, ArmAstBase.ksTypeTuple, aoValues, sComment);
 
     def clone(self):
-        return ArmAstTuple([oValue.clone() for oValue in self.aoValues]);
+        return ArmAstTuple([oValue.clone() for oValue in self.aoValues], self.sComment);
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        return '(%s)' % (','.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]),);
+        sRet = '(%s)' % (','.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]),);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         raise Exception('ArmAstTuple does not support conversion to C expression: %s' % (self.toString()));
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return -1;
 
 
 class ArmAstDotAtom(ArmAstValuesBase):
-    def __init__(self, aoValues):
-        ArmAstValuesBase.__init__(self, ArmAstBase.ksTypeDotAtom, aoValues);
+    def __init__(self, aoValues, sComment = None):
+        ArmAstValuesBase.__init__(self, ArmAstBase.ksTypeDotAtom, aoValues, sComment);
 
     def clone(self):
-        return ArmAstDotAtom([oValue.clone() for oValue in self.aoValues]);
+        return ArmAstDotAtom([oValue.clone() for oValue in self.aoValues], self.sComment);
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        return '.'.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]);
+        sRet = '.'.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
@@ -1131,7 +1259,7 @@ class ArmAstDotAtom(ArmAstValuesBase):
     #    """ Limited to identifiers separated byt dots """
     #    asValues = sExpr.split('.');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return -1;
 
@@ -1145,11 +1273,11 @@ class ArmAstDotAtom(ArmAstValuesBase):
 
 
 class ArmAstConcat(ArmAstValuesBase):
-    def __init__(self, aoValues):
-        ArmAstValuesBase.__init__(self, ArmAstBase.ksTypeConcat, aoValues);
+    def __init__(self, aoValues, sComment = None):
+        ArmAstValuesBase.__init__(self, ArmAstBase.ksTypeConcat, aoValues, sComment);
 
     def clone(self):
-        return ArmAstConcat([oValue.clone() for oValue in self.aoValues]);
+        return ArmAstConcat([oValue.clone() for oValue in self.aoValues], self.sComment);
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
         sRet = '';
@@ -1160,6 +1288,8 @@ class ArmAstConcat(ArmAstValuesBase):
                 sRet += oValue.sName;
             else:
                 sRet += '(%s)' % (oValue.toStringEx(sLang, cchMaxWidth));
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
         return sRet;
 
     def toCExpr(self, oHelper):
@@ -1180,7 +1310,7 @@ class ArmAstConcat(ArmAstValuesBase):
         sConcat += ')';
         return sConcat;
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         cBitsWidth = 0;
         for oValue in self.aoValues:
@@ -1193,8 +1323,8 @@ class ArmAstConcat(ArmAstValuesBase):
 
 class ArmAstFunctionCallBase(ArmAstBase):
     """ Common base class for ArmAstFunction and ArmAstCppCall. """
-    def __init__(self, sType, sName, aoArgs):
-        ArmAstBase.__init__(self, sType);
+    def __init__(self, sType, sName, aoArgs, sComment = None):
+        ArmAstBase.__init__(self, sType, sComment);
         self.sName  = sName;
         self.aoArgs = aoArgs;
 
@@ -1227,12 +1357,15 @@ class ArmAstFunctionCallBase(ArmAstBase):
             for i, sArg in enumerate(asArgs):
                 if i > 0: sArgList += ',' + sNlIndent;
                 sArgList += sArg.replace('\n', sNlIndent);
-        return '%s(%s)' % (self.sName, sArgList,);
+        sRet = '%s(%s)' % (self.sName, sArgList,);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         return oHelper.convertFunctionCall(self);
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return -1;
 
@@ -1241,13 +1374,13 @@ class ArmAstFunction(ArmAstFunctionCallBase):
     """ This is used both as an expression and as a statment... """
     koReValidName = re.compile('^[_A-Za-z][_A-Za-z0-9]+$');
 
-    def __init__(self, sName, aoArgs, fIsStmt = False):
+    def __init__(self, sName, aoArgs, fIsStmt = False, sComment = None):
         assert self.koReValidName.match(sName), 'sName=%s' % (sName);
         ArmAstFunctionCallBase.__init__(self, ArmAstBase.ksTypeFunction, sName, aoArgs);
         self.fIsStmt = fIsStmt;
 
     def clone(self):
-        return ArmAstFunction(self.sName, [oArg.clone() for oArg in self.aoArgs], self.fIsStmt);
+        return ArmAstFunction(self.sName, [oArg.clone() for oArg in self.aoArgs], self.fIsStmt, self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstFunction):
@@ -1285,13 +1418,13 @@ class ArmAstIdentifier(ArmAstLeafBase):
     koReValidNameRelaxed = re.compile('^[_A-Za-z][_A-Za-z0-9<>]*$');
     kaoReValidName       = (koReValidName, koReValidNameRelaxed)
 
-    def __init__(self, sName, fRelaxedName = False):
-        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeIdentifier);
+    def __init__(self, sName, fRelaxedName = False, sComment = None):
+        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeIdentifier, sComment);
         assert self.kaoReValidName[fRelaxedName].match(sName), 'sName=%s' % (sName);
         self.sName = sName;
 
     def clone(self):
-        return ArmAstIdentifier(self.sName);
+        return ArmAstIdentifier(self.sName, fRelaxedName = True, sComment = self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstIdentifier):
@@ -1300,16 +1433,21 @@ class ArmAstIdentifier(ArmAstLeafBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
-        return self.sName;
+        sRet = self.sName;
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
+
 
     def toCExpr(self, oHelper):
         (sCName, _) = oHelper.getFieldInfo(self.sName);
         return sCName;
 
-    def getWidth(self, oHelper):
-        (_, cBitsWidth) = oHelper.getFieldInfo(self.sName);
-        return cBitsWidth;
+    def getWidth(self, oHelper = None):
+        if oHelper:
+            (_, cBitsWidth) = oHelper.getFieldInfo(self.sName);
+            return cBitsWidth;
+        return -1;
 
     def isMatchingIdentifier(self, sName):
         return self.sName == sName;
@@ -1319,13 +1457,13 @@ class ArmAstIdentifier(ArmAstLeafBase):
 
 
 class ArmAstBool(ArmAstLeafBase):
-    def __init__(self, fValue):
-        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeBool);
+    def __init__(self, fValue, sComment = None):
+        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeBool, sComment);
         assert fValue is True or fValue is False, '%s' % (fValue,);
         self.fValue = fValue;
 
     def clone(self):
-        return ArmAstBool(self.fValue);
+        return ArmAstBool(self.fValue, self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstBase):
@@ -1334,14 +1472,16 @@ class ArmAstBool(ArmAstLeafBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
-        return 'true' if self.fValue is True else 'false';
+        sRet = 'true' if self.fValue is True else 'false';
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
-        return 'true' if self.fValue is True else 'false';
+        return self.toStringEx('C');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return 1;
 
@@ -1353,8 +1493,8 @@ class ArmAstBool(ArmAstLeafBase):
 
 
 class ArmAstInteger(ArmAstLeafBase):
-    def __init__(self, iValue, cBitsWidth = -1):
-        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeInteger);
+    def __init__(self, iValue, cBitsWidth = -1, sComment = None):
+        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeInteger, sComment);
         self.iValue = int(iValue);
         self.cBitsWidth = cBitsWidth;
         assert cBitsWidth == -1 or (cBitsWidth > 0 and 0 <= iValue < (1 << cBitsWidth));
@@ -1370,20 +1510,21 @@ class ArmAstInteger(ArmAstLeafBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
         if self.iValue < 10:
-            return '%u' % (self.iValue,);
-        return '%#x' % (self.iValue,);
+            sRet = '%u' % (self.iValue,);
+        else:
+            sRet = '%#x' % (self.iValue,);
+        if sLang == 'C' and self.iValue >= 0x80000000: # ASSUMES unsigned integer type
+            sRet = 'UINT%u_C(%s)' % (64 if self.iValue >= 0x100000000 else 32, sRet,);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
-        if self.iValue < 10:
-            return '%u' % (self.iValue,);
-        if self.iValue & (1<<31):
-            return 'UINT32_C(%#x)' % (self.iValue,);
-        return '%#x' % (self.iValue,);
+        return self.toStringEx('C');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         if self.cBitsWidth > 0:
             return self.cBitsWidth;
@@ -1411,20 +1552,23 @@ class ArmAstInteger(ArmAstLeafBase):
 
 
 class ArmAstSet(ArmAstValuesBase):
-    def __init__(self, aoValues):
-        ArmAstValuesBase.__init__(self, ArmAstBase.ksTypeSet, aoValues);
+    def __init__(self, aoValues, sComment = None):
+        ArmAstValuesBase.__init__(self, ArmAstBase.ksTypeSet, aoValues, sComment);
 
     def clone(self):
-        return ArmAstSet([oValue.clone() for oValue in self.aoValues]);
+        return ArmAstSet([oValue.clone() for oValue in self.aoValues], self.sComment);
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        return '(%s)' % (', '.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]),);
+        sRet = '(%s)' % (', '.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]),);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         raise Exception('ArmAstSet does not support conversion to C expression: %s' % (self.toString()));
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         if self.aoValues:
             return max(oValue.getWidth() for oValue in self.aoValues);
@@ -1432,8 +1576,8 @@ class ArmAstSet(ArmAstValuesBase):
 
 
 class ArmAstValue(ArmAstLeafBase):
-    def __init__(self, sValue):
-        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeValue);
+    def __init__(self, sValue, sComment = None):
+        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeValue, sComment);
         assert isinstance(sValue, str);
         self.sValue = sValue;
 
@@ -1447,21 +1591,28 @@ class ArmAstValue(ArmAstLeafBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
-        return self.sValue;
+        sRet = self.sValue;
+        if sLang == 'C':
+            (fValue, _, fWildcard, cBitsWidth) = ArmAstValue.parseValue(self.sValue, 0);
+            if fWildcard == 0:
+                if cBitsWidth  >= 31:
+                    sRet = 'UINT%u_C(%#x)' % (64 if cBitsWidth > 32 else 32, fValue,);
+                elif fValue >= 10:
+                    sRet = '%#x' % (fValue,);
+                else:
+                    sRet = '%u' % (fValue,);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
-        (fValue, _, fWildcard, _) = ArmAstValue.parseValue(self.sValue, 0);
+        (_, _, fWildcard, _) = ArmAstValue.parseValue(self.sValue, 0);
         if fWildcard:
             raise Exception('Value contains wildcard elements: %s' % (self.sValue,));
-        if fValue < 10:
-            return '%u' % (fValue,);
-        if fValue & (1<<31):
-            return 'UINT32_C(%#x)' % (fValue,);
-        return '%#x' % (fValue,);
+        return self.toStringEx('C');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         (_, _, _, cBitsWidth) = ArmAstValue.parseValue(self.sValue, 0);
         return cBitsWidth;
@@ -1509,14 +1660,14 @@ class ArmAstValue(ArmAstLeafBase):
 class ArmAstEquationValue(ArmAstLeafBase):
     koSimpleName = re.compile('^[_A-Za-z][_A-Za-z0-9]+$');
 
-    def __init__(self, sValue, iFirstBit, cBitsWidth):
-        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeValue);
+    def __init__(self, sValue, iFirstBit, cBitsWidth, sComment = None):
+        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeValue, sComment);
         self.sValue     = sValue;
         self.iFirstBit  = iFirstBit;
         self.cBitsWidth = cBitsWidth;
 
     def clone(self):
-        return ArmAstEquationValue(self.sValue, self.iFirstBit, self.cBitsWidth);
+        return ArmAstEquationValue(self.sValue, self.iFirstBit, self.cBitsWidth, self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstEquationValue):
@@ -1527,23 +1678,26 @@ class ArmAstEquationValue(ArmAstLeafBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
         if self.koSimpleName.match(self.sValue):
-            return '%s[%u:%u]' % (self.sValue, self.iFirstBit, self.iFirstBit + self.cBitsWidth - 1,);
-        return '(%s)[%u:%u]' % (self.sValue, self.iFirstBit, self.iFirstBit + self.cBitsWidth - 1,);
+            sRet = '%s[%u:%u]' % (self.sValue, self.iFirstBit, self.iFirstBit + self.cBitsWidth - 1,);
+        else:
+            sRet = '(%s)[%u:%u]' % (self.sValue, self.iFirstBit, self.iFirstBit + self.cBitsWidth - 1,);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         raise Exception('todo');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return self.cBitsWidth;
 
 
 class ArmAstValuesGroup(ArmAstBase):
-    def __init__(self, sValue, aoValues = None):
-        ArmAstBase.__init__(self, ArmAstBase.ksTypeValue);
+    def __init__(self, sValue, aoValues = None, sComment = None):
+        ArmAstBase.__init__(self, ArmAstBase.ksTypeValue, sComment);
         self.sValue     = sValue;
         self.aoValues   = aoValues;
         if aoValues is None:
@@ -1579,7 +1733,7 @@ class ArmAstValuesGroup(ArmAstBase):
                 off += 1;
 
     def clone(self):
-        return ArmAstValuesGroup(self.sValue, [oValue.clone() for oValue in self.aoValues]);
+        return ArmAstValuesGroup(self.sValue, [oValue.clone() for oValue in self.aoValues], self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstValuesGroup):
@@ -1603,19 +1757,22 @@ class ArmAstValuesGroup(ArmAstBase):
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
         ## @todo deal width cchMaxWidth.
-        return ':'.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]);
+        sRet = ':'.join([oValue.toStringEx(sLang, cchMaxWidth) for oValue in self.aoValues]);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         raise Exception('todo');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         return sum(oValue.getWidth(oHelper) for oValue in self.aoValues);
 
 
 class ArmAstString(ArmAstLeafBase):
-    def __init__(self, sValue):
-        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeValue);
+    def __init__(self, sValue, sComment = None):
+        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeValue, sComment);
         self.sValue = sValue;
 
     def clone(self):
@@ -1628,21 +1785,26 @@ class ArmAstString(ArmAstLeafBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
-        return '"' + self.sValue + '"';
+        if sLang == 'C':
+            sRet = '"' + self.sValue.replace('\\', '\\\\').replace('"', '\\"') + '"';
+        else:
+            sRet = '"' + self.sValue + '"';
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         return '"' + self.sValue.replace('\\', '\\\\').replace('"', '\\"') + '"';
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return -1;
 
 
 class ArmAstField(ArmAstLeafBase):
-    def __init__(self, sField, sName, sState = 'AArch64', sSlices = None, sInstance = None):
-        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeField);
+    def __init__(self, sField, sName, sState = 'AArch64', sSlices = None, sInstance = None, sComment = None):
+        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeField, sComment);
         self.sField    = sField;
         self.sName     = sName;
         self.sState    = sState;
@@ -1652,7 +1814,7 @@ class ArmAstField(ArmAstLeafBase):
         assert sInstance is None;
 
     def clone(self):
-        return ArmAstField(self.sField, self.sName, self.sState, self.sSlices, self.sInstance);
+        return ArmAstField(self.sField, self.sName, self.sState, self.sSlices, self.sInstance, self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstField):
@@ -1665,16 +1827,20 @@ class ArmAstField(ArmAstLeafBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
-        return '%s.%s.%s' % (self.sState, self.sName, self.sField,);
+        sRet = '%s.%s.%s' % (self.sState, self.sName, self.sField,);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         (sCName, _) = oHelper.getFieldInfo(self.sField, self.sName, self.sState);
         return sCName;
 
-    def getWidth(self, oHelper):
-        (_, cBitsWidth) = oHelper.getFieldInfo(self.sField, self.sName, self.sState);
-        return cBitsWidth;
+    def getWidth(self, oHelper = None):
+        if oHelper:
+            (_, cBitsWidth) = oHelper.getFieldInfo(self.sField, self.sName, self.sState);
+            return cBitsWidth;
+        return -1;
 
     def isMatchingField(self, sField, sName, sState = 'AArch64'):
         return (    (   sField is None
@@ -1686,8 +1852,8 @@ class ArmAstField(ArmAstLeafBase):
 
 
 class ArmAstRegisterType(ArmAstLeafBase):
-    def __init__(self, sName, sState = 'AArch64', sSlices = None, sInstance = None):
-        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeRegisterType);
+    def __init__(self, sName, sState = 'AArch64', sSlices = None, sInstance = None, sComment = None):
+        ArmAstLeafBase.__init__(self, ArmAstBase.ksTypeRegisterType, sComment);
         self.sName     = sName;
         self.sState    = sState;
         self.sSlices   = sSlices;
@@ -1696,7 +1862,7 @@ class ArmAstRegisterType(ArmAstLeafBase):
         assert sInstance is None;
 
     def clone(self):
-        return ArmAstRegisterType(self.sName, self.sState, self.sSlices, self.sInstance);
+        return ArmAstRegisterType(self.sName, self.sState, self.sSlices, self.sInstance, self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstRegisterType):
@@ -1708,15 +1874,17 @@ class ArmAstRegisterType(ArmAstLeafBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
-        return '%s.%s' % (self.sState, self.sName,);
+        sRet = '%s.%s' % (self.sState, self.sName,);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         #(sCName, _) = oHelper.getFieldInfo(None, self.sName, self.sState);
         #return sCName;
         raise Exception('not implemented');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         #(_, cBitsWidth) = oHelper.getFieldInfo(None, self.sName, self.sState);
         #return cBitsWidth;
         _ = oHelper;
@@ -1724,12 +1892,12 @@ class ArmAstRegisterType(ArmAstLeafBase):
 
 
 class ArmAstType(ArmAstBase):
-    def __init__(self, oName):
-        ArmAstBase.__init__(self, ArmAstBase.ksTypeType);
+    def __init__(self, oName, sComment = None):
+        ArmAstBase.__init__(self, ArmAstBase.ksTypeType, sComment);
         self.oName = oName;
 
     def clone(self):
-        return ArmAstType(self.oName.clone());
+        return ArmAstType(self.oName.clone(), self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstType):
@@ -1748,20 +1916,23 @@ class ArmAstType(ArmAstBase):
         return fnCallback(self, fEliminationAllowed, oCallbackArg, aoStack);
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        return self.oName.toStringEx(sLang, cchMaxWidth);
+        sRet = self.oName.toStringEx(sLang, cchMaxWidth);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         raise Exception('not implemented');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         raise Exception('not implemented');
 
 
 class ArmAstTypeAnnotation(ArmAstBase):
-    def __init__(self, oVar, oType):
-        ArmAstBase.__init__(self, ArmAstBase.ksTypeTypeAnnotation);
+    def __init__(self, oVar, oType, sComment = None):
+        ArmAstBase.__init__(self, ArmAstBase.ksTypeTypeAnnotation, sComment);
         self.oVar  = oVar;
         self.oType = oType;
 
@@ -1788,13 +1959,16 @@ class ArmAstTypeAnnotation(ArmAstBase):
         return fnCallback(self, fEliminationAllowed, oCallbackArg, aoStack);
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        return '(%s) %s' % (self.oType.toStringEx(sLang, cchMaxWidth), self.oVar.toStringEx(sLang, cchMaxWidth),);
+        sRet = '(%s) %s' % (self.oType.toStringEx(sLang, cchMaxWidth), self.oVar.toStringEx(sLang, cchMaxWidth),);
+        if self.sComment:
+            sRet = self.formatInExprComment(sRet, self.sComment, sLang, cchMaxWidth);
+        return sRet;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
         raise Exception('not implemented');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         raise Exception('not implemented');
 
@@ -1809,8 +1983,8 @@ class ArmAstStatementBase(ArmAstBase):
 
     This adds the toStringList method and blocks the toCExpr and getWidth methods.
     """
-    def __init__(self, sType):
-        ArmAstBase.__init__(self, sType);
+    def __init__(self, sType, sComment = None):
+        ArmAstBase.__init__(self, sType, sComment);
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
         return '\n'.join(self.toStringList(sLang = sLang, cchMaxWidth = cchMaxWidth));
@@ -1823,7 +1997,7 @@ class ArmAstStatementBase(ArmAstBase):
         _ = oHelper;
         raise Exception('not implemented');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         raise Exception('not implemented');
 
@@ -1838,13 +2012,22 @@ class ArmAstStatementBase(ArmAstBase):
         """ Checks if all code paths ends with a return statement. """
         return False;
 
+    @staticmethod
+    def formatLineComment(sComment, sIndent = '', sLang = None, cchMaxWidth = 120):
+        """ Helper for formatting line comments. """
+        _ = cchMaxWidth;
+        asRet = [];
+        if sLang in ('C', None):
+            for iLine, sLine, fFinal in enumerateWithLookahead(sComment.split('\n')):
+                asRet.append('%s%s%s%s' % (sIndent, '/* ' if iLine == 0 else '   ', sLine, ' */' if fFinal else ''));
+        return asRet;
 
 class ArmAstStatementList(ArmAstStatementBase):
     """
     List of statements.
     """
-    def __init__(self, aoStmts):
-        ArmAstStatementBase.__init__(self, 'Statement List');
+    def __init__(self, aoStmts, sComment = None):
+        ArmAstStatementBase.__init__(self, 'Statement List', sComment);
         self.aoStmts = aoStmts;
 
     def clone(self):
@@ -1877,7 +2060,7 @@ class ArmAstStatementList(ArmAstStatementBase):
         return fnCallback(self, fEliminationAllowed, oCallbackArg, aoStack);
 
     def toStringList(self, sIndent = '', sLang = None, cchMaxWidth = 120):
-        asLines = [];
+        asLines = [] if not self.sComment else self.formatLineComment(self.sComment, sIndent, sLang, cchMaxWidth);
         for oStmt in self.aoStmts:
             asLines += oStmt.toStringList(sIndent, sLang, cchMaxWidth);
         return asLines;
@@ -1895,11 +2078,11 @@ class ArmAstNop(ArmAstStatementBase):
     NOP statement.
     Not part of ARM spec. We need it for transformations.
     """
-    def __init__(self):
-        ArmAstStatementBase.__init__(self, 'AST.Nop');
+    def __init__(self, sComment = None):
+        ArmAstStatementBase.__init__(self, 'AST.Nop', sComment);
 
     def clone(self):
-        return ArmAstNop();
+        return ArmAstNop(self.sComment);
 
     def isSame(self, oOther):
         return isinstance(oOther, ArmAstNop);
@@ -1912,7 +2095,9 @@ class ArmAstNop(ArmAstStatementBase):
 
     def toStringList(self, sIndent = '', sLang = None, cchMaxWidth = 120):
         _ = sLang; _ = cchMaxWidth;
-        return [ 'NOP();', ];
+        if self.sComment and sLang in ('C', None):
+            return [ '%sNOP(); /* %s */' % (sIndent, self.sComment), ];
+        return [ '%sNOP();' % (sIndent,), ];
 
     def isLeaf(self):
         return True;
@@ -1921,13 +2106,13 @@ class ArmAstNop(ArmAstStatementBase):
 class ArmAstAssignment(ArmAstStatementBase):
     """ We classify assignments as statements. """
 
-    def __init__(self, oVar, oValue):
-        ArmAstStatementBase.__init__(self, ArmAstBase.ksTypeAssignment);
+    def __init__(self, oVar, oValue, sComment = None):
+        ArmAstStatementBase.__init__(self, ArmAstBase.ksTypeAssignment, sComment);
         self.oVar      = oVar;
         self.oValue    = oValue;
 
     def clone(self):
-        return ArmAstAssignment(self.oVar.clone(), self.oValue.clone());
+        return ArmAstAssignment(self.oVar.clone(), self.oValue.clone(), self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstAssignment):
@@ -1952,26 +2137,27 @@ class ArmAstAssignment(ArmAstStatementBase):
         return None;
 
     def toStringList(self, sIndent = '', sLang = None, cchMaxWidth = 120):
-        sVar   = self.oVar.toStringEx(sLang, cchMaxWidth);
-        cchVar = len(sVar);
+        sComment = ' /* %s */' % (self.sComment,) if self.sComment and sLang in ('C', None) else '';
+        sVar     = self.oVar.toStringEx(sLang, cchMaxWidth);
+        cchVar   = len(sVar);
         if '\n' in sVar:
             sVar += '\n   ' + sIndent;
             cchVar = 3;
-        sValue = self.oValue.toStringEx(sLang, max(cchMaxWidth - cchVar, 60));
+        sValue   = self.oValue.toStringEx(sLang, max(cchMaxWidth - cchVar, 60));
         if '\n' in sValue:
             sValue = '(' + sValue.replace('\n', '\n' + ' ' * (cchVar + 4) + sIndent) + ' )';
-        return ('%s%s = %s;' % (sIndent, sVar, sValue)).split('\n');
+        return ('%s%s = %s;%s' % (sIndent, sVar, sValue, sComment)).split('\n');
 
 
 class ArmAstReturn(ArmAstStatementBase):
     """ We classify assignments as statements. """
 
-    def __init__(self, oValue):
-        ArmAstStatementBase.__init__(self, ArmAstBase.ksTypeReturn);
+    def __init__(self, oValue, sComment = None):
+        ArmAstStatementBase.__init__(self, ArmAstBase.ksTypeReturn, sComment);
         self.oValue = oValue;
 
     def clone(self):
-        return ArmAstReturn(self.oValue.clone() if self.oValue else None);
+        return ArmAstReturn(self.oValue.clone() if self.oValue else None, self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstReturn):
@@ -1996,12 +2182,13 @@ class ArmAstReturn(ArmAstStatementBase):
         return fnCallback(self, fEliminationAllowed, oCallbackArg, aoStack);
 
     def toStringList(self, sIndent = '', sLang = None, cchMaxWidth = 120):
+        sComment = ' /* %s */' % (self.sComment,) if self.sComment and sLang in ('C', None) else '';
         if self.oValue:
             sValue = self.oValue.toStringEx(sLang, max(cchMaxWidth - 7, 60));
             if '\n' not in sValue:
-                return [ '%sreturn %s;' % (sIndent, sValue,) ];
-            return ('%sreturn %s;' % (sIndent, sValue.replace('\n', '\n' + '       ' + sIndent),)).split('\n');
-        return [ '%sreturn;' % (sIndent,) ];
+                return [ '%sreturn %s;%s' % (sIndent, sValue, sComment) ];
+            return ('%sreturn %s;%s' % (sIndent, sValue.replace('\n', '\n' + '       ' + sIndent), sComment,)).split('\n');
+        return [ '%sreturn;%s' % (sIndent,sComment) ];
 
     def doAllPathsReturn(self):
         return True;
@@ -2025,8 +2212,8 @@ class ArmAstIfList(ArmAstStatementBase):
             action3;
     """
 
-    def __init__(self, aoIfConditions, aoIfStatements, oElseStatement):
-        ArmAstStatementBase.__init__(self, 'Accessors.Permission.MemoryAccess');
+    def __init__(self, aoIfConditions, aoIfStatements, oElseStatement, sComment = None):
+        ArmAstStatementBase.__init__(self, 'Accessors.Permission.MemoryAccess', sComment);
         # The if/elif condition expressions.
         self.aoIfConditions  = aoIfConditions   # type: List[ArmAstBase]
         # The if/elif statements, runs in parallel to aoIfConditions. ArmAstIfList allowed.
@@ -2099,10 +2286,10 @@ class ArmAstIfList(ArmAstStatementBase):
         return fnCallback(ArmAstNop(), fEliminationAllowed, oCallbackArg, aoStack);
 
     def toStringList(self, sIndent = '', sLang = None, cchMaxWidth = 120):
-        asLines         = [];
         sNextIndent     = sIndent + '    ';
         cchMaxWidth     = max(cchMaxWidth,     60);
         cchNextMaxWidth = max(cchMaxWidth - 4, 60);
+        asLines         = [] if not self.sComment else self.formatLineComment(self.sComment, sIndent, sLang, cchMaxWidth);
         fNeedElse       = False;
         for i, oIfCond in enumerate(self.aoIfConditions):
             sIfCond = oIfCond.toStringEx(sLang, cchMaxWidth);
@@ -2257,14 +2444,14 @@ class ArmAstCppExprBase(object):
 
 class ArmAstCppExpr(ArmAstLeafBase, ArmAstCppExprBase):
     """ C++ AST node. """
-    def __init__(self, sExpr, cBitsWidth = -1):
-        ArmAstLeafBase.__init__(self, 'C++ Expression');
+    def __init__(self, sExpr, cBitsWidth = -1, sComment = None):
+        ArmAstLeafBase.__init__(self, 'C++ Expression', sComment);
         ArmAstCppExprBase.__init__(self);
         self.sExpr      = sExpr;
         self.cBitsWidth = cBitsWidth;
 
     def clone(self):
-        return ArmAstCppExpr(self.sExpr, self.cBitsWidth);
+        return ArmAstCppExpr(self.sExpr, self.cBitsWidth, self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstCppExpr):
@@ -2274,14 +2461,15 @@ class ArmAstCppExpr(ArmAstLeafBase, ArmAstCppExprBase):
         return False;
 
     def toStringEx(self, sLang = None, cchMaxWidth = 120):
-        _ = sLang; _ = cchMaxWidth;
+        if self.sComment:
+            return self.formatInExprComment(self.sExpr, self.sComment, sLang, cchMaxWidth);
         return self.sExpr;
 
     def toCExpr(self, oHelper):
         _ = oHelper;
-        return self.sExpr;
+        return self.toStringEx(sLang = 'C');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return self.cBitsWidth;
 
@@ -2290,13 +2478,13 @@ class ArmAstCppCall(ArmAstFunctionCallBase, ArmAstCppExprBase):
     """
     C++ AST function call node.
     """
-    def __init__(self, sName, aoArgs, cBitsWidth = 32):
-        ArmAstFunctionCallBase.__init__(self, 'C++ function call', sName, aoArgs);
+    def __init__(self, sName, aoArgs, cBitsWidth = 32, sComment = None):
+        ArmAstFunctionCallBase.__init__(self, 'C++ function call', sName, aoArgs, sComment);
         ArmAstCppExprBase.__init__(self);
         self.cBitsWidth = cBitsWidth; # the return value width. 0 for void.
 
     def clone(self):
-        return ArmAstCppCall(self.sName, [oArg.clone() for oArg in self.aoArgs], self.cBitsWidth);
+        return ArmAstCppCall(self.sName, [oArg.clone() for oArg in self.aoArgs], self.cBitsWidth, self.sComment);
 
     def isSame(self, oOther):
         if isinstance(oOther, ArmAstCppCall):
@@ -2308,7 +2496,7 @@ class ArmAstCppCall(ArmAstFunctionCallBase, ArmAstCppExprBase):
         _ = oHelper;
         return self.toStringEx(sLang = 'C');
 
-    def getWidth(self, oHelper):
+    def getWidth(self, oHelper = None):
         _ = oHelper;
         return self.cBitsWidth;
 

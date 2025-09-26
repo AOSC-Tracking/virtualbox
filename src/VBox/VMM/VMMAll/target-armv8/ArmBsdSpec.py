@@ -30,7 +30,7 @@ along with this program; if not, see <https://www.gnu.org/licenses>.
 
 SPDX-License-Identifier: GPL-3.0-only
 """
-__version__ = "$Revision: 169505 $"
+__version__ = "$Revision: 170447 $"
 
 # Standard python imports.
 import collections;
@@ -422,6 +422,12 @@ g_dArmFeatureSupportExprOverrides = {
     'FEAT_GICv3_TDIR': ArmAstBinaryOp(ArmAstIdentifier('FEAT_GICv3'), '&&', ArmAstField('TDS', 'ICH_VTR_EL2'),), # ??
 
     # Missing in 2024-12:
+    'FEAT_PoPS': ArmAstBinaryOp.andListToTree([
+        ArmAstBinaryOp(ArmAstFunction('UInt', [ArmAstField('PoPS', 'ID_AA64MMFR4_EL1'),]), '>=', ArmAstInteger(1)),
+    ]),
+    'FEAT_SRMASK': ArmAstBinaryOp.andListToTree([
+        ArmAstBinaryOp(ArmAstFunction('UInt', [ArmAstField('SRMASK', 'ID_AA64MMFR4_EL1'),]), '>=', ArmAstInteger(1)),
+    ]),
     'FEAT_SSVE_FEXPA': ArmAstField('SFEXPA', 'ID_AA64SMFR0_EL1'),
 
     # Odd ones:

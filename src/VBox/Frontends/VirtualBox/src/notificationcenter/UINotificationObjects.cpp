@@ -38,6 +38,7 @@
 #include "UIGlobalSession.h"
 #include "UIHostComboEditor.h"
 #include "UILocalMachineStuff.h"
+#include "UILoggingDefs.h"
 #include "UINotificationCenter.h"
 #include "UINotificationObjects.h"
 #include "UITranslator.h"
@@ -737,6 +738,13 @@ void UINotificationMessage::cannotAcquireSessionParameter(const CSession &comSes
 /* static */
 void UINotificationMessage::cannotAcquireMachineParameter(const CMachine &comMachine)
 {
+    /* Do not show error for the E_NOTIMPL case, just add it to the log: */
+    if (comMachine.lastRC() == E_NOTIMPL)
+    {
+        LogRel(("GUI: IMachine getter lastRC == E_NOTIMPL, skipping ...\n"));
+        return;
+    }
+
     createMessage(
         QApplication::translate("UIMessageCenter", "Machine failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire machine parameter.") +
@@ -3287,7 +3295,7 @@ CProgress UINotificationProgressCloudMachineClone::createProgress(COMResult &com
     CCloudMachine comCloneMachine;
     CProgress comProgress = m_comClient.CloneInstance(m_strId, m_strCloneName, comCloneMachine);
     /* Store COM result: */
-    comResult = m_comMachine;
+    comResult = m_comClient;
     /* Return progress-wrapper: */
     return comProgress;
 }
@@ -3794,7 +3802,7 @@ CProgress UINotificationProgressSnapshotTake::createProgress(COMResult &comResul
                                                     m_strSnapshotDescription,
                                                     true, m_uSnapshotId);
     /* Store COM result: */
-    comResult = m_comMachine;
+    comResult = comMachine;
     /* Return progress-wrapper: */
     return comProgress;
 }
@@ -4019,7 +4027,7 @@ CProgress UINotificationProgressSnapshotDelete::createProgress(COMResult &comRes
     /* Initialize progress-wrapper: */
     CProgress comProgress = comMachine.DeleteSnapshot(m_uSnapshotId);
     /* Store COM result: */
-    comResult = m_comMachine;
+    comResult = comMachine;
     /* Return progress-wrapper: */
     return comProgress;
 }

@@ -319,7 +319,7 @@ void UIVirtualBoxWidget::sltHandleCommitData()
 void UIVirtualBoxWidget::sltHandleMachineStateChange(const QUuid &uId)
 {
     /* Update toolbar to show/hide corresponding actions: */
-    if (currentItem()->id() == uId)
+    if (currentItem() && currentItem()->id() == uId)
         updateToolbar();
 }
 
@@ -399,8 +399,8 @@ void UIVirtualBoxWidget::prepareWidgets()
         }
     }
 
-    /* Create notification-center: */
-    UINotificationCenter::create(this);
+    /* Reparent notification-center: */
+    gpNotificationCenter->setParent(this);
 
     /* Update toolbar finally: */
     updateToolbar();
@@ -746,8 +746,8 @@ void UIVirtualBoxWidget::cleanupConnections()
 
 void UIVirtualBoxWidget::cleanup()
 {
-    /* Destroy notification-center: */
-    UINotificationCenter::destroy();
+    /* Reparent notification-center: */
+    gpNotificationCenter->setParent(0);
 }
 
 UIGlobalToolsWidget *UIVirtualBoxWidget::globalToolsWidget() const

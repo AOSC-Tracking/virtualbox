@@ -111,15 +111,10 @@
     } while (0)
 
 
-#define IEM_MC_STORE_MEM_FLAT_U32_PAIR(a_GCPtrMem, a_u32Value1, a_u32Value2) \
-    iemMemFlatStoreDataPairU32Jmp(pVCpu, (a_GCPtrMem), (a_u32Value1), (a_u32Value2))
-#define IEM_MC_STORE_MEM_FLAT_U64_PAIR(a_GCPtrMem, a_u64Value1, a_u64Value2) \
-    iemMemFlatStoreDataPairU64Jmp(pVCpu, (a_GCPtrMem), (a_u64Value1), (a_u64Value2))
-
 /** Fetched PC (for PC relative addressing). */
 #define IEM_MC_FETCH_PC_U64(a_GCPtrMem)  (a_GCPtrMem) = pVCpu->cpum.GstCtx.Pc.u64
 
-/** Adds a constant to an address (64-bit), applying checked
+/** Adds a constant offset to an address (64-bit), applying checked
  *  pointer arithmetic at the current EL. */
 #define IEM_MC_ADD_CONST_U64_TO_ADDR(a_EffAddr, a_u64Const) do { \
         /*uint64_t const OldEffAddr = (a_EffAddr);*/ \
@@ -127,22 +122,89 @@
         AssertReturn(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fCpa2, VERR_IEM_ASPECT_NOT_IMPLEMENTED); /** @todo CPA2 */ \
     } while (0)
 
+/** Adds an offset from a local to an address (64-bit), applying checked
+ *  pointer arithmetic at the current EL. */
+#define IEM_MC_ADD_LOCAL_U64_TO_ADDR(a_EffAddr, a_u64Local) do { \
+        /*uint64_t const OldEffAddr = (a_EffAddr);*/ \
+        (a_EffAddr) += a_u64Local; \
+        AssertReturn(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fCpa2, VERR_IEM_ASPECT_NOT_IMPLEMENTED); /** @todo CPA2 */ \
+    } while (0)
 
 
-#define IEM_MC_A64_SUBS_U64(a_uDifference, a_uMinuend, a_uSubtrahend) \
-    (a_uDifference) = iemMcA64SubsU64(a_uMinuend, a_uSubtrahend, &pVCpu->cpum.GstCtx.fPState)
+/** Prepares for using the FPU state.
+ * Ensures that we can use the host FPU in the current context (RC+R0.
+ * Ensures the guest FPU state in the CPUMCTX is up to date. */
+#define IEM_MC_PREPARE_FPU_USAGE()              iemFpuPrepareUsage(pVCpu)
+/** Actualizes the guest FPU state so it can be accessed read-only fashion. */
+#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()   iemFpuActualizeStateForRead(pVCpu)
+/** Actualizes the guest FPU state so it can be accessed and modified. */
+#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE() iemFpuActualizeStateForChange(pVCpu)
 
-/** Helper that implements IEM_MC_A64_SUBS_U64. */
-DECL_FORCE_INLINE(uint64_t) iemMcA64SubsU64(uint64_t uMinuend, uint64_t uSubtrahend, uint64_t *pfPState)
+#define IEM_MC_FETCH_FREG_HI_U64(a_u64Dst, a_iFpReg)    (a_u64Dst) = iemFRegFetchHiU64(pVCpu, (a_iFpReg))
+#define IEM_MC_STORE_FREG_HI_U64(a_iFpReg, a_u64Value)  iemFRegStoreHiU64(pVCpu, (a_iFpReg), (a_u64Value))
+
+
+#define IEM_MC_FETCH_MEM_FLAT_U32_PAIR(a_u32Value1, a_u32Value2, a_GCPtrMem) \
+    (a_u32Value1) = iemMemFlatFetchDataPairU32Jmp(pVCpu, (a_GCPtrMem), &(a_u32Value2))
+#define IEM_MC_FETCH_MEM_FLAT_U32_PAIR_SX_U64(a_u64Value1, a_u64Value2, a_GCPtrMem) \
+    uint32_t       u32LdTmp2 = 0; \
+    uint32_t const u32LdTmp1 = iemMemFlatFetchDataPairU32Jmp(pVCpu, (a_GCPtrMem), &u32LdTmp2); \
+    (a_u64Value1) = (int64_t)(int32_t)u32LdTmp1; \
+    (a_u64Value2) = (int64_t)(int32_t)u32LdTmp2
+#define IEM_MC_FETCH_MEM_FLAT_U64_PAIR(a_u64Value1, a_u64Value2, a_GCPtrMem) \
+    (a_u64Value1) = iemMemFlatFetchDataPairU64Jmp(pVCpu, (a_GCPtrMem), &(a_u64Value2))
+#define IEM_MC_FETCH_MEM_FLAT_U128_PAIR(a_u128Value1, a_u128Value2, a_GCPtrMem) \
+    iemMemFlatFetchDataPairU128Jmp(pVCpu, (a_GCPtrMem), &(a_u128Value1), &(a_u128Value2))
+
+#define IEM_MC_STORE_MEM_FLAT_U32_PAIR(a_GCPtrMem, a_u32Value1, a_u32Value2) \
+    iemMemFlatStoreDataPairU32Jmp(pVCpu, (a_GCPtrMem), (a_u32Value1), (a_u32Value2))
+#define IEM_MC_STORE_MEM_FLAT_U64_PAIR(a_GCPtrMem, a_u64Value1, a_u64Value2) \
+    iemMemFlatStoreDataPairU64Jmp(pVCpu, (a_GCPtrMem), (a_u64Value1), (a_u64Value2))
+#define IEM_MC_STORE_MEM_FLAT_U128_PAIR(a_GCPtrMem, a_u128Value1, a_u128Value2) \
+    iemMemFlatStoreDataPairU128Jmp(pVCpu, (a_GCPtrMem), &(a_u128Value1), &(a_u128Value2))
+
+
+
+#define IEM_MC_A64_ADDS_U32(a_uSum, a_uAddend1, a_uAddend2, a_fCarry) \
+    (a_uSum) = iemMcA64Adds<uint32_t, 32, a_fCarry>(a_uAddend1, a_uAddend2, &pVCpu->cpum.GstCtx.fPState)
+#define IEM_MC_A64_ADDS_U64(a_uSum, a_uAddend1, a_uAddend2, a_fCarry) \
+    (a_uSum) = iemMcA64Adds<uint64_t, 64, a_fCarry>(a_uAddend1, a_uAddend2, &pVCpu->cpum.GstCtx.fPState)
+
+/** Helper that implements IEM_MC_A64_ADDS_U32 & IEM_MC_A64_ADDS_U64.
+ * @todo not use if the a_fCarry approach is the best...  */
+template<typename a_Type, unsigned const a_cBits, unsigned const a_fCarry>
+DECL_FORCE_INLINE(a_Type) iemMcA64Adds(a_Type uAddend1, a_Type uAddend2, uint64_t *pfPState)
 {
-    uint64_t const uDiff     = uMinuend - uSubtrahend;
-    uint64_t const fNewFlags = ((uDiff >> (63 - ARMV8_SPSR_EL2_AARCH64_N_BIT)) & ARMV8_SPSR_EL2_AARCH64_N)
+    a_Type const   uSum      = uAddend1 + uAddend2 + a_fCarry;
+    uint64_t const fNewFlags = ((uSum >> (a_cBits - 1 - ARMV8_SPSR_EL2_AARCH64_N_BIT)) & ARMV8_SPSR_EL2_AARCH64_N)
+                             | (uSum             ? 0 : ARMV8_SPSR_EL2_AARCH64_Z)
+                             | ((!a_fCarry ? uSum >= uAddend2 : uSum > uAddend2) ? 0 : ARMV8_SPSR_EL2_AARCH64_C)
+                             | (   (((~(uAddend1 ^ uAddend2) & (uSum ^ uAddend1)) >> (a_cBits - 1)) & 1)
+                                << ARMV8_SPSR_EL2_AARCH64_V_BIT);
+    *pfPState = (*pfPState & ~ARMV8_SPSR_EL2_AARCH64_NZCV) | fNewFlags;
+    return uSum;
+}
+
+
+#define IEM_MC_A64_SUBS_U32(a_uDifference, a_uMinuend, a_uSubtrahend, a_fCarry) \
+    (a_uDifference) = iemMcA64Subs<uint32_t, 32, a_fCarry>(a_uMinuend, a_uSubtrahend, &pVCpu->cpum.GstCtx.fPState)
+#define IEM_MC_A64_SUBS_U64(a_uDifference, a_uMinuend, a_uSubtrahend, a_fCarry) \
+    (a_uDifference) = iemMcA64Subs<uint64_t, 64, a_fCarry>(a_uMinuend, a_uSubtrahend, &pVCpu->cpum.GstCtx.fPState)
+
+/** Helper that implements IEM_MC_A64_SUBS_U32 & IEM_MC_A64_SUBS_U64. */
+template<typename a_Type, unsigned const a_cBits, unsigned const a_fCarry>
+DECL_FORCE_INLINE(a_Type) iemMcA64Subs(a_Type uMinuend, a_Type uSubtrahend, uint64_t *pfPState)
+{
+    a_Type const   uDiff     = uMinuend - uSubtrahend - (a_fCarry ? 0U : 1U);
+    uint64_t const fNewFlags = ((uDiff >> (a_cBits - 1 - ARMV8_SPSR_EL2_AARCH64_N_BIT)) & ARMV8_SPSR_EL2_AARCH64_N)
                              | (uDiff                  ? 0 : ARMV8_SPSR_EL2_AARCH64_Z)
-                             | (uMinuend < uSubtrahend ? 0 : ARMV8_SPSR_EL2_AARCH64_C) /* inverted for subtractions */
-                             | (((((uMinuend ^ uSubtrahend) & (uDiff ^ uMinuend)) >> 63) & 1) << ARMV8_SPSR_EL2_AARCH64_V_BIT);
+                             | ((a_fCarry ? uMinuend < uSubtrahend : uMinuend <= uSubtrahend) ? 0 : ARMV8_SPSR_EL2_AARCH64_C) /* inverted for subtractions */
+                             | (   ((((uMinuend ^ uSubtrahend) & (uDiff ^ uMinuend)) >> (a_cBits - 1)) & 1)
+                                << ARMV8_SPSR_EL2_AARCH64_V_BIT);
     *pfPState = (*pfPState & ~ARMV8_SPSR_EL2_AARCH64_NZCV) | fNewFlags;
     return uDiff;
 }
+
 
 #define IEM_MC_A64_ANDS_U32(a_uDst, a_fMask) (a_uDst) = iemMcA64Ands<uint32_t>(a_uDst, a_fMask, &pVCpu->cpum.GstCtx.fPState)
 #define IEM_MC_A64_ANDS_U64(a_uDst, a_fMask) (a_uDst) = iemMcA64Ands<uint64_t>(a_uDst, a_fMask, &pVCpu->cpum.GstCtx.fPState)

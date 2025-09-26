@@ -31,6 +31,11 @@
 # pragma once
 #endif
 
+/* Write statistics to the host release log: execution time of DDI entry points, etc.
+ * Requires g_VBoxLogUm = VBOXWDDM_CFG_LOG_UM_BACKDOOR in a release build in the miniport driver.
+ */
+//#define DX_STATS
+
 #include <iprt/assert.h>
 #include <iprt/handletable.h>
 
@@ -147,6 +152,7 @@ typedef struct VBOXDXKMRESOURCE
         struct /* Context object allocation */
         {
             RTLISTNODE             nodeAllocationsChain;    /* CO allocations can be chained. */
+            uint8_t               *pu8COMapped;             /* If CO is locked. */
             uint64_t               u64Bitmap;               /* Bitmap of allocated blocks. */
             uint32_t               aOffset[VBOXDX_COALLOCATION_MAX_OBJECTS]; /* Start offsets of blocks. */
         } co;
@@ -541,6 +547,33 @@ typedef struct VBOXDXSRVSTATE
 } VBOXDXSRVSTATE, *PVBOXDXSRVSTATE;
 
 
+/* Arbitrary size of the upload buffer. */
+#define VBOXDX_UPLOAD_BUFFER_SIZE _8M
+
+/* Allocated range which will become free when the query completes. */
+typedef struct VBOXDXUPLOADBATCH
+{
+    RTLISTNODE                     nodeUploadBatch;
+    uint32_t                       cbBatch;                  /* How many bytes in this batch. */
+    VBOXDXQUERY                    queryBatchCompleted;      /* cbBatch can be added to VBOXDXUPLOAD::cbFree
+                                                              * when this query completes. */
+} VBOXDXUPLOADBATCH;
+
+typedef struct VBOXDXUPLOAD
+{
+    PVBOXDX_RESOURCE               pUploadBuffer;            /* Ring buffer for upload data. */
+    void                          *pvUploadBufferMapped;     /* The buffer is always mapped. */
+
+    uint32_t                       offFree;                  /* Offset of the free region in the ring buffer. */
+    uint32_t                       cbFree;                   /* Size of the free region. */
+
+    VBOXDXUPLOADBATCH             *pCurrentBatch;            /* Data is added to this batch. */
+
+    RTLISTANCHOR                   listUploadBatches;        /* Submitted batches (VBOXDXUPLOADBATCH). */
+    RTLISTANCHOR                   listLookasideBatches;     /* Unused batches (VBOXDXUPLOADBATCH). */
+} VBOXDXUPLOAD;
+
+
 typedef struct VBOXDX_DEVICE
 {
     /* DX runtime data. */
@@ -621,6 +654,8 @@ typedef struct VBOXDX_DEVICE
         VBOXDXINDEXBUFFERSTATE     IndexBuffer;
         VBOXDXSRVSTATE             aSRVs[SVGA3D_SHADERTYPE_MAX - SVGA3D_SHADERTYPE_MIN]; /* For each shader type. */
     } pipeline;
+
+    VBOXDXUPLOAD                upload;                     /* UpdateSubresourceUP helpers. */
 
     /* Video decoding and processing. */
     struct

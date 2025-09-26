@@ -2429,12 +2429,14 @@ typedef struct IEMCPU
     CPUMCPUVENDOR           enmCpuVendor;
     /** @} */
 
+    /** Number of iemLogCurInstr() calls that should output FPU state. */
+    uint8_t                 cLogFpuCountdown;
     /** Counts RDMSR \#GP(0) LogRel(). */
     uint8_t                 cLogRelRdMsr;
     /** Counts WRMSR \#GP(0) LogRel(). */
     uint8_t                 cLogRelWrMsr;
     /** Alignment padding. */
-    uint8_t                 abAlignment9[50];
+    uint8_t                 abAlignment9[49];
 
 
     /** @name Recompiled Exection
@@ -2997,6 +2999,15 @@ typedef IEMCPU const *PCIEMCPU;
             AssertRCStmt(rcCtxImport, IEM_DO_LONGJMP(pVCpu, rcCtxImport)); \
         } \
     } while (0)
+
+
+/** Helper for sign-extending an non-standard value to unsigned 32-bit. */
+#define IEM_SIGN_EXTEND_TO_U32(a_uValue, a_cSrcBits, a_cShiftLeft) \
+    ( (uint32_t)((int32_t)(a_uValue) << (32 - (a_cSrcBits)) >> (32 - (a_cSrcBits) - (a_cShiftLeft))) )
+
+/** Helper for sign-extending an non-standard value to unsigned 64-bit. */
+#define IEM_SIGN_EXTEND_TO_U64(a_uValue, a_cSrcBits, a_cShiftLeft) \
+    ( (uint64_t)((int64_t)(a_uValue) << (64 - (a_cSrcBits)) >> (64 - (a_cSrcBits) - (a_cShiftLeft))) )
 
 
 

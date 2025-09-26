@@ -930,6 +930,10 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
 {
     RT_NOREF(pVM);
 
+    fWhat &= pVCpu->cpum.GstCtx.fExtrn; /* Exclude state we might have fetched (and modified) already. */
+    if (!fWhat)
+        return VINF_SUCCESS;
+
     hv_return_t hrc = hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, HV_SYS_REG_CNTV_CTL_EL0, &pVCpu->cpum.GstCtx.CntvCtlEl0);
     if (hrc == HV_SUCCESS)
         hrc = hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, HV_SYS_REG_CNTV_CVAL_EL0, &pVCpu->cpum.GstCtx.CntvCValEl0);
@@ -1082,8 +1086,10 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     RT_NOREF(pVM);
     hv_return_t hrc = HV_SUCCESS;
 
-    if (   (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_FPCR | CPUMCTX_EXTRN_FPSR))
-        !=                              (CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_FPCR | CPUMCTX_EXTRN_FPSR))
+    uint64_t const fExtrn = pVCpu->cpum.GstCtx.fExtrn;
+
+    if (   (fExtrn & (CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_FPCR | CPUMCTX_EXTRN_FPSR))
+        !=           (CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_FPCR | CPUMCTX_EXTRN_FPSR))
     {
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumRegs); i++)
         {
@@ -1096,7 +1102,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
-        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_V0_V31))
+        && !(fExtrn & CPUMCTX_EXTRN_V0_V31))
     {
         /* SIMD/FP registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumFpRegs); i++)
@@ -1107,7 +1113,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
-        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_DEBUG))
+        && !(fExtrn & CPUMCTX_EXTRN_SYSREG_DEBUG))
     {
         /* Debug registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumDbgRegs); i++)
@@ -1118,7 +1124,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
-        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_PAUTH_KEYS))
+        && !(fExtrn & CPUMCTX_EXTRN_SYSREG_PAUTH_KEYS))
     {
         /* Debug registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumPAuthKeyRegs); i++)
@@ -1129,8 +1135,8 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
-        &&     (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SYSREG_MISC))
-            !=                              (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SYSREG_MISC))
+        &&     (fExtrn & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SYSREG_MISC))
+            !=           (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SYSREG_MISC))
     {
         /* System registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumSysRegs); i++)
@@ -1144,7 +1150,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
-        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SCTLR_TCR_TTBR))
+        && !(fExtrn & CPUMCTX_EXTRN_SCTLR_TCR_TTBR))
     {
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumSysRegsPg); i++)
         {
@@ -1155,7 +1161,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
 
     if (   hrc == HV_SUCCESS
         && pVM->nem.s.fMacOsSequia
-        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_MISC))
+        && !(fExtrn & CPUMCTX_EXTRN_SYSREG_MISC))
     {
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumSysRegsSequioa); i++)
         {
@@ -1166,7 +1172,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
-        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_EL2)
+        && !(fExtrn & CPUMCTX_EXTRN_SYSREG_EL2)
         && pVM->nem.s.fEl2Enabled)
     {
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumEl2SysRegs); i++)
@@ -1178,7 +1184,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
-        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_PSTATE))
+        && !(fExtrn & CPUMCTX_EXTRN_PSTATE))
         hrc = hv_vcpu_set_reg(pVCpu->nem.s.hVCpu, HV_REG_CPSR, pVCpu->cpum.GstCtx.fPState);
 
     pVCpu->cpum.GstCtx.fExtrn |= CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_NEM;
@@ -1321,7 +1327,15 @@ static int nemR3DarwinStatisticsRegister(PVM pVM, VMCPUID idCpu, PNEMCPU pNemCpu
            NEM_REG_STAT(a_pVar, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, a_szNmFmt, a_szDesc)
 #define NEM_REG_COUNTER(a, b, desc) NEM_REG_STAT(a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, b, desc)
 
-    NEM_REG_COUNTER(&pNemCpu->StatExitAll, "/NEM/CPU%u/Exit/All", "Total exits (including nested-guest exits).");
+    NEM_REG_COUNTER(&pNemCpu->StatExitAll,               "/NEM/CPU%u/Exit/All",             "Total exits (including nested-guest exits).");
+    NEM_REG_COUNTER(&pNemCpu->StatExitCanceled,          "/NEM/CPU%u/Exit/Canceled",        "Exits caused by poking EMT");
+    NEM_REG_COUNTER(&pNemCpu->StatExitVTimerActivated,   "/NEM/CPU%u/Exit/VTimerActivated", "The VTimer activated and an interrupt needs to be injected.");
+    NEM_REG_COUNTER(&pNemCpu->StatExitExcpDataAbort,     "/NEM/CPU%u/Exit/ExcpDataAbort",   "Exception - Data Abort (usually MMIO accesses)");
+    NEM_REG_COUNTER(&pNemCpu->StatExitExcpSysInsn,       "/NEM/CPU%u/Exit/ExcpSysInsn",     "Exception - system register read/write.");
+    NEM_REG_COUNTER(&pNemCpu->StatExitExcpHvcSmcInsn,    "/NEM/CPU%u/Exit/HvcSmcInsn",      "Exception - HVC/SMC instruction encountered.");
+    NEM_REG_COUNTER(&pNemCpu->StatExitExcpWfxInsn,       "/NEM/CPU%u/Exit/WFxInsn",         "Exception - WFx instruction encountered.");
+    NEM_REG_COUNTER(&pNemCpu->StatExitExcpBrkInsn,       "/NEM/CPU%u/Exit/BrkInsn",         "Exception - BRK instruction encountered.");
+    NEM_REG_COUNTER(&pNemCpu->StatExitExcpSsFromLowerEl, "/NEM/CPU%u/Exit/SsFromLowerEl",   "Exception - Single Step exception from lower EL.");
 
     return VINF_SUCCESS;
 
@@ -1919,6 +1933,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionDataAbort(PVM pVM, PVMCPU pVCp
 
     RT_NOREF(fL2Fault, GCPtrDataAbrt);
 
+    STAM_COUNTER_INC(&pVCpu->nem.s.StatExitExcpDataAbort);
+
     if (fWrite)
     {
         /*
@@ -2116,6 +2132,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedSysInsn(PVM pVM, PVMCPU
     LogFlowFunc(("fRead=%RTbool uCRm=%u uReg=%u uCRn=%u uOp1=%u uOp2=%u uOp0=%u idSysReg=%#x\n",
                  fRead, uCRm, uReg, uCRn, uOp1, uOp2, uOp0, idSysReg));
 
+    STAM_COUNTER_INC(&pVCpu->nem.s.StatExitExcpSysInsn);
+
     /** @todo EMEXITTYPE_MSR_READ/EMEXITTYPE_MSR_WRITE are misnomers. */
     EMHistoryAddExit(pVCpu,
                      fRead
@@ -2165,6 +2183,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
 {
     uint16_t u16Imm = ARMV8_EC_ISS_AARCH64_TRAPPED_HVC_INSN_IMM_GET(uIss);
     LogFlowFunc(("u16Imm=%#RX16\n", u16Imm));
+
+    STAM_COUNTER_INC(&pVCpu->nem.s.StatExitExcpHvcSmcInsn);
 
 #if 0 /** @todo For later */
     EMHistoryAddExit(pVCpu,
@@ -2294,6 +2314,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
             return nemR3DarwinHandleExitExceptionTrappedHvcInsn(pVM, pVCpu, uIss, true);
         case ARMV8_ESR_EL2_EC_TRAPPED_WFX:
         {
+            STAM_COUNTER_INC(&pVCpu->nem.s.StatExitExcpWfxInsn);
+
             /* No need to halt if there is an interrupt pending already. */
             if (VMCPU_FF_IS_ANY_SET(pVCpu, (VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ)))
             {
@@ -2319,21 +2341,6 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
 
                 uint64_t cTicksVTimerToExpire = pVCpu->cpum.GstCtx.CntvCValEl0 - cTicksVTimer;
                 uint64_t cNanoSecsVTimerToExpire = ASMMultU64ByU32DivByU32(cTicksVTimerToExpire, RT_NS_1SEC, (uint32_t)pVM->nem.s.u64CntFrqHz);
-
-                /*
-                 * Our halt method doesn't work with sub millisecond granularity at the moment causing a huge slowdown
-                 * + scheduling overhead which would increase the wakeup latency.
-                 * So only halt when the threshold is exceeded (needs more experimentation but 5ms turned out to be a good compromise
-                 * between CPU load when the guest is idle and performance).
-                 */
-                if (cNanoSecsVTimerToExpire < 2 * RT_NS_1MS)
-                {
-                    LogFlowFunc(("Guest timer expiration < 2ms (cNanoSecsVTimerToExpire=%RU64) => VINF_SUCCESS\n",
-                                 cNanoSecsVTimerToExpire));
-                    pVCpu->cpum.GstCtx.Pc.u64 += fInsn32Bit ? sizeof(uint32_t) : sizeof(uint16_t);
-                    return VINF_SUCCESS;
-                }
-
                 LogFlowFunc(("Set vTimer activation to cNanoSecsVTimerToExpire=%#RX64 (CntvCValEl0=%#RX64, u64VTimerOff=%#RX64 cTicksVTimer=%#RX64 u64CntFrqHz=%#RX64)\n",
                              cNanoSecsVTimerToExpire, pVCpu->cpum.GstCtx.CntvCValEl0, pVM->nem.s.u64VTimerOff, cTicksVTimer, pVM->nem.s.u64CntFrqHz));
                 TMCpuSetVTimerNextActivation(pVCpu, cNanoSecsVTimerToExpire);
@@ -2346,6 +2353,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
         }
         case ARMV8_ESR_EL2_EC_AARCH64_BRK_INSN:
         {
+            STAM_COUNTER_INC(&pVCpu->nem.s.StatExitExcpBrkInsn);
+
             VBOXSTRICTRC rcStrict = DBGFTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.GstCtx);
             /** @todo Forward genuine guest traps to the guest by either single stepping instruction with debug exception trapping turned off
              * or create instruction interpreter and inject exception ourselves. */
@@ -2353,7 +2362,10 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
             return rcStrict;
         }
         case ARMV8_ESR_EL2_SS_EXCEPTION_FROM_LOWER_EL:
+        {
+            STAM_COUNTER_INC(&pVCpu->nem.s.StatExitExcpSsFromLowerEl);
             return VINF_EM_DBG_STEPPED;
+        }
         case ARMV8_ESR_EL2_EC_UNKNOWN:
         default:
             LogRel(("NEM/Darwin: Unknown Exception Class in syndrome: uEc=%u{%s} uIss=%#RX32 fInsn32Bit=%RTbool\n",
@@ -2376,7 +2388,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
  */
 static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
 {
-    int rc = nemR3DarwinCopyStateFromHv(pVM, pVCpu, CPUMCTX_EXTRN_ALL);
+    int rc = nemR3DarwinCopyStateFromHv(pVM, pVCpu, NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2391,11 +2403,16 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
     switch (pExit->reason)
     {
         case HV_EXIT_REASON_CANCELED:
+        {
+            STAM_COUNTER_INC(&pVCpu->nem.s.StatExitCanceled);
             return VINF_EM_RAW_INTERRUPT;
+        }
         case HV_EXIT_REASON_EXCEPTION:
             return nemR3DarwinHandleExitException(pVM, pVCpu, pExit);
         case HV_EXIT_REASON_VTIMER_ACTIVATED:
         {
+            STAM_COUNTER_INC(&pVCpu->nem.s.StatExitVTimerActivated);
+
             LogFlowFunc(("vTimer got activated\n"));
             TMCpuSetVTimerNextActivation(pVCpu, UINT64_MAX);
             pVCpu->nem.s.fVTimerActivated = true;

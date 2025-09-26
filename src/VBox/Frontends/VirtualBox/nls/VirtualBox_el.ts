@@ -6189,6 +6189,11 @@
         <comment>TpmType</comment>
         <translation>2.0</translation>
     </message>
+    <message>
+        <source>Intel 82583V Gigabit Network Connection [EXPERIMENTAL]</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -16929,6 +16934,26 @@
     <message>
         <source>Password must match</source>
         <translation>Το συνθηματικό πρέπει να ταιριάζει</translation>
+    </message>
+    <message>
+        <source>The user name cannot contain following characters: / \ [ ] : | &lt; &gt; + = ; , ? * % @</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The user name cannot be &apos;NONE&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The user name cannot be longer than 20 characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The user name includes invalid characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The user name cannot be longer than 32 characters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

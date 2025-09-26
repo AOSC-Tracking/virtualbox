@@ -100,6 +100,9 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
     PROGRAMS += tstX86-1
    endif
   endif
+  ifeq ($(KBUILD_TARGET_ARCH),arm64)
+   PROGRAMS += tstArm64-1
+  endif
   ifdef VBOX_WITH_RAW_MODE
    if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
     PROGRAMS += tstMicroHardened
@@ -837,6 +840,47 @@ tstX86-1_LDFLAGS.linux = $(VBOX_GCC_no-pie)
 tstX86-FpuSaveRestore_TEMPLATE = VBoxR3TstExe
 tstX86-FpuSaveRestore_SOURCES  = tstX86-FpuSaveRestore.cpp tstX86-FpuSaveRestoreA.asm
 tstX86-FpuSaveRestore_LIBS     = $(LIB_RUNTIME)
+
+#
+# Barebone ARM64 testcase.
+#
+tstArm64-1_TEMPLATE     := VBoxR3TstExe
+tstArm64-1_SOURCES       = tstArm64-1.S
+tstArm64-1_LDFLAGS.win  := -Entry:MainEntrypoint -Subsystem:console -guard:no
+#tstArm64-1_ASFLAGS.win.arm64 := -g1 -gcodeview - doesn't work, clang -cc1as doesn't do codeview, only dwarf.
+tstArm64-1_INCS          = $(tstArm64-1_0_OUTDIR)
+tstArm64-1_INTERMEDIATES = $(tstArm64-1_0_OUTDIR)/tstArm64-1-generated.S
+tstArm64-1_CLEANS        = $(tstArm64-1_0_OUTDIR)/tstArm64-1-generated.S
+$(call KB_FN_DO_PASS0_ON_TARGET,tstArm64-1)
+
+$(tstArm64-1_0_OUTDIR)/tstArm64-1-generated.S: $(PATH_SUB_CURRENT)/tstArm64-1-codegen.py | $$(dir $$@)
+	$(call MSG_GENERATE,tstArm64-1,$@,$<)
+	$(VBOX_BLD_PYTHON) "$<" --output "$@"
+
+#
+# Process python source(s).
+#
+BLDDIRS += $(PATH_TARGET)/pylint
+
+define def_vbox_vmm_testcase_py_check
+ $(eval name:=$(basename $(notdir $(py))))
+
+ pylint: $(name)-py-phony.o
+ $(name).o: $(name)-py-phony.o
+ $(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
+ ifdef VBOX_WITH_PYLINT
+	$(QUIET2)$(call MSG_L1,Subjecting $(py) to pylint...)
+	$(QUIET)$(REDIRECT) -C "$(dir $(py))" -E LC_ALL=C -- \
+		$(VBOX_PYLINT) --rcfile=$(PATH_TARGET)/no-such-pylintrc \
+			$$(VBOX_PYLINT_FLAGS) $$($(py)_VBOX_PYLINT_FLAGS) ./$(notdir $(py))
+ endif
+	$(QUIET)$(APPEND) -t "$(PATH_TARGET)/pylint/$(name).o"
+
+ TESTING += $(name)-py-phony.o
+endef # def_vbox_vmm_testcase_py_check
+
+$(foreach py, $(PATH_SUB_CURRENT)/tstArm64-1-codegen.py, $(eval $(def_vbox_vmm_testcase_py_check)))
+
 
 ifdef VBOX_WITH_RAW_MODE
 
