@@ -3998,8 +3998,13 @@ static int vmxHCImportGuestStateInner(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, ui
 {
     Assert(a_fWhat != 0); /* No AssertCompile as the assertion probably kicks in before the compiler (clang) discards it. */
     AssertCompile(!(a_fWhat & ~HMVMX_CPUMCTX_EXTRN_ALL));
-    Assert(   (pVCpu->cpum.GstCtx.fExtrn & a_fWhat) == a_fWhat
-           || (pVCpu->cpum.GstCtx.fExtrn & a_fWhat) == (a_fWhat & ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS)));
+    /* KERNEL_GS_BASE and SYSCALL_MSRS would've already been imported if we happen to get preempted (see hmR0VmxLeave). */
+    AssertMsg(   (pVCpu->cpum.GstCtx.fExtrn & a_fWhat) == a_fWhat
+              || (pVCpu->cpum.GstCtx.fExtrn & a_fWhat) == (a_fWhat & ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS))
+              || (pVCpu->cpum.GstCtx.fExtrn & a_fWhat) == (a_fWhat & ~(CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS))
+              || (pVCpu->cpum.GstCtx.fExtrn & a_fWhat) == (a_fWhat & ~(  CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS \
+                                                                       | CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS)),
+              ("fExtrn=%#RX64 a_fWhat=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn, a_fWhat));
 
     STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatImportGuestState, x);
 
@@ -5605,7 +5610,7 @@ static uint32_t vmxHCCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
                                   || (pCtx->ss.Attr.n.u1Granularity), VMX_IGS_SS_ATTR_G_INVALID);
             }
 
-            /* DS, ES, FS, GS - only check for usable selectors, see vmxHCExportGuestSReg(). */
+            /* DS, ES, FS, GS - only check for usable selectors, see vmxHCExportGuestSegReg(). */
             if (!(pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE))
             {
                 HMVMX_CHECK_BREAK(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_DS_ATTR_A_INVALID);
@@ -7901,7 +7906,7 @@ HMVMX_EXIT_DECL vmxHCExitCpuid(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     VBOXSTRICTRC rcStrict;
     PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
-                                                            EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_CPUID),
+                                                            EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_X86_CPUID),
                                                             pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
     if (!pExitRec)
     {
@@ -8942,11 +8947,11 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
                                                     !fIOString
                                                     ? !fIOWrite
-                                                    ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_READ)
-                                                    : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_WRITE)
+                                                    ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_X86_PIO_READ)
+                                                    : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_X86_PIO_WRITE)
                                                     : !fIOWrite
-                                                    ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_STR_READ)
-                                                    : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_STR_WRITE),
+                                                    ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_X86_PIO_STR_READ)
+                                                    : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_X86_PIO_STR_WRITE),
                                                     pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
     if (!pExitRec)
     {
@@ -9920,7 +9925,7 @@ HMVMX_EXIT_DECL vmxHCExitVmread(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         /* Try for exit optimization.  This is on the following instruction
            because it would be a waste of time to have to reinterpret the
            already decoded vmwrite instruction. */
-        PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_VMREAD));
+        PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_X86_VMREAD));
         if (pExitRec)
         {
             /* Frequent access or probing. */

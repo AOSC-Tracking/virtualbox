@@ -430,7 +430,7 @@
 /** Locality response buffer address register. */
 #define TPM_CRB_LOCALITY_REG_CTRL_RSP_ADDR_HIGH              0x6c
 /** Locality data buffer. */
-#define TPM_CRB_LOCALITY_REG_DATA_BUFFER                     0x80
+#define TPM_CRB_LOCALITY_REG_DATA_BUFFER                     UINT32_C(0x80)
 /** @} */
 
 
@@ -714,15 +714,14 @@ DECLINLINE(uint32_t) tpmGetRegisterFromOffset(RTGCPHYS off)
  * @param   pu64                Where to store the read data.
  * @param   cb                  Number of bytes to read.
  */
-static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
-                                    uint8_t bLoc, uint32_t uReg, uint64_t *pu64, size_t cb)
+static VBOXSTRICTRC tpmMmioFifoReadInt(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
+                                       uint8_t bLoc, uint32_t uReg, uint64_t *pu64, size_t cb)
 {
     RT_NOREF(pDevIns);
-    VBOXSTRICTRC rc = VINF_SUCCESS;
 
     /* Special path for the data buffer. */
     if (   (   (   uReg >= TPM_FIFO_LOCALITY_REG_DATA_FIFO
-               && uReg < TPM_FIFO_LOCALITY_REG_DATA_FIFO + sizeof(uint32_t))
+                && uReg < TPM_FIFO_LOCALITY_REG_DATA_FIFO + sizeof(uint32_t))
             || (   uReg >= TPM_FIFO_LOCALITY_REG_XDATA_FIFO
                 && uReg < TPM_FIFO_LOCALITY_REG_XDATA_FIFO + sizeof(uint32_t)))
         && bLoc == pThis->bLoc
@@ -829,7 +828,7 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
 
     *pu64 = u64;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -845,8 +844,8 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
  * @param   u64                 The value to write.
  * @param   cb                  Number of bytes to write.
  */
-static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
-                                     uint8_t bLoc, uint32_t uReg, uint64_t u64, size_t cb)
+static VBOXSTRICTRC tpmMmioFifoWriteInt(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
+                                        uint8_t bLoc, uint32_t uReg, uint64_t u64, size_t cb)
 {
 #ifdef IN_RING3
     PDEVTPMR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMR3);
@@ -1011,20 +1010,17 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
 /**
  * Read from a CRB interface register.
  *
- * @returns VBox strict status code.
+ * @returns The data read.
  * @param   pDevIns             Pointer to the PDM device instance data.
  * @param   pThis               Pointer to the shared TPM device.
  * @param   pLoc                The locality state being read from.
  * @param   bLoc                The locality index.
  * @param   uReg                The register offset being accessed.
- * @param   pu32                Where to store the read data.
  */
-static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
-                                   uint8_t bLoc, uint32_t uReg, uint32_t *pu32)
+static uint32_t tpmMmioCrbReadInt(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc, uint8_t bLoc, uint32_t uReg)
 {
     RT_NOREF(pDevIns);
 
-    VBOXSTRICTRC rc = VINF_SUCCESS;
     uint32_t u32 = UINT32_MAX;
     switch (uReg)
     {
@@ -1126,8 +1122,7 @@ static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOC
             break; /* Return ~0 */
     }
 
-    *pu32 = u32;
-    return rc;
+    return u32;
 }
 
 
@@ -1142,8 +1137,8 @@ static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOC
  * @param   uReg                The register offset being accessed.
  * @param   u32                 The value to write.
  */
-static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
-                                    uint8_t bLoc, uint32_t uReg, uint32_t u32)
+static VBOXSTRICTRC tpmMmioCrbWriteInt(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
+                                       uint8_t bLoc, uint32_t uReg, uint32_t u32)
 {
 #ifdef IN_RING3
     PDEVTPMR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMR3);
@@ -1319,181 +1314,215 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
 /* -=-=-=-=-=- MMIO callbacks -=-=-=-=-=- */
 
 /**
- * @callback_method_impl{FNIOMMMIONEWREAD}
+ * @callback_method_impl{FNIOMMMIONEWREAD,
+ *      MMIO handler for CRB configured device}
  */
-static DECLCALLBACK(VBOXSTRICTRC) tpmMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) tpmMmioCrbRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, uint32_t cb)
 {
-    PDEVTPM pThis  = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
-    RT_NOREF(pvUser);
+    PDEVTPM const pThis = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
+    RT_NOREF(pvUser, cb);
+    Assert(pThis->fCrb);
 
-    AssertReturn(cb <= sizeof(uint64_t), VERR_INTERNAL_ERROR);
+    /* Check IOMMMIO_FLAGS_READ_DWORD ASSUMPTIONS: */
+    Assert(cb == sizeof(uint32_t));
+    Assert((off & 3) == 0);
 
-    VBOXSTRICTRC rc = VINF_SUCCESS;
+    /* Get and strip off the IOMMMIO_OFF_F_READING_MISSING_BYTES bit. */
+    bool const fReadingMissingBytes = RT_BOOL(off & IOMMMIO_OFF_F_READING_MISSING_BYTES);
+    off &= ~IOMMMIO_OFF_F_READING_MISSING_BYTES;
 
-    if (pThis->fCrb)
+    /*
+     * Determin the locality and register.
+     */
+    uint32_t const uReg = tpmGetRegisterFromOffset(off);
+    Assert((uReg & 3) == 0);
+    uint8_t const  bLoc = tpmGetLocalityFromOffset(off);
+    Assert(bLoc < RT_ELEMENTS(pThis->aLoc)); /* (This is a function of the MMIO registration.) */
+    PDEVTPMLOCALITY const pLoc = &pThis->aLoc[bLoc];
+
+    /*
+     * Special path for the data buffer.
+     *
+     * Since the buffer is a multiple of DWORDs in size, we don't need to concern
+     * ourselves too much with off + cb considerations.  For now, we return the
+     * following buffer content, should cbCmdResp not be a multiple of 4 as well.
+     *
+     * Note! To simplify writing, we allow iomMmioDoComplicatedWrite to read from
+     *       the buffer to supply missing bytes in writes are not DWORD aligned
+     *       and/or sized.
+     */
+    uint32_t const offCmdResp = uReg - TPM_CRB_LOCALITY_REG_DATA_BUFFER;
+    uint32_t const cbCmdResp  = RT_MIN(pThis->cbCmdResp, TPM_DATA_BUFFER_SIZE_MAX); /* paranoia */
+    if (   offCmdResp < cbCmdResp
+        && bLoc == pThis->bLoc
+        && (   pThis->enmState == DEVTPMSTATE_CMD_COMPLETION
+            || (   fReadingMissingBytes
+                && (   pThis->enmState == DEVTPMSTATE_READY
+                    || pThis->enmState == DEVTPMSTATE_CMD_RECEPTION))))
     {
-        Assert(!(off & (cb - 1)));
-
-        uint32_t uReg = tpmGetRegisterFromOffset(off);
-        uint8_t bLoc = tpmGetLocalityFromOffset(off);
-        PDEVTPMLOCALITY pLoc = &pThis->aLoc[bLoc];
-
-        /* Special path for the data buffer. */
-        if (   uReg >= TPM_CRB_LOCALITY_REG_DATA_BUFFER
-            && uReg < TPM_CRB_LOCALITY_REG_DATA_BUFFER + pThis->cbCmdResp
-            && bLoc == pThis->bLoc
-            && pThis->enmState == DEVTPMSTATE_CMD_COMPLETION)
-        {
-            memcpy(pv, &pThis->abCmdResp[uReg - TPM_CRB_LOCALITY_REG_DATA_BUFFER], cb);
-            return VINF_SUCCESS;
-        }
-
-        /* The register space is divided into 32-bit parts. */
-        Assert(cb <= sizeof(uint64_t));
-        uint32_t uRegAligned = uReg & ~UINT32_C(0x3);
-        uint32_t cBitsShift = uReg & UINT32_C(0x3);
-        uint32_t u32;
-        rc = tpmMmioCrbRead(pDevIns, pThis, pLoc, bLoc, uRegAligned, &u32);
-        if (rc == VINF_SUCCESS)
-        {
-            switch (cb)
-            {
-                case 1: *(uint8_t *)pv = (uint8_t)(u32 >> cBitsShift); break;
-                case 2: *(uint16_t *)pv = (uint16_t)(u32 >> cBitsShift); break;
-                case 4:
-                case 8: *(uint32_t *)pv = u32; break;
-                default: AssertFailedBreakStmt(rc = VERR_INTERNAL_ERROR);
-            }
-
-            LogFlowFunc((": %RGp %#x %.*Rhxs (uRegAligned=%#x cBitsShift=%#x u32=%#RX32)\n", off, cb, cb, pv, uRegAligned, cBitsShift, u32));
-
-            if (cb == sizeof(uint64_t))
-            {
-                rc = tpmMmioCrbRead(pDevIns, pThis, pLoc, bLoc, uRegAligned + 4, &((uint32_t *)pv)[1]);
-                LogFlowFunc((": %RGp %#x %.*Rhxs (uRegAligned=%#x u32=%#RX32)\n",
-                             off, cb, cb, pv, uRegAligned + 4, *((const uint32_t *)pv + 1)));
-            }
-        }
+        AssertCompile((TPM_CRB_LOCALITY_REG_DATA_BUFFER & 3) == 0);
+        AssertCompile(((TPM_CRB_LOCALITY_REG_DATA_BUFFER + TPM_DATA_BUFFER_SIZE_MAX) & 3) == 0);
+        uint32_t u32 = *(uint32_t const *)&pThis->abCmdResp[offCmdResp]; /* aligned */
+        *(uint32_t *)pv = u32;
+        LogFlowFunc(("%RGp (LB %u) -> bLoc=%u offCmdResp=%u -> %#010x%s\n",
+                     off, cb, bLoc, offCmdResp, u32, fReadingMissingBytes ? " (reading missing write bytes)" :" "));
     }
+    /*
+     * The register space is divided into 32-bit parts.  Since we've registered
+     * this as a DWORD-only callback, there is little extra to do here.
+     */
     else
     {
-        uint64_t u64;
-
-        RTGCPHYS offAligned = off & ~UINT64_C(0x3);
-        uint8_t cBitsShift  = (off & 0x3) * 8;
-
-        uint32_t uReg = tpmGetRegisterFromOffset(offAligned);
-        uint8_t bLoc = tpmGetLocalityFromOffset(offAligned);
-        PDEVTPMLOCALITY pLoc = &pThis->aLoc[bLoc];
-
-        rc = tpmMmioFifoRead(pDevIns, pThis, pLoc, bLoc, uReg, &u64, cb);
-        LogFlowFunc((": %RGp %#x %#llx\n", off, cb, u64));
-
-        if (rc == VINF_SUCCESS)
-        {
-            switch (cb)
-            {
-                case 1: *(uint8_t *)pv = (uint8_t)(u64 >> cBitsShift); break;
-                case 2: *(uint16_t *)pv = (uint16_t)(u64 >> cBitsShift); break;
-                case 4: *(uint32_t *)pv = (uint32_t)(u64 >> cBitsShift); break;
-                case 8: *(uint64_t *)pv = u64; break;
-                default: AssertFailedBreakStmt(rc = VERR_INTERNAL_ERROR);
-            }
-        }
+        uint32_t const u32 = tpmMmioCrbReadInt(pDevIns, pThis, pLoc, bLoc, uReg);
+        *(uint32_t *)pv = u32;
+        LogFlowFunc(("%RGp (LB %u) -> bLoc=%u uReg=%#x -> %#x%s\n",
+                     off, cb, bLoc, uReg, u32, fReadingMissingBytes ? " (reading missing write bytes)" :" "));
     }
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE,
+ *      MMIO write handler for CRB configured device}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) tpmMmioCrbWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, uint32_t cb)
+{
+    PDEVTPM pThis  = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
+    RT_NOREF(pvUser, cb);
+    Assert(pThis->fCrb);
+
+    /* Check IOMMMIO_FLAGS_READ_DWORD ASSUMPTIONS: */
+    Assert(cb == sizeof(uint32_t));
+    Assert((off & 3) == 0);
+
+    /*
+     * Determin the locality and register.
+     */
+    uint32_t const uReg = tpmGetRegisterFromOffset(off);
+    uint8_t const  bLoc = tpmGetLocalityFromOffset(off);
+    Assert(bLoc < RT_ELEMENTS(pThis->aLoc)); /* (This is a function of the MMIO registration.) */
+    PDEVTPMLOCALITY const pLoc = &pThis->aLoc[bLoc];
+
+    /* The value is 32-bit. */
+    uint32_t const u32Value = *(uint32_t const *)pv;
+
+    /*
+     * Special path for the data buffer.
+     *
+     * Since the buffer is a multiple of DWORDs in size, we don't need to concern
+     * ourselves too much with off + cb considerations.  For misaligned or writes
+     * smaller than a DWORD, IOM will call tpmMmioCrbRead to supply the missing
+     * bytes.  We use IOMMMIO_FLAGS_SET_HI_OFF_BIT_READING_MISSING to let us read
+     * buffer content while it's in write-only state.
+     */
+    uint32_t const offCmdResp = uReg - TPM_CRB_LOCALITY_REG_DATA_BUFFER;
+    uint32_t const cbCmdResp  = RT_MIN(pThis->cbCmdResp, TPM_DATA_BUFFER_SIZE_MAX); /* paranoia */
+    if (   offCmdResp < cbCmdResp
+        && bLoc == pThis->bLoc
+        && (   pThis->enmState == DEVTPMSTATE_READY
+            || pThis->enmState == DEVTPMSTATE_CMD_RECEPTION))
+    {
+        pThis->enmState = DEVTPMSTATE_CMD_RECEPTION;
+        *(uint32_t *)&pThis->abCmdResp[offCmdResp] = u32Value; /* aligned */
+        LogFlowFunc(("%RGp (LB %u) -> bLoc=%u offCmdResp=%#x u32Value=%#x\n", off, cb, bLoc, offCmdResp, u32Value));
+        return VINF_SUCCESS;
+    }
+    /*
+     * The register space is divided into 32-bit parts.  Since we've registered
+     * this as a DWORD-only callback and told IOM to read any missing bits, there
+     * is little extra to do here.
+     */
+    VBOXSTRICTRC rc = tpmMmioCrbWriteInt(pDevIns, pThis, pLoc, bLoc, uReg, u32Value);
+    LogFlowFunc(("%RGp (LB %u) -> bLoc=%u uReg=%#x u32Value=%#x -> %Rrc\n",
+                 off, cb, bLoc, uReg, u32Value, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
 
 /**
- * @callback_method_impl{FNIOMMMIONEWWRITE}
+ * @callback_method_impl{FNIOMMMIONEWREAD,
+ *      MMIO read handler for FIFO configured device.}
  */
-static DECLCALLBACK(VBOXSTRICTRC) tpmMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) tpmMmioFifoRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, uint32_t cb)
+{
+    PDEVTPM pThis  = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
+    RT_NOREF(pvUser);
+    Assert(!pThis->fCrb);
+#ifdef LOG_ENABLED
+    RTGCPHYS        offOrg = off;
+    void * const    pvOrg  = pv;
+    uint32_t const  cbOrg  = cb;
+#endif
+
+    /*
+     * Need to loop here since we're registered as a passthru handler.
+     */
+    AssertReturn(cb <= sizeof(uint64_t), VERR_INTERNAL_ERROR);
+    /** @todo r=bird: The current code allows doing 64-bit reads from a 32-bit
+     *        register w/o including the value of any adjacent register,
+     *        as well as reading up to 8 bytes from the FIFO DATA registers. This
+     *        makes little sense and need resolving before it can be rewritten to
+     *        loop over the registers covered by the {off,off+cb-1} area being
+     *        requested. */
+    uint64_t u64;
+
+    RTGCPHYS offAligned = off & ~UINT64_C(0x3);
+    uint8_t cBitsShift  = (off & 0x3) * 8;
+
+    uint32_t uReg = tpmGetRegisterFromOffset(offAligned);
+    uint8_t bLoc = tpmGetLocalityFromOffset(offAligned);
+    PDEVTPMLOCALITY pLoc = &pThis->aLoc[bLoc];
+
+    VBOXSTRICTRC rc = tpmMmioFifoReadInt(pDevIns, pThis, pLoc, bLoc, uReg, &u64, cb);
+    LogFlowFunc((": %RGp %#x %#llx\n", off, cb, u64));
+
+    if (rc == VINF_SUCCESS)
+    {
+        switch (cb)
+        {
+            case 1: *(uint8_t *)pv = (uint8_t)(u64 >> cBitsShift); break;
+            case 2: *(uint16_t *)pv = (uint16_t)(u64 >> cBitsShift); break;
+            case 4: *(uint32_t *)pv = (uint32_t)(u64 >> cBitsShift); break;
+            case 8: *(uint64_t *)pv = u64; break;
+            default: AssertFailedBreakStmt(rc = VERR_INTERNAL_ERROR);
+        }
+    }
+
+    LogFlowFunc(("%RGp LB %#x: %.*Rhxs\n", offOrg, cbOrg, cbOrg, pvOrg));
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE,
+ *      MMIO write handler for FIFO configured device.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) tpmMmioFifoWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, uint32_t cb)
 {
     PDEVTPM pThis  = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
     RT_NOREF(pvUser);
 
-    Assert(!(off & (cb - 1)));
+    Assert(!pThis->fCrb);
+    Assert(!(off & (cb - 1))); /** @todo it's passthru, what do you expect... */
 
-    VBOXSTRICTRC rc = VINF_SUCCESS;
     uint32_t uReg = tpmGetRegisterFromOffset(off);
     uint8_t bLoc = tpmGetLocalityFromOffset(off);
     PDEVTPMLOCALITY pLoc = &pThis->aLoc[bLoc];
 
-    if (pThis->fCrb)
+    uint64_t u64;
+    switch (cb)
     {
-        /* Special path for the data buffer. */
-        if (   uReg >= TPM_CRB_LOCALITY_REG_DATA_BUFFER
-            && uReg < TPM_CRB_LOCALITY_REG_DATA_BUFFER + pThis->cbCmdResp
-            && bLoc == pThis->bLoc
-            && (   pThis->enmState == DEVTPMSTATE_READY
-                || pThis->enmState == DEVTPMSTATE_CMD_RECEPTION))
-        {
-            pThis->enmState = DEVTPMSTATE_CMD_RECEPTION;
-            memcpy(&pThis->abCmdResp[uReg - TPM_CRB_LOCALITY_REG_DATA_BUFFER], pv, cb);
-            return VINF_SUCCESS;
-        }
-
-        /* The register space is divided into 32-bit parts. */
-        Assert(cb <= sizeof(uint64_t));
-        uint32_t uRegAligned = uReg & ~UINT32_C(0x3);
-        uint32_t cBitsShift = uReg & UINT32_C(0x3);
-        uint32_t u32;
-
-        LogFlowFunc((": %RGp %#x %.*Rhxs (uRegAligned=%#x cBitsShift=%#x)\n", off, cb, cb, pv, uRegAligned, cBitsShift));
-
-        switch (cb)
-        {
-            case 1:
-            {
-                /* Read current content and merge with the written data. */
-                uint32_t u32Read;
-                rc = tpmMmioCrbRead(pDevIns, pThis, pLoc, bLoc, uRegAligned, &u32Read);
-                if (rc != VINF_SUCCESS)
-                    return rc;
-                u32 = u32Read & ~((uint32_t)UINT8_MAX << cBitsShift);
-                u32 |= ((uint32_t)*(const uint8_t *)pv) << cBitsShift;
-                break;
-            }
-            case 2:
-            {
-                /* Read current content and merge with the written data. */
-                uint32_t u32Read;
-                rc = tpmMmioCrbRead(pDevIns, pThis, pLoc, bLoc, uRegAligned, &u32Read);
-                if (rc != VINF_SUCCESS)
-                    return rc;
-                u32 = u32Read & ~((uint32_t)UINT16_MAX << cBitsShift);
-                u32 |= ((uint32_t)*(const uint16_t *)pv) << cBitsShift;
-                break;
-            }
-            case 4:
-            case 8:
-                u32 = *(const uint32_t *)pv;
-                break;
-            default: AssertFailedReturn(VERR_INTERNAL_ERROR);
-        }
-
-        rc = tpmMmioCrbWrite(pDevIns, pThis, pLoc, bLoc, uRegAligned, u32);
-        if (   rc == VINF_SUCCESS
-            && cb == sizeof(uint64_t))
-            rc = tpmMmioCrbWrite(pDevIns, pThis, pLoc, bLoc, uRegAligned + 4, *((uint32_t *)pv + 1));
+        case 1: u64 = *(const uint8_t *)pv; break;
+        case 2: u64 = *(const uint16_t *)pv; break;
+        case 4: u64 = *(const uint32_t *)pv; break;
+        case 8: u64 = *(const uint64_t *)pv; break;
+        default: AssertFailedReturn(VERR_INTERNAL_ERROR);
     }
-    else
-    {
-        uint64_t u64;
-        switch (cb)
-        {
-            case 1: u64 = *(const uint8_t *)pv; break;
-            case 2: u64 = *(const uint16_t *)pv; break;
-            case 4: u64 = *(const uint32_t *)pv; break;
-            case 8: u64 = *(const uint64_t *)pv; break;
-            default: AssertFailedReturn(VERR_INTERNAL_ERROR);
-        }
 
-        LogFlowFunc((": %RGp %#llx\n", off, u64));
-        rc = tpmMmioFifoWrite(pDevIns, pThis, pLoc, bLoc, uReg, u64, cb);
-    }
+    LogFlowFunc((": %RGp %#llx\n", off, u64));
+    VBOXSTRICTRC rc = tpmMmioFifoWriteInt(pDevIns, pThis, pLoc, bLoc, uReg, u64, cb);
 
     return rc;
 }
@@ -1582,6 +1611,7 @@ static DECLCALLBACK(int) tpmR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     pHlp->pfnSSMPutBool(  pSSM, pThis->fLocChangeSup);
     pHlp->pfnSSMPutU32(   pSSM, (uint32_t)pThis->enmTpmVers);
     pHlp->pfnSSMPutU32(   pSSM, pThis->cbCmdResp);
+    /** @todo fCrb   */
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -1842,9 +1872,14 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Register the MMIO range, PDM API requests page aligned
      * addresses and sizes.
      */
-    rc = PDMDevHlpMmioCreateAndMap(pDevIns, pThis->GCPhysMmio, TPM_MMIO_SIZE, tpmMmioWrite, tpmMmioRead,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   "TPM MMIO", &pThis->hMmio);
+    if (pThis->fCrb)
+        rc = PDMDevHlpMmioCreateAndMap(pDevIns, pThis->GCPhysMmio, TPM_MMIO_SIZE, tpmMmioCrbWrite, tpmMmioCrbRead,
+                                       IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING | IOMMMIO_FLAGS_READ_DWORD
+                                       | IOMMMIO_FLAGS_SET_HI_OFF_BIT_READING_MISSING, "TPM MMIO", &pThis->hMmio);
+    else
+        rc = PDMDevHlpMmioCreateAndMap(pDevIns, pThis->GCPhysMmio, TPM_MMIO_SIZE, tpmMmioFifoWrite, tpmMmioFifoRead,
+                                       IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                       "TPM MMIO", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1903,7 +1938,11 @@ static DECLCALLBACK(int) tpmRZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PDEVTPM   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
 
-    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, tpmMmioWrite, tpmMmioRead, NULL /*pvUser*/);
+    int rc;
+    if (pThis->fCrb)
+        rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, tpmMmioCrbWrite, tpmMmioCrbRead, NULL /*pvUser*/);
+    else
+        rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, tpmMmioFifoWrite, tpmMmioFifoRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;

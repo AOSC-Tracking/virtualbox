@@ -147,10 +147,10 @@ UIToolPane *UIMachineToolsWidget::toolPane() const
     return m_pPaneTools;
 }
 
-UIToolType UIMachineToolsWidget::menuToolType(UIToolClass enmClass) const
+UIToolType UIMachineToolsWidget::menuToolType() const
 {
     AssertPtrReturn(toolMenu(), UIToolType_Invalid);
-    return toolMenu()->toolsType(enmClass);
+    return toolMenu()->toolsType();
 }
 
 void UIMachineToolsWidget::setMenuToolType(UIToolType enmType)
@@ -360,12 +360,12 @@ void UIMachineToolsWidget::sltHandleToolMenuUpdate(UIVirtualMachineItem *pItem)
                         << UIToolType_FileManager;
 
     /* Make sure no restricted tool is selected: */
-    if (restrictedTypes.contains(toolMenu()->toolsType(UIToolClass_Machine)))
+    if (restrictedTypes.contains(toolMenu()->toolsType()))
         setMenuToolType(UIToolType_Details);
 
     /* Hide restricted tools in the menu: */
     const QList restrictions(restrictedTypes.begin(), restrictedTypes.end());
-    toolMenu()->setRestrictedToolTypes(UIToolClass_Machine, restrictions);
+    toolMenu()->setRestrictedToolTypes(restrictions);
 
     /* Disable even unrestricted tools for inacccessible VMs: */
     const bool fCurrentItemIsOk = isItemAccessible(pItem);
@@ -462,11 +462,13 @@ void UIMachineToolsWidget::prepareWidgets()
 
             /* Add into layout: */
             pLayout->addWidget(m_pSplitter);
+
+            /* Bring the VM list to the focus, this have to be done after hierarchy is
+             * finalized for the parent, i.e. splitter is inserted into layout: */
+            if (chooser())
+                chooser()->setFocus();
         }
     }
-
-    /* Bring the VM list to the focus: */
-    chooser()->setFocus();
 }
 
 void UIMachineToolsWidget::prepareConnections()
@@ -507,7 +509,7 @@ void UIMachineToolsWidget::prepareConnections()
 void UIMachineToolsWidget::loadSettings()
 {
     /* Acquire & select tools currently chosen in the menu: */
-    sltHandleToolsMenuIndexChange(toolMenu()->toolsType(UIToolClass_Machine));
+    sltHandleToolsMenuIndexChange(toolMenu()->toolsType());
 
     /* Update Machine tools restrictions for currently selected item: */
     UIVirtualMachineItem *pItem = currentItem();

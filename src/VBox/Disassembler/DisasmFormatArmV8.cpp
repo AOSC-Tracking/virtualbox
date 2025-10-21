@@ -553,8 +553,8 @@ static const char *disasmFormatArmV8SysReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
     uint8_t bTmp = (idSysReg >> 7) & 0xf;
     if (bTmp >= 10)
     {
-        pachTmp[idx++] = '1' + (bTmp - 10);
-        bTmp -= 10;
+        pachTmp[idx++] = '0' + (bTmp / 10);
+        bTmp %= 10;
     }
     pachTmp[idx++] = '0' + bTmp;
     pachTmp[idx++] = '_';
@@ -562,8 +562,8 @@ static const char *disasmFormatArmV8SysReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
     bTmp = (idSysReg >> 3) & 0xf;
     if (bTmp >= 10)
     {
-        pachTmp[idx++] = '1' + (bTmp - 10);
-        bTmp -= 10;
+        pachTmp[idx++] = '0' + (bTmp / 10);
+        bTmp %= 10;
     }
     pachTmp[idx++] = '0' + bTmp;
 
@@ -598,8 +598,8 @@ static const char *disasmFormatArmV8SysIns(PCDISOPPARAM pParam, char *pachTmp, s
     uint8_t bTmp =  + ARMV8_AARCH64_SYSREG_ID_GET_CRN(idSysIns);
     if (bTmp >= 10)
     {
-        pachTmp[idx++] = '1' + (bTmp - 10);
-        bTmp -= 10;
+        pachTmp[idx++] = '0' + (bTmp / 10);
+        bTmp %= 10;
     }
     pachTmp[idx++] = '0' + bTmp;
     pachTmp[idx++] = '_';
@@ -607,8 +607,8 @@ static const char *disasmFormatArmV8SysIns(PCDISOPPARAM pParam, char *pachTmp, s
     bTmp =  + ARMV8_AARCH64_SYSREG_ID_GET_CRM(idSysIns);
     if (bTmp >= 10)
     {
-        pachTmp[idx++] = '1' + (bTmp - 10);
-        bTmp -= 10;
+        pachTmp[idx++] = '0' + (bTmp / 10);
+        bTmp %= 10;
     }
     pachTmp[idx++] = '0' + bTmp;
     pachTmp[idx++] = '_';
@@ -703,6 +703,8 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
 #define PUT_NUM_16(num) PUT_NUM(6,  "0x%04x", (uint16_t)(num))
 #define PUT_NUM_32(num) PUT_NUM(10, "0x%08x", (uint32_t)(num))
 #define PUT_NUM_64(num) PUT_NUM(18, "0x%016RX64", (uint64_t)(num))
+
+#define PUT_NUM_DECIMAL_XX(num) PUT_NUM((unsigned)(num) < 10 ? 1U : 2U,  "%u", (unsigned)(num))
 
 #define PUT_NUM_SIGN(cch, fmt, num, stype, utype) \
             do { \
@@ -925,6 +927,27 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     }
                     else
                         PUT_SYMBOL(DIS_FMT_SEL_FROM_REG(DISSELREG_CS), uTrgAddr, " (", ')');
+                    break;
+                }
+                case kDisArmv8OpParmImmFp:
+                {
+                    PUT_C('#');
+                    switch (pParam->fUse & DISUSE_IMMEDIATE)
+                    {
+                        /** @todo floating point formatting. */
+                        case DISUSE_IMMEDIATE16:
+                            PUT_NUM_16(pParam->uValue);
+                            break;
+                        case DISUSE_IMMEDIATE32:
+                            PUT_NUM_32(pParam->uValue);
+                            break;
+                        case DISUSE_IMMEDIATE64:
+                            PUT_NUM_64(pParam->uValue);
+                            break;
+                        default:
+                            AssertFailed();
+                            break;
+                    }
                     break;
                 }
                 case kDisArmv8OpParmReg:
@@ -1187,10 +1210,13 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     case kDisArmv8OpParmExtendSxtX:
                         PUT_SZ("SXTX #");
                         break;
+                    case kDisArmv8OpParmExtendMsl:
+                        PUT_SZ("MSL #");
+                        break;
                     default:
                         AssertFailed();
                 }
-                PUT_NUM_8(pParam->armv8.u.cExtend);
+                PUT_NUM_DECIMAL_XX(pParam->armv8.u.cExtend);
             }
         }
     }

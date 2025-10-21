@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 170798 $"
 
 
 # Standard Python imports.
@@ -139,7 +139,7 @@ class TestFileSet(testfileset.TestFileSet):
         # Try unpack it.
         #
         reporter.log('Unpacking "%s" into "%s"...' % (sTarFileGst, self.sBasePath));
-        if oTxsSession.syncUnpackFile(sTarFileGst, self.sBasePath, fIgnoreErrors = True) is not True:
+        if oTxsSession.syncUnpackFile(sTarFileGst, self.sBasePath, cMsTimeout = 240000, fIgnoreErrors = True) is not True:
             reporter.log('Failed to expand tarball "%s" into "%s", falling back on individual directory and file creation...'
                          % (sTarFileGst, self.sBasePath,));
             if self.__uploadFallback(oTxsSession, sTarFileGst, oTstDrv) is not True:

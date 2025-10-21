@@ -64,6 +64,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GCM
+#define VMCPU_INCL_CPUM_GST_CTX /* For CPUM_IMPORT_EXTRN_RET(). */
+#include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/gcm.h>
 #include <VBox/vmm/ssm.h>
 #include "GCMInternal.h"
@@ -398,5 +400,132 @@ VMMR3_INT_DECL(int) GCMR3Term(PVM pVM)
 VMMR3_INT_DECL(void) GCMR3Reset(PVM pVM)
 {
     RT_NOREF(pVM);
+}
+
+
+/**
+ * EMT worker function for GCMR3PatchGuest.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   enmPatch    The ID identifying the patch.
+ */
+static DECLCALLBACK(void) gcmR3PatchGuest(PVM pVM, GCMGSTPATCHID enmPatch)
+{
+    PUVM pUVM = pVM->pUVM;
+
+    if (enmPatch == kGcmGstPatchId_LinuxIoApicBug)
+    {
+        int rc = VINF_SUCCESS;
+        /*
+         * Ensure that the state necessary for memory accesses is imported as we might
+         * be called through an I/O port handler where this might not be the case.
+         */
+        CPUM_IMPORT_EXTRN_RCSTRICT(VMMGetCpu(pVM),
+                                     CPUMCTX_EXTRN_RIP
+                                   | CPUMCTX_EXTRN_RFLAGS
+                                   | CPUMCTX_EXTRN_SS   /* for CPL */
+                                   | CPUMCTX_EXTRN_CS   /* for mode */
+                                   | CPUMCTX_EXTRN_CR0  /* for mode */
+                                   | CPUMCTX_EXTRN_EFER /* for mode */
+                                   | CPUMCTX_EXTRN_DR7  /* for debugging - compulsory */
+                                   | CPUMCTX_EXTRN_GDTR /* for selector info */
+                                   | CPUMCTX_EXTRN_LDTR /* for selector info */
+                                   | CPUMCTX_EXTRN_CR3 /* for page tables */
+                                   | CPUMCTX_EXTRN_CR4 /* for mode paging mode */
+                                   | CPUMCTX_EXTRN_DR7 /* for memory breakpoints */,
+                                   rc);
+        if (RT_SUCCESS(rc))
+        {
+            DBGFR3PlugInLoadAll(pVM->pUVM); /* Need to load all plugins first. */
+
+            /* Need to call the guest OS digger to resovle symbols first. */
+            LogRel(("GCM: Triggered guest specific patching to workaround IO-APIC issue\n"));
+            char szName[32]; RT_ZERO(szName);
+            rc = DBGFR3OSDetect(pUVM, &szName[0], sizeof(szName));
+            if (rc == VINF_SUCCESS)
+            {
+                LogRel(("GCM:    Detected guest OS %s\n", szName));
+
+                /* Get at the timer_irq_works() function address. */
+                RTDBGSYMBOL Sym;
+                /*
+                 * Try to just set the no_timer_check variable to 1 first if it exists, then we don't need
+                 * to patch code.
+                 */
+                rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "no_timer_check", &Sym, NULL /*phMod*/);
+                if (RT_SUCCESS(rc))
+                {
+                    LogRel(("GCM:    \"no_timer_check\" is at address %RGv\n", Sym.Value));
+
+                    int iNoTimerCheck;
+                    DBGFADDRESS Addr;
+                    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, Sym.Value), &iNoTimerCheck, sizeof(iNoTimerCheck));
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (!iNoTimerCheck)
+                        {
+                            iNoTimerCheck = 1;
+                            rc = DBGFR3MemWrite(pUVM, 0 /*idCpu*/, &Addr, &iNoTimerCheck, sizeof(iNoTimerCheck));
+                            if (RT_SUCCESS(rc))
+                                LogRel(("GCM:    no_timer_check enabled successfully, good luck!\n"));
+                            else
+                                LogRel(("GCM:    Setting no_timer_check to 1 failed with %Rrc\n", rc));
+                        }
+                        else
+                            LogRel(("GCM:    no_timer_check is already enabled, doing nothing, good luck!\n"));
+                    }
+                    else
+                        LogRel(("GCM:    Reading \"no_timer_check\" failed with %Rrc\n", rc));
+                }
+                else if (rc == VERR_SYMBOL_NOT_FOUND)
+                {
+                    LogRel(("GCM:    Couldn't find \"no_timer_check\", trying \"timer_irq_works\"\n"));
+
+                    rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "timer_irq_works", &Sym, NULL /*phMod*/);
+                    if (RT_SUCCESS(rc))
+                    {
+                        LogRel(("GCM:    \"timer_irq_works()\" is at address %RGv\n", Sym.Value));
+                        /* Write the patch (same for 32-bit and 64-bit) and overwrite the entire function. */
+                        uint8_t abPatch[] =
+                        {
+                            0xfb,                         /* sti */
+                            0xb8, 0x01, 0x00, 0x00, 0x00, /* mov eax, 0x1 */
+                            0xc3                          /* ret */
+                        };
+                        DBGFADDRESS Addr;
+                        rc = DBGFR3MemWrite(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, Sym.Value), &abPatch[0], sizeof(abPatch));
+                        if (RT_SUCCESS(rc))
+                            LogRel(("GCM:    Successfully overwritten \"timer_irq_works()\" to always return true, good luck!\n"));
+                        else
+                            LogRel(("GCM:    Overwriting \"timer_irq_works()\" failed with %Rrc\n", rc));
+                    }
+                    else
+                        LogRel(("GCM:    Querying the \"timer_irq_works()\" symbol address failed with %Rrc\n", rc));
+                }
+                else
+                    LogRel(("GCM:    Querying the \"no_timer_check\" symbol address failed with %Rrc\n", rc));
+            }
+            else
+                LogRel(("GCM:    Detecting the guest OS failed with %Rrc\n", rc));
+        }
+        else
+            LogRel(("GCM: Failed to import necessary state for guest patching %Rrc\n", rc));
+    }
+    else
+        AssertFailed();
+}
+
+
+/**
+ * Triggers a guest patch attempt to workaround an issue identified by the given patch ID.
+ *
+ * @param   pVM      The cross context VM structure.
+ * @param   enmPatch The ID identifying the patch.
+ *
+ * @thread any
+ */
+VMMR3_INT_DECL(void) GCMR3PatchGuest(PVM pVM, GCMGSTPATCHID enmPatch)
+{
+    VMR3ReqPriorityCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)gcmR3PatchGuest, 2, pVM, enmPatch);
 }
 

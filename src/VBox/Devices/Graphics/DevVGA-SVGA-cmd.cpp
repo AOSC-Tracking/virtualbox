@@ -2245,7 +2245,7 @@ static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBSc
                 rc = pSvgaR3State->pFuncsGBO->pfnScreenTargetBind(pThisCC, pScreen, pCmd->image.sid);
                 AssertRC(rc);
 #ifdef DX_NEW_HWSCREEN
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(rc) && pCmd->image.sid != SVGA_ID_INVALID)
                 {
                     SVGA3dRect rect;
                     rect.x = 0;
@@ -3668,8 +3668,10 @@ static int vmsvga3dCmdDXTransferFromBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXTrans
          * Map the surface.
          */
         VMSVGA3D_MAPPED_SURFACE mapSurface;
+        uint32_t const mapFlags = vmsvga3dIsEntireImage(pThisCC, &imageSurface, &pCmd->destBox)
+                                ? 0 : (VMSVGA3D_MAP_F_DYNAMIC_INTERMEDIATE | VMSVGA3D_MAP_F_EXACT_REGION);
         rc = vmsvga3dSurfaceMap(pThisCC, &imageSurface, &pCmd->destBox, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD,
-            VMSVGA3D_MAP_F_DYNAMIC_INTERMEDIATE | VMSVGA3D_MAP_F_EXACT_REGION, &mapSurface);
+            mapFlags, &mapSurface);
         if (RT_SUCCESS(rc))
         {
             /*

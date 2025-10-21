@@ -79,10 +79,10 @@
 # include <iprt/asm-amd64-x86.h>
 #endif
 
-#if (RTLNX_VER_MIN(6,16,0)) && defined(CONFIG_KVM_GENERIC_HARDWARE_ENABLING) && defined(VBOX_WITH_HOST_VMX)
+#if (RTLNX_VER_RANGE(6,16,0, 6,18,0)) && defined(CONFIG_KVM_GENERIC_HARDWARE_ENABLING) && defined(VBOX_WITH_HOST_VMX)
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  include <linux/kvm_host.h>
-#  define SUPDRV_LINUX_HAS_KVM_VMX_API
+#  define SUPDRV_LINUX_HAS_KVM_HWVIRT_API
 # endif
 #endif
 
@@ -181,6 +181,9 @@ static int  supdrvLinuxLdrModuleNotifyCallback(struct notifier_block *pBlock,
  * Device extention & session data association structure.
  */
 static SUPDRVDEVEXT         g_DevExt;
+#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
+static bool                 g_fUsingKvmHwvirtApi;
+#endif
 
 /** Module parameter.
  * Not prefixed because the name is used by macros and the end of this file. */
@@ -340,6 +343,35 @@ DECLINLINE(RTUID) vboxdrvLinuxEuid(void)
 #endif
 
 
+#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
+/**
+ * This is a hack/workaround that attempts to detect whether the kvm_intel/kvm_amd
+ * module is likely to be loaded. See @bugref{10963#c14} for details.
+ */
+static bool is_kvm_hwvirt_mod_likely_loaded(void)
+{
+    /*
+     * We don't disable preemption/interrupts here because we assume all CPUs will have
+     * the relevant bits identical in CR4 and EFER.
+     */
+    bool const     fIsIntel  = ASMIsIntelOrCompatibleCpu();
+    uint64_t const fVmxeMask = RT_BIT_64(13);
+    if (   fIsIntel
+        && (ASMGetCR4() & fVmxeMask))
+        return true;
+
+    bool const     fIsAmd    = ASMIsAmdOrCompatibleCpu();
+    uint32_t const idEfer    = 0xc0000080;
+    uint64_t const fSvmeMask = RT_BIT_64(12);
+    if (   fIsAmd
+        && (ASMRdMsr(idEfer) & fSvmeMask))
+           return true;
+
+    return false;
+}
+#endif
+
+
 /**
  * Initialize module.
  *
@@ -408,8 +440,6 @@ static int __init VBoxDrvLinuxInit(void)
                         if (rc2)
                             printk(KERN_WARNING "vboxdrv: failed to register module notifier! rc2=%d\n", rc2);
 #endif
-
-
                         printk(KERN_INFO "vboxdrv: TSC mode is %s, tentative frequency %llu Hz\n",
                                SUPGetGIPModeName(g_DevExt.pGip), g_DevExt.pGip->u64CpuHz);
                         LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
@@ -1649,49 +1679,36 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
 
 
 /**
- * @copydoc SUPR0EnableVTx
+ * @copydoc SUPR0EnableHwvirt
  */
-int VBOXCALL supdrvOSEnableVTx(bool fEnable)
+int VBOXCALL supdrvOSEnableHwvirt(bool fEnable)
 {
-#ifdef SUPDRV_LINUX_HAS_KVM_VMX_API
+#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
     if (fEnable)
     {
-        /* kvm_enable_virtualization() is guarded by kvm_usage_count reference counter inside a mutex. */
-        int const rc = kvm_enable_virtualization();
-        if (!rc)
-            return VINF_SUCCESS;
-        printk(KERN_ERR "vboxdrv: Failed to enable the KVM kernel API for acquiring VT-x. rc=%d\n", rc);
+        if (is_kvm_hwvirt_mod_likely_loaded())
+        {
+            /* kvm_enable_virtualization() is guarded by kvm_usage_count reference counter inside a mutex. */
+            int const rc = kvm_enable_virtualization();
+            if (!rc)
+            {
+                g_fUsingKvmHwvirtApi = true;
+                printk(KERN_INFO "vboxdrv: Using KVM hardware-virtualization API\n");
+                return VINF_SUCCESS;
+            }
+            printk(KERN_ERR "vboxdrv: Failed to enable the KVM kernel API for acquiring VMX/SVM. rc=%d\n", rc);
+        }
         return VERR_NOT_AVAILABLE;
     }
 
-    kvm_disable_virtualization();
+    if (g_fUsingKvmHwvirtApi)
+    {
+        kvm_disable_virtualization();
+        g_fUsingKvmHwvirtApi = false;
+    }
     return VINF_SUCCESS;
 #endif
     return VERR_NOT_SUPPORTED;
-}
-
-
-/**
- * @copydoc SUPR0SuspendVTxOnCpu
- */
-bool VBOXCALL supdrvOSSuspendVTxOnCpu(void)
-{
-# ifdef SUPDRV_LINUX_HAS_KVM_VMX_API
-    /* The KVM kernel API registers and handles suspend/resume callbacks by itself. */
-    return true;
-# else
-    return false;
-# endif
-}
-
-
-/**
- * @copydoc SUPR0ResumeVTxOnCpu
- */
-void VBOXCALL supdrvOSResumeVTxOnCpu(bool fSuspended)
-{
-    /* The KVM kernel API registers and handles suspend/resume callbacks by itself. */
-    NOREF(fSuspended);
 }
 
 

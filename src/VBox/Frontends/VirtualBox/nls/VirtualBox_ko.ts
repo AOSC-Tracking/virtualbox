@@ -3377,11 +3377,15 @@
         <source>Virtual Machine group</source>
         <translation type="vanished">가상 머신 그룹</translation>
     </message>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
+        <source>Virtual machine</source>
         <translation>가상 머신</translation>
     </message>
 </context>
@@ -18246,7 +18250,11 @@
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Welcome</source>
         <translation type="vanished">환영합니다</translation>

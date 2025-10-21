@@ -73,57 +73,56 @@ public:
         : QAccessibleObject(pObject)
     {}
 
+    /** Returns the role. */
+    virtual QAccessible::Role role() const RT_OVERRIDE
+    {
+#ifdef VBOX_WS_MAC
+        // WORKAROUND: macOS doesn't respect QAccessible::Tree/TreeItem roles.
+
+        /* Sanity check: */
+        AssertPtrReturn(item(), QAccessible::NoRole);
+
+        /* Return List for group item, ListItem for machine item: */
+        if (item()->type() == UIChooserNodeType_Group)
+            return QAccessible::List;
+        return QAccessible::ListItem;
+#else
+        return QAccessible::TreeItem;
+#endif
+    }
+
     /** Returns the parent. */
     virtual QAccessibleInterface *parent() const RT_OVERRIDE
     {
-        /* Make sure item still alive: */
+        /* Sanity check: */
         AssertPtrReturn(item(), 0);
 
-        /* Return the parent: */
+        /* Get item parent: */
+        UIChooserItem *pParentItem = item()->parentItem();
+
+        /* Sanity check: */
+        AssertPtrReturn(pParentItem, 0);
+
+        /* Return the parent item interface for non-root parent item: */
+        if (!pParentItem->isRoot())
+            return QAccessible::queryAccessibleInterface(pParentItem);
+
+        /* Sanity check: */
+        AssertPtrReturn(item()->model(), 0);
+        AssertPtrReturn(item()->model()->view(), 0);
+
+        /* Return the parent view interface if parent item is root: */
         return QAccessible::queryAccessibleInterface(item()->model()->view());
-    }
-
-    /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE
-    {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), 0);
-
-        /* Return the number of group children: */
-        if (item()->type() == UIChooserNodeType_Group)
-            return item()->items().size();
-
-        /* Zero by default: */
-        return 0;
-    }
-
-    /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE
-    {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), 0);
-        /* Make sure index is valid: */
-        AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
-
-        /* Return the child with the passed iIndex: */
-        return QAccessible::queryAccessibleInterface(item()->items().at(iIndex));
-    }
-
-    /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
-    {
-        /* Search for corresponding child: */
-        for (int i = 0; i < childCount(); ++i)
-            if (child(i) == pChild)
-                return i;
-
-        /* -1 by default: */
-        return -1;
     }
 
     /** Returns the rect. */
     virtual QRect rect() const RT_OVERRIDE
     {
+        /* Sanity check: */
+        AssertPtrReturn(item(), QRect());
+        AssertPtrReturn(item()->model(), QRect());
+        AssertPtrReturn(item()->model()->view(), QRect());
+
         /* Now goes the mapping: */
         const QSize   itemSize         = item()->size().toSize();
         const QPointF itemPosInScene   = item()->mapToScene(QPointF(0, 0));
@@ -133,12 +132,77 @@ public:
         return itemRectInScreen;
     }
 
+    /** Returns the number of children. */
+    virtual int childCount() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertPtrReturn(item(), 0);
+
+        /* Return the number of item children: */
+        return item()->items().size();
+    }
+
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+        AssertPtrReturn(item(), 0);
+
+        /* Return the child with the passed iIndex: */
+        return QAccessible::queryAccessibleInterface(item()->items().value(iIndex));
+    }
+
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertPtrReturn(pChild, -1);
+
+        /* Acquire item itself: */
+        UIChooserItem *pChildItem = qobject_cast<UIChooserItem*>(pChild->object());
+
+        /* Sanity check: */
+        AssertPtrReturn(pChildItem, -1);
+        AssertPtrReturn(pChildItem->parentItem(), -1);
+
+        /* Return the index of item in it's parent: */
+        return pChildItem->parentItem()->items().indexOf(pChildItem);
+    }
+
+    /** Returns the state. */
+    virtual QAccessible::State state() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertPtrReturn(item(), QAccessible::State());
+        AssertPtrReturn(item()->model(), QAccessible::State());
+
+        /* Compose the state: */
+        QAccessible::State myState;
+        myState.focusable = true;
+        myState.selectable = true;
+        if (item()->model()->firstSelectedItem() == item())
+            myState.focused = true;
+        if (item()->model()->selectedItems().contains(item()))
+            myState.selected = true;
+        if (item()->type() == UIChooserNodeType_Group)
+        {
+            myState.expandable = true;
+            if (!item()->toGroupItem()->isClosed())
+                myState.expanded = true;
+        }
+
+        /* Return the state: */
+        return myState;
+    }
+
     /** Returns a text for the passed @a enmTextRole. */
     virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
     {
-        /* Make sure item still alive: */
+        /* Sanity check: */
         AssertPtrReturn(item(), QString());
 
+        /* Text for known roles: */
         switch (enmTextRole)
         {
             case QAccessible::Name:        return item()->name();
@@ -148,51 +212,6 @@ public:
 
         /* Null-string by default: */
         return QString();
-    }
-
-    /** Returns the role. */
-    virtual QAccessible::Role role() const RT_OVERRIDE
-    {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), QAccessible::NoRole);
-
-        /* Return the role of group: */
-        if (item()->type() == UIChooserNodeType_Group)
-            return QAccessible::List;
-
-        /* ListItem by default: */
-        return QAccessible::ListItem;
-    }
-
-    /** Returns the state. */
-    virtual QAccessible::State state() const RT_OVERRIDE
-    {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), QAccessible::State());
-
-        /* Compose the state: */
-        QAccessible::State state;
-        state.focusable = true;
-        state.selectable = true;
-
-        /* Compose the state of first selected-item: */
-        if (item() && item() == item()->model()->firstSelectedItem())
-        {
-            state.active = true;
-            state.focused = true;
-            state.selected = true;
-        }
-
-        /* Compose the state of group: */
-        if (item()->type() == UIChooserNodeType_Group)
-        {
-            state.expandable = true;
-            if (!item()->toGroupItem()->isClosed())
-                state.expanded = true;
-        }
-
-        /* Return the state: */
-        return state;
     }
 
 private:

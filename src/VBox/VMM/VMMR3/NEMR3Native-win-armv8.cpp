@@ -1405,28 +1405,32 @@ DECLHIDDEN(int) nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                     {
                         PNEMCPU pNemCpu = &pVM->apCpusR3[idCpu]->nem.s;
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitPortIo,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of port I/O exits",               "/NEM/CPU%u/ExitPortIo", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmapped,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits",        "/NEM/CPU%u/ExitMemUnmapped", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitMemIntercept,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits",     "/NEM/CPU%u/ExitMemIntercept", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitHalt", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of interrupt window exits",       "/NEM/CPU%u/ExitInterruptWindow", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitCpuId,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of CPUID exits",                  "/NEM/CPU%u/ExitCpuId", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitMsr,             STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of MSR access exits",             "/NEM/CPU%u/ExitMsr", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitException,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of exception exits",              "/NEM/CPU%u/ExitException", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionBp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #BP exits",                    "/NEM/CPU%u/ExitExceptionBp", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionDb,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #DB exits",                    "/NEM/CPU%u/ExitExceptionDb", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionGp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #GP exits",                    "/NEM/CPU%u/ExitExceptionGp", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionGpMesa, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #GP exits from mesa driver",   "/NEM/CPU%u/ExitExceptionGpMesa", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUd,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #UD exits",                    "/NEM/CPU%u/ExitExceptionUd", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUdHandled, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of handled #UD exits",         "/NEM/CPU%u/ExitExceptionUdHandled", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmapped,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits",                            "/NEM/CPU%u/ExitMemUnmapped", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmappedToIem,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits handled by IEM fallback",    "/NEM/CPU%u/ExitMemUnmapped/ToIem", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitMemIntercept,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits",                         "/NEM/CPU%u/ExitMemIntercept", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitMemInterceptToIem,STAMTYPE_COUNTER,STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits handled by IEM fallback", "/NEM/CPU%u/ExitMemIntercept/ToIem", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitHypercall,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of hypercall exits",              "/NEM/CPU%u/ExitHypercall", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitPortIo,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of port I/O exits",               "/NEM/CPU%u/ExitPortIo", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitHalt", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of interrupt window exits",       "/NEM/CPU%u/ExitInterruptWindow", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitCpuId,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of CPUID exits",                  "/NEM/CPU%u/ExitCpuId", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitMsr,             STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of MSR access exits",             "/NEM/CPU%u/ExitMsr", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitException,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of exception exits",              "/NEM/CPU%u/ExitException", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionBp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #BP exits",                    "/NEM/CPU%u/ExitExceptionBp", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionDb,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #DB exits",                    "/NEM/CPU%u/ExitExceptionDb", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionGp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #GP exits",                    "/NEM/CPU%u/ExitExceptionGp", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionGpMesa, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #GP exits from mesa driver",   "/NEM/CPU%u/ExitExceptionGpMesa", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUd,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #UD exits",                    "/NEM/CPU%u/ExitExceptionUd", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUdHandled, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of handled #UD exits",         "/NEM/CPU%u/ExitExceptionUdHandled", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitCanceled,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of execution cancelation exits",  "/NEM/CPU%u/ExitCanceled", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatExitUnrecoverable,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unrecoverable exits",          "/NEM/CPU%u/ExitUnrecoverable", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingAlerts,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stop alerts",      "/NEM/CPU%u/StopCpuPendingAlerts", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingOdd,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of odd pending CPU stops (see code)", "/NEM/CPU%u/StopCpuPendingOdd", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatCancelChangedState,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel changed state",         "/NEM/CPU%u/CancelChangedState", idCpu);
-                        STAMR3RegisterF(pVM, &pNemCpu->StatCancelAlertedThread, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel alerted EMT",           "/NEM/CPU%u/CancelAlertedEMT", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingAlerts,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stop alerts",      "/NEM/CPU%u/StopCpuPendingAlerts", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingOdd,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of odd pending CPU stops (see code)", "/NEM/CPU%u/StopCpuPendingOdd", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatCancelChangedState,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel changed state",         "/NEM/CPU%u/CancelChangedState", idCpu);
+                        //STAMR3RegisterF(pVM, &pNemCpu->StatCancelAlertedThread, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel alerted EMT",           "/NEM/CPU%u/CancelAlertedEMT", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPre,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pre execution FF breaks",      "/NEM/CPU%u/BreakOnFFPre", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPost,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of post execution FF breaks",     "/NEM/CPU%u/BreakOnFFPost", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnCancel,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel execution breaks",      "/NEM/CPU%u/BreakOnCancel", idCpu);
@@ -2253,55 +2257,50 @@ DECLINLINE(uint64_t) nemR3WinGetGReg(PVMCPU pVCpu, uint8_t uReg)
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pExit           The VM exit information to handle.
+ * @param   fUnmappedExit   Set if WHvRunVpExitReasonUnmappedGpa,
+ *                          clear if WHvRunVpExitReasonGpaIntercept.
+ * @param   uTscExit        The host TSC value at the exit.
  * @sa      nemHCWinHandleMessageMemory
  */
 NEM_TMPL_STATIC VBOXSTRICTRC
-nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT const *pExit)
+nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT const *pExit, bool fUnmappedExit, uint64_t uTscExit)
 {
-    uint64_t const uHostTsc = ASMReadTSC();
     Assert(pExit->MemoryAccess.Header.InterceptAccessType != 3);
 
     /*
      * Emulate the memory access, either access handler or special memory.
      */
-    WHV_INTERCEPT_MESSAGE_HEADER const *pHdr = &pExit->MemoryAccess.Header;
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                               pExit->MemoryAccess.Header.InterceptAccessType == WHvMemoryAccessWrite
                                             ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
                                             : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
-                                            pHdr->Pc, uHostTsc);
-    nemR3WinCopyStateFromArmHeader(pVCpu, &pExit->MemoryAccess.Header);
+                                            pExit->MemoryAccess.Header.Pc, uTscExit);
     RT_NOREF_PV(pExitRec);
-    int rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
-    AssertRCReturn(rc, rc);
-
+    nemR3WinCopyStateFromArmHeader(pVCpu, &pExit->MemoryAccess.Header);
 #ifdef LOG_ENABLED
     uint8_t const cbInstr = pExit->MemoryAccess.InstructionByteCount;
-    RTGCPTR const GCPtrVa = pExit->MemoryAccess.Gva;
 #endif
     RTGCPHYS const GCPhys = pExit->MemoryAccess.Gpa;
     uint64_t const uIss   = pExit->MemoryAccess.Syndrome;
-    bool fIsv        = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_ISV);
-    bool fL2Fault    = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_S1PTW);
-    bool fWrite      = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_WNR);
-    bool f64BitReg   = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_SF);
-    bool fSignExtend = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_SSE);
-    uint8_t uReg     = ARMV8_EC_ISS_DATA_ABRT_SRT_GET(uIss);
-    uint8_t uAcc     = ARMV8_EC_ISS_DATA_ABRT_SAS_GET(uIss);
-    size_t cbAcc     = nemR3WinGetByteCountFromSas(uAcc);
-    LogFlowFunc(("fIsv=%RTbool fL2Fault=%RTbool fWrite=%RTbool f64BitReg=%RTbool fSignExtend=%RTbool uReg=%u uAcc=%u GCPtrDataAbrt=%RGv GCPhys=%RGp cbInstr=%u\n",
-                 fIsv, fL2Fault, fWrite, f64BitReg, fSignExtend, uReg, uAcc, GCPtrVa, GCPhys, cbInstr));
-
-    RT_NOREF(fL2Fault);
 
     VBOXSTRICTRC rcStrict;
-    if (fIsv)
+    if (   (uIss & (ARMV8_EC_ISS_DATA_ABRT_ISV | ARMV8_EC_ISS_DATA_ABRT_LST))
+        == ARMV8_EC_ISS_DATA_ABRT_ISV) /* LST != 0 for LD64B/ST64B/ST64BV/ST64BV0 */
     {
-        EMHistoryAddExit(pVCpu,
-                         fWrite
-                         ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
-                         : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
-                         pVCpu->cpum.GstCtx.Pc.u64, ASMReadTSC());
+        bool const fL2Fault    = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_S1PTW);
+        bool const fWrite      = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_WNR);
+        bool const f64BitReg   = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_SF);
+        bool const fSignExtend = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_SSE);
+        uint8_t const uReg     = ARMV8_EC_ISS_DATA_ABRT_SRT_GET(uIss);
+        uint8_t const uAcc     = ARMV8_EC_ISS_DATA_ABRT_SAS_GET(uIss);
+        size_t  const cbAcc    = nemR3WinGetByteCountFromSas(uAcc);
+        RT_NOREF(fL2Fault);
+        LogFlowFunc(("%s GCPtrDataAbrt=%RGv GCPhys=%RGp PC=%RGv cbInstr=%u uIss=%RX64 fIsv=true fL2Fault=%RTbool fWrite=%RTbool f64BitReg=%RTbool fSignExtend=%RTbool uReg=%u uAcc=%u\n",
+                     fUnmappedExit ? "Unmapped" : "Intercept", pExit->MemoryAccess.Gva, GCPhys, pExit->MemoryAccess.Header.Pc,
+                     cbInstr, uIss, fL2Fault, fWrite, f64BitReg, fSignExtend, uReg, uAcc));
+
+        int rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_PC);
+        AssertRCReturn(rc, rc);
 
         uint64_t u64Val = 0;
         if (fWrite)
@@ -2311,6 +2310,8 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT c
             Log4(("MmioExit/%u: %08RX64: WRITE %RGp LB %u, %.*Rhxs -> rcStrict=%Rrc\n",
                   pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, GCPhys, cbAcc, cbAcc,
                   &u64Val, VBOXSTRICTRC_VAL(rcStrict) ));
+            if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+                pVCpu->cpum.GstCtx.Pc.u64 += sizeof(uint32_t);
         }
         else
         {
@@ -2318,12 +2319,34 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT c
             Log4(("MmioExit/%u: %08RX64: READ %RGp LB %u -> %.*Rhxs rcStrict=%Rrc\n",
                   pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, GCPhys, cbAcc, cbAcc,
                   &u64Val, VBOXSTRICTRC_VAL(rcStrict) ));
-            if (rcStrict == VINF_SUCCESS)
+            if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+            {
                 nemR3WinSetGReg(pVCpu, uReg, f64BitReg, fSignExtend, u64Val);
+                pVCpu->cpum.GstCtx.Pc.u64 += sizeof(uint32_t);
+            }
         }
     }
     else
     {
+        /* The following ASSUMES that the vCPU state is completely synced. */
+        LogFlowFunc(("%s GCPtrDataAbrt=%RGv GCPhys=%RGp PC=%RGv cbInstr=%u uIss=%RX64\n",
+                     fUnmappedExit ? "Unmapped" : "Intercept", pExit->MemoryAccess.Gva, GCPhys, pExit->MemoryAccess.Header.Pc,
+                     cbInstr, uIss));
+        if (fUnmappedExit)
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMemUnmappedToIem);
+        else
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMemInterceptToIem);
+
+        int rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        AssertRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_IEM_TARGETING_ARM
+        /* Let IEM do the work.  TLBs must be invalidated, as we don't track that. */
+        IEMTlbInvalidateAll(pVCpu);
+        rcStrict = IEMExecOne(pVCpu);
+        LogFlowFunc(("IEMExecOne returns %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
+        return rcStrict;
+#else
         /** @todo Our UEFI firmware accesses the flash region with the following instruction
          *        when the NVRAM actually contains data:
          *             ldrb w9, [x6, #-0x0001]!
@@ -2331,13 +2354,10 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT c
          *        is a proper IEM implementation we just handle this here for now to avoid annoying
          *        users too much.
          */
-        /* The following ASSUMES that the vCPU state is completely synced. */
-
         /* Read instruction. */
-        RTGCPTR GCPtrPage = pVCpu->cpum.GstCtx.Pc.u64 & ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
+        RTGCPTR const GCPtrPage = pVCpu->cpum.GstCtx.Pc.u64 & ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
         const void *pvPageR3 = NULL;
         PGMPAGEMAPLOCK  PageMapLock;
-
         rcStrict = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, GCPtrPage, &pvPageR3, &PageMapLock);
         if (rcStrict == VINF_SUCCESS)
         {
@@ -2345,7 +2365,7 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT c
             PGMPhysReleasePageMappingLock(pVCpu->pVMR3, &PageMapLock);
 
             DISSTATE Dis;
-            rcStrict = DISInstrWithPrefetchedBytes((uintptr_t)pVCpu->cpum.GstCtx.Pc.u64, DISCPUMODE_ARMV8_A64,  0 /*fFilter - none */,
+            rcStrict = DISInstrWithPrefetchedBytes((uintptr_t)pVCpu->cpum.GstCtx.Pc.u64, DISCPUMODE_ARMV8_A64, 0 /*fFilter - none */,
                                                    &u32Instr, sizeof(u32Instr), NULL, NULL, &Dis, NULL);
             if (rcStrict == VINF_SUCCESS)
             {
@@ -2362,11 +2382,13 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT c
                     Log4(("MmioExit/%u: %08RX64: READ %#RGp LB %u -> %.*Rhxs rcStrict=%Rrc\n",
                           pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, GCPhys, sizeof(bVal), sizeof(bVal),
                           &bVal, VBOXSTRICTRC_VAL(rcStrict) ));
-                    if (rcStrict == VINF_SUCCESS)
+                    if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
                     {
                         nemR3WinSetGReg(pVCpu, Dis.aParams[0].armv8.Op.Reg.idReg, false /*f64BitReg*/, false /*fSignExtend*/, bVal);
                         /* Update the indexed register. */
                         pVCpu->cpum.GstCtx.aGRegs[Dis.aParams[1].armv8.Op.Reg.idReg].x += Dis.aParams[1].armv8.u.offBase;
+                        /* Update PC. */
+                        pVCpu->cpum.GstCtx.Pc.u64 += sizeof(uint32_t);
                     }
                 }
                 /*
@@ -2382,6 +2404,7 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT c
                          && Dis.aParams[2].armv8.Op.Reg.enmRegType == kDisOpParamArmV8RegType_Gpr_64Bit)
                 {
                     /** @todo This is tricky to handle if the first register read returns something else than VINF_SUCCESS... */
+                    /** @todo It's even more tricky, since PGM_PHYS_RW_IS_SUCCESS the right test. */
                     /* The fault address is already the final address. */
                     uint32_t u32Val1 = 0;
                     uint32_t u32Val2 = 0;
@@ -2395,16 +2418,16 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT c
                     {
                         nemR3WinSetGReg(pVCpu, Dis.aParams[0].armv8.Op.Reg.idReg, false /*f64BitReg*/, false /*fSignExtend*/, u32Val1);
                         nemR3WinSetGReg(pVCpu, Dis.aParams[1].armv8.Op.Reg.idReg, false /*f64BitReg*/, false /*fSignExtend*/, u32Val2);
+                        /* Update PC. */
+                        pVCpu->cpum.GstCtx.Pc.u64 += sizeof(uint32_t);
                     }
                 }
                 else
                     AssertFailedReturn(VERR_NOT_SUPPORTED);
             }
         }
+#endif /* !VBOX_WITH_IEM_TARGETING_ARM */
     }
-
-    if (rcStrict == VINF_SUCCESS)
-        pVCpu->cpum.GstCtx.Pc.u64 += sizeof(uint32_t); /** @todo Why is InstructionByteCount always 0? */
 
     return rcStrict;
 }
@@ -2417,16 +2440,19 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT c
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pExit           The VM exit information to handle.
+ * @param   uTscExit        The host TSC value at the exit.
  * @sa      nemHCWinHandleMessageMemory
  */
 NEM_TMPL_STATIC VBOXSTRICTRC
-nemR3WinHandleExitHypercall(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT const *pExit)
+nemR3WinHandleExitHypercall(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT const *pExit, uint64_t uTscExit)
 {
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT_EX(EMEXIT_F_KIND_EM, EMEXITTYPE_A64_HVC, pExit->Hypercall.Immediate),
+                     pExit->Hypercall.Header.Pc, uTscExit);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
     /** @todo Raise exception to EL1 if PSCI not configured. */
     /** @todo Need a generic mechanism here to pass this to, GIM maybe?. */
-    uint32_t uFunId = pExit->Hypercall.Immediate;
+    uint32_t uFunId = pExit->Hypercall.Immediate; /** @todo r=bird: this is probably wrong, the value is 16-bit. */
     bool fHvc64 = RT_BOOL(uFunId & ARM_SMCCC_FUNC_ID_64BIT); RT_NOREF(fHvc64);
     uint32_t uEntity = ARM_SMCCC_FUNC_ID_ENTITY_GET(uFunId);
     uint32_t uFunNum = ARM_SMCCC_FUNC_ID_NUM_GET(uFunId);
@@ -2435,7 +2461,8 @@ nemR3WinHandleExitHypercall(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEX
         switch (uFunNum)
         {
             case ARM_PSCI_FUNC_ID_PSCI_VERSION:
-                nemR3WinSetGReg(pVCpu, ARMV8_A64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, ARM_PSCI_FUNC_ID_PSCI_VERSION_SET(1, 2));
+                nemR3WinSetGReg(pVCpu, ARMV8_A64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/,
+                                ARM_PSCI_FUNC_ID_PSCI_VERSION_SET(1, 2));
                 break;
             case ARM_PSCI_FUNC_ID_SYSTEM_OFF:
                 rcStrict = VMR3PowerOff(pVM->pUVM);
@@ -2489,7 +2516,8 @@ nemR3WinHandleExitHypercall(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEX
                 break;
             }
             default:
-                nemR3WinSetGReg(pVCpu, ARMV8_A64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
+                nemR3WinSetGReg(pVCpu, ARMV8_A64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/,
+                                (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
         }
     }
     else
@@ -2511,9 +2539,11 @@ nemR3WinHandleExitHypercall(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEX
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pExit           The VM exit information to handle.
+ * @param   uTscExit        The host TSC value at the exit.
  * @sa      nemHCWinHandleMessageUnrecoverableException
  */
-NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitUnrecoverableException(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT const *pExit)
+NEM_TMPL_STATIC VBOXSTRICTRC
+nemR3WinHandleExitUnrecoverableException(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT const *pExit, uint64_t uTscExit)
 {
 #if 0
     /*
@@ -2529,7 +2559,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitUnrecoverableException(PVMCC pVM,
      * Let IEM decide whether this is really it.
      */
     EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_UNRECOVERABLE_EXCEPTION),
-                     pExit->UnrecoverableException.Header.Pc, ASMReadTSC());
+                     pExit->UnrecoverableException.Header.Pc, uTscExit);
     nemR3WinCopyStateFromArmHeader(pVCpu, &pExit->UnrecoverableException.Header);
     AssertReleaseFailed();
     RT_NOREF_PV(pVM);
@@ -2545,9 +2575,11 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitUnrecoverableException(PVMCC pVM,
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pExit           The VM exit information to handle.
+ * @param   uTscExit        The host TSC value at the exit.
  * @sa      nemHCWinHandleMessage
  */
-NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT const *pExit)
+NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, MY_WHV_RUN_VP_EXIT_CONTEXT const *pExit,
+                                                uint64_t uTscExit)
 {
 #ifdef LOG_ENABLED
     if (LogIs3Enabled())
@@ -2563,31 +2595,36 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, MY_WH
     {
         case WHvRunVpExitReasonUnmappedGpa:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMemUnmapped);
-            return nemR3WinHandleExitMemory(pVM, pVCpu, pExit);
+            return nemR3WinHandleExitMemory(pVM, pVCpu, pExit, true /*fUnmappedExit*/, uTscExit);
+
+        case WHvRunVpExitReasonGpaIntercept:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMemIntercept);
+            return nemR3WinHandleExitMemory(pVM, pVCpu, pExit, false /*fUnmappedExit*/, uTscExit);
 
         case WHvRunVpExitReasonCanceled:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitCanceled);
             Log4(("CanceledExit/%u\n", pVCpu->idCpu));
             return VINF_SUCCESS;
 
         case WHvRunVpExitReasonHypercall:
-            return nemR3WinHandleExitHypercall(pVM, pVCpu, pExit);
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHypercall);
+            return nemR3WinHandleExitHypercall(pVM, pVCpu, pExit, uTscExit);
 
         case 0x8001000c: /* WHvRunVpExitReasonArm64Reset */
         {
             if (pExit->Arm64Reset.ResetType == WHV_ARM64_RESET_CONTEXT_TYPE_POWER_OFF)
                 return VMR3PowerOff(pVM->pUVM);
-            else if (pExit->Arm64Reset.ResetType == WHV_ARM64_RESET_CONTEXT_TYPE_RESET)
+            if (pExit->Arm64Reset.ResetType == WHV_ARM64_RESET_CONTEXT_TYPE_RESET)
             {
                 VM_FF_SET(pVM, VM_FF_RESET);
                 return VINF_EM_RESET;
             }
-            else
-                AssertLogRelFailedReturn(VERR_NEM_IPE_3);
+            AssertLogRelFailedReturn(VERR_NEM_IPE_3);
         }
 
         case WHvRunVpExitReasonUnrecoverableException:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitUnrecoverable);
-            return nemR3WinHandleExitUnrecoverableException(pVM, pVCpu, pExit);
+            return nemR3WinHandleExitUnrecoverableException(pVM, pVCpu, pExit, uTscExit);
 
         case WHvRunVpExitReasonUnsupportedFeature:
         case WHvRunVpExitReasonInvalidVpRegisterValue:
@@ -2598,7 +2635,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, MY_WH
         /* Undesired exits: */
         case WHvRunVpExitReasonNone:
         default:
-            LogRel(("Unknown exit:\n%.*Rhxd\n", (int)sizeof(*pExit), pExit));
+            LogRel(("Unknown exit %#x on cpu #%u\n%.*Rhxd\n", pExit->ExitReason, pVCpu->idCpu, (int)sizeof(*pExit), pExit));
             AssertLogRelMsgFailedReturn(("Unknown exit on CPU #%u: %#x!\n", pVCpu->idCpu, pExit->ExitReason), VERR_NEM_IPE_3);
     }
 }
@@ -2687,7 +2724,8 @@ VMMR3_INT_DECL(VBOXSTRICTRC) NEMR3RunGC(PVM pVM, PVMCPU pVCpu)
                 HRESULT hrc = WHvRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, &ExitReason, sizeof(ExitReason));
 
                 VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
-                TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
+                uint64_t const uTscExit = ASMReadTSC();
+                TMNotifyEndOfExecution(pVM, pVCpu, uTscExit);
 #ifdef LOG_ENABLED
                 if (LogIsFlowEnabled())
                 {
@@ -2715,7 +2753,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) NEMR3RunGC(PVM pVM, PVMCPU pVCpu)
                     /*
                      * Deal with the message.
                      */
-                    rcStrict = nemR3WinHandleExit(pVM, pVCpu, &ExitReason);
+                    rcStrict = nemR3WinHandleExit(pVM, pVCpu, &ExitReason, uTscExit);
                     if (rcStrict == VINF_SUCCESS)
                     { /* hopefully likely */ }
                     else

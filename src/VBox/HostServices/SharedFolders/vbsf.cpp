@@ -49,6 +49,7 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/symlink.h>
 #include <iprt/uni.h>
@@ -2438,6 +2439,70 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, PCSHFLSTRING pPath, uint3
                     rc = RTFileDelete(pszFullPath);
                 else
                     rc = RTDirRemove(pszFullPath);
+
+                /** @todo r=aeichner 2025-10-01 Temporarily for investigating an error on the testboxes. */
+                if (RT_FAILURE(rc))
+                {
+                    if (flags & SHFL_REMOVE_SYMLINK)
+                        LogRel(("RTSymlinkDelete(%s, 0) -> %Rrc\n", pszFullPath, rc));
+                    else if (flags & SHFL_REMOVE_FILE)
+                        LogRel(("RTFileDelete(%s) -> %Rrc\n", pszFullPath, rc));
+                    else
+                        LogRel(("RTDirRemove(%s) -> %Rrc\n", pszFullPath, rc));
+                    if (rc == VERR_SHARING_VIOLATION)
+                    {
+                        /* Try to get at the process IDs using that path. */
+                        RTPROCESS aPids[32];
+                        uint32_t cProcs = RT_ELEMENTS(aPids);
+                        uint32_t const fFlags = RTPATH_QUERY_PROC_F_DIR_INCLUDE_SUB_OBJ | RTPATH_QUERY_PROC_F_SKIP_MAPPINGS;
+                        int rc2 = RTPathQueryProcessesUsing(pszFullPath, fFlags, &cProcs, &aPids[0]);
+                        if (RT_SUCCESS(rc2))
+                        {
+                            if (!cProcs)
+                            {
+                                LogRel(("RTPathQueryProcessesUsing(%s,,,) -> %Rrc, found 0 processes accessing the file\n", pszFullPath, rc2));
+#ifdef RT_OS_WINDOWS
+                                /* Try a few times on Windows, there seems to be a race during high load, see https://github.com/python/cpython/issues/84324 . */
+                                uint32_t cTries = 5;
+                                do
+                                {
+                                    if (flags & SHFL_REMOVE_SYMLINK)
+                                        rc = RTSymlinkDelete(pszFullPath, 0);
+                                    else if (flags & SHFL_REMOVE_FILE)
+                                        rc = RTFileDelete(pszFullPath);
+                                    else
+                                        rc = RTDirRemove(pszFullPath);
+                                    if (RT_SUCCESS(rc))
+                                        break;
+                                    RTThreadSleep(100);
+                                } while (--cTries > 0 && rc == VERR_SHARING_VIOLATION);
+
+                                if (flags & SHFL_REMOVE_SYMLINK)
+                                    LogRel(("RTSymlinkDelete(%s, 0) -> %Rrc\n", pszFullPath, rc));
+                                else if (flags & SHFL_REMOVE_FILE)
+                                    LogRel(("RTFileDelete(%s) -> %Rrc\n", pszFullPath, rc));
+                                else
+                                    LogRel(("RTDirRemove(%s) -> %Rrc\n", pszFullPath, rc));
+#endif
+                            }
+                            else
+                                for (uint32_t i = 0; i < cProcs; i++)
+                                {
+                                    char *pszProc = NULL;
+                                    rc2 = RTProcQueryExecutablePathA(aPids[i], &pszProc);
+                                    if (RT_SUCCESS(rc2))
+                                    {
+                                        LogRel(("    [%u]: <%RU32>:%s\n", i, aPids[i], pszProc));
+                                        RTStrFree(pszProc);
+                                    }
+                                    else
+                                        LogRel(("    [%u]: <%RU32>\n", i, aPids[i]));
+                                }
+                        }
+                        else
+                            LogRel(("RTPathQueryProcessesUsing(%s,,,) -> %Rrc", pszFullPath, rc2));
+                    }
+                }
 
 #if 0 //ndef RT_OS_WINDOWS
                 /* There are a few adjustments to be made here: */

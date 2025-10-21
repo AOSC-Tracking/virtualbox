@@ -38,7 +38,7 @@
 
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
-#include "UITools.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declaration: */
 class QGraphicsScene;
@@ -82,9 +82,8 @@ public:
 
     /** Constructs item on the basis of passed arguments.
       * @param  pScene   Brings the scene reference to add item to.
-      * @param  icon     Brings the item icon.
       * @param  enmType  Brings the item type. */
-    UIToolsItem(QGraphicsScene *pScene, const QIcon &icon, UIToolType enmType);
+    UIToolsItem(QGraphicsScene *pScene, UIToolType enmType);
     /** Destructs item. */
     virtual ~UIToolsItem() RT_OVERRIDE;
 
@@ -93,13 +92,13 @@ public:
         /** Returns model reference. */
         UIToolsModel *model() const;
 
-        /** Returns item icon. */
-        QIcon icon() const { return m_icon; }
-
         /** Returns item name. */
         QString name() const { return m_strName; }
         /** Defines item @a strName. */
         void setName(const QString &strName);
+
+        /** Returns item description. */
+        QString description() const { return m_strDescription; }
 
         /** Returns item class. */
         UIToolClass itemClass() const { return m_enmClass; }
@@ -152,6 +151,9 @@ private slots:
 
     /** @name Item stuff.
       * @{ */
+        /** Handles translation event. */
+        void sltRetranslateUI();
+
         /** Handles top-level window remaps. */
         void sltHandleWindowRemapped();
     /** @} */
@@ -171,15 +173,15 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
-        /** Prepares connections. */
-        void prepareConnections();
-
         /** Cleanups all. */
         void cleanup();
     /** @} */
 
     /** @name Item stuff.
       * @{ */
+        /** Retuns icon for @a enmType specified. */
+        static QIcon typeToIcon(UIToolType enmType);
+
         /** Returns abstractly stored data value for certain @a iKey. */
         QVariant data(int iKey) const;
     /** @} */
@@ -234,19 +236,23 @@ private:
 
     /** @name Item stuff.
       * @{ */
-        /** Holds the item parent. */
-        QGraphicsScene *m_pScene;
-        /** Holds the item icon. */
-        QIcon           m_icon;
-        /** Holds the item name. */
-        QString         m_strName;
-        /** Holds the item class. */
-        UIToolClass     m_enmClass;
-        /** Holds the item type. */
-        UIToolType      m_enmType;
+        /** Holds the passed item scene. */
+        QGraphicsScene   *m_pScene;
+        /** Holds the passed item type. */
+        const UIToolType  m_enmType;
 
-        /** Holds the item pixmap. */
+        /** Holds the item class (based on type). */
+        const UIToolClass  m_enmClass;
+        /** Holds the item icon (based on type). */
+        const QIcon        m_icon;
+
+        /** Holds the item pixmap (based on icon). */
         QPixmap  m_pixmap;
+
+        /** Holds the item name. */
+        QString  m_strName;
+        /** Holds the item description. */
+        QString  m_strDescription;
 
         /** Holds the hiding reason. */
         HidingReason  m_enmReason;

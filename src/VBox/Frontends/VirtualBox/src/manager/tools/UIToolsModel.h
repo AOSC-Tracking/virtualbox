@@ -79,8 +79,7 @@ public:
 
     /** Constructs Tools-model passing @a pParent to the base-class.
       * @param  enmClass  Brings the tool class. */
-    UIToolsModel(QObject *pParent,
-                 UIToolClass enmClass);
+    UIToolsModel(QObject *pParent, UIToolClass enmClass);
     /** Destructs Tools-model. */
     virtual ~UIToolsModel() RT_OVERRIDE;
 
@@ -90,7 +89,7 @@ public:
         void init();
 
         /** Returns the scene reference. */
-        QGraphicsScene *scene() const;
+        QGraphicsScene *scene() const { return m_pScene; }
         /** Returns the paint device reference. */
         QPaintDevice *paintDevice() const;
 
@@ -98,25 +97,22 @@ public:
         QGraphicsItem *itemAt(const QPointF &position) const;
 
         /** Returns tools-view reference. */
-        UIToolsView *view() const;
+        UIToolsView *view() const { return m_pView; }
         /** Defines tools @a pView reference. */
         void setView(UIToolsView *pView);
 
+        /** Returns current tools type. */
+        UIToolType toolsType() const;
         /** Defines current tools @a enmType. */
         void setToolsType(UIToolType enmType);
-        /** Returns current tools type for the @a enmClass specified. */
-        UIToolType toolsType(UIToolClass enmClass) const;
 
+        /** Returns whether tool items enabled.*/
+        bool isItemsEnabled() const { return m_fItemsEnabled; }
         /** Defines whether tool items @a fEnabled.*/
         void setItemsEnabled(bool fEnabled);
-        /** Returns whether tool items enabled.*/
-        bool isItemsEnabled() const;
 
-        /** Defines restricted tool @a types for the @a enmClass specified. */
-        void setRestrictedToolTypes(UIToolClass enmClass, const QList<UIToolType> &types);
-
-        /** Returns restricted tool types for the @a enmClass specified. */
-        QList<UIToolType> restrictedToolTypes(UIToolClass enmClass) const;
+        /** Defines restricted tool @a types. */
+        void setRestrictedToolTypes(const QList<UIToolType> &types);
 
         /** Returns abstractly stored data value for certain @a iKey. */
         QVariant data(int iKey) const;
@@ -131,15 +127,15 @@ public:
         UIToolsItem *item(UIToolType enmType) const;
 
         /** Returns whether we should show item names. */
-        bool showItemNames() const;
+        bool showItemNames() const { return m_fShowItemNames; }
     /** @} */
 
     /** @name Selection stuff.
       * @{ */
+        /** Returns current item. */
+        UIToolsItem *currentItem() const;
         /** Defines current @a pItem. */
         void setCurrentItem(UIToolsItem *pItem);
-        /** Returns current item for the @a enmClass specified. */
-        UIToolsItem *currentItem(UIToolClass enmClass) const;
     /** @} */
 
     /** @name Layout stuff.
@@ -173,11 +169,13 @@ private slots:
         /** Handles request to commit data. */
         void sltHandleCommitData();
 
-        /** Handles translation event. */
-        void sltRetranslateUI();
-
         /** Handles tool label visibility change event. */
         void sltHandleToolLabelsVisibilityChange(bool fVisible);
+
+        /** Handles view's focus-in event. */
+        void sltHandleViewFocusInEvent();
+        /** Handles view's focus-out event. */
+        void sltHandleViewFocusOutEvent();
     /** @} */
 
 private:
@@ -190,6 +188,8 @@ private:
         void prepareScene();
         /** Prepares items. */
         void prepareItems();
+        /** Prepare item for @a enmType. */
+        void prepareItem(UIToolType enmType);
         /** Prepare connections. */
         void prepareConnections();
 
@@ -206,24 +206,31 @@ private:
         void cleanup();
     /** @} */
 
+    /** @name Event handling stuff.
+      * @{ */
+        /** Handles request to trigger @a pItem. */
+        bool triggerItem(UIToolsItem *pItem);
+    /** @} */
+
     /** @name General stuff.
       * @{ */
-        /** Holds the tool class. */
-        UIToolClass  m_enmClass;
+        /** Holds the passed tool class. */
+        const UIToolClass  m_enmClass;
 
-        /** Holds the layout alignment. */
-        Qt::Alignment  m_enmAlignment;
+        /** Holds the layout alignment (based on tool class). */
+        const Qt::Alignment  m_enmAlignment;
+
+        /** Holds the scene instance. */
+        QGraphicsScene *m_pScene;
 
         /** Holds the view reference. */
-        UIToolsView    *m_pView;
-        /** Holds the scene reference. */
-        QGraphicsScene *m_pScene;
+        UIToolsView *m_pView;
 
         /** Holds whether items enabled. */
         bool  m_fItemsEnabled;
 
-        /** Holds a map of restricted tool types. */
-        QMap<UIToolClass, QList<UIToolType> >  m_mapRestrictedToolTypes;
+        /** Holds the list of restricted tool types. */
+        QList<UIToolType>  m_listRestrictedToolTypes;
     /** @} */
 
     /** @name Children stuff.
@@ -237,8 +244,8 @@ private:
 
     /** @name Selection stuff.
       * @{ */
-        /** Holds the selected item map reference. */
-        QMap<UIToolClass, QPointer<UIToolsItem> >  m_mapCurrentItems;
+        /** Holds the current item reference. */
+        QPointer<UIToolsItem>  m_pCurrentItem;
     /** @} */
 };
 

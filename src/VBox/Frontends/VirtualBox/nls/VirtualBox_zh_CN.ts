@@ -4319,11 +4319,15 @@
         <source>Virtual Machine group</source>
         <translation type="vanished">虚拟电脑编组</translation>
     </message>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
+        <source>Virtual machine</source>
         <translation>虚拟电脑</translation>
     </message>
 </context>
@@ -24668,7 +24672,11 @@
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Welcome</source>
         <translation type="vanished">欢迎</translation>

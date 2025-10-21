@@ -265,6 +265,9 @@ private:
 UIModeCheckBox::UIModeCheckBox(QWidget *pParent)
     : QCheckBox(pParent)
 {
+#ifndef VBOX_WS_MAC
+    setFocusPolicy(Qt::TabFocus);
+#endif
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 }
 
@@ -322,7 +325,22 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
 #ifdef VBOX_WS_MAC
     contentRect.setLeft(contentRect.left() + 2); /// @todo justify!
     contentRect.setWidth(contentRect.width() - 10); /// @todo justify!
-#endif
+#else /* !VBOX_WS_MAC */
+    /* On non-macOS hosts we'll have to give some space to focus-frame: */
+    contentRect.setLeft(contentRect.left() + 1);
+    contentRect.setTop(contentRect.top() + 1);
+#endif /* !VBOX_WS_MAC */
+
+#ifndef VBOX_WS_MAC
+    /* On non-macOS hosts we'll have to draw focus-frame ourselves: */
+    if (hasFocus())
+    {
+        QStyleOptionFocusRect option;
+        option.initFrom(this);
+        option.rect = rect();
+        style()->drawPrimitive(QStyle::PE_FrameFocusRect, &option, &painter, this);
+    }
+#endif /* !VBOX_WS_MAC */
 
     /* Prepare left painter paths: */
     QPainterPath painterPath1;
@@ -506,31 +524,43 @@ void UIFilterEditor::paintEvent(QPaintEvent *pEvent)
     /* Prepare colors: */
     const bool fActive = window() && window()->isActiveWindow();
     const QPalette::ColorGroup enmColorGroup = fActive ? QPalette::Active : QPalette::Inactive;
-#ifdef VBOX_WS_MAC
     const QColor colorHighlight = uiCommon().isInDarkMode()
                                 ? qApp->palette().color(enmColorGroup, QPalette::Highlight).lighter(110)
                                 : qApp->palette().color(enmColorGroup, QPalette::Highlight).darker(110);
-#endif
-    const QColor colorBase = qApp->palette().color(enmColorGroup, QPalette::Base);
+    QColor colorBase = qApp->palette().color(enmColorGroup, QPalette::Base);
+    colorBase.setAlpha(qMax(colorBase.alpha(), 250));
     const QColor colorFrame = uiCommon().isInDarkMode()
                             ? qApp->palette().color(enmColorGroup, QPalette::Window).lighter(120)
                             : qApp->palette().color(enmColorGroup, QPalette::Window).darker(120);
 
-    /* Prepare base/frame painter path: */
+    /* Prepare focus-frame and base painter path: */
     const QRegion totalRegion = QRegion(m_pLineEdit->geometry()) + QRegion(m_pToolButton->geometry());
     QRect widgetRect = totalRegion.boundingRect();
-#ifdef VBOX_WS_MAC
-    const QRect focusRect = widgetRect;
+    QRect focusRect = widgetRect;
     widgetRect.adjust(3, 3, -3, -3);
+#ifndef VBOX_WS_MAC
+    /* Additionally prepare Windows/nix focus-frame: */
+    QRect nativeFocusRect = focusRect;
+    focusRect.adjust(1, 1, -1, -1);
+#endif /* !VBOX_WS_MAC */
     const QPainterPath focusPath = cookPainterPath(focusRect, m_iRadius + 2);
-#endif
     const QPainterPath widgetPath = cookPainterPath(widgetRect, m_iRadius);
 
-    /* Draw base/frame: */
-#ifdef VBOX_WS_MAC
+    /* Draw cross-platform focus-frame: */
     if (m_pLineEdit->hasFocus())
         painter.fillPath(focusPath, colorHighlight);
-#endif
+#ifndef VBOX_WS_MAC
+    /* Additionally draw Windows/nix focus-frame: */
+    if (m_pLineEdit->hasFocus())
+    {
+        QStyleOptionFocusRect option;
+        option.initFrom(this);
+        option.rect = nativeFocusRect;
+        style()->drawPrimitive(QStyle::PE_FrameFocusRect, &option, &painter, this);
+    }
+#endif /* !VBOX_WS_MAC */
+
+    /* Draw base: */
     painter.fillPath(widgetPath, colorBase);
     painter.strokePath(widgetPath, colorFrame);
 }
@@ -549,7 +579,7 @@ void UIFilterEditor::sltHandleButtonClicked()
 void UIFilterEditor::prepare()
 {
     /* Init the decoration radius: */
-    m_iRadius = 10;
+    m_iRadius = 8;
 
     /* Prepare filter editor: */
     m_pLineEdit = new QILineEdit(this);
@@ -582,6 +612,7 @@ void UIFilterEditor::prepare()
     m_pToolButton = new QToolButton(this);
     if (m_pToolButton)
     {
+        m_pToolButton->setFocusPolicy(Qt::NoFocus);
         m_pToolButton->setStyleSheet("QToolButton {\
                                       border: 0px none black;\
                                       margin: 0px 5px 0px 5px;\
@@ -758,6 +789,9 @@ void UIVerticalScrollArea::wheelEvent(QWheelEvent *pEvent)
 
 void UIVerticalScrollArea::prepare()
 {
+    /* No need to have focus, children will have it: */
+    setFocusPolicy(Qt::NoFocus);
+
     /* Make vertical scroll-bar always hidden: */
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
@@ -1233,9 +1267,6 @@ void UIAdvancedSettingsDialog::addItem(const QString &strBigIcon,
                 this, &UIAdvancedSettingsDialog::sltHandleValidityChange);
         pSettingsPage->setValidator(pValidator);
         m_pWarningPane->registerValidator(pValidator);
-
-        /* Update navigation (tab-order): */
-        pSettingsPage->setOrderAfter(m_pSelector->widget());
     }
 }
 
@@ -1492,13 +1523,10 @@ void UIAdvancedSettingsDialog::prepareSelector()
         m_pLayoutMain->addWidget(m_pCheckBoxMode, 0, 0);
     }
 
-    /* Prepare classical tree-view selector: */
-    m_pSelector = new UISettingsSelectorTreeView(centralWidget());
+    /* Prepare classical list-widget selector: */
+    m_pSelector = new UISettingsSelectorListWidget(centralWidget());
     if (m_pSelector)
-    {
         m_pLayoutMain->addWidget(m_pSelector->widget(), 1, 0);
-        m_pSelector->widget()->setFocus();
-    }
 
     /* Prepare filter editor: */
     m_pEditorFilter = new UIFilterEditor(centralWidget());
@@ -1511,7 +1539,7 @@ void UIAdvancedSettingsDialog::prepareSelector()
 
     /* Configure selector created above: */
     if (m_pSelector)
-        connect(m_pSelector, &UISettingsSelectorTreeView::sigCategoryChanged,
+        connect(m_pSelector, &UISettingsSelector::sigCategoryChanged,
                 this, &UIAdvancedSettingsDialog::sltCategoryChanged);
 }
 

@@ -2297,6 +2297,10 @@
 #define VERR_SVM_VMRUN_PRECOND_2                    (-4072)
 /** Precodition no 3 in hmR0SvmVmRun failed. */
 #define VERR_SVM_VMRUN_PRECOND_3                    (-4073)
+/** Host API has not enabled SVME bit in EFER MSR. */
+#define VERR_SVM_HOST_SVME_NOT_ENABLED              (-4074)
+/** Host API has not set a valid physical address of host-state area. */
+#define VERR_SVM_HOST_VM_HSAVE_PA_INVALID           (-4075)
 /** @} */
 
 
@@ -3121,6 +3125,16 @@
 #define VERR_APIC_INTR_MASKED_BY_TPR                (-6701)
 /** APIC did not accept the interrupt. */
 #define VERR_APIC_INTR_DISCARDED                    (-6702)
+/** APIC initialization failed. */
+#define VERR_APIC_INIT_FAILED                       (-6703)
+/** APIC register/MSR write invalid. */
+#define VERR_APIC_WRITE_INVALID                     (-6704)
+/** APIC internal error \#0. */
+#define VERR_APIC_IPE_0                             (-6705)
+/** APIC internal error \#1. */
+#define VERR_APIC_IPE_1                             (-6706)
+/** APIC internal error \#2. */
+#define VERR_APIC_IPE_2                             (-6707)
 /** @} */
 
 /** @name NEM Status Codes

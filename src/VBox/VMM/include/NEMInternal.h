@@ -264,6 +264,8 @@ typedef struct NEM
     bool                        fExtendedCpuIdExit : 1;
     /** WHvRunVpExitReasonException is supported. */
     bool                        fExtendedXcptExit : 1;
+    /** WHvRunVpExitReasonX64ApicInitSipiTrap is supported. */
+    bool                        fExtendedApicInitSipiTrap : 1;
     /** Copy of WHV_CAPABILITY_FEATURES::SpeculationControl. */
     bool                        fSpeculationControl : 1;
     /** Whether to export/import IA32_SPEC_CTRL. */
@@ -356,8 +358,12 @@ typedef struct NEM
     /** @} */
     /** Dirty tracking slots. */
     NEMHVMMIO2REGION            aMmio2DirtyTracking[8];
+    /** The end of valid aMmio2DirtyTracking entries. */
+    uint32_t                    idxMmio2DirtyTrackingEnd;
+    uint32_t                    u32Padding2;
     /** The vCPU config. */
     hv_vcpu_config_t            hVCpuCfg;
+
 # elif defined(VBOX_VMM_TARGET_X86)
     /** Set if hv_vm_space_create() was called successfully. */
     bool                        fCreatedAsid : 1;
@@ -492,6 +498,9 @@ typedef struct NEMCPU
 # if 0
     STAMCOUNTER                 StatExitCpuId;
     STAMCOUNTER                 StatExitUnrecoverable;
+    STAMCOUNTER                 StatExitApicEoi;
+    STAMCOUNTER                 StatExitApicSipiInitTrap;
+    STAMCOUNTER                 StatExitCanceled;
     STAMCOUNTER                 StatGetMsgTimeout;
     STAMCOUNTER                 StatStopCpuSuccess;
     STAMCOUNTER                 StatStopCpuPending;
@@ -547,9 +556,9 @@ typedef struct NEMCPU
 
     /** @name Statistics
      * @{ */
-    STAMCOUNTER                 StatExitPortIo;
     STAMCOUNTER                 StatExitMemUnmapped;
-    STAMCOUNTER                 StatExitMemIntercept;
+# if !defined(VBOX_VMM_TARGET_ARMV8)
+    STAMCOUNTER                 StatExitPortIo;
     STAMCOUNTER                 StatExitHalt;
     STAMCOUNTER                 StatExitInterruptWindow;
     STAMCOUNTER                 StatExitCpuId;
@@ -561,7 +570,19 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatExitExceptionGpMesa;
     STAMCOUNTER                 StatExitExceptionUd;
     STAMCOUNTER                 StatExitExceptionUdHandled;
+    STAMCOUNTER                 StatExitApicEoi;
+    STAMCOUNTER                 StatExitApicSipiInitTrap;
+    STAMCOUNTER                 StatExitCanceled;
+# endif
+# if defined(VBOX_VMM_TARGET_ARMV8)
+    STAMCOUNTER                 StatExitMemUnmappedToIem;
+    STAMCOUNTER                 StatExitMemIntercept;
+    STAMCOUNTER                 StatExitMemInterceptToIem;
+    STAMCOUNTER                 StatExitHypercall;
+    STAMCOUNTER                 StatExitCanceled;
+# endif
     STAMCOUNTER                 StatExitUnrecoverable;
+# if !defined(VBOX_VMM_TARGET_ARMV8)
     STAMCOUNTER                 StatGetMsgTimeout;
     STAMCOUNTER                 StatStopCpuSuccess;
     STAMCOUNTER                 StatStopCpuPending;
@@ -569,6 +590,7 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatStopCpuPendingOdd;
     STAMCOUNTER                 StatCancelChangedState;
     STAMCOUNTER                 StatCancelAlertedThread;
+# endif
     STAMCOUNTER                 StatBreakOnCancel;
     STAMCOUNTER                 StatBreakOnFFPre;
     STAMCOUNTER                 StatBreakOnFFPost;
@@ -679,13 +701,16 @@ typedef struct NEMCPU
 # ifdef VBOX_VMM_TARGET_ARMV8
     STAMCOUNTER                 StatExitCanceled;
     STAMCOUNTER                 StatExitVTimerActivated;
+    STAMCOUNTER                 StatExitExcp;
     STAMCOUNTER                 StatExitExcpDataAbort;
+    STAMCOUNTER                 StatExitExcpDataAbortDirty;
+    STAMCOUNTER                 StatExitExcpDataAbortToIem;
     STAMCOUNTER                 StatExitExcpSysInsn;
     STAMCOUNTER                 StatExitExcpHvcSmcInsn;
     STAMCOUNTER                 StatExitExcpWfxInsn;
     STAMCOUNTER                 StatExitExcpBrkInsn;
     STAMCOUNTER                 StatExitExcpSsFromLowerEl;
-#endif
+# endif
 # ifdef VBOX_WITH_STATISTICS
     STAMPROFILEADV              StatProfGstStateImport;
     STAMPROFILEADV              StatProfGstStateExport;

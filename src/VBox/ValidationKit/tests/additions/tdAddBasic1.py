@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 170882 $"
 
 # Standard Python imports.
 import os;
@@ -205,6 +205,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 self.sFileCdWait = ('%s/VBoxWindowsAdditions.exe' % (self.sGstPathGaPrefix,));
             elif oTestVm.isLinux():
                 self.sFileCdWait = ('%s/VBoxLinuxAdditions.run' % (self.sGstPathGaPrefix,));
+            elif oTestVm.isSolaris():
+                self.sFileCdWait = ('%s/VBoxSolarisAdditions.pkg' % (self.sGstPathGaPrefix,));
 
             oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
                                                                       cMsCdWait = 5 * 60 * 1000,
@@ -250,7 +252,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 ## @todo Final test: Uninstallation.
 
                 # Download the TxS (Test Execution Service) log. This is not fatal when not being present.
-                if not fRc:
+                # The TXS session can be None if re-connecting after the reboot failed.
+                if not fRc and oTxsSession is not None:
                     self.txsDownloadFiles(oSession, oTxsSession,
                                           [ (oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'vbox-txs-release.log'),
                                                               'vbox-txs-%s.log' % oTestVm.sVmName) ],
@@ -270,6 +273,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             (fRc, oTxsSession) = self.testWindowsInstallAdditions(oSession, oTxsSession, oTestVm);
         elif oTestVm.isLinux():
             (fRc, oTxsSession) = self.testLinuxInstallAdditions(oSession, oTxsSession, oTestVm);
+        elif oTestVm.isSolaris():
+            (fRc, oTxsSession) = self.testSolarisInstallAdditions(oSession, oTxsSession);
         else:
             reporter.error('Guest Additions installation not implemented for %s yet! (%s)' %
                            (oTestVm.sKind, oTestVm.sVmName,));
@@ -444,7 +449,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         #
         # Do the actual install.
         #
-        fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000, sExe, asArgs, fCheckSessionStatus = True);
+        fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 10 * 60 * 1000, sExe, asArgs, fCheckSessionStatus = True);
 
         # Add the Windows Guest Additions installer files to the files we want to download
         # from the guest. Note: There won't be a install_ui.log because of the silent installation.
@@ -573,11 +578,25 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                     reporter.testFailure('Rebooting and reconnecting to TXS service failed');
             else:
                 reporter.log('Skipping guest reboot after Guest Additions installation as requested');
-                fRc = self.txsRunTest(oTxsSession, 'Check Guest Additions kernel modules status', 5 * 60 * 1000,
-                                      self.getGuestSystemShell(oTestVm),
-                                      (self.getGuestSystemShell(oTestVm),
-                                      '/sbin/rcvboxadd', 'status-kernel'));
-                if fRc and oTxsSession.isSuccess():
+                #
+                # For test VMs which feature a graphical desktop _and_ use the VBoxVGA graphics controller emulation
+                # calling "/sbin/rcvboxadd status kernel" will report that the vboxvideo kernel module wasn't reloaded
+                # because Xorg will make use of any shipped vboxvideo driver (like tst-ubuntu-18_04_3-64 for instance)
+                # and prevent unloading the currently loaded vboxvideo driver.
+                # For these VMs don't bother with checking the status and just assume everything went well.
+                #
+                if oTestVm.sGraphicsControllerType == 'VMSVGA':
+                    fRc = self.txsRunTest(oTxsSession, 'Check Guest Additions kernel modules status', 5 * 60 * 1000,
+                                          self.getGuestSystemShell(oTestVm),
+                                          (self.getGuestSystemShell(oTestVm),
+                                          '/sbin/rcvboxadd', 'status-kernel'));
+                    if fRc and oTxsSession.isSuccess():
+                        pass;
+                    else:
+                        fRc = False;
+                        reporter.testFailure('Kernel modules were not reloaded');
+
+                if fRc:
                     fRc = self.txsRunTest(oTxsSession, 'Check Guest Additions user services status', 5 * 60 * 1000,
                                           self.getGuestSystemShell(oTestVm),
                                           (self.getGuestSystemShell(oTestVm),
@@ -587,9 +606,60 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                     else:
                         fRc = False;
                         reporter.testFailure('User services were not reloaded');
-                else:
-                    fRc = False;
-                    reporter.testFailure('Kernel modules were not reloaded');
+            if fRc:
+                reporter.testDone();
+
+        return (fRc, oTxsSession);
+
+    def testSolarisInstallAdditions(self, oSession, oTxsSession):
+        #
+        # The actual install.
+        #
+
+        # Create the admin file for the non interactive installation.
+        sAdminFile = '/root/admin';
+        sContent = 'mail=\n';
+        sContent += 'instance=overwrite\n';
+        sContent += 'partial=nocheck\n';
+        sContent += 'runlevel=nocheck\n';
+        sContent += 'idepend=nocheck\n';
+        sContent += 'rdepend=nocheck\n';
+        sContent += 'space=nocheck\n';
+        sContent += 'setuid=nocheck\n';
+        sContent += 'conflict=nocheck\n';
+        sContent += 'action=nocheck\n';
+        sContent += 'networktimeout=60\n';
+        sContent += 'networkretries=3\n';
+        sContent += 'authentication=quit\n';
+        sContent += 'keystore=/var/sadm/security\n';
+        sContent += 'proxy=\n';
+        sContent += 'basedir=default\n';
+
+        if oTxsSession.syncUploadString(sContent, sAdminFile, 0o644) is not True:
+            return reporter.error('Failed to create "%s" via TXS' % (sAdminFile,));
+
+        # Construct arguments for installer.
+        asArgs = [ '/usr/sbin/pkgadd', '-a', sAdminFile, '-n', '-d',
+                   '${CDROM}/%s/VBoxSolarisAdditions.pkg' % self.sGstPathGaPrefix,
+                   'SUNWvboxguest' ];
+
+        fRc = self.txsRunTest(oTxsSession, 'VBoxSolarisAdditions.pkg', 30 * 60 * 1000,
+                              '/usr/sbin/pkgadd', asArgs);
+        if fRc and oTxsSession.isSuccess():
+            reporter.log('Installation completed');
+        else:
+            reporter.error('Installing Solaris Additions failed (isSuccess=%s, lastReply=%s, see log file for details)'
+                           % (oTxsSession.isSuccess(), oTxsSession.getLastReply()));
+
+        # Do the final reboot to get the just installed Guest Additions up and running.
+        if fRc:
+            if self.fRebootAfterInstall:
+                reporter.testStart('Rebooting guest after Guest Additions installation');
+                (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000);
+                if not fRc:
+                    reporter.testFailure('Rebooting and reconnecting to TXS service failed');
+            else:
+                reporter.log('Skipping guest reboot after Guest Additions installation as requested');
             if fRc:
                 reporter.testDone();
 

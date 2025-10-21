@@ -42,7 +42,7 @@
 #include <iprt/assert.h>
 
 /** QAccessibleWidget extension used as an accessibility interface for Chooser-view. */
-class UIAccessibilityInterfaceForUIChooserView : public QAccessibleWidget
+class UIAccessibilityInterfaceForUIChooserView : public QAccessibleWidget, public QAccessibleSelectionInterface
 {
 public:
 
@@ -59,57 +59,152 @@ public:
 
     /** Constructs an accessibility interface passing @a pWidget to the base-class. */
     UIAccessibilityInterfaceForUIChooserView(QWidget *pWidget)
+#ifdef VBOX_WS_MAC
+        // WORKAROUND: macOS doesn't respect QAccessible::Tree/TreeItem roles.
         : QAccessibleWidget(pWidget, QAccessible::List)
+#else
+        : QAccessibleWidget(pWidget, QAccessible::Tree)
+#endif
     {}
+
+    /** Returns a specialized accessibility interface type. */
+    virtual void *interface_cast(QAccessible::InterfaceType enmType) RT_OVERRIDE
+    {
+        switch (enmType)
+        {
+#ifdef VBOX_WS_MAC
+            /// @todo Fix selection interface for macOS first of all!
+#else
+            case QAccessible::SelectionInterface:
+                return static_cast<QAccessibleSelectionInterface*>(this);
+#endif
+            default:
+                break;
+        }
+
+        return 0;
+    }
 
     /** Returns the number of children. */
     virtual int childCount() const RT_OVERRIDE
     {
-        /* Make sure view still alive: */
+        /* Sanity check: */
         AssertPtrReturn(view(), 0);
+        AssertPtrReturn(view()->model(), 0);
+        AssertPtrReturn(view()->model()->root(), 0);
 
-        /* Return the number of model children if model really assigned: */
-        return view()->model() ? view()->model()->root()->items().size() : 0;
+        /* Return the number of model's root children: */
+        return view()->model()->root()->items().size();
     }
 
     /** Returns the child with the passed @a iIndex. */
     virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE
     {
-        /* Make sure view still alive: */
-        AssertPtrReturn(view(), 0);
-        /* Make sure index is valid: */
+        /* Sanity check: */
         AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+        AssertPtrReturn(view(), 0);
+        AssertPtrReturn(view()->model(), 0);
+        AssertPtrReturn(view()->model()->root(), 0);
 
-        /* Return the model child with the passed iIndex if model really assigned: */
-        return QAccessible::queryAccessibleInterface(view()->model() ? view()->model()->root()->items().at(iIndex) : 0);
+        /* Return the model's root child with the passed iIndex: */
+        return QAccessible::queryAccessibleInterface(view()->model()->root()->items().at(iIndex));
     }
 
-    /** Returns the index of passed @a pChild. */
+    /** Returns the index of the passed @a pChild. */
     virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
     {
-        /* Make sure view still alive: */
-        AssertPtrReturn(view(), -1);
-        /* Make sure child is valid: */
-        AssertReturn(pChild, -1);
+        /* Sanity check: */
+        AssertPtrReturn(pChild, -1);
 
         /* Acquire item itself: */
         UIChooserItem *pChildItem = qobject_cast<UIChooserItem*>(pChild->object());
 
+        /* Sanity check: */
+        AssertPtrReturn(pChildItem, -1);
+        AssertPtrReturn(pChildItem->parentItem(), -1);
+
         /* Return the index of item in it's parent: */
-        return   pChildItem && pChildItem->parentItem()
-               ? pChildItem->parentItem()->items().indexOf(pChildItem)
-               : -1;;
+        return pChildItem->parentItem()->items().indexOf(pChildItem);
+    }
+
+    /** Returns the state. */
+    virtual QAccessible::State state() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertPtrReturn(view(), QAccessible::State());
+
+        /* Compose the state: */
+        QAccessible::State myState;
+        myState.focusable = true;
+        if (view()->hasFocus())
+            myState.focused = true;
+
+        /* Return the state: */
+        return myState;
     }
 
     /** Returns a text for the passed @a enmTextRole. */
     virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
     {
-        /* Make sure view still alive: */
+        /* Sanity check: */
         AssertPtrReturn(view(), QString());
 
-        /* Return view tool-tip: */
-        Q_UNUSED(enmTextRole);
-        return view()->whatsThis();
+        /* Text for known roles: */
+        switch (enmTextRole)
+        {
+            case QAccessible::Name: return view()->whatsThis();
+            default: break;
+        }
+
+        /* Null string by default: */
+        return QString();
+    }
+
+    /** Returns the total number of selected accessible items. */
+    virtual int selectedItemCount() const RT_OVERRIDE
+    {
+        /* For now we are interested in just first one selected item: */
+        return 1;
+    }
+
+    /** Returns the list of selected accessible items. */
+    virtual QList<QAccessibleInterface*> selectedItems() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertPtrReturn(view(), QList<QAccessibleInterface*>());
+        AssertPtrReturn(view()->model(), QList<QAccessibleInterface*>());
+        AssertPtrReturn(view()->model()->firstSelectedItem(), QList<QAccessibleInterface*>());
+
+        /* For now we are interested in just first one selected item: */
+        return QList<QAccessibleInterface*>() << QAccessible::queryAccessibleInterface(view()->model()->firstSelectedItem());
+    }
+
+    /** Adds childItem to the selection. */
+    virtual bool select(QAccessibleInterface *) RT_OVERRIDE
+    {
+        /// @todo implement
+        return false;
+    }
+
+    /** Removes childItem from the selection. */
+    virtual bool unselect(QAccessibleInterface *) RT_OVERRIDE
+    {
+        /// @todo implement
+        return false;
+    }
+
+    /** Selects all accessible child items. */
+    virtual bool selectAll() RT_OVERRIDE
+    {
+        /// @todo implement
+        return false;
+    }
+
+    /** Unselects all accessible child items. */
+    virtual bool clear() RT_OVERRIDE
+    {
+        /// @todo implement
+        return false;
     }
 
 private:

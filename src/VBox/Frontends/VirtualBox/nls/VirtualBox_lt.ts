@@ -3694,11 +3694,15 @@
         <source>Virtual Machine group</source>
         <translation type="obsolete">Virtualių mašinų grupė</translation>
     </message>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
+        <source>Virtual machine</source>
         <translation type="unfinished">Virtuali mašina</translation>
     </message>
 </context>
@@ -22263,7 +22267,11 @@
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Media</source>
         <translation type="unfinished"></translation>

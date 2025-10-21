@@ -771,6 +771,7 @@ UICommon_QT_MOCHDRS = \
 	src/extensions/QITableView.h \
 	src/extensions/QITableWidget.h \
 	src/extensions/QITabWidget.h \
+	src/extensions/QITextEdit.h \
 	src/extensions/QIToolBar.h \
 	src/extensions/QIToolButton.h \
 	src/extensions/QITreeView.h \
@@ -992,8 +993,10 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/widgets/graphics/UIGraphicsScrollBar.cpp \
+	src/wizards/editors/UIHostnameDomainNameEditor.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
 	src/wizards/newvm/UIWizardNewVMSummaryPage.cpp
+
 
 #
 # VirtualBox Virtual Machine Application
@@ -1331,6 +1334,7 @@ UICommon_SOURCES = \
 	src/extensions/QITableView.cpp \
 	src/extensions/QITableWidget.cpp \
 	src/extensions/QITabWidget.cpp \
+	src/extensions/QITextEdit.cpp \
 	src/extensions/QIToolBar.cpp \
 	src/extensions/QIToolButton.cpp \
 	src/extensions/QITreeView.cpp \
@@ -1344,6 +1348,7 @@ UICommon_SOURCES = \
 	src/converter/UIConverterBackendCOM.cpp \
 	src/converter/UIConverterBackendGlobal.cpp \
 	src/globals/COMDefs.cpp \
+	src/globals/UIAccessible.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \

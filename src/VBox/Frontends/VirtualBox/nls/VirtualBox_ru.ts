@@ -2895,9 +2895,16 @@
     </message>
 </context>
 <context>
+    <name>UIChooserNodeGroup</name>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
+        <source>Virtual machine</source>
         <translation>Виртуальная машина</translation>
     </message>
 </context>
@@ -12389,7 +12396,11 @@
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Media</source>
         <translation>Носители</translation>

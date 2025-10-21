@@ -2525,8 +2525,6 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         else
             pVCpu->cpum.GstCtx.sp            = (uint16_t)NewOuterRsp.u;
 
-        iemRecalcExecModeAndCplAndAcFlags(pVCpu); /* Affects iemRegAddToRspEx and the setting of RSP/SP below.  */
-
         /** @todo check if the hidden bits are loaded correctly for 64-bit
          *        mode. */
     }
@@ -3724,10 +3722,6 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     pVCpu->cpum.GstCtx.cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
     pVCpu->cpum.GstCtx.cs.u32Limit   = cbLimitCS;
     pVCpu->cpum.GstCtx.cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
-    if (pVCpu->cpum.GstCtx.cs.Attr.n.u1Long || pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig)
-        pVCpu->cpum.GstCtx.rsp       = uNewRsp;
-    else
-        pVCpu->cpum.GstCtx.sp        = (uint16_t)uNewRsp;
     pVCpu->cpum.GstCtx.ss.Sel        = uNewSs;
     pVCpu->cpum.GstCtx.ss.ValidSel   = uNewSs;
     if (!(uNewSs & X86_SEL_MASK_OFF_RPL))
@@ -3746,6 +3740,13 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         pVCpu->cpum.GstCtx.ss.u64Base    = X86DESC_BASE(&DescSS.Legacy);
         Log2(("iret/64 new SS: base=%#RX64 lim=%#x attr=%#x\n", pVCpu->cpum.GstCtx.ss.u64Base, pVCpu->cpum.GstCtx.ss.u32Limit, pVCpu->cpum.GstCtx.ss.Attr.u));
     }
+
+    if (pVCpu->cpum.GstCtx.cs.Attr.n.u1Long)
+        pVCpu->cpum.GstCtx.rsp = uNewRsp;
+    else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
+        pVCpu->cpum.GstCtx.rsp = (uint32_t)uNewRsp;
+    else
+        pVCpu->cpum.GstCtx.sp  = (uint16_t)uNewRsp;
 
     if (IEM_GET_CPL(pVCpu) != uNewCpl)
     {
@@ -4337,7 +4338,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
         pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.SysEnter.eip;
         pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.SysEnter.esp;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_L | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
-                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC;
+                                        | X86_SEL_TYPE_ER_ACC;
         pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_64BIT;
     }
@@ -4348,7 +4349,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
         pVCpu->cpum.GstCtx.rip          = (uint32_t)pVCpu->cpum.GstCtx.SysEnter.eip;
         pVCpu->cpum.GstCtx.rsp          = (uint32_t)pVCpu->cpum.GstCtx.SysEnter.esp;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
-                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC;
+                                        | X86_SEL_TYPE_ER_ACC;
         pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_32BIT_PROT
                            | iemCalc32BitFlatIndicatorEsDs(pVCpu);
@@ -4364,7 +4365,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
     pVCpu->cpum.GstCtx.ss.u64Base       = 0;
     pVCpu->cpum.GstCtx.ss.u32Limit      = UINT32_MAX;
     pVCpu->cpum.GstCtx.ss.Attr.u        = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
-                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_RW_ACC;
+                                        | X86_SEL_TYPE_RW_ACC;
     pVCpu->cpum.GstCtx.ss.fFlags        = CPUMSELREG_FLAGS_VALID;
 
     pVCpu->cpum.GstCtx.rflags.Bits.u1IF = 0;
@@ -4434,7 +4435,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
         pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.rdx;
         pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.rcx;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_L | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
-                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC | (3 << X86DESCATTR_DPL_SHIFT);
+                                        | X86_SEL_TYPE_ER_ACC | (3 << X86DESCATTR_DPL_SHIFT);
         pVCpu->cpum.GstCtx.cs.Sel       = (uNewCs | 3) + 32;
         pVCpu->cpum.GstCtx.cs.ValidSel  = (uNewCs | 3) + 32;
         pVCpu->cpum.GstCtx.ss.Sel       = (uNewCs | 3) + 40;
@@ -4452,7 +4453,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
         pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.edx;
         pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.ecx;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
-                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC | (3 << X86DESCATTR_DPL_SHIFT);
+                                        | X86_SEL_TYPE_ER_ACC | (3 << X86DESCATTR_DPL_SHIFT);
         pVCpu->cpum.GstCtx.cs.Sel       = (uNewCs | 3) + 16;
         pVCpu->cpum.GstCtx.cs.ValidSel  = (uNewCs | 3) + 16;
         pVCpu->cpum.GstCtx.ss.Sel       = (uNewCs | 3) + 24;
@@ -4471,7 +4472,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
     pVCpu->cpum.GstCtx.ss.u64Base       = 0;
     pVCpu->cpum.GstCtx.ss.u32Limit      = UINT32_MAX;
     pVCpu->cpum.GstCtx.ss.Attr.u        = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
-                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_RW_ACC | (3 << X86DESCATTR_DPL_SHIFT);
+                                        | X86_SEL_TYPE_RW_ACC | (3 << X86DESCATTR_DPL_SHIFT);
     pVCpu->cpum.GstCtx.ss.fFlags        = CPUMSELREG_FLAGS_VALID;
     pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
 

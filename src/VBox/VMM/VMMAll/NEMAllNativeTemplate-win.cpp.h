@@ -419,6 +419,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         if (   pVCpu->nem.s.fDesiredInterruptWindows
             && pVCpu->nem.s.fPicReadyForInterrupt)
         {
+            Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_IF);
             ADD_REG64(WHvRegisterPendingEvent, 0);
 
             uint8_t bInterrupt;
@@ -890,7 +891,8 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
     if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
     {
         Assert(aenmNames[iReg] == WHvX64RegisterCr8);
-        PDMApicSetTpr(pVCpu, (uint8_t)aValues[iReg].Reg64 << 4);
+        if (!pVCpu->CTX_SUFF(pVM)->nem.s.fLocalApicEmulation)
+            PDMApicSetTpr(pVCpu, (uint8_t)aValues[iReg].Reg64 << 4);
         iReg++;
     }
 
@@ -1077,7 +1079,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
 
             GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrPAT, WHvX64RegisterPat, "MSR PAT");
 #if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
-            GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrPAT, WHvX64RegisterMsrMtrrCap);
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrCap, WHvX64RegisterMsrMtrrCap);
 #endif
             GET_REG64_LOG7(pCtxMsrs->msr.MtrrDefType,      WHvX64RegisterMsrMtrrDefType,     "MSR MTRR_DEF_TYPE");
             GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix64K_00000, WHvX64RegisterMsrMtrrFix64k00000, "MSR MTRR_FIX_64K_00000");
@@ -1593,8 +1595,9 @@ DECLINLINE(VBOXSTRICTRC) nemHCWinImportStateIfNeededStrict(PVMCPUCC pVCpu, uint6
  */
 DECLINLINE(void) nemR3WinCopyStateFromX64Header(PVMCPUCC pVCpu, WHV_VP_EXIT_CONTEXT const *pExitCtx)
 {
-    Assert(   (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT))
-           ==                              (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT));
+    AssertMsg(   (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT))
+              ==                              (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT),
+              ("fExtrn=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn));
 
     NEM_WIN_COPY_BACK_SEG(pVCpu->cpum.GstCtx.cs, pExitCtx->Cs);
     pVCpu->cpum.GstCtx.rip      = pExitCtx->Rip;
@@ -1602,7 +1605,10 @@ DECLINLINE(void) nemR3WinCopyStateFromX64Header(PVMCPUCC pVCpu, WHV_VP_EXIT_CONT
     pVCpu->nem.s.fLastInterruptShadow = CPUMUpdateInterruptShadowEx(&pVCpu->cpum.GstCtx,
                                                                     pExitCtx->ExecutionState.InterruptShadow,
                                                                     pExitCtx->Rip);
-    PDMApicSetTpr(pVCpu, pExitCtx->Cr8 << 4);
+    if (!pVCpu->CTX_SUFF(pVM)->nem.s.fLocalApicEmulation)
+        PDMApicSetTpr(pVCpu, pExitCtx->Cr8 << 4);
+    else
+        PDMApicImportState(pVCpu);
 
     pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_APIC_TPR);
 }
@@ -1718,6 +1724,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitIoPort(PVMCC pVM, PVMCPUCC pVCpu,
            || pExit->IoPortAccess.AccessInfo.AccessSize == 2
            || pExit->IoPortAccess.AccessInfo.AccessSize == 4);
 
+    nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
+
     /*
      * Whatever we do, we must clear pending event injection upon resume.
      */
@@ -1730,11 +1738,11 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitIoPort(PVMCC pVM, PVMCPUCC pVCpu,
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                             !pExit->IoPortAccess.AccessInfo.StringOp
                                             ? (  pExit->MemoryAccess.AccessInfo.AccessType == WHvMemoryAccessWrite
-                                               ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_WRITE)
-                                               : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_READ))
+                                               ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_X86_PIO_WRITE)
+                                               : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_X86_PIO_READ))
                                             : (  pExit->MemoryAccess.AccessInfo.AccessType == WHvMemoryAccessWrite
-                                               ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_WRITE)
-                                               : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_READ)),
+                                               ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_X86_PIO_STR_WRITE)
+                                               : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_X86_PIO_STR_READ)),
                                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
     if (!pExitRec)
     {
@@ -1757,10 +1765,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitIoPort(PVMCC pVM, PVMCPUCC pVCpu,
                       pExit->IoPortAccess.PortNumber, (uint32_t)pExit->IoPortAccess.Rax & fAndMask,
                       pExit->IoPortAccess.AccessInfo.AccessSize, VBOXSTRICTRC_VAL(rcStrict) ));
                 if (IOM_SUCCESS(rcStrict))
-                {
-                    nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
                     nemR3WinAdvanceGuestRipAndClearRF(pVCpu, &pExit->VpContext, 1);
-                }
             }
             else
             {
@@ -1778,7 +1783,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitIoPort(PVMCC pVM, PVMCPUCC pVCpu,
                         pVCpu->cpum.GstCtx.rax = uValue;
                     pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_RAX;
                     Log4(("IOExit/%u: RAX %#RX64 -> %#RX64\n", pVCpu->idCpu, pExit->IoPortAccess.Rax, pVCpu->cpum.GstCtx.rax));
-                    nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
                     nemR3WinAdvanceGuestRipAndClearRF(pVCpu, &pExit->VpContext, 1);
                 }
             }
@@ -1799,7 +1803,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitIoPort(PVMCC pVM, PVMCPUCC pVCpu,
              * experiments to figure out how it's communicated.  Alternatively, we can scan
              * the opcode bytes for possible evil prefixes.
              */
-            nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
             pVCpu->cpum.GstCtx.fExtrn &= ~(  CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX | CPUMCTX_EXTRN_RDI | CPUMCTX_EXTRN_RSI
                                            | CPUMCTX_EXTRN_DS  | CPUMCTX_EXTRN_ES);
             NEM_WIN_COPY_BACK_SEG(pVCpu->cpum.GstCtx.ds, pExit->IoPortAccess.Ds);
@@ -1837,7 +1840,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitIoPort(PVMCC pVM, PVMCPUCC pVCpu,
      * Frequent exit or something needing probing.
      * Get state and call EMHistoryExec.
      */
-    nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
     if (!pExit->IoPortAccess.AccessInfo.StringOp)
         pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_RAX;
     else
@@ -1918,7 +1920,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitInterruptWindow(PVMCC pVM, PVMCPU
 NEM_TMPL_STATIC VBOXSTRICTRC
 nemR3WinHandleExitCpuId(PVMCC pVM, PVMCPUCC pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExit)
 {
-    PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_CPUID),
+    PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_X86_CPUID),
                                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
     if (!pExitRec)
     {
@@ -2000,8 +2002,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitMsr(PVMCC pVM, PVMCPUCC pVCpu, WH
          */
         PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                                   pExit->MsrAccess.AccessInfo.IsWrite
-                                                ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE)
-                                                : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ),
+                                                ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_X86_MSR_WRITE)
+                                                : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_X86_MSR_READ),
                                                 pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
         nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
         rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu,
@@ -2477,11 +2479,13 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, WHV_R
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
             EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_HALT),
                              pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
+            nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
             Log4(("HaltExit/%u\n", pVCpu->idCpu));
             return VINF_EM_HALT;
 
         case WHvRunVpExitReasonCanceled:
-            Log4(("CanceledExit/%u\n", pVCpu->idCpu));
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitCanceled);
+            nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
             return VINF_SUCCESS;
 
         case WHvRunVpExitReasonX64InterruptWindow:
@@ -2505,6 +2509,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, WHV_R
             return nemR3WinHandleExitUnrecoverableException(pVM, pVCpu, pExit);
 
         case WHvRunVpExitReasonX64ApicEoi:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitApicEoi);
             Assert(pVM->nem.s.fLocalApicEmulation);
             PDMIoApicBroadcastEoi(pVCpu->CTX_SUFF(pVM), pExit->ApicEoi.InterruptVector);
             return VINF_SUCCESS;
@@ -2514,6 +2519,13 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, WHV_R
             LogRel(("Unimplemented exit:\n%.*Rhxd\n", (int)sizeof(*pExit), pExit));
             AssertLogRelMsgFailedReturn(("Unexpected exit on CPU #%u: %#x\n%.32Rhxd\n",
                                          pVCpu->idCpu, pExit->ExitReason, pExit), VERR_NEM_IPE_3);
+
+        case WHvRunVpExitReasonX64ApicInitSipiTrap:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitApicSipiInitTrap);
+            Assert(pVM->cCpus > 1);
+            Assert(pVM->nem.s.fLocalApicEmulation);
+            nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
+            return PDMApicSetIcr(pVCpu, pExit->ApicInitSipi.ApicIcr);
 
         /* Undesired exits: */
         case WHvRunVpExitReasonNone:
@@ -2626,6 +2638,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
             /* If only an APIC interrupt is pending, we need to know its priority. Otherwise we'll
              * likely get pointless deliverability notifications with IF=1 but TPR still too high.
              */
+            Assert(!pVM->nem.s.fLocalApicEmulation);
             bool    fPendingIntr = false;
             uint8_t bTpr = 0;
             uint8_t bPendingIntr = 0;
@@ -2773,6 +2786,9 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
                              aRegs[2].Reg64, aRegs[3].Segment.Selector, aRegs[4].Reg64, aRegs[5].Reg64));
                 }
 #endif
+                if (pVCpu->CTX_SUFF(pVM)->nem.s.fLocalApicEmulation)
+                    PDMApicExportState(pVCpu);
+
                 WHV_RUN_VP_EXIT_CONTEXT ExitReason = {0};
                 TMNotifyStartOfExecution(pVM, pVCpu);
 

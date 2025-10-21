@@ -62,7 +62,7 @@ public:
     static QList<const QIListWidgetItem*> toList(const QList<const QListWidgetItem*> &initialList);
 
     /** Constructs item passing @a pListWidget into the base-class. */
-    QIListWidgetItem(QIListWidget *pListWidget);
+    QIListWidgetItem(QIListWidget *pListWidget = 0);
     /** Constructs item passing @a strText and @a pListWidget into the base-class. */
     QIListWidgetItem(const QString &strText, QIListWidget *pListWidget);
     /** Constructs item passing @a icon, @a strText and @a pListWidget into the base-class. */
@@ -107,6 +107,9 @@ public:
     QList<QIListWidgetItem*> selectedItems() const;
     /** Finds items with the text that matches the string text using the given flags. */
     QList<QIListWidgetItem*> findItems(const QString &text, Qt::MatchFlags flags) const;
+
+    /** Finds first item with the property @a strKey having @a vValue. */
+    QIListWidgetItem *findItem(const QString &strKey, const QVariant &vValue);
 
 protected:
 

@@ -109,6 +109,12 @@
 
 #define IEM_MC_LOCAL_ASSIGN_CONST_U64(a_VarDst, a_Value)    (a_VarDst) = (a_Value)
 #define IEM_MC_LOCAL_ASSIGN_LOCAL_U64(a_VarDst, a_VarSrc)   (a_VarDst) = (a_VarSrc)
+/** For extracting a subfield from a_u64Value and assign it to a_u64VarDst. */
+#define IEM_MC_ASSIGN_2LOCS_SUBFIELD_U64(a_u64VarDst, a_u64Value, a_iFirstBit, a_cBits) \
+    (a_u64VarDst) = ((a_u64Value) >> (a_iFirstBit)) & (RT_BIT_64(a_cBits) - UINT64_C(1))
+/** For extracting a signed subfield from a_u64Value and assign it to a_u64VarDst. */
+#define IEM_MC_ASSIGN_2LOCS_SUBFIELD_U64_SX_S64(a_i64VarDst, a_u64Value, a_iFirstBit, a_cBits); \
+    (a_i64VarDst) = (int64_t)((a_u64Value) << (64 - a_iFirstBit - a_cBits)) >> (64 - a_cBits)
 
 /*
  * General purpose register accessors.
@@ -132,6 +138,7 @@
 #define IEM_MC_FETCH_GREG_U32_SX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = (int32_t)iemGRegFetchU32(pVCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U64(a_u64Dst, a_iGReg)        (a_u64Dst) = iemGRegFetchU64(pVCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U64_ZX_U64                    IEM_MC_FETCH_GREG_U64
+#define IEM_MC_FETCH_GREG_S64(a_i64Dst, a_iGReg)        (a_i64Dst) = (int64_t)iemGRegFetchU64(pVCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_PAIR_U32(a_u64Dst, a_iGRegLo, a_iGRegHi) do { \
         (a_u64Dst).s.Lo = iemGRegFetchU32(pVCpu, (a_iGRegLo)); \
         (a_u64Dst).s.Hi = iemGRegFetchU32(pVCpu, (a_iGRegHi)); \
@@ -151,7 +158,8 @@
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)      iemGRegStoreU32(pVCpu, (a_iGReg), (uint32_t)(a_u32Value)) /* clear high bits. */
 #define IEM_MC_STORE_GREG_I32(a_iGReg, a_i32Value)      *iemGRegRefU64(pVCpu, (a_iGReg)) = (uint32_t)(a_i32Value) /* clear high bits. */
 #define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)      iemGRegStoreU64(pVCpu, (a_iGReg), (a_u64Value))
-#define IEM_MC_STORE_GREG_I64(a_iGReg, a_i64Value)      *iemGRegRefI64(pVCpu, (a_iGReg)) = (a_i64Value)
+#define IEM_MC_STORE_GREG_S64(a_iGReg, a_i64Value)      iemGRegStoreU64(pVCpu, (a_iGReg), (uint64_t)(a_i64Value))
+#define IEM_MC_STORE_GREG_I64                           IEM_MC_STORE_GREG_S64
 #define IEM_MC_STORE_GREG_U32_CONST                     IEM_MC_STORE_GREG_U32
 #define IEM_MC_STORE_GREG_U64_CONST                     IEM_MC_STORE_GREG_U64
 #define IEM_MC_STORE_GREG_PAIR_U32(a_iGRegLo, a_iGRegHi, a_u64Value) do { \
@@ -204,17 +212,23 @@
 #define IEM_MC_FETCH_FREG_U16(a_u16Dst, a_iFpReg)       (a_u16Dst) = iemFRegFetchU16(pVCpu, (a_iFpReg))
 #define IEM_MC_FETCH_FREG_U32(a_u32Dst, a_iFpReg)       (a_u32Dst) = iemFRegFetchU32(pVCpu, (a_iFpReg))
 #define IEM_MC_FETCH_FREG_U64(a_u64Dst, a_iFpReg)       (a_u64Dst) = iemFRegFetchU64(pVCpu, (a_iFpReg))
+#define IEM_MC_FETCH_FREG_S64(a_i64Dst, a_iFpReg)       (a_i64Dst) = (int64_t)iemFRegFetchU64(pVCpu, (a_iFpReg))
 #define IEM_MC_FETCH_FREG_U128(a_u128Dst, a_iFpReg)     iemFRegFetchU128(pVCpu, (a_iFpReg), &(a_u128Dst))
 
 #define IEM_MC_STORE_FREG_U8( a_iFpReg, a_u8Value)      iemFRegStoreU16(pVCpu, (a_iFpReg), (a_u8Value))
 #define IEM_MC_STORE_FREG_U16(a_iFpReg, a_u16Value)     iemFRegStoreU16(pVCpu, (a_iFpReg), (a_u16Value))
 #define IEM_MC_STORE_FREG_U32(a_iFpReg, a_u32Value)     iemFRegStoreU32(pVCpu, (a_iFpReg), (a_u32Value))
 #define IEM_MC_STORE_FREG_U64(a_iFpReg, a_u64Value)     iemFRegStoreU64(pVCpu, (a_iFpReg), (a_u64Value))
+#define IEM_MC_STORE_FREG_S64(a_iFpReg, a_i64Value)     iemFRegStoreU64(pVCpu, (a_iFpReg), (a_i64Value)) /* not sign extending! */
 #define IEM_MC_STORE_FREG_U128(a_iFpReg, a_u128Value)   iemFRegStoreU128(pVCpu, (a_iFpReg), &(a_u128Value))
 
 
 #define IEM_MC_SUB_LOCAL_U32(a_u32Value, a_u32Const)    do { (a_u32Value) -= (a_u32Const); } while (0)
 #define IEM_MC_SUB_LOCAL_U64(a_u64Value, a_u64Const)    do { (a_u64Value) -= (a_u64Const); } while (0)
+
+#define IEM_MC_ADD_LOCAL_U32(a_u32Value, a_u32Const)    do { (a_u32Value) += (a_u32Const); } while (0)
+#define IEM_MC_ADD_LOCAL_U64(a_u64Value, a_u64Const)    do { (a_u64Value) += (a_u64Const); } while (0)
+#define IEM_MC_ADD_LOCAL_S64(a_i64Value, a_i64Const)    do { (a_i64Value) += (a_i64Const); } while (0)
 
 #define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u8Value, a_iGReg)    do { (a_u8Value)  += iemGRegFetchU8( pVCpu, (a_iGReg)); } while (0)
 #define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += iemGRegFetchU16(pVCpu, (a_iGReg)); } while (0)
@@ -223,6 +237,9 @@
 #define IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(a_EffAddr, a_i16) do { (a_EffAddr) += (a_i16); } while (0)
 #define IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR(a_EffAddr, a_i32) do { (a_EffAddr) += (a_i32); } while (0)
 #define IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR(a_EffAddr, a_i64) do { (a_EffAddr) += (a_i64); } while (0)
+
+#define IEM_MC_NEG_LOCAL_U32(a_u32Local)                do { (a_u32Local) = (uint32_t)-(int32_t)(a_u32Local); } while (0)
+#define IEM_MC_NEG_LOCAL_U64(a_u64Local)                do { (a_u64Local) = (uint64_t)-(int64_t)(a_u64Local); } while (0)
 
 #define IEM_MC_NOT_LOCAL_U32(a_u32Local)                do { (a_u32Local) = ~(a_u32Local); } while (0)
 #define IEM_MC_NOT_LOCAL_U64(a_u64Local)                do { (a_u64Local) = ~(a_u64Local); } while (0)
@@ -248,6 +265,7 @@
 #define IEM_MC_SAR_LOCAL_U64(a_u64Local, a_cShift)      do { (a_u64Local) = (uint64_t)((int64_t)(a_u64Local) >>(a_cShift));  } while (0)
 
 #define IEM_MC_SHR_LOCAL_U8(a_u8Local, a_cShift)        do { (a_u8Local)  >>= (a_cShift);  } while (0)
+#define IEM_MC_SHR_LOCAL_U32(a_u32Local, a_cShift)      do { (a_u32Local) >>= (a_cShift);  } while (0)
 #define IEM_MC_SHR_LOCAL_U64(a_u64Local, a_cShift)      do { (a_u64Local) >>= (a_cShift);  } while (0)
 
 #define IEM_MC_SHL_LOCAL_S16(a_i16Local, a_cShift)      do { (a_i16Local) <<= (a_cShift);  } while (0)
@@ -262,15 +280,22 @@
 
 #define IEM_MC_ADD_2LOCS_U32(a_u32Value, a_u32Addend)   do { (a_u32Value) += a_u32Addend; } while (0)
 #define IEM_MC_ADD_2LOCS_U64(a_u64Value, a_u64Addend)   do { (a_u64Value) += a_u64Addend; } while (0)
+#define IEM_MC_ADD_2LOCS_S64(a_i64Value, a_i64Addend)   do { (a_i64Value) += a_i64Addend; } while (0)
 
 #define IEM_MC_SUB_2LOCS_U32(a_u32Value, a_u32Subtrahend) do { (a_u32Value) -= a_u32Subtrahend; } while (0)
 #define IEM_MC_SUB_2LOCS_U64(a_u64Value, a_u64Subtrahend) do { (a_u64Value) -= a_u64Subtrahend; } while (0)
+#define IEM_MC_SUB_2LOCS_S64(a_i64Value, a_i64Subtrahend) do { (a_i64Value) -= a_i64Subtrahend; } while (0)
 
 #define IEM_MC_AND_2LOCS_U32(a_u32Local, a_u32Mask)     do { (a_u32Local) &= (a_u32Mask); } while (0)
 #define IEM_MC_AND_2LOCS_U64(a_u64Local, a_u64Mask)     do { (a_u64Local) &= (a_u64Mask); } while (0)
 
 #define IEM_MC_OR_2LOCS_U32(a_u32Local, a_u32Mask)      do { (a_u32Local) |= (a_u32Mask); } while (0)
 #define IEM_MC_OR_2LOCS_U64(a_u64Local, a_u64Mask)      do { (a_u64Local) |= (a_u64Mask); } while (0)
+
+/** For OR'ing in a subfield from a_u64Value into a_u64Local.
+ * @note The a_u64Value type can be int64_t, thus the cast.  */
+#define IEM_MC_OR_2LOCS_MASKED_AND_SHIFTED_U64(a_u64Local, a_u64Value, a_fValueAndMask, a_cValueLeftShift) \
+    do { (a_u64Local) |= ((uint64_t)(a_u64Value) & (a_fValueAndMask)) << (a_cValueLeftShift); } while (0)
 
 #define IEM_MC_XOR_2LOCS_U32(a_u32Local, a_u32Mask)     do { (a_u32Local) ^= (a_u32Mask); } while (0)
 #define IEM_MC_XOR_2LOCS_U64(a_u64Local, a_u64Mask)     do { (a_u64Local) ^= (a_u64Mask); } while (0)
@@ -286,6 +311,11 @@
 
 #define IEM_MC_ROR_2LOCS_U32(a_u32Local, a_cShift)      do { (a_u32Local) = ASMRotateRightU32((a_u32Local), (a_cShift));  } while (0)
 #define IEM_MC_ROR_2LOCS_U64(a_u64Local, a_cShift)      do { (a_u64Local) = ASMRotateRightU64((a_u64Local), (a_cShift));  } while (0)
+
+#define IEM_MC_MUL_2LOCS_U32(a_u32Local, a_u32Factor2)  do { (a_u32Local) *= (a_u32Factor2); } while (0)
+#define IEM_MC_MUL_2LOCS_U64(a_u64Local, a_u64Factor2)  do { (a_u64Local) *= (a_u64Factor2); } while (0)
+#define IEM_MC_MULH_2LOCS_S64(a_i64Local, a_i64Factor2) do { (void)ASMMult2xS64Ret2xS64(a_i64Local, a_i64Factor2, &(a_i64Local) /*high*/); } while (0)
+#define IEM_MC_MULH_2LOCS_U64(a_u64Local, a_u64Factor2) do { (void)ASMMult2xU64Ret2xU64(a_u64Local, a_u64Factor2, &(a_u64Local) /*high*/); } while (0)
 
 
 #define IEM_MC_AND_GREG_U32(a_iGReg, a_u32Value) \
@@ -528,6 +558,50 @@
     iemMemFlatStoreDataU256Jmp(pVCpu, (a_GCPtrMem), &(a_u256Value))
 #define IEM_MC_STORE_MEM_FLAT_U256_NO_AC(a_GCPtrMem, a_u256Value) \
     iemMemFlatStoreDataU256NoAcJmp(pVCpu, (a_GCPtrMem), &(a_u256Value))
+
+
+/** Relaxed (normal) ordering. */
+#define IEM_SPECIAL_MEM_F_ORDERING_RELAXED          0x00
+/** Load-AcquirePC (RCpc). */
+#define IEM_SPECIAL_MEM_F_ORDERING_ACQUIRE_PC       0x01
+/** Load-Acquire (RCsc). */
+#define IEM_SPECIAL_MEM_F_ORDERING_ACQUIRE          0x02
+/** Store-Release (RCsc). */
+#define IEM_SPECIAL_MEM_F_ORDERING_RELEASE          0x03
+/** Naturally align special fetch or store. */
+#define IEM_SPECIAL_MEM_F_ALIGN_NATURAL             0x10
+
+/* Loads w/ ordering. */
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U8(a_u8Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u8Dst) = iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U16(a_u16Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u16Dst) = iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U32(a_u32Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u32Dst) = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U64(a_u64Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u64Dst) = iemMemFlatFetchDataU64Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U128(a_u128Dst, a_GCPtrMem, a_OrderingAlign) \
+    iemMemFlatFetchDataU128Jmp(pVCpu, &(a_u128Dst), (a_GCPtrMem))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U256(a_u256Dst, a_GCPtrMem, a_OrderingAlign) \
+    iemMemFlatFetchDataU256NoAcJmp(pVCpu, &(a_u256Dst), (a_GCPtrMem))
+
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U8_ZX_U64(a_u64Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u64Dst) = iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U16_ZX_U64(a_u64Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u64Dst) = iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U32_ZX_U64(a_u64Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u64Dst) = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
+
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U8_SX_U32(a_u32Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u32Dst) = (int32_t)(int8_t)iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U8_SX_U64(a_u64Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u64Dst) = (int64_t)(int8_t)iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U16_SX_U32(a_u32Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u32Dst) = (int32_t)(int16_t)iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U16_SX_U64(a_u64Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u64Dst) = (int64_t)(int16_t)iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
+#define IEM_MC_SPECIAL_FETCH_MEM_FLAT_U32_SX_U64(a_u64Dst, a_GCPtrMem, a_OrderingAlign) \
+    ((a_u64Dst) = (int64_t)(int32_t)iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
 
 
 /* 8-bit */
@@ -1612,9 +1686,13 @@
         || !(IEM_MC_IF_FLAGS_EXPR & (a_fBit2))) {
 
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                   if ((a_Local) == 0) {
+#define IEM_MC_IF_LOCAL_IS_NZ(a_Local)                  if ((a_Local) != 0) {
 #define IEM_MC_IF_2LOCS_MASK_EQ_U64(a_Local1, a_Local2, a_f64Mask) \
                                                         if (((a_Local1) & (a_f64Mask)) == ((a_Local2) & (a_f64Mask))) {
-#define IEM_MC_IF_2LOCS_GT_U64(a_Local1, a_Local2)      if ((a_Local1) >= (a_Local2)) { /* unsigned compare */
+#define IEM_MC_IF_2LOCS_GT_U64(a_uLocal1, a_uLocal2)    if ((a_uLocal1) >  (a_uLocal2)) { /* unsigned compare */
+#define IEM_MC_IF_2LOCS_GT_S64(a_iLocal1, a_iLocal2)    if ((a_iLocal1) >  (a_iLocal2)) { /* signed compare */
+#define IEM_MC_IF_2LOCS_GE_U64(a_uLocal1, a_uLocal2)    if ((a_uLocal1) >= (a_uLocal2)) { /* unsigned compare */
+#define IEM_MC_IF_2LOCS_GE_S64(a_iLocal1, a_iLocal2)    if ((a_iLocal1) >= (a_iLocal2)) { /* signed compare */
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (iemGRegFetchU64(pVCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
 
 #define IEM_MC_ELSE()                                   } else {

@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 170875 $"
 
 # Standard Python imports.
 import os
@@ -292,6 +292,11 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                 asArgs.append('--many-files=3072');
             elif utils.getHostOs() in [ 'linux', ]:
                 asArgs.append('--many-files=4096');
+
+            # On Windows hosts we get spurious VERR_SHARING_VIOLATION errors for the rmdir
+            # testcase without any process accessing it, so disable it there for now.
+            if utils.getHostOs() in [ 'win' ]:
+                asArgs.append('--no-mk-rm-dir');
 
             # Add the extra arguments from the command line and kick it off:
             asArgs.extend(self.asExtraArgs);

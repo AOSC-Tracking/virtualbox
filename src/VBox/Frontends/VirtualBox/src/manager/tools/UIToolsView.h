@@ -43,6 +43,13 @@ class UIToolsView : public QIGraphicsView
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about focus-in event. */
+    void sigFocusInEvent();
+    /** Notifies listeners about focus-out event. */
+    void sigFocusOutEvent();
+
 public:
 
     /** Constructs a Tools-view passing @a pParent to the base-class.
@@ -72,6 +79,11 @@ protected:
       * @{ */
         /** Handles resize @a pEvent. */
         virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
+
+        /** Handles focus-in event. */
+        virtual void focusInEvent(QFocusEvent *pEvent) RT_OVERRIDE;
+        /** Handles focus-out event. */
+        virtual void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE;
     /** @} */
 
 private slots:
@@ -113,11 +125,6 @@ private:
       * @{ */
         /** Updates scene rectangle. */
         void updateSceneRect();
-
-#ifndef VBOX_WS_MAC
-        /** Returns a number shifter per 10% from @a i1 to @a i2. */
-        static int iShift10(int i1, int i2);
-#endif
     /** @} */
 
     /** @name General stuff.

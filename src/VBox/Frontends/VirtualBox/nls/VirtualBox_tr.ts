@@ -2885,10 +2885,17 @@
     </message>
 </context>
 <context>
+    <name>UIChooserNodeGroup</name>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
-        <translation>Sanal Makine</translation>
+        <source>Virtual machine</source>
+        <translation>Sanal makine</translation>
     </message>
 </context>
 <context>
@@ -12376,7 +12383,11 @@
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Media</source>
         <translation>Ortam</translation>

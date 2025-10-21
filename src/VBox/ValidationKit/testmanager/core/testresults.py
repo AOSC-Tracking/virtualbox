@@ -39,7 +39,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 170701 $"
 
 
 # Standard python imports.
@@ -437,6 +437,7 @@ class TestResultFileData(ModelDataBase):
     ksKind_LogUninstaller           = 'log/uninstaller';
     ksKind_LogGuestKernel           = 'log/guest/kernel';
     ksKind_ProcessReportVm          = 'process/report/vm';
+    ksKind_ProcessReportGuest       = 'process/report/guest';
     ksKind_CrashReportVm            = 'crash/report/vm';
     ksKind_CrashDumpVm              = 'crash/dump/vm';
     ksKind_CrashReportSvc           = 'crash/report/svc';
@@ -463,6 +464,7 @@ class TestResultFileData(ModelDataBase):
         ksKind_LogUninstaller,
         ksKind_LogGuestKernel,
         ksKind_ProcessReportVm,
+        ksKind_ProcessReportGuest,
         ksKind_CrashReportVm,
         ksKind_CrashDumpVm,
         ksKind_CrashReportSvc,

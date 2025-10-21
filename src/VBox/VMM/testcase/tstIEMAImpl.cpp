@@ -990,7 +990,7 @@ const char *GenFormatI16(int16_t const *pi16)
 static void GenerateHeader(PRTSTREAM pOut, const char *pszCpuDesc, const char *pszCpuType)
 {
     /* We want to tag the generated source code with the revision that produced it. */
-    static char s_szRev[] = "$Revision: 170187 $";
+    static char s_szRev[] = "$Revision: 170899 $";
     const char *pszRev = RTStrStripL(strchr(s_szRev, ':') + 1);
     size_t      cchRev = 0;
     while (RT_C_IS_DIGIT(pszRev[cchRev]))
@@ -9948,7 +9948,7 @@ int main(int argc, char **argv)
      * If not using the IEMAllAImpl.asm code, this will be set to Intel.
      */
 #if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
-    g_idxCpuEflFlavour = ASMIsAmdCpu() || ASMIsHygonCpu()
+    g_idxCpuEflFlavour = ASMIsAmdOrCompatibleCpu()
                        ? IEMTARGETCPU_EFL_BEHAVIOR_AMD
                        : IEMTARGETCPU_EFL_BEHAVIOR_INTEL;
 #else
@@ -10274,7 +10274,7 @@ int main(int argc, char **argv)
         RTMpGetDescription(NIL_RTCPUID, g_szCpuDesc, sizeof(g_szCpuDesc));
 
         /* For the revision, use the highest for this file and VBoxRT. */
-        static const char s_szRev[] = "$Revision: 170187 $";
+        static const char s_szRev[] = "$Revision: 170899 $";
         const char *pszRev = s_szRev;
         while (*pszRev && !RT_C_IS_DIGIT(*pszRev))
             pszRev++;

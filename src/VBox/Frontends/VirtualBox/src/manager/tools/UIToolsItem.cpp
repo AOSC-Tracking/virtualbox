@@ -36,14 +36,19 @@
 #include <QStyle>
 #include <QStyleOptionGraphicsItem>
 #include <QToolTip>
-#include <QWindow>
+#include <QWindow> // for windowHandle()
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIIconPool.h"
 #include "UIToolsItem.h"
 #include "UIToolsModel.h"
 #include "UIToolsView.h"
+#include "UITranslationEventListener.h"
 #include "UIVirtualBoxManager.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 
 /** QAccessibleObject extension used as an accessibility interface for Tools-view items. */
@@ -67,51 +72,32 @@ public:
         : QAccessibleObject(pObject)
     {}
 
+    /** Returns the role. */
+    virtual QAccessible::Role role() const RT_OVERRIDE
+    {
+        return QAccessible::ListItem;
+    }
+
     /** Returns the parent. */
     virtual QAccessibleInterface *parent() const RT_OVERRIDE
     {
-        /* Make sure item still alive: */
+        /* Sanity check: */
         AssertPtrReturn(item(), 0);
+        AssertPtrReturn(item()->model(), 0);
+        AssertPtrReturn(item()->model()->view(), 0);
 
         /* Return the parent: */
         return QAccessible::queryAccessibleInterface(item()->model()->view());
     }
 
-    /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE
-    {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), 0);
-
-        /* Zero: */
-        return 0;
-    }
-
-    /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int) const RT_OVERRIDE
-    {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), 0);
-
-        /* Null: */
-        return 0;
-    }
-
-    /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
-    {
-        /* Search for corresponding child: */
-        for (int i = 0; i < childCount(); ++i)
-            if (child(i) == pChild)
-                return i;
-
-        /* -1 by default: */
-        return -1;
-    }
-
     /** Returns the rect. */
     virtual QRect rect() const RT_OVERRIDE
     {
+        /* Sanity check: */
+        AssertPtrReturn(item(), QRect());
+        AssertPtrReturn(item()->model(), QRect());
+        AssertPtrReturn(item()->model()->view(), QRect());
+
         /* Now goes the mapping: */
         const QSize   itemSize         = item()->size().toSize();
         const QPointF itemPosInScene   = item()->mapToScene(QPointF(0, 0));
@@ -121,55 +107,64 @@ public:
         return itemRectInScreen;
     }
 
-    /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
+    /** Returns the number of children. */
+    virtual int childCount() const RT_OVERRIDE
     {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), QString());
-
-        switch (enmTextRole)
-        {
-            case QAccessible::Name:        return item()->name();
-            /// @todo handle!
-            //case QAccessible::Description: return item()->description();
-            default: break;
-        }
-
-        /* Null-string by default: */
-        return QString();
+        /* Zero: */
+        return 0;
     }
 
-    /** Returns the role. */
-    virtual QAccessible::Role role() const RT_OVERRIDE
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int) const RT_OVERRIDE
     {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), QAccessible::NoRole);
+        /* Null: */
+        return 0;
+    }
 
-        /* ListItem by default: */
-        return QAccessible::ListItem;
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface*) const RT_OVERRIDE
+    {
+        /* -1: */
+        return -1;
     }
 
     /** Returns the state. */
     virtual QAccessible::State state() const RT_OVERRIDE
     {
-        /* Make sure item still alive: */
+        /* Sanity check: */
         AssertPtrReturn(item(), QAccessible::State());
+        AssertPtrReturn(item()->model(), QAccessible::State());
 
         /* Compose the state: */
-        QAccessible::State state;
-        state.focusable = true;
-        state.selectable = true;
-
-        /* Compose the state of current item: */
-        if (item() && item() == item()->model()->currentItem(item()->itemClass()))
+        QAccessible::State myState;
+        myState.focusable = true;
+        myState.selectable = true;
+        if (item()->model()->currentItem() == item())
         {
-            state.active = true;
-            state.focused = true;
-            state.selected = true;
+            myState.focused = true;
+            myState.selected = true;
         }
 
         /* Return the state: */
-        return state;
+        return myState;
+    }
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertPtrReturn(item(), QString());
+
+        /* Text for known roles: */
+        switch (enmTextRole)
+        {
+            case QAccessible::Name:        return item()->name();
+            case QAccessible::Description: return item()->description();
+            default: break;
+        }
+
+        /* Null-string by default: */
+        return QString();
     }
 
 private:
@@ -339,11 +334,11 @@ UIToolsItemAnimation::UIToolsItemAnimation(QObject *pTarget, const QByteArray &p
 *   Class UIToolsItem implementation.                                                                                            *
 *********************************************************************************************************************************/
 
-UIToolsItem::UIToolsItem(QGraphicsScene *pScene, const QIcon &icon, UIToolType enmType)
+UIToolsItem::UIToolsItem(QGraphicsScene *pScene, UIToolType enmType)
     : m_pScene(pScene)
-    , m_icon(icon)
-    , m_enmClass(UIToolStuff::castTypeToClass(enmType))
     , m_enmType(enmType)
+    , m_enmClass(UIToolStuff::castTypeToClass(itemType()))
+    , m_icon(typeToIcon(itemType()))
     , m_enmReason(HidingReason_Null)
     , m_fHovered(false)
     , m_iPreviousMinimumWidthHint(0)
@@ -361,7 +356,11 @@ UIToolsItem::~UIToolsItem()
 
 UIToolsModel *UIToolsItem::model() const
 {
-    UIToolsModel *pModel = qobject_cast<UIToolsModel*>(QIGraphicsWidget::scene()->parent());
+    /* Sanity check: */
+    AssertPtrReturn(m_pScene, 0);
+
+    /* Acquire model from parent scene: */
+    UIToolsModel *pModel = qobject_cast<UIToolsModel*>(m_pScene->parent());
     AssertMsg(pModel, ("Incorrect graphics scene parent set!"));
     return pModel;
 }
@@ -369,7 +368,7 @@ UIToolsModel *UIToolsItem::model() const
 void UIToolsItem::setName(const QString &strName)
 {
     /* If name changed: */
-    if (m_strName != strName)
+    if (name() != strName)
     {
         /* Update linked values: */
         m_strName = strName;
@@ -420,6 +419,9 @@ void UIToolsItem::updateGeometry()
 
 int UIToolsItem::minimumWidthHint() const
 {
+    /* Sanity check: */
+    AssertPtrReturn(model(), 0);
+
     /* Prepare variables: */
     const int iMargin = data(ToolsItemData_Margin).toInt();
     const int iSpacing = data(ToolsItemData_Spacing).toInt();
@@ -431,7 +433,7 @@ int UIToolsItem::minimumWidthHint() const
     iProposedWidth += 2 * iMargin;
 #ifdef VBOX_WS_MAC
     /* Additional margin for non-Machine items (Global & Aux): */
-    if (m_enmClass == UIToolClass_Machine)
+    if (itemClass() == UIToolClass_Machine)
         iProposedWidth += iMargin;
     else
         iProposedWidth += 2 * iMargin;
@@ -446,9 +448,9 @@ int UIToolsItem::minimumWidthHint() const
     /* Take into account label size for non-Aux tools
      * 1. if text labels requested or
      * 2. machine item selected: */
-    const bool fCondition1 = m_enmClass == UIToolClass_Global && model()->showItemNames();
-    const bool fCondition2 = m_enmClass == UIToolClass_Machine && (   model()->showItemNames()
-                                                                   || model()->currentItem(itemClass()) == this);
+    const bool fCondition1 = itemClass() == UIToolClass_Global && model()->showItemNames();
+    const bool fCondition2 = itemClass() == UIToolClass_Machine && (   model()->showItemNames()
+                                                                    || model()->currentItem() == this);
     if (fCondition1 || fCondition2)
     {
         iProposedWidth += m_nameSize.width();
@@ -502,18 +504,23 @@ void UIToolsItem::showEvent(QShowEvent *pEvent)
 
 void UIToolsItem::hoverMoveEvent(QGraphicsSceneHoverEvent *)
 {
-    if (!m_fHovered)
+    if (!isHovered())
     {
+        /* Sanity check: */
+        AssertPtrReturnVoid(model());
+        AssertPtrReturnVoid(model()->view());
+        AssertPtrReturnVoid(model()->view()->parentWidget());
+
         m_fHovered = true;
 
         /* Show tooltip for all tools
          * 0. for Aux unconditionally
          * 1. for Global if text labels hidden
          * 2. For Machine if text labels hidden and item isn't selected: */
-        const bool fCondition0 = m_enmClass == UIToolClass_Aux;
-        const bool fCondition1 = m_enmClass == UIToolClass_Global && !model()->showItemNames();
-        const bool fCondition2 = m_enmClass == UIToolClass_Machine && !model()->showItemNames()
-                                                                   && model()->currentItem(itemClass()) != this;
+        const bool fCondition0 = itemClass() == UIToolClass_Aux;
+        const bool fCondition1 = itemClass() == UIToolClass_Global && !model()->showItemNames();
+        const bool fCondition2 = itemClass() == UIToolClass_Machine && !model()->showItemNames()
+                                                                    && model()->currentItem() != this;
         if (fCondition0 || fCondition1 || fCondition2)
         {
             const QPointF posAtScene = mapToScene(rect().topRight() + QPoint(3, -3));
@@ -530,7 +537,7 @@ void UIToolsItem::hoverMoveEvent(QGraphicsSceneHoverEvent *)
 
 void UIToolsItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
 {
-    if (m_fHovered)
+    if (isHovered())
     {
         m_fHovered = false;
         update();
@@ -554,6 +561,34 @@ void UIToolsItem::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOpt
     paintToolInfo(pPainter, rectangle);
 }
 
+void UIToolsItem::sltRetranslateUI()
+{
+    /* Translate item name: */
+    switch (itemType())
+    {
+        // Aux
+        case UIToolType_Toggle:      setName(tr("Show text")); break;
+        // Global
+        case UIToolType_Home:        setName(tr("Home")); break;
+        case UIToolType_Machines:    setName(tr("Machines")); break;
+        case UIToolType_Extensions:  setName(tr("Extensions")); break;
+        case UIToolType_Media:       setName(tr("Media")); break;
+        case UIToolType_Network:     setName(tr("Network")); break;
+        case UIToolType_Cloud:       setName(tr("Cloud")); break;
+        case UIToolType_Resources:   setName(tr("Resources")); break;
+        // Machine
+        case UIToolType_Details:     setName(tr("Details")); break;
+        case UIToolType_Snapshots:   setName(tr("Snapshots")); break;
+        case UIToolType_Logs:        setName(tr("Logs")); break;
+        case UIToolType_ResourceUse: setName(tr("Resource Use")); break;
+        case UIToolType_FileManager: setName(tr("File Manager")); break;
+        default: break;
+    }
+
+    /* Translate item description: */
+    m_strDescription = tr("Tool item");
+}
+
 void UIToolsItem::sltHandleWindowRemapped()
 {
     /* Update pixmap: */
@@ -563,7 +598,7 @@ void UIToolsItem::sltHandleWindowRemapped()
 void UIToolsItem::prepare()
 {
     /* Add item to the scene: */
-    AssertMsg(m_pScene, ("Incorrect scene passed!"));
+    AssertPtrReturnVoid(m_pScene);
     m_pScene->addItem(this);
 
     /* Install Tools-view item accessibility interface factory: */
@@ -575,38 +610,75 @@ void UIToolsItem::prepare()
     setFocusPolicy(Qt::NoFocus);
     setFlag(QGraphicsItem::ItemIsSelectable, false);
 
-    /* Prepare connections: */
-    prepareConnections();
-
     /* Init: */
     updatePixmap();
     updateNameSize();
 
     /* Create animation engine: */
     m_pAnimationEngine = new UIToolsItemAnimationEngine(this);
-}
-
-void UIToolsItem::prepareConnections()
-{
-    /* This => model connections: */
-    connect(this, &UIToolsItem::sigMinimumWidthHintChanged,
-            model(), &UIToolsModel::sltItemMinimumWidthHintChanged);
-    connect(this, &UIToolsItem::sigMinimumHeightHintChanged,
-            model(), &UIToolsModel::sltItemMinimumHeightHintChanged);
 
     /* Manager => this connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
             this, &UIToolsItem::sltHandleWindowRemapped);
+
+    /* Apply language settings: */
+    sltRetranslateUI();
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIToolsItem::sltRetranslateUI);
 }
 
 void UIToolsItem::cleanup()
 {
     /* If that item is current: */
-    if (model()->currentItem(itemClass()) == this)
+    if (model()->currentItem() == this)
     {
         /* Unset the current item: */
         model()->setCurrentItem(0);
     }
+}
+
+/* static */
+QIcon UIToolsItem::typeToIcon(UIToolType enmType)
+{
+    switch (enmType)
+    {
+        /* Aux tools: */
+        case UIToolType_Toggle:
+            return UIIconPool::iconSet(":/tools_menu_24px.png", ":/tools_menu_24px.png");
+
+        /* Global tools: */
+        case UIToolType_Home:
+            return UIIconPool::iconSet(":/welcome_screen_24px.png", ":/welcome_screen_24px.png");
+        case UIToolType_Machines:
+            return UIIconPool::iconSet(":/machine_details_manager_24px.png", ":/machine_details_manager_disabled_24px.png");
+        case UIToolType_Extensions:
+            return UIIconPool::iconSet(":/extension_pack_manager_24px.png", ":/extension_pack_manager_disabled_24px.png");
+        case UIToolType_Media:
+            return UIIconPool::iconSet(":/media_manager_24px.png", ":/media_manager_disabled_24px.png");
+        case UIToolType_Network:
+            return UIIconPool::iconSet(":/host_iface_manager_24px.png", ":/host_iface_manager_disabled_24px.png");
+        case UIToolType_Cloud:
+            return UIIconPool::iconSet(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_disabled_24px.png");
+        case UIToolType_Resources:
+            return UIIconPool::iconSet(":/resources_monitor_24px.png", ":/resources_monitor_disabled_24px.png");
+
+        /* Machine tools: */
+        case UIToolType_Details:
+            return UIIconPool::iconSet(":/machine_details_manager_24px.png", ":/machine_details_manager_disabled_24px.png");
+        case UIToolType_Snapshots:
+            return UIIconPool::iconSet(":/snapshot_manager_24px.png", ":/snapshot_manager_disabled_24px.png");
+        case UIToolType_Logs:
+            return UIIconPool::iconSet(":/vm_show_logs_24px.png", ":/vm_show_logs_disabled_24px.png");
+        case UIToolType_ResourceUse:
+            return UIIconPool::iconSet(":/performance_monitor_24px.png", ":/performance_monitor_disabled_24px.png");
+        case UIToolType_FileManager:
+            return UIIconPool::iconSet(":/file_manager_24px.png", ":/file_manager_disabled_24px.png");
+
+        default:
+            break;
+    }
+
+    AssertFailedReturn(QIcon());
 }
 
 QVariant UIToolsItem::data(int iKey) const
@@ -623,7 +695,7 @@ QVariant UIToolsItem::data(int iKey) const
         case ToolsItemData_Spacing:
         {
             const int iHint = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-            return m_enmClass == UIToolClass_Machine ? iHint / 4 : iHint / 2;
+            return itemClass() == UIToolClass_Machine ? iHint / 4 : iHint / 2;
         }
         case ToolsItemData_Padding:
         {
@@ -681,7 +753,7 @@ void UIToolsItem::updateNameSize()
 {
     /* Calculate new name size: */
     const QFontMetrics fm(data(Qt::FontRole).value<QFont>(), model()->paintDevice());
-    const QSize nameSize = QSize(fm.horizontalAdvance(m_strName), fm.height());
+    const QSize nameSize = QSize(fm.horizontalAdvance(name()), fm.height());
 
     /* Update linked values: */
     if (m_nameSize != nameSize)
@@ -700,7 +772,7 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
     const QPalette pal = QApplication::palette();
 
     /* Selection background: */
-    if (model()->currentItem(itemClass()) == this)
+    if (model()->currentItem() == this)
     {
         /* Acquire background color: */
         const QColor selectionColor = uiCommon().isInDarkMode()
@@ -763,10 +835,21 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
             default:
                 break;
         }
+
+#ifndef VBOX_WS_MAC
+        /* On non-macOS hosts we'll have to draw focus-frame ourselves: */
+        if (model()->view()->hasFocus())
+        {
+            QStyleOptionFocusRect focusOption;
+            focusOption.rect = rectangle;
+            focusOption.backgroundColor = pal.color(QPalette::Window);
+            QApplication::style()->drawPrimitive(QStyle::PE_FrameFocusRect, &focusOption, pPainter);
+        }
+#endif /* !VBOX_WS_MAC */
     }
 
     /* Hovering background for widget: */
-    else if (m_fHovered)
+    else if (isHovered())
     {
         /* Prepare variables: */
         const int iMargin = data(ToolsItemData_Margin).toInt();
@@ -785,7 +868,7 @@ void UIToolsItem::paintBackground(QPainter *pPainter, const QRect &rectangle) co
         subRect.setWidth(subRect.height());
 #ifdef VBOX_WS_MAC
         /* Take into account additional margin for non-Machine items (Global & Aux): */
-        if (m_enmClass == UIToolClass_Machine)
+        if (itemClass() == UIToolClass_Machine)
             subRect.moveTopLeft(rectangle.topLeft() + QPoint(1.5 * iMargin - iPadding, iMargin - iPadding));
         else
             subRect.moveTopLeft(rectangle.topLeft() + QPoint(2 * iMargin - iPadding, iMargin - iPadding));
@@ -826,7 +909,7 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
 #ifdef VBOX_WS_MAC
         /* Take into account additional margin for non-Machine items (Global & Aux): */
         int iPixmapX = 0;
-        if (m_enmClass == UIToolClass_Machine)
+        if (itemClass() == UIToolClass_Machine)
             iPixmapX = 1.5 * iMargin;
         else
             iPixmapX = 2 * iMargin;
@@ -845,13 +928,13 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
     }
 
     /* Paint right column: */
-    if (m_enmClass != UIToolClass_Aux)
+    if (itemClass() != UIToolClass_Aux)
     {
         /* Prepare variables: */
 #ifdef VBOX_WS_MAC
         /* Take into account additional margin for non-Machine items (Global & Aux): */
         int iNameX = 0;
-        if (m_enmClass == UIToolClass_Machine)
+        if (itemClass() == UIToolClass_Machine)
             iNameX = 1.5 * iMargin + m_pixmapSize.width() + 2 * iSpacing;
         else
             iNameX = 2 * iMargin + m_pixmapSize.width() + 2 * iSpacing;
@@ -863,9 +946,9 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
         /* Paint name for non-Aux tools
          * 1. if text labels requested or
          * 2. machine item selected: */
-        const bool fCondition1 = m_enmClass == UIToolClass_Global && model()->showItemNames();
-        const bool fCondition2 = m_enmClass == UIToolClass_Machine && (   model()->showItemNames()
-                                                                       || model()->currentItem(itemClass()) == this);
+        const bool fCondition1 = itemClass() == UIToolClass_Global && model()->showItemNames();
+        const bool fCondition2 = itemClass() == UIToolClass_Machine && (   model()->showItemNames()
+                                                                        || model()->currentItem() == this);
         if (fCondition1 || fCondition2)
         {
             /* Acquire font: */
@@ -881,14 +964,14 @@ void UIToolsItem::paintToolInfo(QPainter *pPainter, const QRect &rectangle) cons
                       /* Paint device: */
                       model()->paintDevice(),
                       /* Text to paint: */
-                      m_strName);
+                      name());
 
             /* Paint animated underline: */
             if (hoveringProgress())
             {
                 QFontMetrics fm(fnt);
                 const double fRatio = (double)hoveringProgress() / 100;
-                const int iLength = fRatio * fm.horizontalAdvance(m_strName);
+                const int iLength = fRatio * fm.horizontalAdvance(name());
                 pPainter->drawLine(QPoint(iNameX, iNameY + fm.height()),
                                    QPoint(iNameX + iLength, iNameY + fm.height()));
             }
@@ -920,15 +1003,6 @@ void UIToolsItem::paintText(QPainter *pPainter, QPoint point,
     point += QPoint(0, fm.ascent());
 
     /* Draw text: */
-    // QPainterPath textPath;
-    // textPath.addText(0, 0, font, strText);
-    // textPath.translate(point);
-    // pPainter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
-    // pPainter->setPen(QPen(uiCommon().isInDarkMode() ? Qt::black : Qt::white, 2, Qt::SolidLine, Qt::RoundCap));
-    // pPainter->drawPath(QPainterPathStroker().createStroke(textPath));
-    // pPainter->setBrush(uiCommon().isInDarkMode() ? Qt::white: Qt::black);
-    // pPainter->setPen(Qt::NoPen);
-    // pPainter->drawPath(textPath);
     pPainter->drawText(point, strText);
 
     /* Restore painter: */

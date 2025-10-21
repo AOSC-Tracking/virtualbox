@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 170879 $"
 
 # Standard Python imports.
 import copy;
@@ -182,6 +182,24 @@ g_kasPlatformArchitectureX86 = 'x86';
 g_kasPlatformArchitectureARM = 'ARM';
 ## @}
 
+## @name Flags for instruction set architecture extension which must be present for the VM to be supported on the host.
+## @{
+g_kfIsaExtSse42      = 0x00001;
+g_kfIsaExtSsse3      = 0x00002;
+g_kfIsaExtPopcnt     = 0x00004;
+g_kfIsaExtCmpxchgb16 = 0x00008;
+
+# This is a convenient helper for what is known as the x86-64-v2 microarchitecture level
+g_fIsaExtsX8664v2  = g_kfIsaExtSse42 | g_kfIsaExtSsse3 | g_kfIsaExtPopcnt | g_kfIsaExtCmpxchgb16;
+## @}
+
+g_kdaIsaExtsCpuidBits = {
+    g_kfIsaExtSse42:      1 << 20,
+    g_kfIsaExtSsse3:      1 <<  9,
+    g_kfIsaExtPopcnt:     1 << 23,
+    g_kfIsaExtCmpxchgb16: 1 << 13
+};
+
 ## Valid platform architectures.
 g_kasPlatformArchitectures = ( g_kasPlatformArchitectureX86, g_kasPlatformArchitectureARM );
 
@@ -208,6 +226,10 @@ g_kdaParavirtProvidersSupported = {
     g_ksGuestOsTypeWindows : ( g_ksParavirtProviderNone, g_ksParavirtProviderHyperV, )
 }
 
+## @name Flags for working around quirks of certain guests.
+## @{
+g_kfQuirkLinuxIoApic = 0x0001; ##< Patches the guest to avoid IO-APIC related guest panis during boot
+## @}
 
 # pylint: enable=line-too-long
 
@@ -244,6 +266,8 @@ class BaseTestVm(object):
                  fVmmDevTestingPart = None,                 # type: bool
                  fVmmDevTestingMmio = False,                # type: bool
                  iGroup = 1,                                # type: int
+                 fIsaExts = 0,                              # type: int
+                 fQuirks  = 0                               # type: int
                  ):
         self.oSet                    = oSet                 # type: TestVmSet
         self.sVmName                 = sVmName;
@@ -256,6 +280,8 @@ class BaseTestVm(object):
         self.asParavirtModesSup      = asParavirtModesSup;
         self.asParavirtModesSupOrg   = asParavirtModesSup;  # HACK ALERT! Trick to make the 'effing random mess not get in the
                                                             # way of actively selecting virtualization modes.
+        self.fIsaExts                = fIsaExts;
+        self.fQuirks                 = fQuirks;
 
         self.fSkip                   = False;               # All VMs are included in the configured set by default.
         self.fSnapshotRestoreCurrent = False;               # Whether to restore execution on the current snapshot.
@@ -441,6 +467,10 @@ class BaseTestVm(object):
             reporter.log('Skipping P4 incompatible VM.');
         elif self.sPlatformArchitecture == 'ARM' and utils.getHostArch() == 'amd64':
             reporter.log('Skipping ARM VM on amd64 host');
+        elif not self.areIsaExtsSupported(oTestDrv, self.fIsaExts):
+            # @todo r=aeichner This will skip a VM on an ARM host running in IEM if fIsaExts != 0,
+            #                  not important right now.
+            reporter.log('Skipping VM requiring ISA extensions not supported on the host');
         else:
             return False;
         return True;
@@ -627,6 +657,7 @@ class BaseTestVm(object):
         if self.isWindows():    return 'win';
         if self.isOS2():        return 'os2';
         if self.isLinux():      return 'linux';
+        if self.isSolaris():    return 'solaris';
         reporter.error('getGuestOs does not what to return!');
         raise Exception();
 
@@ -651,6 +682,10 @@ class BaseTestVm(object):
     def isLinux(self):
         """ Checks if it's an Linux VM. """
         return self.sGuestOsType == g_ksGuestOsTypeLinux;
+
+    def isSolaris(self):
+        """ Checks if it's an Solaris VM. """
+        return self.sGuestOsType == g_ksGuestOsTypeSolaris;
 
     def is64bit(self):
         """ Checks if it's a 64-bit VM. """
@@ -759,6 +794,32 @@ class BaseTestVm(object):
             return False;
         reporter.log('Skipping "%s" because host CPU is a family %u AMD, which may cause trouble for the guest OS installer.'
                      % (self.sVmName, uFamily,));
+        return True;
+
+    def areIsaExtsSupported(self, oTestDrv, fIsaExts):
+        """
+        Checks if the host CPU supports the given ISA extensions.
+        """
+        if fIsaExts == 0:
+            return True;
+
+        try:
+            if oTestDrv.fpApiVer >= 7.1:
+                (_, _, uEcx, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x00000001, 0);
+            else:
+                (_, _, uEcx, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x00000001, 0);
+        except:
+            #reporter.logXcpt();
+            return False;
+
+        fBit = 1;
+        while fIsaExts:
+            # Check whether the given instruction set extension is supported.
+            if uEcx & g_kdaIsaExtsCpuidBits[fIsaExts & fBit] == 0:
+                return False;
+
+            fIsaExts = fIsaExts & ~fBit; # Clear bit from the flags
+            fBit = fBit << 1;
         return True;
 
     def getTestUser(self):
@@ -984,7 +1045,7 @@ class BaseTestVm(object):
 
 
 ## @todo Inherit from BaseTestVm
-class TestVm(object):
+class TestVm(object):                                       # pylint: disable=too-many-instance-attributes
     """
     A Test VM - name + VDI/whatever.
 
@@ -1016,7 +1077,9 @@ class TestVm(object):
                  sGraphicsControllerType = None,            # type: str
                  fSecureBoot = False,                       # type: bool
                  sUefiMokPathPrefix = None,                 # type: str
-                 sPlatformArchitecture = 'x86'              # type: str
+                 sPlatformArchitecture = 'x86',             # type: str
+                 fIsaExts = 0,                              # type: int
+                 fQuirks = 0                                # type: int
                  ):
         self.oSet                    = oSet;
         self.sVmName                 = sVmName;
@@ -1048,6 +1111,8 @@ class TestVm(object):
         self.fSecureBoot             = fSecureBoot;
         self.sUefiMokPathPrefix      = sUefiMokPathPrefix;
         self.sPlatformArchitecture   = sPlatformArchitecture;
+        self.fIsaExts                = fIsaExts;
+        self.fQuirks                 = fQuirks;
 
         self.fSnapshotRestoreCurrent = False;        # Whether to restore execution on the current snapshot.
         self.fSkip                   = False;        # All VMs are included in the configured set by default.
@@ -1280,6 +1345,10 @@ class TestVm(object):
                     fRc = None; # Skip the test.
                 elif self.sPlatformArchitecture == 'ARM' and utils.getHostArch() == 'amd64':
                     fRc = None; # Skip the test.
+                elif not self.areIsaExtsSupported(oTestDrv, self.fIsaExts):
+                     # @todo r=aeichner This will skip a VM on an ARM host running in IEM if fIsaExts != 0,
+                     #                  not important right now.
+                    fRc = None; # Skip the test.
                 else:
                     oSession = oTestDrv.openSession(oVM);
                     if oSession is not None:
@@ -1328,6 +1397,11 @@ class TestVm(object):
                             utils.noxcptDeleteFile(self.sCom1RawFile);
                             fRc = oSession.setupSerialToRawFile(0, self.sCom1RawFile);
 
+                        # Apply any quirks being set.
+                        if fRc and self.fQuirks != 0:
+                            if self.fQuirks & g_kfQuirkLinuxIoApic:
+                                fRc = oSession.setExtraData('VBoxInternal2/LinuxIoApicPatching', '1');
+
                         # Make life simpler for child classes.
                         if fRc:
                             fRc = self._childVmReconfig(oTestDrv, oVM, oSession);
@@ -1357,6 +1431,7 @@ class TestVm(object):
         if self.isWindows():    return 'win';
         if self.isOS2():        return 'os2';
         if self.isLinux():      return 'linux';
+        if self.isSolaris():    return 'solaris';
         reporter.error('getGuestOs does not what to return!');
         raise Exception();
 
@@ -1381,6 +1456,10 @@ class TestVm(object):
     def isLinux(self):
         """ Checks if it's an Linux VM. """
         return self.sGuestOsType == g_ksGuestOsTypeLinux;
+
+    def isSolaris(self):
+        """ Checks if it's an Solaris VM. """
+        return self.sGuestOsType == g_ksGuestOsTypeSolaris;
 
     def is64bit(self):
         """ Checks if it's a 64-bit VM. """
@@ -1489,6 +1568,36 @@ class TestVm(object):
             return False;
         reporter.log('Skipping "%s" because host CPU is a family %u AMD, which may cause trouble for the guest OS installer.'
                      % (self.sVmName, uFamily,));
+        return True;
+
+    def areIsaExtsSupported(self, oTestDrv, fIsaExts):
+        """
+        Checks if the host CPU supports the given ISA extensions.
+        """
+        if fIsaExts == 0:
+            return True;
+
+        try:
+            if oTestDrv.fpApiVer >= 7.1:
+                (_, _, uEcx, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x00000001, 0);
+            else:
+                (_, _, uEcx, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x00000001, 0);
+        except:
+            #reporter.logXcpt();
+            return False;
+
+        fBit = 1;
+        while fIsaExts:
+            # Check whether the given instruction set extension is supported.
+            print('uEcx ' + str(uEcx));
+            print('fIsaExts ' + str(fIsaExts));
+            print('fBit ' + str(fBit));
+            print(str(g_kdaIsaExtsCpuidBits[fIsaExts & fBit]));
+            if (uEcx & g_kdaIsaExtsCpuidBits[fIsaExts & fBit]) == 0:
+                return False;
+
+            fIsaExts = fIsaExts & ~fBit; # Clear bit from the flags
+            fBit = fBit << 1;
         return True;
 
     def getTestUser(self):
@@ -2125,7 +2234,8 @@ class TestVmManager(object):
         TestVm('tst-ol-9_2-amd64',          kfGrpStdSmoke,        sHd = '7.1/smoketests/ol-9_2-amd64-txs.vdi',
                sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True,
                asParavirtModesSup = [g_ksParavirtProviderKVM,], sHddControllerType='SATA Controller',
-               sDvdControllerType = 'SATA Controller', sGraphicsControllerType = 'VMSVGA'),
+               sDvdControllerType = 'SATA Controller', sGraphicsControllerType = 'VMSVGA',
+               fIsaExts = g_fIsaExtsX8664v2),
         # Note: Don't use this image for VBoxService / Guest Control-related tests anymore;
         #       The distro has a buggy dbus implementation, which crashes often in some dbus watcher functions when being
         #       invoked by pm_sm_authenticate(). Also, the distro's repositories can't be used either easily anymore due to old
@@ -2148,14 +2258,17 @@ class TestVmManager(object):
         #       asParavirtModesSup = [g_ksParavirtProviderKVM,]),
         # Note: Has ancient Guest Additions 3.0.14 installed already.
         TestVm('tst-rhel5',                 kfGrpSmoke,           sHd = '3.0/tcp/rhel5.vdi',
-               sKind = 'RedHat', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
+               sKind = 'RedHat', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat',
+               fQuirks = g_kfQuirkLinuxIoApic),
         TestVm('tst-arch',                  kfGrpStandard,        sHd = '4.2/usb/tst-arch.vdi',
-               sKind = 'ArchLinux_64', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
+               sKind = 'ArchLinux_64', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat',
+               fQuirks = g_kfQuirkLinuxIoApic),
         # disabled 2019-03-08 klaus - fails all over the place and pollutes the test results
         #TestVm('tst-ubuntu-1804-64',   kfGrpStdSmoke,        sHd = '4.2/ubuntu-1804/t-ubuntu-1804-64.vdi',
         #       sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True),
         TestVm('tst-ol76-64',   kfGrpStdSmoke,        sHd = '4.2/ol76/t-ol76-64.vdi',
-               sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True),
+               sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True,
+               fQuirks = g_kfQuirkLinuxIoApic),
         TestVm('tst-ubuntu-20_04-64-amdvi',     kfGrpStdSmoke,    sHd = '6.1/ubuntu-20_04-64-updated_by_ksenia.vdi',
                sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True,
                asParavirtModesSup = [g_ksParavirtProviderKVM,], sNic0AttachType = 'nat', sChipsetType = 'ich9',
@@ -2262,7 +2375,8 @@ class TestVmManager(object):
 
         # Audio testing.
         TestVm('tst-audio-debian10-64',     kfGrpStdSmoke,       sHd = '6.1/audio/debian10-amd64-7.vdi',
-               sKind = 'Debian_64', acCpusSup = range(1, 33), fIoApic = True),
+               sKind = 'Debian_64', acCpusSup = range(1, 33), fIoApic = True,
+               fQuirks = g_kfQuirkLinuxIoApic),
 
         # DOS and Old Windows.
         AncientTestVm('tst-dos20',              sKind = 'DOS',

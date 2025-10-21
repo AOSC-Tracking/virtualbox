@@ -3866,11 +3866,15 @@
         <source>Virtual Machine group</source>
         <translation type="vanished">Grupa maszyny wirtualnej</translation>
     </message>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
+        <source>Virtual machine</source>
         <translation>Maszyna wirtualna</translation>
     </message>
 </context>
@@ -24411,7 +24415,11 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Welcome</source>
         <translation type="vanished">Powitanie</translation>

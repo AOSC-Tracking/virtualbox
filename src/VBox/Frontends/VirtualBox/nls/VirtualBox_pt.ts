@@ -3699,12 +3699,16 @@
         <source>Virtual Machine group</source>
         <translation type="vanished">Grupo da Máquina Virtual</translation>
     </message>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
-        <translation>Máquina Virtual</translation>
+        <source>Virtual machine</source>
+        <translation>Máquina virtual</translation>
     </message>
 </context>
 <context>
@@ -21404,7 +21408,11 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Welcome</source>
         <translation type="vanished">Bem-vindo</translation>

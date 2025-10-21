@@ -38,12 +38,11 @@
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
-class QSortFilterProxyModel;
+class QPainter;
+class QListWidgetItem;
 class UISelectorItem;
-class UISelectorModel;
-class UISelectorTreeView;
+class UISelectorListWidget;
 class UISettingsPage;
-
 
 /** QObject subclass providing settings dialog
   * with the means to switch between settings pages. */
@@ -123,20 +122,19 @@ protected:
     QList<UISelectorItem*> m_list;
 };
 
-
 /** UISettingsSelector subclass providing settings dialog
   * with the means to switch between settings pages.
-  * This one represented as tree-view. */
-class SHARED_LIBRARY_STUFF UISettingsSelectorTreeView : public UISettingsSelector
+  * This one represented as list-widget. */
+class SHARED_LIBRARY_STUFF UISettingsSelectorListWidget : public UISettingsSelector
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs settings selector passing @a pParent to the base-class. */
-    UISettingsSelectorTreeView(QWidget *pParent);
+    UISettingsSelectorListWidget(QWidget *pParent);
     /** Destructs settings selector. */
-    virtual ~UISettingsSelectorTreeView() RT_OVERRIDE;
+    virtual ~UISettingsSelectorListWidget() RT_OVERRIDE;
 
     /** Returns the widget selector operates on. */
     virtual QWidget *widget() const RT_OVERRIDE;
@@ -171,8 +169,11 @@ public:
 
 private slots:
 
-    /** Handles selector section change from @a pPrevItem to @a pItem. */
-    void sltHandleCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
+    /** Handles selector @a pItem painting with @a pPainter specified. */
+    void sltHandleItemPainted(QListWidgetItem *pItem, QPainter *pPainter);
+
+    /** Handles selector item change from @a pPreviousItem to @a pCurrentItem. */
+    void sltHandleCurrentItemChanged(QListWidgetItem *pCurrentItem, QListWidgetItem *pPreviousItem);
 
 private:
 
@@ -181,13 +182,11 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Holds the tree-view instance. */
-    UISelectorTreeView    *m_pTreeView;
-    /** Holds the model instance. */
-    UISelectorModel       *m_pModel;
-    /** Holds the proxy-model instance. */
-    QSortFilterProxyModel *m_pModelProxy;
-};
+    /** Calculates size-hint for @a pItem specified: */
+    QSize itemSizeHint(QListWidgetItem *pItem) const;
 
+    /** Holds the selector list-widget instance. */
+    UISelectorListWidget *m_pListWidget;
+};
 
 #endif /* !FEQT_INCLUDED_SRC_settings_UISettingsSelector_h */

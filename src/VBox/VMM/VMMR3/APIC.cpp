@@ -185,41 +185,18 @@ static const SSMFIELD g_aX2ApicPageFields[] =
 };
 
 
-/**
- * Sets the CPUID feature bits for the APIC mode.
- *
- * @param   pVM             The cross context VM structure.
- * @param   enmMode         The APIC mode.
+/*
+ * Instantiate the APIC R3-context common code.
  */
-static void apicR3SetCpuIdFeatureLevel(PVM pVM, PDMAPICMODE enmMode)
-{
-    switch (enmMode)
-    {
-        case PDMAPICMODE_NONE:
-            CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
-            CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
-            break;
-
-        case PDMAPICMODE_APIC:
-            CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
-            break;
-
-        case PDMAPICMODE_X2APIC:
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
-            break;
-
-        default:
-            AssertMsgFailed(("Unknown/invalid APIC mode: %d\n", (int)enmMode));
-    }
-}
+#define VMM_APIC_TEMPLATE_R3_COMMON
+#include "../VMMAll/APICAllCommon.cpp.h"
+#undef VMM_APIC_TEMPLATE_R3_COMMON
 
 
 /**
- * @interface_method_impl{PDMAPICBACKEND,pfnHvSetCompatMode}
+ * @interface_method_impl{PDMAPICBACKEND,pfnSetHvCompatMode}
  */
-DECLCALLBACK(int) apicR3HvSetCompatMode(PVM pVM, bool fHyperVCompatMode)
+DECLCALLBACK(int) apicR3SetHvCompatMode(PVM pVM, bool fHyperVCompatMode)
 {
     PAPIC pApic = VM_TO_APIC(pVM);
     if (pApic->fHyperVCompatMode ^ fHyperVCompatMode)
@@ -229,53 +206,6 @@ DECLCALLBACK(int) apicR3HvSetCompatMode(PVM pVM, bool fHyperVCompatMode)
     int rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic);
     AssertLogRelRC(rc);
     return rc;
-}
-
-
-/**
- * Helper for dumping an APIC 256-bit sparse register.
- *
- * @param   pApicReg        The APIC 256-bit spare register.
- * @param   pHlp            The debug output helper.
- */
-static void apicR3DbgInfo256BitReg(volatile const XAPIC256BITREG *pApicReg, PCDBGFINFOHLP pHlp)
-{
-    ssize_t const  cFragments = RT_ELEMENTS(pApicReg->u);
-    unsigned const cBitsPerFragment = sizeof(pApicReg->u[0].u32Reg) * 8;
-    XAPIC256BITREG ApicReg;
-    RT_ZERO(ApicReg);
-
-    pHlp->pfnPrintf(pHlp, "    ");
-    for (ssize_t i = cFragments - 1; i >= 0; i--)
-    {
-        uint32_t const uFragment = pApicReg->u[i].u32Reg;
-        ApicReg.u[i].u32Reg = uFragment;
-        pHlp->pfnPrintf(pHlp, "%08x", uFragment);
-    }
-    pHlp->pfnPrintf(pHlp, "\n");
-
-    uint32_t cPending = 0;
-    pHlp->pfnPrintf(pHlp, "    Pending:");
-    for (ssize_t i = cFragments - 1; i >= 0; i--)
-    {
-        uint32_t uFragment = ApicReg.u[i].u32Reg;
-        if (uFragment)
-        {
-            do
-            {
-                unsigned idxSetBit = ASMBitLastSetU32(uFragment);
-                --idxSetBit;
-                ASMBitClear(&uFragment, idxSetBit);
-
-                idxSetBit += (i * cBitsPerFragment);
-                pHlp->pfnPrintf(pHlp, " %#02x", idxSetBit);
-                ++cPending;
-            } while (uFragment);
-        }
-    }
-    if (!cPending)
-        pHlp->pfnPrintf(pHlp, " None");
-    pHlp->pfnPrintf(pHlp, "\n");
 }
 
 
@@ -303,7 +233,7 @@ static void apicR3DbgInfoPib(PCAPICPIB pApicPib, PCDBGFINFOHLP pHlp)
     }
 
     /* Dump it. */
-    apicR3DbgInfo256BitReg(&ApicReg, pHlp);
+    apicR3CommonDbgInfo256BitReg(&ApicReg, pHlp);
 }
 
 
@@ -321,104 +251,13 @@ static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     if (!pVCpu)
         pVCpu = pVM->apCpusR3[0];
 
-    PCAPICCPU    pApicCpu    = VMCPU_TO_APICCPU(pVCpu);
-    PCXAPICPAGE  pXApicPage  = VMCPU_TO_CXAPICPAGE(pVCpu);
-    PCX2APICPAGE pX2ApicPage = VMCPU_TO_CX2APICPAGE(pVCpu);
-
-    uint64_t const uBaseMsr  = pApicCpu->uApicBaseMsr;
-    APICMODE const enmMode   = apicGetMode(uBaseMsr);
-    bool const   fX2ApicMode = XAPIC_IN_X2APIC_MODE(pVCpu);
-
-    pHlp->pfnPrintf(pHlp, "APIC%u:\n", pVCpu->idCpu);
-    pHlp->pfnPrintf(pHlp, "  APIC Base MSR                 = %#RX64 (Addr=%#RX64%s%s%s)\n", uBaseMsr,
-                    MSR_IA32_APICBASE_GET_ADDR(uBaseMsr), uBaseMsr & MSR_IA32_APICBASE_EN ? " en" : "",
-                    uBaseMsr & MSR_IA32_APICBASE_BSP ? " bsp" : "", uBaseMsr & MSR_IA32_APICBASE_EXTD ? " extd" : "");
-    pHlp->pfnPrintf(pHlp, "  Mode                          = %u (%s)\n", enmMode, apicGetModeName(enmMode));
-    if (fX2ApicMode)
-        pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pX2ApicPage->id.u32ApicId,
-                                                                              pX2ApicPage->id.u32ApicId);
-    else
-        pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pXApicPage->id.u8ApicId, pXApicPage->id.u8ApicId);
-    pHlp->pfnPrintf(pHlp, "  Version                       = %#x\n",      pXApicPage->version.all.u32Version);
-    pHlp->pfnPrintf(pHlp, "    APIC Version                  = %#x\n",      pXApicPage->version.u.u8Version);
-    pHlp->pfnPrintf(pHlp, "    Max LVT entry index (0..N)    = %u\n",       pXApicPage->version.u.u8MaxLvtEntry);
-    pHlp->pfnPrintf(pHlp, "    EOI Broadcast supression      = %RTbool\n",  pXApicPage->version.u.fEoiBroadcastSupression);
-    if (!fX2ApicMode)
-        pHlp->pfnPrintf(pHlp, "  APR                           = %u (%#x)\n", pXApicPage->apr.u8Apr, pXApicPage->apr.u8Apr);
-    pHlp->pfnPrintf(pHlp, "  TPR                           = %u (%#x)\n", pXApicPage->tpr.u8Tpr, pXApicPage->tpr.u8Tpr);
-    pHlp->pfnPrintf(pHlp, "    Task-priority class           = %#x\n",      XAPIC_TPR_GET_TP(pXApicPage->tpr.u8Tpr) >> 4);
-    pHlp->pfnPrintf(pHlp, "    Task-priority subclass        = %#x\n",      XAPIC_TPR_GET_TP_SUBCLASS(pXApicPage->tpr.u8Tpr));
-    pHlp->pfnPrintf(pHlp, "  PPR                           = %u (%#x)\n", pXApicPage->ppr.u8Ppr, pXApicPage->ppr.u8Ppr);
-    pHlp->pfnPrintf(pHlp, "    Processor-priority class      = %#x\n",      XAPIC_PPR_GET_PP(pXApicPage->ppr.u8Ppr) >> 4);
-    pHlp->pfnPrintf(pHlp, "    Processor-priority subclass   = %#x\n",      XAPIC_PPR_GET_PP_SUBCLASS(pXApicPage->ppr.u8Ppr));
-    if (!fX2ApicMode)
-        pHlp->pfnPrintf(pHlp, "  RRD                           = %u (%#x)\n", pXApicPage->rrd.u32Rrd, pXApicPage->rrd.u32Rrd);
-    pHlp->pfnPrintf(pHlp, "  LDR                           = %#x\n",      pXApicPage->ldr.all.u32Ldr);
-    pHlp->pfnPrintf(pHlp, "    Logical APIC ID               = %#x\n",      fX2ApicMode ? pX2ApicPage->ldr.u32LogicalApicId
-                                                                          : pXApicPage->ldr.u.u8LogicalApicId);
-    if (!fX2ApicMode)
-    {
-        pHlp->pfnPrintf(pHlp, "  DFR                           = %#x\n",  pXApicPage->dfr.all.u32Dfr);
-        pHlp->pfnPrintf(pHlp, "    Model                         = %#x (%s)\n", pXApicPage->dfr.u.u4Model,
-                        apicGetDestFormatName((XAPICDESTFORMAT)pXApicPage->dfr.u.u4Model));
-    }
-    pHlp->pfnPrintf(pHlp, "  SVR                           = %#x\n", pXApicPage->svr.all.u32Svr);
-    pHlp->pfnPrintf(pHlp, "    Vector                        = %u (%#x)\n", pXApicPage->svr.u.u8SpuriousVector,
-                                                                          pXApicPage->svr.u.u8SpuriousVector);
-    pHlp->pfnPrintf(pHlp, "    Software Enabled              = %RTbool\n",  RT_BOOL(pXApicPage->svr.u.fApicSoftwareEnable));
-    pHlp->pfnPrintf(pHlp, "    Supress EOI broadcast         = %RTbool\n",  RT_BOOL(pXApicPage->svr.u.fSupressEoiBroadcast));
-    pHlp->pfnPrintf(pHlp, "  ISR\n");
-    apicR3DbgInfo256BitReg(&pXApicPage->isr, pHlp);
-    pHlp->pfnPrintf(pHlp, "  TMR\n");
-    apicR3DbgInfo256BitReg(&pXApicPage->tmr, pHlp);
-    pHlp->pfnPrintf(pHlp, "  IRR\n");
-    apicR3DbgInfo256BitReg(&pXApicPage->irr, pHlp);
+    PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    apicR3CommonDbgInfo(pVCpu, pHlp, pApicCpu->uApicBaseMsr);
+    pHlp->pfnPrintf(pHlp, "  ESR Internal                  = %#x\n", pApicCpu->uEsrInternal);
     pHlp->pfnPrintf(pHlp, "  PIB\n");
     apicR3DbgInfoPib((PCAPICPIB)pApicCpu->pvApicPibR3, pHlp);
     pHlp->pfnPrintf(pHlp, "  Level PIB\n");
     apicR3DbgInfoPib(&pApicCpu->ApicPibLevel, pHlp);
-    pHlp->pfnPrintf(pHlp, "  ESR Internal                  = %#x\n",      pApicCpu->uEsrInternal);
-    pHlp->pfnPrintf(pHlp, "  ESR                           = %#x\n",      pXApicPage->esr.all.u32Errors);
-    pHlp->pfnPrintf(pHlp, "    Redirectable IPI              = %RTbool\n",  pXApicPage->esr.u.fRedirectableIpi);
-    pHlp->pfnPrintf(pHlp, "    Send Illegal Vector           = %RTbool\n",  pXApicPage->esr.u.fSendIllegalVector);
-    pHlp->pfnPrintf(pHlp, "    Recv Illegal Vector           = %RTbool\n",  pXApicPage->esr.u.fRcvdIllegalVector);
-    pHlp->pfnPrintf(pHlp, "    Illegal Register Address      = %RTbool\n",  pXApicPage->esr.u.fIllegalRegAddr);
-    pHlp->pfnPrintf(pHlp, "  ICR Low                       = %#x\n",      pXApicPage->icr_lo.all.u32IcrLo);
-    pHlp->pfnPrintf(pHlp, "    Vector                        = %u (%#x)\n", pXApicPage->icr_lo.u.u8Vector,
-                                                                            pXApicPage->icr_lo.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "    Delivery Mode                 = %#x (%s)\n", pXApicPage->icr_lo.u.u3DeliveryMode,
-                    apicGetDeliveryModeName((XAPICDELIVERYMODE)pXApicPage->icr_lo.u.u3DeliveryMode));
-    pHlp->pfnPrintf(pHlp, "    Destination Mode              = %#x (%s)\n", pXApicPage->icr_lo.u.u1DestMode,
-                    apicGetDestModeName((XAPICDESTMODE)pXApicPage->icr_lo.u.u1DestMode));
-    if (!fX2ApicMode)
-        pHlp->pfnPrintf(pHlp, "    Delivery Status               = %u\n",       pXApicPage->icr_lo.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "    Level                         = %u\n",       pXApicPage->icr_lo.u.u1Level);
-    pHlp->pfnPrintf(pHlp, "    Trigger Mode                  = %u (%s)\n",  pXApicPage->icr_lo.u.u1TriggerMode,
-                    apicGetTriggerModeName((XAPICTRIGGERMODE)pXApicPage->icr_lo.u.u1TriggerMode));
-    pHlp->pfnPrintf(pHlp, "    Destination shorthand         = %#x (%s)\n", pXApicPage->icr_lo.u.u2DestShorthand,
-                    apicGetDestShorthandName((XAPICDESTSHORTHAND)pXApicPage->icr_lo.u.u2DestShorthand));
-    pHlp->pfnPrintf(pHlp, "  ICR High                      = %#x\n",      pXApicPage->icr_hi.all.u32IcrHi);
-    pHlp->pfnPrintf(pHlp, "    Destination field/mask        = %#x\n",      fX2ApicMode ? pX2ApicPage->icr_hi.u32IcrHi
-                                                                          : pXApicPage->icr_hi.u.u8Dest);
-}
-
-
-/**
- * Helper for dumping the LVT timer.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pHlp    The debug output helper.
- */
-static void apicR3InfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
-{
-    PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-    uint32_t const uLvtTimer = pXApicPage->lvt_timer.all.u32LvtTimer;
-    pHlp->pfnPrintf(pHlp, "LVT Timer          = %#RX32\n",   uLvtTimer);
-    pHlp->pfnPrintf(pHlp, "  Vector             = %u (%#x)\n", pXApicPage->lvt_timer.u.u8Vector, pXApicPage->lvt_timer.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "  Delivery status    = %u\n",       pXApicPage->lvt_timer.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "  Masked             = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtTimer));
-    pHlp->pfnPrintf(pHlp, "  Timer Mode         = %#x (%s)\n", pXApicPage->lvt_timer.u.u2TimerMode,
-                    apicGetTimerModeName((XAPICTIMERMODE)pXApicPage->lvt_timer.u.u2TimerMode));
 }
 
 
@@ -435,189 +274,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
         pVCpu = pVM->apCpusR3[0];
-
-    PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-
-    /*
-     * Delivery modes available in the LVT entries. They're different (more reserved stuff) from the
-     * ICR delivery modes and hence we don't use apicGetDeliveryMode but mostly because we want small,
-     * fixed-length strings to fit our formatting needs here.
-     */
-    static const char * const s_apszLvtDeliveryModes[] =
-    {
-        "Fixed ",
-        "Rsvd  ",
-        "SMI   ",
-        "Rsvd  ",
-        "NMI   ",
-        "INIT  ",
-        "Rsvd  ",
-        "ExtINT"
-    };
-    /* Delivery Status. */
-    static const char * const s_apszLvtDeliveryStatus[] =
-    {
-        "Idle",
-        "Pend"
-    };
-    const char *pszNotApplicable = "";
-
-    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC Local Vector Table (LVT):\n", pVCpu->idCpu);
-    pHlp->pfnPrintf(pHlp, "lvt     timermode  mask  trigger  rirr  polarity  dlvr_st  dlvr_mode   vector\n");
-    /* Timer. */
-    {
-        /* Timer modes. */
-        static const char * const s_apszLvtTimerModes[] =
-        {
-            "One-shot ",
-            "Periodic ",
-            "TSC-dline"
-        };
-        const uint32_t       uLvtTimer         = pXApicPage->lvt_timer.all.u32LvtTimer;
-        const XAPICTIMERMODE enmTimerMode      = XAPIC_LVT_GET_TIMER_MODE(uLvtTimer);
-        const char          *pszTimerMode      = s_apszLvtTimerModes[enmTimerMode];
-        const uint8_t        uMask             = XAPIC_LVT_IS_MASKED(uLvtTimer);
-        const uint8_t        uDeliveryStatus   = uLvtTimer & XAPIC_LVT_DELIVERY_STATUS;
-        const char          *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
-        const uint8_t        uVector           = XAPIC_LVT_GET_VECTOR(uLvtTimer);
-
-        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %3u (%#x)\n",
-                        "Timer",
-                        pszTimerMode,
-                        uMask,
-                        pszNotApplicable, /* TriggerMode */
-                        pszNotApplicable, /* Remote IRR */
-                        pszNotApplicable, /* Polarity */
-                        pszDeliveryStatus,
-                        pszNotApplicable, /* Delivery Mode */
-                        uVector,
-                        uVector);
-    }
-
-#if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
-    /* Thermal sensor. */
-    {
-        uint32_t const uLvtThermal = pXApicPage->lvt_thermal.all.u32LvtThermal;
-        const uint8_t           uMask             = XAPIC_LVT_IS_MASKED(uLvtThermal);
-        const uint8_t           uDeliveryStatus   = uLvtThermal & XAPIC_LVT_DELIVERY_STATUS;
-        const char             *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
-        const XAPICDELIVERYMODE enmDeliveryMode   = XAPIC_LVT_GET_DELIVERY_MODE(uLvtThermal);
-        const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
-        const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtThermal);
-
-        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %3u (%#x)\n",
-                        "Thermal",
-                        pszNotApplicable, /* Timer mode */
-                        uMask,
-                        pszNotApplicable, /* TriggerMode */
-                        pszNotApplicable, /* Remote IRR */
-                        pszNotApplicable, /* Polarity */
-                        pszDeliveryStatus,
-                        pszDeliveryMode,
-                        uVector,
-                        uVector);
-    }
-#endif
-
-    /* Performance Monitor Counters. */
-    {
-        uint32_t const uLvtPerf = pXApicPage->lvt_thermal.all.u32LvtThermal;
-        const uint8_t           uMask             = XAPIC_LVT_IS_MASKED(uLvtPerf);
-        const uint8_t           uDeliveryStatus   = uLvtPerf & XAPIC_LVT_DELIVERY_STATUS;
-        const char             *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
-        const XAPICDELIVERYMODE enmDeliveryMode   = XAPIC_LVT_GET_DELIVERY_MODE(uLvtPerf);
-        const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
-        const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtPerf);
-
-        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %3u (%#x)\n",
-                        "Perf",
-                        pszNotApplicable, /* Timer mode */
-                        uMask,
-                        pszNotApplicable, /* TriggerMode */
-                        pszNotApplicable, /* Remote IRR */
-                        pszNotApplicable, /* Polarity */
-                        pszDeliveryStatus,
-                        pszDeliveryMode,
-                        uVector,
-                        uVector);
-    }
-
-    /* LINT0, LINT1. */
-    {
-        /* LINTx name. */
-        static const char * const s_apszLvtLint[] =
-        {
-            "LINT0",
-            "LINT1"
-        };
-        /* Trigger mode. */
-        static const char * const s_apszLvtTriggerModes[] =
-        {
-            "Edge ",
-            "Level"
-        };
-        /* Polarity. */
-        static const char * const s_apszLvtPolarity[] =
-        {
-            "ActiveHi",
-            "ActiveLo"
-        };
-
-        uint32_t aLvtLint[2];
-        aLvtLint[0] = pXApicPage->lvt_lint0.all.u32LvtLint0;
-        aLvtLint[1] = pXApicPage->lvt_lint1.all.u32LvtLint1;
-        for (size_t i = 0; i < RT_ELEMENTS(aLvtLint); i++)
-        {
-            uint32_t const uLvtLint = aLvtLint[i];
-            const char             *pszLint           = s_apszLvtLint[i];
-            const uint8_t           uMask             = XAPIC_LVT_IS_MASKED(uLvtLint);
-            const XAPICTRIGGERMODE  enmTriggerMode    = XAPIC_LVT_GET_TRIGGER_MODE(uLvtLint);
-            const char             *pszTriggerMode    = s_apszLvtTriggerModes[enmTriggerMode];
-            const uint8_t           uRemoteIrr        = XAPIC_LVT_GET_REMOTE_IRR(uLvtLint);
-            const uint8_t           uPolarity         = XAPIC_LVT_GET_POLARITY(uLvtLint);
-            const char             *pszPolarity       = s_apszLvtPolarity[uPolarity];
-            const uint8_t           uDeliveryStatus   = uLvtLint & XAPIC_LVT_DELIVERY_STATUS;
-            const char             *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
-            const XAPICDELIVERYMODE enmDeliveryMode   = XAPIC_LVT_GET_DELIVERY_MODE(uLvtLint);
-            const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
-            const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtLint);
-
-            pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %u   %8s    %4s     %6s    %3u (%#x)\n",
-                            pszLint,
-                            pszNotApplicable, /* Timer mode */
-                            uMask,
-                            pszTriggerMode,
-                            uRemoteIrr,
-                            pszPolarity,
-                            pszDeliveryStatus,
-                            pszDeliveryMode,
-                            uVector,
-                            uVector);
-        }
-    }
-
-    /* Error. */
-    {
-        uint32_t const uLvtError = pXApicPage->lvt_thermal.all.u32LvtThermal;
-        const uint8_t           uMask             = XAPIC_LVT_IS_MASKED(uLvtError);
-        const uint8_t           uDeliveryStatus   = uLvtError & XAPIC_LVT_DELIVERY_STATUS;
-        const char             *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
-        const XAPICDELIVERYMODE enmDeliveryMode   = XAPIC_LVT_GET_DELIVERY_MODE(uLvtError);
-        const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
-        const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtError);
-
-        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %3u (%#x)\n",
-                        "Error",
-                        pszNotApplicable, /* Timer mode */
-                        uMask,
-                        pszNotApplicable, /* TriggerMode */
-                        pszNotApplicable, /* Remote IRR */
-                        pszNotApplicable, /* Polarity */
-                        pszDeliveryStatus,
-                        pszDeliveryMode,
-                        uVector,
-                        uVector);
-    }
+    apicR3CommonDbgInfoLvt(pVCpu, pHlp);
 }
 
 
@@ -634,17 +291,9 @@ static DECLCALLBACK(void) apicR3InfoTimer(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
         pVCpu = pVM->apCpusR3[0];
-
-    PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-    PCAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
-
-    pHlp->pfnPrintf(pHlp, "VCPU[%u] Local APIC timer:\n", pVCpu->idCpu);
-    pHlp->pfnPrintf(pHlp, "  ICR              = %#RX32\n", pXApicPage->timer_icr.u32InitialCount);
-    pHlp->pfnPrintf(pHlp, "  CCR              = %#RX32\n", pXApicPage->timer_ccr.u32CurrentCount);
-    pHlp->pfnPrintf(pHlp, "  DCR              = %#RX32\n", pXApicPage->timer_dcr.all.u32DivideValue);
-    pHlp->pfnPrintf(pHlp, "    Timer shift    = %#x\n",    apicGetTimerShift(pXApicPage));
+    PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    apicR3CommonDbgInfoLvtTimer(pVCpu, pHlp);
     pHlp->pfnPrintf(pHlp, "  Timer initial TS = %#RU64\n", pApicCpu->u64TimerInitial);
-    apicR3InfoLvtTimer(pVCpu, pHlp);
 }
 
 
@@ -745,7 +394,7 @@ static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix, uint32_t uVersi
             LogRel(("APIC%u: uIcr_Lo                  = %#RX32\n", pVCpu->idCpu, pXApicPage->icr_lo.all.u32IcrLo));
             LogRel(("APIC%u: uIcr_Hi                  = %#RX32\n", pVCpu->idCpu, pXApicPage->icr_hi.all.u32IcrHi));
             LogRel(("APIC%u: uTimerDcr                = %#RX32\n", pVCpu->idCpu, pXApicPage->timer_dcr.all.u32DivideValue));
-            LogRel(("APIC%u: uCountShift              = %#RX32\n", pVCpu->idCpu, apicGetTimerShift(pXApicPage)));
+            LogRel(("APIC%u: uCountShift              = %#RX32\n", pVCpu->idCpu, apicCommonGetTimerShift(pXApicPage)));
             LogRel(("APIC%u: uInitialCount            = %#RX32\n", pVCpu->idCpu, pXApicPage->timer_icr.u32InitialCount));
             LogRel(("APIC%u: u64InitialCountLoadTime  = %#RX64\n", pVCpu->idCpu, pApicCpu->u64TimerInitial));
             LogRel(("APIC%u: u64NextTime / TimerCCR   = %#RX64\n", pVCpu->idCpu, pXApicPage->timer_ccr.u32CurrentCount));
@@ -908,7 +557,7 @@ static int apicR3LoadLegacyVCpuData(PPDMDEVINS pDevIns, PVMCPU pVCpu, PSSMHANDLE
      * completely. The shift count can always be derived from the DCR.
      * See @bugref{8245#c98}.
      */
-    uint8_t const uTimerShift = apicGetTimerShift(pXApicPage);
+    uint8_t const uTimerShift = apicCommonGetTimerShift(pXApicPage);
 
     pHlp->pfnSSMGetU32(pSSM, &pXApicPage->timer_icr.u32InitialCount);
     pHlp->pfnSSMGetU64(pSSM, &pApicCpu->u64TimerInitial);
@@ -961,7 +610,7 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         pHlp->pfnSSMPutU32(pSSM, pApicCpu->uEsrInternal);
 
         /* Save the APIC page. */
-        if (XAPIC_IN_X2APIC_MODE(pVCpu))
+        if (XAPIC_IN_X2APIC_MODE(pVCpu->apic.s.uApicBaseMsr))
             pHlp->pfnSSMPutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, &g_aX2ApicPageFields[0]);
         else
             pHlp->pfnSSMPutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, &g_aXApicPageFields[0]);
@@ -1041,7 +690,7 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             pHlp->pfnSSMGetU32(pSSM, &pApicCpu->uEsrInternal);
 
             /* Load the APIC page. */
-            if (XAPIC_IN_X2APIC_MODE(pVCpu))
+            if (XAPIC_IN_X2APIC_MODE(pVCpu->apic.s.uApicBaseMsr))
                 pHlp->pfnSSMGetStruct(pSSM, pApicCpu->pvApicPageR3, &g_aX2ApicPageFields[0]);
             else
                 pHlp->pfnSSMGetStruct(pSSM, pApicCpu->pvApicPageR3, &g_aXApicPageFields[0]);
@@ -1055,7 +704,7 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             {
                 PCXAPICPAGE    pXApicPage    = VMCPU_TO_CXAPICPAGE(pVCpu);
                 uint32_t const uInitialCount = pXApicPage->timer_icr.u32InitialCount;
-                uint8_t const  uTimerShift   = apicGetTimerShift(pXApicPage);
+                uint8_t const  uTimerShift   = apicCommonGetTimerShift(pXApicPage);
                 apicHintTimerFreq(pDevIns, pApicCpu, uInitialCount, uTimerShift);
             }
 
@@ -1471,7 +1120,7 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     }
 
     /* Tell CPUM about the APIC feature level so it can adjust APICBASE MSR GP mask and CPUID bits. */
-    apicR3SetCpuIdFeatureLevel(pVM, pApic->enmMaxMode);
+    apicR3CommonSetCpuIdFeatureLevel(pVM, pApic->enmMaxMode);
 
     /* Finally, initialize the state. */
     rc = apicR3InitState(pVM);

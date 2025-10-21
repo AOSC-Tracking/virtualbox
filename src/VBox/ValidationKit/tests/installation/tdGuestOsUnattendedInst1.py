@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 170931 $"
 
 
 # Standard Python imports.
@@ -76,6 +76,10 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
     kfKeyFile               = 0x0004; ##< ISO requires a .key file containing the product key.
     kfNeedCom1              = 0x0008; ##< Need serial port, typically for satifying the windows kernel debugger.
 
+    kfLinuxIoApic           = 0x0010; ##< Patch the Linux guest to work around IO-APIC issues.
+    kfWinGaTimesync         = 0x0020; ##< Don't set the host time when the timesync service starts as that breaks
+                                      #   the task scheduler causing TXS to not start.
+
     kfIdeIrqDelay           = 0x1000;
     kfUbuntuNewAmdBug       = 0x2000;
     kfNoWin81Paravirt       = 0x4000;
@@ -88,6 +92,9 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
     ## IRQ delay extra data config for win2k VMs.
     kasIdeIrqDelay     = [ 'VBoxInternal/Devices/piix3ide/0/Config/IRQDelay:1', ];
 
+    ## IO-APIC related workaround for older Linux VMs.
+    kasLinuxIoApic     = [ 'VBoxInternal2/LinuxIoApicPatching:1', ];
+
     def __init__(self, oSet, sVmName, sKind, sInstallIso, fFlags = 0, sPlatformArchitecture = 'x86'):
         vboxtestvms.BaseTestVm.__init__(self, sVmName, sPlatformArchitecture, oSet = oSet, sKind = sKind,
                                         fRandomPvPModeCrap = (fFlags & self.kfNoWin81Paravirt) == 0);
@@ -99,6 +106,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         self.fOptIoApic             = None;
         self.fOptPae                = None;
         self.fOptInstallAdditions   = False;
+        self.fOptNoTimesyncSetStart = False;
         self.asOptExtraData         = [];
         if fFlags & self.kfUbuntuAvx2Crash:
             self.asOptExtraData    += self.kasUbuntuAvx2Crash;
@@ -106,6 +114,10 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
             self.asOptExtraData    += self.kasIdeIrqDelay;
         if fFlags & self.kfNeedCom1:
             self.fCom1RawFile       = True;
+        if fFlags & self.kfLinuxIoApic:
+            self.asOptExtraData    += self.kasLinuxIoApic;
+        if fFlags & self.kfWinGaTimesync:
+            self.fOptNoTimesyncSetStart = True;
 
     def _unattendedConfigure(self, oIUnattended, oTestDrv): # type: (Any, vbox.TestDriver) -> bool
         """
@@ -259,30 +271,24 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         # downloading updates and doing database updates during installation.
         # We want predicable results.
         #
-        # On macOS however this will result in HostOnly networking being used
-        # with an incompatible IP address, resulting in the TXS service not being
-        # able to contact the host. Until this is fixed properly just get along
-        # with inconsistent results, still better than completely failing testcases.
-        #
         if eNic0AttachType is None:
-            if utils.getHostOs() != 'darwin' \
-               and oTestDrv.fpApiVer < 7.0 \
-               and self.isLinux() \
+            if self.isLinux() \
                and (   'ubuntu' in self.sKind.lower()
                     or 'debian' in self.sKind.lower()):
                 eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnly;
 
-            # Also use it for windows xp to prevent it from ever going online.
-            if self.sKind in ('WindowsXP','WindowsXP_64',):
+            # Also use it for Windows to prevent it from ever going online.
+            if self.isWindows():
                 eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnly;
 
         #
-        # Use host-only networks instead of host-only adapters for trunk builds on Mac OS.
+        # Use NAT instead of host-only adapters on macOS because we can't find the
+        # guest's IP address without having the guest additions installed, which is not
+        # always the case.
         #
         if     eNic0AttachType   == vboxcon.NetworkAttachmentType_HostOnly \
-           and utils.getHostOs() == 'darwin' \
-           and oTestDrv.fpApiVer >= 7.0:
-            eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnlyNetwork;
+           and utils.getHostOs() == 'darwin':
+            eNic0AttachType = vboxcon.NetworkAttachmentType_NAT;
 
         return vboxtestvms.BaseTestVm._createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage); # pylint: disable=protected-access
 
@@ -321,6 +327,35 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
             sKey, sValue = sExtraData.split(':');
             reporter.log('Set extradata: %s => %s' % (sKey, sValue))
             fRc = oSession.setExtraData(sKey, sValue) and fRc;
+
+        if self.fOptNoTimesyncSetStart:
+            fRc = oSession.setGuestPropertyValue('/VirtualBox/GuestAdd/VBoxService/--timesync-no-set-start', '1') and fRc;
+            fRc =     oSession.setGuestPropertyValue('/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold', '43200000') \
+                  and fRc; # 12 hours
+
+        if fRc:
+            #
+            # Ensure the IP address doesn't change between guest reboots, as seen with the unattended Debian installer,
+            # by adding a fixed address for the MAC address.
+            #
+            try:
+                oNic              = oSession.o.machine.getNetworkAdapter(0);
+                enmAttachmentType = oNic.attachmentType;
+                if enmAttachmentType == vboxcon.NetworkAttachmentType_HostOnly:
+                    # Get the MAC address and find the DHCP server.
+                    sMacAddr      = oNic.MACAddress;
+                    sHostOnlyNIC  = oNic.hostOnlyInterface;
+                    oIHostOnlyIf  = oTestDrv.oVBox.host.findHostNetworkInterfaceByName(sHostOnlyNIC);
+                    sHostOnlyNet  = oIHostOnlyIf.networkName;
+                    oIDhcpServer  = oTestDrv.oVBox.findDHCPServerByNetworkName(sHostOnlyNet);
+
+                    sLowerIp = oIDhcpServer.lowerIP;
+                    oIDhcpCfg = oIDhcpServer.getConfig(vboxcon.DHCPConfigScope_MAC, sMacAddr, 0, True);
+                    oIDhcpCfg = oTestDrv.oVBoxMgr.queryInterface(oIDhcpCfg, 'IDHCPIndividualConfig');
+                    oIDhcpCfg.fixedAddress = sLowerIp;
+            except:
+                reporter.errorXcpt();
+                fRc = False;
 
         # Save the settings.
         fRc = fRc and oSession.saveSettings()
@@ -398,7 +433,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         #
         sInstallIso = self.sInstallIso
         if not os.path.isabs(sInstallIso):
-            sInstallIso = os.path.join(oTestDrv.sResourcePath, sInstallIso);
+            sInstallIso = oTestDrv.getFullResourceName(sInstallIso);
 
         try:
             oIUnattended.isoPath = sInstallIso;
@@ -492,74 +527,74 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             UnattendedVm(oSet, 'tst-xpsp2-64',    'WindowsXP_64',    '6.0/uaisos/en_win_xp_pro_x64_with_sp2_vl_x13-41611.iso', UnattendedVm.kfKeyFile), # >=3GiB
             #fixme: UnattendedVm(oSet, 'tst-xpchk-64',    'WindowsXP_64',    '6.0/uaisos/en_windows_xp_professional_x64_chk.iso', UnattendedVm.kfKeyFile | UnattendedVm.kfNeedCom1), # >=3GiB
             # No key files needed:
-            UnattendedVm(oSet, 'tst-vista-32',    'WindowsVista',    '6.0/uaisos/en_windows_vista_ee_x86_dvd_vl_x13-17271.iso'),          # >=6GiB
-            UnattendedVm(oSet, 'tst-vista-64',    'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_x64_dvd_vl_x13-17316.iso'),  # >=8GiB
-            UnattendedVm(oSet, 'tst-vistasp1-32', 'WindowsVista',    '6.0/uaisos/en_windows_vista_enterprise_with_service_pack_1_x86_dvd_x14-55954.iso'), # >=6GiB
-            UnattendedVm(oSet, 'tst-vistasp1-64', 'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_with_service_pack_1_x64_dvd_x14-55934.iso'), # >=9GiB
-            UnattendedVm(oSet, 'tst-vistasp2-32', 'WindowsVista',    '6.0/uaisos/en_windows_vista_enterprise_sp2_x86_dvd_342329.iso'),    # >=7GiB
-            UnattendedVm(oSet, 'tst-vistasp2-64', 'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_sp2_x64_dvd_342332.iso'),    # >=10GiB
-            UnattendedVm(oSet, 'tst-w7-32',       'Windows7',        '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'),         # >=6GiB
-            UnattendedVm(oSet, 'tst-w7-64',       'Windows7_64',     '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'),         # >=10GiB
-            UnattendedVm(oSet, 'tst-w7sp1-32',    'Windows7',        '6.0/uaisos/en_windows_7_enterprise_with_sp1_x86_dvd_u_677710.iso'), # >=6GiB
-            UnattendedVm(oSet, 'tst-w7sp1-64',    'Windows7_64',     '6.0/uaisos/en_windows_7_enterprise_with_sp1_x64_dvd_u_677651.iso'), # >=8GiB
-            UnattendedVm(oSet, 'tst-w8-32',       'Windows8',        '6.0/uaisos/en_windows_8_enterprise_x86_dvd_917587.iso'),            # >=6GiB
-            UnattendedVm(oSet, 'tst-w8-64',       'Windows8_64',     '6.0/uaisos/en_windows_8_enterprise_x64_dvd_917522.iso'),            # >=9GiB
-            UnattendedVm(oSet, 'tst-w81-32',      'Windows81',       '6.0/uaisos/en_windows_8_1_enterprise_x86_dvd_2791510.iso'),         # >=5GiB
-            UnattendedVm(oSet, 'tst-w81-64',      'Windows81_64',    '6.0/uaisos/en_windows_8_1_enterprise_x64_dvd_2791088.iso'),         # >=8GiB
-            UnattendedVm(oSet, 'tst-w10-1507-32', 'Windows10',       '6.0/uaisos/en_windows_10_pro_10240_x86_dvd.iso'),                   # >=6GiB
-            UnattendedVm(oSet, 'tst-w10-1507-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_pro_10240_x64_dvd.iso'),                   # >=9GiB
-            UnattendedVm(oSet, 'tst-w10-1511-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1511_updated_feb_2016_x86_dvd_8378870.iso'),    # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1511-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1511_x64_dvd_7224901.iso'),                     # >=9GiB
-            UnattendedVm(oSet, 'tst-w10-1607-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x86_dvd_9060097.iso'),    # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1607-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x64_dvd_9054264.iso'),    # >=9GiB
-            UnattendedVm(oSet, 'tst-w10-1703-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x86_dvd_10188981.iso'), # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1703-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x64_dvd_10189290.iso'), # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1709-32', 'Windows10',       '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x86_dvd_100090759.iso'),  # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1709-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x64_dvd_100090741.iso'),  # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1803-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x86_dvd_12063341.iso'), # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1803-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x64_dvd_12063333.iso'), # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1809-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x86_dvd_2f92403b.iso'),   # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1809-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x64_dvd_f0b7dc68.iso'),   # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1903-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_editions_version_1903_x86_dvd_ca4f0f49.iso'), # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1903-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_editions_version_1903_x64_dvd_37200948.iso'), # >=10GiB
+            UnattendedVm(oSet, 'tst-vista-32',    'WindowsVista',    '6.0/uaisos/en_windows_vista_ee_x86_dvd_vl_x13-17271.iso',                                         UnattendedVm.kfWinGaTimesync), # >=6GiB
+            UnattendedVm(oSet, 'tst-vista-64',    'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_x64_dvd_vl_x13-17316.iso',                                 UnattendedVm.kfWinGaTimesync), # >=8GiB
+            UnattendedVm(oSet, 'tst-vistasp1-32', 'WindowsVista',    '6.0/uaisos/en_windows_vista_enterprise_with_service_pack_1_x86_dvd_x14-55954.iso',                UnattendedVm.kfWinGaTimesync), # >=6GiB
+            UnattendedVm(oSet, 'tst-vistasp1-64', 'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_with_service_pack_1_x64_dvd_x14-55934.iso',                UnattendedVm.kfWinGaTimesync), # >=9GiB
+            UnattendedVm(oSet, 'tst-vistasp2-32', 'WindowsVista',    '6.0/uaisos/en_windows_vista_enterprise_sp2_x86_dvd_342329.iso',                                   UnattendedVm.kfWinGaTimesync), # >=7GiB
+            UnattendedVm(oSet, 'tst-vistasp2-64', 'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_sp2_x64_dvd_342332.iso',                                   UnattendedVm.kfWinGaTimesync), # >=10GiB
+            UnattendedVm(oSet, 'tst-w7-32',       'Windows7',        '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso',                                        UnattendedVm.kfWinGaTimesync), # >=6GiB
+            UnattendedVm(oSet, 'tst-w7-64',       'Windows7_64',     '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso',                                        UnattendedVm.kfWinGaTimesync), # >=10GiB
+            UnattendedVm(oSet, 'tst-w7sp1-32',    'Windows7',        '6.0/uaisos/en_windows_7_enterprise_with_sp1_x86_dvd_u_677710.iso',                                UnattendedVm.kfWinGaTimesync), # >=6GiB
+            UnattendedVm(oSet, 'tst-w7sp1-64',    'Windows7_64',     '6.0/uaisos/en_windows_7_enterprise_with_sp1_x64_dvd_u_677651.iso',                                UnattendedVm.kfWinGaTimesync), # >=8GiB
+            UnattendedVm(oSet, 'tst-w8-32',       'Windows8',        '6.0/uaisos/en_windows_8_enterprise_x86_dvd_917587.iso',                                           UnattendedVm.kfWinGaTimesync), # >=6GiB
+            UnattendedVm(oSet, 'tst-w8-64',       'Windows8_64',     '6.0/uaisos/en_windows_8_enterprise_x64_dvd_917522.iso',                                           UnattendedVm.kfWinGaTimesync), # >=9GiB
+            UnattendedVm(oSet, 'tst-w81-32',      'Windows81',       '6.0/uaisos/en_windows_8_1_enterprise_x86_dvd_2791510.iso',                                        UnattendedVm.kfWinGaTimesync), # >=5GiB
+            UnattendedVm(oSet, 'tst-w81-64',      'Windows81_64',    '6.0/uaisos/en_windows_8_1_enterprise_x64_dvd_2791088.iso',                                        UnattendedVm.kfWinGaTimesync), # >=8GiB
+            UnattendedVm(oSet, 'tst-w10-1507-32', 'Windows10',       '6.0/uaisos/en_windows_10_pro_10240_x86_dvd.iso',                                                  UnattendedVm.kfWinGaTimesync), # >=6GiB
+            UnattendedVm(oSet, 'tst-w10-1507-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_pro_10240_x64_dvd.iso',                                                  UnattendedVm.kfWinGaTimesync), # >=9GiB
+            UnattendedVm(oSet, 'tst-w10-1511-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1511_updated_feb_2016_x86_dvd_8378870.iso',           UnattendedVm.kfWinGaTimesync), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1511-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1511_x64_dvd_7224901.iso',                            UnattendedVm.kfWinGaTimesync), # >=9GiB
+            UnattendedVm(oSet, 'tst-w10-1607-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x86_dvd_9060097.iso',           UnattendedVm.kfWinGaTimesync), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1607-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x64_dvd_9054264.iso',           UnattendedVm.kfWinGaTimesync), # >=9GiB
+            UnattendedVm(oSet, 'tst-w10-1703-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x86_dvd_10188981.iso',        UnattendedVm.kfWinGaTimesync), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1703-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x64_dvd_10189290.iso',        UnattendedVm.kfWinGaTimesync), # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1709-32', 'Windows10',       '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x86_dvd_100090759.iso',  UnattendedVm.kfWinGaTimesync), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1709-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x64_dvd_100090741.iso',  UnattendedVm.kfWinGaTimesync), # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1803-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x86_dvd_12063341.iso', UnattendedVm.kfWinGaTimesync), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1803-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x64_dvd_12063333.iso', UnattendedVm.kfWinGaTimesync), # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1809-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x86_dvd_2f92403b.iso',   UnattendedVm.kfWinGaTimesync), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1809-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x64_dvd_f0b7dc68.iso',   UnattendedVm.kfWinGaTimesync), # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1903-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_editions_version_1903_x86_dvd_ca4f0f49.iso',                    UnattendedVm.kfWinGaTimesync), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1903-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_editions_version_1903_x64_dvd_37200948.iso',                    UnattendedVm.kfWinGaTimesync), # >=10GiB
             #
             # Ubuntu
             #
             ## @todo 15.10 fails with grub install error.
             #UnattendedVm(oSet, 'tst-ubuntu-15.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-15.10-desktop-amd64.iso'),
             UnattendedVm(oSet, 'tst-ubuntu-16.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso',    # ~5GiB
-                         UnattendedVm.kfUbuntuAvx2Crash),
-            UnattendedVm(oSet, 'tst-ubuntu-16.04-32',   'Ubuntu',    '6.0/uaisos/ubuntu-16.04-desktop-i386.iso'),    # >=4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.1-desktop-amd64.iso'), # >=5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.1-desktop-i386.iso'),  # >=4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.2-desktop-amd64.iso'), # >=5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.2-desktop-i386.iso'),  # >=4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.3-desktop-amd64.iso'), # >=5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.3-desktop-i386.iso'),  # >=4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.4-desktop-amd64.iso'), # >=5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.4-desktop-i386.iso'),  # >=4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.5-desktop-amd64.iso'), # >=5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.5-desktop-i386.iso'),  # >=4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.6-desktop-amd64.iso'), # >=5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.6-desktop-i386.iso'),  # >=4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.10-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso'),   # >=5.5GiB
+                         UnattendedVm.kfUbuntuAvx2Crash | UnattendedVm.kfLinuxIoApic),
+            UnattendedVm(oSet, 'tst-ubuntu-16.04-32',   'Ubuntu',    '6.0/uaisos/ubuntu-16.04-desktop-i386.iso',    UnattendedVm.kfLinuxIoApic), # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.1-desktop-amd64.iso', UnattendedVm.kfLinuxIoApic), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.1-desktop-i386.iso',  UnattendedVm.kfLinuxIoApic), # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.2-desktop-amd64.iso', UnattendedVm.kfLinuxIoApic), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.2-desktop-i386.iso',  UnattendedVm.kfLinuxIoApic), # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.3-desktop-amd64.iso', UnattendedVm.kfLinuxIoApic), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.3-desktop-i386.iso',  UnattendedVm.kfLinuxIoApic), # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.4-desktop-amd64.iso', UnattendedVm.kfLinuxIoApic), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.4-desktop-i386.iso',  UnattendedVm.kfLinuxIoApic), # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.5-desktop-amd64.iso', UnattendedVm.kfLinuxIoApic), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.5-desktop-i386.iso',  UnattendedVm.kfLinuxIoApic), # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.6-desktop-amd64.iso', UnattendedVm.kfLinuxIoApic), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.6-desktop-i386.iso',  UnattendedVm.kfLinuxIoApic), # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.10-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso',   UnattendedVm.kfLinuxIoApic), # >=5.5GiB
             ## @todo 16.10-32 doesn't ask for an IP, so it always fails.
             #UnattendedVm(oSet, 'tst-ubuntu-16.10-32',   'Ubuntu',    '6.0/uaisos/ubuntu-16.10-desktop-i386.iso'),   # >=5.5GiB?
-            UnattendedVm(oSet, 'tst-ubuntu-17.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'),   # >=5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-17.04-32',   'Ubuntu',    '6.0/uaisos/ubuntu-17.04-desktop-i386.iso'),    # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-17.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso',   UnattendedVm.kfLinuxIoApic), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-17.04-32',   'Ubuntu',    '6.0/uaisos/ubuntu-17.04-desktop-i386.iso',    UnattendedVm.kfLinuxIoApic), # >=4.5GiB
             ## @todo ubuntu 17.10, 18.04 & 18.10 do not work.  They misses all the the build tools (make, gcc, perl, ++)
             ##       and has signed kmods:
             UnattendedVm(oSet, 'tst-ubuntu-17.10-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-17.10-desktop-amd64.iso',    # >=4Gib
-                         UnattendedVm.kfNoGAs),
+                         UnattendedVm.kfNoGAs | UnattendedVm.kfLinuxIoApic),
             UnattendedVm(oSet, 'tst-ubuntu-18.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso',    # >=6GiB
-                         UnattendedVm.kfNoGAs),
+                         UnattendedVm.kfNoGAs | UnattendedVm.kfLinuxIoApic),
             # 18.10 hangs reading install DVD during "starting partitioner..."
             #UnattendedVm(oSet, 'tst-ubuntu-18.10-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-18.10-desktop-amd64.iso',
             #             UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-ubuntu-19.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso',    # >=6GiB
-                         UnattendedVm.kfNoGAs),
+                         UnattendedVm.kfNoGAs | UnattendedVm.kfLinuxIoApic),
             UnattendedVm(oSet, 'tst-ubuntu-22.04-64', 'Ubuntu_64', '7.0/uaisos/ubuntu-22.04.3-desktop-amd64.iso',    # >=6GiB ?
-                         UnattendedVm.kfNoGAs),
+                         UnattendedVm.kfNoGAs | UnattendedVm.kfLinuxIoApic),
             UnattendedVm(oSet, 'tst-ubuntu-23.10-64', 'Ubuntu_64', '7.0/uaisos/ubuntu-23.10.1-desktop-amd64.iso',    # >=6GiB ?
                          UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-ubuntu-server-23.10-64', 'Ubuntu_64', '7.1/uaisos/ubuntu-23.10-live-server-amd64.iso',
@@ -569,11 +604,11 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             # Debian
             #
             UnattendedVm(oSet, 'tst-debian-9.3-64', 'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-DVD-1.iso',  # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs | UnattendedVm.kfLinuxIoApic),
             UnattendedVm(oSet, 'tst-debian-9.4-64', 'Debian_64', '6.0/uaisos/debian-9.4.0-amd64-DVD-1.iso',  # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs),
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfNoGAs | UnattendedVm.kfLinuxIoApic),
             UnattendedVm(oSet, 'tst-debian-10.0-64', 'Debian_64', '6.0/uaisos/debian-10.0.0-amd64-DVD-1.iso',  # >=6GiB?
-                         UnattendedVm.kfAvoidNetwork),
+                         UnattendedVm.kfAvoidNetwork | UnattendedVm.kfLinuxIoApic),
 
             #
             # Fedora

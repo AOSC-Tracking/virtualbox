@@ -551,10 +551,11 @@ static DECLCALLBACK(void) dbgfR3SampleReportTakeSample(PRTTIMER pTimer, void *pv
 {
     PDBGFSAMPLEREPORTINT pThis = (PDBGFSAMPLEREPORTINT)pvUser;
 
+    bool fLast = false;
     if (pThis->cSampleUsLeft != UINT32_MAX)
     {
         int rc = VINF_SUCCESS;
-        uint64_t cUsSampled = iTick * pThis->cSampleIntervalUs; /** @todo Wrong if the timer resolution is different from what we've requested. */
+        uint64_t const cUsSampled = iTick * pThis->cSampleIntervalUs; /** @todo Wrong if the timer resolution is different from what we've requested. */
 
         /* Update progress. */
         if (pThis->pfnProgress)
@@ -571,17 +572,27 @@ static DECLCALLBACK(void) dbgfR3SampleReportTakeSample(PRTTIMER pTimer, void *pv
                                 DBGFSAMPLEREPORTSTATE_RUNNING);
 
             rc = RTTimerStop(pTimer); AssertRC(rc); RT_NOREF(rc);
+            fLast = true;
         }
     }
 
-    ASMAtomicAddU32(&pThis->cEmtsActive, pThis->pUVM->cCpus);
-
-    for (uint32_t i = 0; i < pThis->pUVM->cCpus; i++)
+    uint32_t const cEmtsOld = ASMAtomicAddU32(&pThis->cEmtsActive, pThis->pUVM->cCpus);
+    if (!cEmtsOld || fLast)
     {
-        int rc = VMR3ReqCallVoidNoWait(pThis->pUVM->pVM, i, (PFNRT)dbgfR3SampleReportSample, 1, pThis);
-        AssertRC(rc);
-        if (RT_FAILURE(rc))
-            ASMAtomicDecU32(&pThis->cEmtsActive);
+        for (uint32_t i = 0; i < pThis->pUVM->cCpus; i++)
+        {
+            int rc = VMR3ReqCallU(pThis->pUVM, i, NULL /*ppReq*/, 0 /*cMillies*/,
+                                  VMREQFLAGS_VOID | VMREQFLAGS_NO_WAIT | VMREQFLAGS_POKE,
+                                  (PFNRT)dbgfR3SampleReportSample, 1, pThis);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+                ASMAtomicDecU32(&pThis->cEmtsActive);
+        }
+    }
+    else
+    {
+        LogRelMax(10, ("DBGF/SampleReport: %u EMT(s) still active with the previous sample, skipping sample step %u\n", cEmtsOld, iTick));
+        ASMAtomicSubU32(&pThis->cEmtsActive, pThis->pUVM->cCpus);
     }
 }
 

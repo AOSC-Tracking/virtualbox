@@ -3312,11 +3312,15 @@
         <source>Virtual Machine group</source>
         <translation type="obsolete">Virtuel maskine-gruppe</translation>
     </message>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
+        <source>Virtual machine</source>
         <translation type="unfinished">Virtuel maskine</translation>
     </message>
 </context>
@@ -18912,7 +18916,11 @@
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Media</source>
         <translation type="unfinished"></translation>

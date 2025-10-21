@@ -3311,10 +3311,17 @@
     </message>
 </context>
 <context>
+    <name>UIChooserNodeGroup</name>
+    <message>
+        <source>Machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIChooserNodeMachine</name>
     <message>
-        <source>Virtual Machine</source>
-        <translation>Εικονική Μηχανή</translation>
+        <source>Virtual machine</source>
+        <translation>Εικονική μηχανή</translation>
     </message>
 </context>
 <context>
@@ -8560,7 +8567,7 @@
     </message>
     <message>
         <source>Domain name to be assigned to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Όνομα τομέα που θα δοθεί στην εικονική μηχανή</translation>
     </message>
 </context>
 <context>
@@ -16098,7 +16105,11 @@
     </message>
 </context>
 <context>
-    <name>UIToolsModel</name>
+    <name>UIToolsItem</name>
+    <message>
+        <source>Tool item</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Logs</source>
         <translation>Καταγραφικά</translation>
@@ -16937,23 +16948,23 @@
     </message>
     <message>
         <source>The user name cannot contain following characters: / \ [ ] : | &lt; &gt; + = ; , ? * % @</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα χρήστη δεν μπορεί να περιέχει τους ακόλουθους χαρακτήρες: / \ [ ] : | &lt; &gt; + = ; , ? * % @</translation>
     </message>
     <message>
         <source>The user name cannot be &apos;NONE&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα χρήστη δεν μπορεί να είναι &apos;ΚΑΝΕΝΑ&apos;</translation>
     </message>
     <message>
         <source>The user name cannot be longer than 20 characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα χρήστη δεν μπορεί να μακρύτερο των 20 χαρακτήρων</translation>
     </message>
     <message>
         <source>The user name includes invalid characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα χρήστη περιέχει μη έγκυρους χαρακτήρες</translation>
     </message>
     <message>
         <source>The user name cannot be longer than 32 characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα χρήστη δεν μπορεί να μακρύτερο των 32 χαρακτήρων</translation>
     </message>
 </context>
 <context>
@@ -18495,7 +18506,7 @@
     </message>
     <message>
         <source>Determines MAC address policy for cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Προσδιορίζει την πολιτική διευθύνσεων MAC για κλωνοποίηση.</translation>
     </message>
 </context>
 <context>
@@ -19590,11 +19601,11 @@
     </message>
     <message>
         <source>The ISO is attached to the VM, so you can install the OS automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>Το ISO έχει συνδεθεί στην ΕΜ, ώστε να εγκαταστήσετε το ΛΣ αυτόματα</translation>
     </message>
     <message>
         <source>Proceed with Unattended Installation</source>
-        <translation type="unfinished"></translation>
+        <translation>Συνέχιση με Μη-Καθοδηγούμενη Εγκατάσταση</translation>
     </message>
 </context>
 <context>

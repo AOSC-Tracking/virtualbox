@@ -158,6 +158,16 @@ RTDECL(uint8_t) RTFsIsoMakerGetRockRidgeLevel(RTFSISOMAKER hIsoMaker);
 RTDECL(uint8_t) RTFsIsoMakerGetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker);
 
 /**
+ * Sets the UDF ECMA standard version/level.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   uEcmaLevel          The ECMA standard version (2 or 3), or 0 to
+ *                              disable UDF.
+ */
+RTDECL(int) RTFsIsoMakerSetUdfLevel(RTFSISOMAKER hIsoMaker, uint8_t uEcmaLevel);
+
+/**
  * Changes the file attribute (mode, owner, group) inherit style (from source).
  *
  * The strict style will use the exact attributes from the source, where as the
@@ -758,6 +768,8 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, RTVFSFILE hIsoFile, uint3
 #define RTFSISOMK_IMPORT_F_NO_J_COPYRIGHT_FID   RT_BIT_32(22) /**< Don't import the copyright file ID joliet descriptor field. */
 #define RTFSISOMK_IMPORT_F_NO_J_ABSTRACT_FID    RT_BIT_32(23) /**< Don't import the abstract file ID joliet descriptor field. */
 #define RTFSISOMK_IMPORT_F_NO_J_BIBLIO_FID      RT_BIT_32(24) /**< Don't import the bibliographic file ID joliet descriptor field. */
+
+#define RTFSISOMK_IMPORT_F_NO_U_VOLUME_ID       RT_BIT_32(25) /**< Don't import the UDF volume ID (label). */
 
 #define RTFSISOMK_IMPORT_F_VALID_MASK           UINT32_C(0x01ffffff)
 /** @} */

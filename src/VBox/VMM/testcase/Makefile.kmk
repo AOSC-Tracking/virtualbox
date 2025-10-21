@@ -83,7 +83,8 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   	tstIEMCheckMc \
   	tstIEMAImpl \
   	tstPDMQueue \
-  	tstSSM
+  	tstSSM \
+  	tstVMMUnitTests-1
   PROGRAMS.amd64 += tstIEMAImplAsm
   if defined(VBOX_WITH_IEM_NATIVE_RECOMPILER) && defined(VBOX_WITH_IEM_RECOMPILER)
    PROGRAMS += tstIEMN8veProfiling
@@ -846,7 +847,7 @@ tstX86-FpuSaveRestore_LIBS     = $(LIB_RUNTIME)
 #
 tstArm64-1_TEMPLATE     := VBoxR3TstExe
 tstArm64-1_SOURCES       = tstArm64-1.S
-tstArm64-1_LDFLAGS.win  := -Entry:MainEntrypoint -Subsystem:console -guard:no
+tstArm64-1_LDFLAGS.win  := -Entry:ExeEntrypoint -Subsystem:console -guard:no
 #tstArm64-1_ASFLAGS.win.arm64 := -g1 -gcodeview - doesn't work, clang -cc1as doesn't do codeview, only dwarf.
 tstArm64-1_INCS          = $(tstArm64-1_0_OUTDIR)
 tstArm64-1_INTERMEDIATES = $(tstArm64-1_0_OUTDIR)/tstArm64-1-generated.S
@@ -1045,13 +1046,33 @@ endif
 
 
 #
+# PGM RAM Range Lookup tests and other unit tests...
+#
+tstVMMUnitTests-1_TEMPLATE  := VBoxR3Exe
+tstVMMUnitTests-1_SDKS      := VBoxSoftFloatR3Shared
+tstVMMUnitTests-1_DEFS       = IN_VMM_R3 $(filter-out VBOX_WITH_DEBUGGER VBOX_WITH_IEM_RECOMPILER VBOX_WITH_IEM_NATIVE_RECOMPILER,$(VMM_COMMON_DEFS))
+tstVMMUnitTests-1_DEFS.amd64 = VBOX_VMM_TARGET_X86
+tstVMMUnitTests-1_DEFS.arm64 = VBOX_VMM_TARGET_ARMV8
+tstVMMUnitTests-1_INCS       = $(VBOX_PATH_VMM_SRC)/include
+tstVMMUnitTests-1_SOURCES   := \
+	tstVMMUnitTests-1.cpp \
+	tstPGM-1.cpp
+tstVMMUnitTests-1_LIBS      := \
+	$(PATH_STAGE_LIB)/VMMStatic$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
+	$(LIB_RUNTIME)
+tstVMMUnitTests-1_LDFLAGS.darwin.arm64 := -framework Hypervisor
+
+
+
+#
 # ARMv8 PGM guest page table walking testcase.
 #
 tstPGMAllGst-armv8_TEMPLATE        := VBoxR3TstExe
+tstPGMAllGst-armv8_DEFS             = IN_VMM_R3 VBOX_VMM_TARGET_ARMV8 $(VMM_COMMON_DEFS)
 tstPGMAllGst-armv8_INCS             = \
 	$(VBOX_PATH_VMM_SRC)/include \
 	.
-tstPGMAllGst-armv8_DEFS             = IN_VMM_R3 VBOX_VMM_TARGET_ARMV8 $(VMM_COMMON_DEFS)
 tstPGMAllGst-armv8_SOURCES          = \
 	tstPGMAllGst-armv8.cpp \
 	$(tstPGMAllGst-armv8_0_OUTDIR)/tstPGMAllGst-armv8-tests.cpp

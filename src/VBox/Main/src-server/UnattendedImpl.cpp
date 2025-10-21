@@ -497,8 +497,10 @@ HRESULT Unattended::detectIsoOS()
             return E_OUTOFMEMORY;
         }
     }
-    if (mStrDetectedOSTypeId.startsWithI("windows11"))
-        mfProductKeyRequired = true;
+
+    if (mEnmOsType >= VBOXOSTYPE_Win9x && mEnmOsType <= VBOXOSTYPE_Win2k8_x64)
+         mfProductKeyRequired = true;
+
     /* Check if detected OS type is supported (covers platform architecture). */
     bool fSupported = false;
     for (size_t i = 0; i < mSupportedGuestOSTypes.size() && !fSupported; ++i)
@@ -967,6 +969,8 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                                     {
                                         LogRel2(("Unattended: happy with mDetectedImages[%u]\n", i));
                                         mEnmOsType = mDetectedImages[i].mOSType;
+                                        RTMemTmpFree(pachXmlBuf);
+                                        RTVfsFileRelease(hVfsFile);
                                         return S_OK;
                                     }
                                 }
@@ -2148,7 +2152,9 @@ HRESULT Unattended::i_innerDetectIsoOSLinuxFedora(RTVFS hVfsIso, DETECTBUFFER *p
         static struct { const char *pszFile; VBOXOSTYPE fArch; } const s_aArchSpecificFiles[] =
         {
             { "EFI/BOOT/grubaa64.efi", VBOXOSTYPE_arm64 },
+            { "EFI/BOOT/grubx64.efi", VBOXOSTYPE_x64 },
             { "EFI/BOOT/BOOTAA64.EFI", VBOXOSTYPE_arm64 },
+            { "EFI/BOOT/bootx64.EFI", VBOXOSTYPE_x64 },
         };
         PRTFSOBJINFO pObjInfo = (PRTFSOBJINFO)&pBuf->ab[0];
         AssertCompile(sizeof(*pBuf) > sizeof(*pObjInfo));

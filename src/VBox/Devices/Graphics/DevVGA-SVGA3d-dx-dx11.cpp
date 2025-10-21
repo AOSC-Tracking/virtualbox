@@ -1677,6 +1677,11 @@ static uint32_t dxGetRenderTargetViewSid(PVMSVGA3DDXCONTEXT pDXContext, uint32_t
 
 static int dxDefineStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid, SVGACOTableDXStreamOutputEntry const *pEntry, DXSHADER *pDXShader)
 {
+    ASSERT_GUEST_RETURN(pEntry->numOutputStreamEntries < SVGA3D_MAX_STREAMOUT_DECLS, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(pEntry->numOutputStreamStrides < SVGA3D_DX_MAX_SOTARGETS, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(   pEntry->rasterizedStream < SVGA3D_DX_MAX_SOTARGETS
+                        || pEntry->rasterizedStream == SVGA3D_DX_SO_NO_RASTERIZED_STREAM, VERR_INVALID_PARAMETER);
+
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[soid];
 
@@ -1688,11 +1693,16 @@ static int dxDefineStreamOutput(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
         pMob = vmsvgaR3MobGet(pSvgaR3State, pEntry->mobid);
         ASSERT_GUEST_RETURN(pMob, VERR_INVALID_PARAMETER);
 
+        uint32_t const cbMob = vmsvgaR3MobSize(pMob);
+        uint32_t const cbDecls = pEntry->numOutputStreamEntries * sizeof(SVGA3dStreamOutputDeclarationEntry);
+        ASSERT_GUEST_RETURN(   pEntry->offsetInBytes < cbMob
+                            && cbDecls <= cbMob - pEntry->offsetInBytes, VERR_INVALID_PARAMETER);
+
         /* Create a memory pointer for the MOB, which is accessible by host. */
-        int rc = vmsvgaR3MobBackingStoreCreate(pSvgaR3State, pMob, vmsvgaR3MobSize(pMob));
+        int rc = vmsvgaR3MobBackingStoreCreate(pSvgaR3State, pMob, cbMob);
         ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
 
-        /* Get pointer to the shader bytecode. This will also verify the offset. */
+        /* Get pointer to the declarations. This will also verify the offset. */
         paDecls = (SVGA3dStreamOutputDeclarationEntry const *)vmsvgaR3MobBackingStorePtr(pMob, pEntry->offsetInBytes);
         AssertReturnStmt(paDecls, vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pMob), VERR_INTERNAL_ERROR);
     }
@@ -7830,8 +7840,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXDraw(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
          * Emulate SVGA3D_PRIMITIVE_TRIANGLEFAN using an indexed draw of a triangle list.
          */
 
-        /* Make sure that 16 bit indices are enough. */
-        if (vertexCount > 65535)
+        /* Make sure that 16 bit indices are enough and there are enough vertices to draw at least one triangle. */
+        if (vertexCount > 65535 || vertexCount < 3)
         {
             LogRelMax(1, ("VMSVGA: ignore Draw(TRIANGLEFAN, %u)\n", vertexCount));
             return VERR_NOT_SUPPORTED;
@@ -7985,8 +7995,8 @@ static int dxDrawIndexedTriangleFan(DXDEVICE *pDevice, uint32_t IndexCountTF, ui
      * Emulate an indexed SVGA3D_PRIMITIVE_TRIANGLEFAN using an indexed draw of triangle list.
      */
 
-    /* Make sure that 16 bit indices are enough. */
-    if (IndexCountTF > 65535)
+    /* Make sure that 16 bit indices are enough and there are enough indices to draw at least one triangle. */
+    if (IndexCountTF > 65535 || IndexCountTF < 3)
     {
         LogRelMax(1, ("VMSVGA: ignore DrawIndexed(TRIANGLEFAN, %u)\n", IndexCountTF));
         return VERR_NOT_SUPPORTED;

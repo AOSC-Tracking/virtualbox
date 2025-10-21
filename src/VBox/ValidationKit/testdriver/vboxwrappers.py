@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 170932 $"
 
 
 # Standard Python imports.
@@ -3169,6 +3169,47 @@ class SessionWrapper(TdTaskBase):
 
         return sGuestStack;
 
+    def takeGuestSample(self, sSampleReportPath, cUsSampleInterval = 1000, cUsSampleTime = 10 * 1000 * 1000, cMsTimeout = 40 * 1000): #pylint: disable=line-too-long
+        """
+        Takes a guest sample report
+
+        Returns True on success.
+        Returns False on IMachineDebugger::takeGuestSample().
+        """
+        #
+        # Load all plugins first and try to detect the OS so we can
+        # get nicer stack traces.
+        #
+        try:
+            self.o.console.debugger.loadPlugIn('all');
+        except:
+            reporter.logXcpt('Unable to load debugger plugins');
+        else:
+            try:
+                sOsDetected = self.o.console.debugger.detectOS();
+                _ = sOsDetected;
+            except:
+                reporter.logXcpt('Failed to detect the guest OS');
+
+        # VM needs to be running
+        fPause = False;
+        if self.oVM.state is vboxcon.MachineState_Paused:
+            fPause = True;
+            self.o.console.resume();
+
+        try:
+            oProgressCom = self.o.console.debugger.takeGuestSample(sSampleReportPath, cUsSampleInterval, cUsSampleTime);
+            oProgress = ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oTstDrv, 'Take Guest Sample Report');
+            oProgress.wait(cMsTimeout);
+            oProgress.logResult();
+        except:
+            reporter.logXcpt('IMachineDebugger::takeGuestSample failed');
+            return False;
+
+        if fPause:
+            self.o.console.pause();
+
+        return True;
 
     #
     # Other methods.
@@ -3333,6 +3374,19 @@ class SessionWrapper(TdTaskBase):
                     oIHostOnlyIf  = self.oVBox.host.findHostNetworkInterfaceByName(sHostOnlyNIC);
                     sHostOnlyNet  = oIHostOnlyIf.networkName;
                     oIDhcpServer  = self.oVBox.findDHCPServerByNetworkName(sHostOnlyNet);
+
+                    #
+                    # Check whether a fixed IP was set for the MAC address and use that one, otherwise
+                    # the DHCP server is used to query the guest IP address for the given MAC.
+                    #
+                    try:
+                        oIDhcpCfg    = oIDhcpServer.getConfig(vboxcon.DHCPConfigScope_MAC, sMacAddr, 0, False);
+                        oIDhcpCfg    = self.oVBoxMgr.queryInterface(oIDhcpCfg, 'IDHCPIndividualConfig');
+                        sIpAddr      = oIDhcpCfg.fixedAddress;
+                        oIDhcpServer = None;
+                        sMacAddr     = None;
+                    except:
+                        reporter.log4Xcpt();
             except:
                 reporter.errorXcpt();
                 return None;
