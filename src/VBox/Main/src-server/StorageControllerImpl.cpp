@@ -49,12 +49,12 @@
 struct StorageController::Data
 {
     Data(Machine * const aMachine)
-        : pVirtualBox(NULL),
+        : pVirtualBox(aMachine->i_getVirtualBox()),
           pSystemProperties(NULL),
           pParent(aMachine)
     {
-        unconst(pVirtualBox) = aMachine->i_getVirtualBox();
-        unconst(pSystemProperties) = pVirtualBox->i_getSystemProperties();
+        if (pVirtualBox) /* MSC /analyze paranoia */
+            unconst(pSystemProperties) = pVirtualBox->i_getSystemProperties();
     }
 
     VirtualBox * const                  pVirtualBox;

@@ -4247,7 +4247,7 @@ BOOL Host::i_HostIsNativeApiSupported()
     if (cwcPath >= MAX_PATH || cwcPath < 2)
         return FALSE;
 
-    if (wszPath[cwcPath - 1] != '\\' || wszPath[cwcPath - 1] != '/')
+    if (wszPath[cwcPath - 1] != '\\' && wszPath[cwcPath - 1] != '/')
         wszPath[cwcPath++] = '\\';
     RTUtf16CopyAscii(&wszPath[cwcPath], RT_ELEMENTS(wszPath) - cwcPath, "WinHvPlatform.dll");
     if (GetFileAttributesW(wszPath) == INVALID_FILE_ATTRIBUTES)
@@ -4277,6 +4277,14 @@ BOOL Host::i_HostIsNativeApiSupported()
         return FALSE;
     if (cMaxHyperLeaf >= UINT32_C(0x40000005))
         return TRUE;
+
+    return FALSE;
+#  elif defined(RT_ARCH_ARM64)
+    /** @todo would be great if we could recognize a root partition from the
+     *        CPUID info, but I currently don't dare do that. Just assume that
+     *        it is supported if running on ARM, all hardware supported by Windows/ARM
+     *        seems to support that after all. */
+    return TRUE;
 #  endif
 # elif defined(RT_OS_LINUX)
     int fdKvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
@@ -4286,6 +4294,8 @@ BOOL Host::i_HostIsNativeApiSupported()
         close(fdKvm);
         return TRUE;
     }
+
+    return FALSE;
 # elif defined(RT_OS_DARWIN)
     /*
      * The kern.hv_support parameter indicates support for the hypervisor API
@@ -4298,8 +4308,9 @@ BOOL Host::i_HostIsNativeApiSupported()
         if (fHvSupport != 0)
             return TRUE;
     }
-# endif
+
     return FALSE;
+# endif
 }
 #endif
 

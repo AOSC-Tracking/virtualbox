@@ -184,9 +184,25 @@ struct {
  * The code assumes it's at least an order of magnitude less than UINT32_MAX. */
 #define VMSVGA_MAX_Y                    _1M
 
+/** Maximum cursor dimensions (X/Y) in pixels.
+ * @note This is a VBox limit that we've set ourselves. Do not know what the
+ *       original device implementation reports.  The main objective is (/was)
+ *       to prevent interger overflows when multiplying the dimensions and to
+ *       check the input data sizes.  Since 7.2.8, this is an inclusive limit,
+ *       prior to that it was exclusive.
+ * @todo Check what the other guys return for SVGA_REG_CURSOR_MAX_DIMENSION. */
+#define VMSVGA_CURSOR_MAX_DIMENSION     2048
+/** Maximum cursor byte size.
+ * @note We have to ASSUME color cursors here with 32-bit AND and XOR masks.
+ *       This means twice the size of an alpha cursor.
+ * @todo Check what the other guys returns for SVGA_REG_CURSOR_MAX_BYTE_SIZE.
+ * @todo Does this include the header? */
+#define VMSVGA_CURSOR_MAX_BYTES         (VMSVGA_CURSOR_MAX_DIMENSION * VMSVGA_CURSOR_MAX_DIMENSION * sizeof(uint32_t) * 2)
+
 /* u32ActionFlags */
 #define VMSVGA_ACTION_CHANGEMODE_BIT    0
 #define VMSVGA_ACTION_CHANGEMODE        RT_BIT(VMSVGA_ACTION_CHANGEMODE_BIT)
+#define VMSVGA_ACTION_OUTPUTTARGETS_BIT 1
 
 
 #ifdef DEBUG
@@ -259,13 +275,82 @@ typedef struct VMSVGAVIEWPORT
 } VMSVGAVIEWPORT;
 
 #ifdef VBOX_WITH_VMSVGA3D
-/// @todo Development define. Remove.
-# define DX_NEW_HWSCREEN
-# ifdef DX_NEW_HWSCREEN
-#  define VMSVGA_VRAM_OFFSET_SCREEN_TARGET UINT32_C(0xFFFFFFFF)
-# endif
 typedef struct VMSVGAHWSCREEN *PVMSVGAHWSCREEN;
+typedef struct VMSVGAHWOUTPUTTARGET *PVMSVGAHWOUTPUTTARGET;
 #endif
+
+#define VMSVGA_VRAM_OFFSET_SCREEN_TARGET UINT32_C(0xFFFFFFFF)
+
+/* Output target, i.e. guest screen image in a particular format. */
+typedef struct VMSVGAOUTPUTTARGET
+{
+    /* Maps a u64OutputTargetToken (Key) to the corresponding VMSVGAOUTPUTTARGET instance. */
+    AVLU64NODECORE          coreOutputTarget;
+
+    /* Element of VMSVGASCREENOBJECT::listOutputTargets,
+     * VMSVGAR3STATE::listOutputTargetCreating, VMSVGAR3STATE::listOutputTargetDeleting.
+     */
+    RTLISTNODE              nodeOutputTarget;
+
+    /* An output target is referenced by (Main) consumers(s). */
+    uint64_t volatile       cCombinedRefs;
+
+    /* The counter is incremented each time the output target is updated.
+     * If the target was never updated then the counter value is 0.
+     */
+    uint64_t volatile       u64UpdateSequenceNumber;
+
+    /* Description of the target which the consumers can query. */
+    PDMDISPLAYOUTPUTTARGETDESC desc;
+
+    bool                    fAllocatedBuffer;
+
+#ifdef VBOX_WITH_VMSVGA3D
+    /* Pointer to the HW accelerated (3D) screen data. */
+    R3PTRTYPE(PVMSVGAHWOUTPUTTARGET) pHwOutputTarget;
+#endif
+} VMSVGAOUTPUTTARGET;
+
+
+DECLINLINE(bool) vmsvgaOutputTargetHasExternalRefs(VMSVGAOUTPUTTARGET *pOutputTarget)
+{
+    return (pOutputTarget->cCombinedRefs & UINT64_C(0xFFFFFFFF)) > 0;
+}
+
+
+DECLINLINE(void) vmsvgaOutputTargetAddRefExternal(VMSVGAOUTPUTTARGET *pOutputTarget)
+{
+    ASMAtomicAddU64(&pOutputTarget->cCombinedRefs, UINT64_C(1));
+    Assert((pOutputTarget->cCombinedRefs & UINT64_C(0xFFFFFFFF)) < UINT64_C(0x80000000));
+}
+
+
+DECLINLINE(bool) vmsvgaOutputTargetReleaseExternal(VMSVGAOUTPUTTARGET *pOutputTarget)
+{
+    Assert(vmsvgaOutputTargetHasExternalRefs(pOutputTarget));
+    return ASMAtomicSubU64(&pOutputTarget->cCombinedRefs, UINT64_C(1)) == UINT64_C(1);
+}
+
+
+DECLINLINE(bool) vmsvgaOutputTargetHasInternalRefs(VMSVGAOUTPUTTARGET *pOutputTarget)
+{
+    return (pOutputTarget->cCombinedRefs & UINT64_C(0xFFFFFFFF00000000)) > 0;
+}
+
+
+DECLINLINE(void) vmsvgaOutputTargetAddRefInternal(VMSVGAOUTPUTTARGET *pOutputTarget)
+{
+    ASMAtomicAddU64(&pOutputTarget->cCombinedRefs, UINT64_C(0x100000000));
+    Assert((pOutputTarget->cCombinedRefs & UINT64_C(0xFFFFFFFF00000000)) < UINT64_C(0x8000000000000000));
+}
+
+
+DECLINLINE(bool) vmsvgaOutputTargetReleaseInternal(VMSVGAOUTPUTTARGET *pOutputTarget)
+{
+    Assert(vmsvgaOutputTargetHasInternalRefs(pOutputTarget));
+    return ASMAtomicSubU64(&pOutputTarget->cCombinedRefs, UINT64_C(0x100000000)) == UINT64_C(0x100000000);
+}
+
 
 /**
  * Screen object state.
@@ -281,11 +366,7 @@ typedef struct VMSVGASCREENOBJECT
     int32_t     yOrigin;
     uint32_t    cWidth;
     uint32_t    cHeight;
-#ifndef DX_NEW_HWSCREEN
-    /** Offset of the screen buffer in the guest VRAM. */
-#else
     /** Offset of the screen buffer in the guest VRAM or VMSVGA_VRAM_OFFSET_SCREEN_TARGET. */
-#endif
     uint32_t    offVRAM;
     /** Scanline pitch. */
     uint32_t    cbPitch;
@@ -295,7 +376,12 @@ typedef struct VMSVGASCREENOBJECT
     uint32_t    cDpi;
     bool        fDefined;
     bool        fModified;
-    void       *pvScreenBitmap;
+
+    /** Default output target */
+    VMSVGAOUTPUTTARGET *pScreenOutputTarget;
+    /** Active output targets (VMSVGAOUTPUTTARGET) */
+    RTLISTANCHOR listOutputTargets;
+
 #ifdef VBOX_WITH_VMSVGA3D
     /** Pointer to the HW accelerated (3D) screen data. */
     R3PTRTYPE(PVMSVGAHWSCREEN) pHwScreen;
@@ -472,6 +558,7 @@ typedef struct VMSVGAState
     STAMCOUNTER                 StatRegDevCapWr;
     STAMCOUNTER                 StatRegCmdPrependLowWr;
     STAMCOUNTER                 StatRegCmdPrependHighWr;
+    STAMCOUNTER                 StatRegCursorMobIdWr;
 
     STAMCOUNTER                 StatRegBitsPerPixelRd;
     STAMCOUNTER                 StatRegBlueMaskRd;
@@ -609,6 +696,16 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
 DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns);
 void vmsvgaR3FifoWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC);
 
+int vmsvgaR3GetUniqueOutputTargetToken(PVGASTATE pThis, PVGASTATECC pThisCC, uint64_t *pu64OutputTargetToken);
+int vmsvgaR3QueryDefaultOutputTargetToken(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idScreen, uint64_t *pu64OutputTargetToken);
+int vmsvgaR3CreateOutputTarget(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idScreen, PDMDISPLAYOUTPUTTARGETFORMAT enmFormat,
+                               uint32_t cWidth, uint32_t cHeight, uint32_t uFlags, uint64_t u64OutputTargetToken);
+int vmsvgaR3CreateOutputTargetAsync(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idScreen, PDMDISPLAYOUTPUTTARGETFORMAT enmFormat,
+                                    uint32_t cWidth, uint32_t cHeight, uint32_t uFlags, uint64_t u64OutputTargetToken);
+int vmsvgaR3OutputTargetDesc(PVGASTATE pThis, PVGASTATECC pThisCC, uint64_t u64OutputTargetToken, PDMDISPLAYOUTPUTTARGETDESC *pDescOut);
+void vmsvgaR3RetainOutputTarget(PVGASTATE pThis, PVGASTATECC pThisCC, uint64_t u64OutputTargetToken);
+void vmsvgaR3ReleaseOutputTarget(PVGASTATE pThis, PVGASTATECC pThisCC, uint64_t u64OutputTargetToken);
+
 #ifdef IN_RING3
 VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATECC pThisCC, uint32_t idScreen);
 int vmsvgaR3UpdateScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);
@@ -642,6 +739,26 @@ typedef struct VMSVGAGBODESCRIPTOR
    uint64_t                 cPages;
 } VMSVGAGBODESCRIPTOR, *PVMSVGAGBODESCRIPTOR;
 typedef VMSVGAGBODESCRIPTOR const *PCVMSVGAGBODESCRIPTOR;
+#else
+/**
+ * GBO segment.
+ *
+ * This is basically RTSGSEG but with 32-bit size and an added offset member to
+ * enable binary searching.
+ */
+typedef struct VMSVGAGBOSEG
+{
+    /** Pointer to the first byte in the segment. */
+    uint8_t *pbSeg;
+    /** The segment size in bytes. */
+    uint32_t cbSeg;
+    /** The segment byte offset within the GBO. */
+    uint32_t offSeg;
+} VMSVGAGBOSEG;
+/** Pointer to a GBO segment. */
+typedef VMSVGAGBOSEG *PVMSVGAGBOSEG;
+/** Pointer to a const GBO segment. */
+typedef VMSVGAGBOSEG const *PCVMSVGAGBOSEG;
 #endif
 
 /* GBO.
@@ -655,14 +772,21 @@ typedef struct VMSVGAGBO
     uint32_t                cDescriptors;
     PVMSVGAGBODESCRIPTOR    paDescriptors;
 #else
-    uint32_t                cSegsUsed;        /**< Number of segments used in VMSVGAGBO::paSegs. */
-    void                   *pvDescriptors;    /**< Pointer to the memory for holding all the parallel arrays. */
-    RTGCPHYS               *paGCPhysPages;    /**< Pointer to the array of guest physical address for the pages. */
-    PPGMPAGEMAPLOCK         paPageLocks;      /**< Pointer to the array of PGM page map locks. */
-    void                  **papvPages;        /**< Pointer to the host adresses of mapped pages. */
-    PRTSGSEG                paSegs;           /**< Pointer to an array of segments. */
+    uint32_t                cSegsUsed;          /**< Number of segments used in VMSVGAGBO::paSegs. */
+    void                   *pvDescriptors;      /**< Pointer to the memory for holding all the parallel arrays. */
+    RTGCPHYS               *paGCPhysPages;      /**< Pointer to the array of guest physical address for the pages. */
+    PPGMPAGEMAPLOCK         paPageLocks;        /**< Pointer to the array of PGM page map locks. */
+    void                  **papvPages;          /**< Pointer to the host adresses of mapped pages. */
+    PVMSVGAGBOSEG           paSegs;             /**< Pointer to an array of segments (compressed w/ offset lookup). */
 #endif
-    void                   *pvHost; /* Pointer to cbTotal bytes on the host if VMSVGAGBO_F_HOST_BACKED is set. */
+    void                   *pvHost;             /**< Pointer to cbTotal bytes on the host if VMSVGAGBO_F_HOST_BACKED is set. */
+    /** Use a union to keep the structure layout & size the same, avoiding any
+     *  troubles if VBOX_WITH_STATISTICS is defined locally in a source file. */
+    union
+    {
+        STAMPROFILE         StatTransferPrf;    /**< VBOX_WITH_STATISTICS: Profiles vmsvgaR3GboTransfer(). */
+        STAMCOUNTER         StatTransferCalls;  /**< !VBOX_WITH_STATISTICS: Count vmsvgaR3GboTransfer() calls. */
+    } u;
 } VMSVGAGBO, *PVMSVGAGBO;
 typedef VMSVGAGBO const *PCVMSVGAGBO;
 

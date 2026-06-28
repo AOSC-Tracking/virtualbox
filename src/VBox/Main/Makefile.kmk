@@ -220,8 +220,13 @@ endif
 ifdef VBOX_WITH_MAIN_OBJECT_TRACKER
  VBOX_MAIN_DEFS += VBOX_WITH_MAIN_OBJECT_TRACKER
 endif
+ifdef VBOX_WITH_LIBLZMA
+ VBOX_MAIN_DEFS += VBOX_WITH_LIBLZMA
+endif
 # Unconditionally enable the new semaphore key generation code
 VBOX_MAIN_DEFS += VBOX_WITH_NEW_SYS_V_KEYGEN
+VBOX_MAIN_DEFS += \
+	$(if $(VBOX_WITH_PLUGIN_CRYPT),VBOX_WITH_PLUGIN_CRYPT,)
 
 VBOX_IDL_FILE.MSCOM    = $(VBOX_PATH_SDK)/bindings/mscom/idl/VirtualBox.idl
 VBOX_IDL_FILE.XPCOM    = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl
@@ -443,6 +448,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	UefiMicrosoft3rdCa2023=microsoft_uefi_ca_2023.crt \
  	UefiMicrosoftWinCa=MicWinProPCA2011_2011-10-19.crt \
  	UefiMicrosoftWinCa2023=windows_uefi_ca_2023.crt \
+ 	UefiMicrosoftOpRomUefiCa2023=microsoft_option_rom_uefi_ca_2023.crt \
  	UefiOracleDefPk=OrclUefiDefPk2021_2021-09-29.crt
 
  VBOX_SVC_CERT_NAMES := $(foreach cert,$(VBOX_SVC_CERTS),$(firstword $(subst =,$(SP),$(cert))))
@@ -634,7 +640,6 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-all/NvramStoreImpl.cpp \
  	$(if $(VBOX_WITH_MAIN_OBJECT_TRACKER),src-all/ObjectsTracker.cpp) \
  	src-all/PCIDeviceAttachmentImpl.cpp \
- 	src-all/PlatformPropertiesImpl.cpp \
  	src-all/ProgressImpl.cpp \
  	src-all/RecordingUtils.cpp \
  	src-all/SecretKeyStore.cpp \
@@ -643,6 +648,10 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-all/ThreadTask.cpp \
  	src-all/VirtualBoxBase.cpp \
  	src-all/VirtualBoxErrorInfoImpl.cpp \
+ 	$(if $(VBOX_WITH_FULL_VM_ENCRYPTION), \
+ 		src-all/VBoxCrypto.cpp \
+ 		src-all/VBoxCryptoVfs.cpp \
+ 		,) \
  	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
  	src-server/CertificateImpl.cpp \
  	src-server/ApplianceImpl.cpp \
@@ -653,6 +662,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-server/BandwidthControlImpl.cpp \
  	src-server/BandwidthGroupImpl.cpp \
  	src-server/FirmwareSettingsImpl.cpp \
+	src-server/PlatformPropertiesImpl.cpp \
  	src-server/RecordingSettingsImpl.cpp \
  	src-server/RecordingScreenSettingsImpl.cpp \
  	src-server/GraphicsAdapterImpl.cpp \
@@ -890,17 +900,24 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
 		$(VBOX_XIDL_FILE)
  endif
 
- ## @todo r=klaus unfortunately we don't have xmllint everywhere, would be
- # good to check the validity for every VirtualBox.xidl change.
- #$(VBOX_XIDL_FILE).validated.ts: $(VBOX_XIDL_FILE_SRC)
- #	xmllint --dtdvalid $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.dtd --noout $<
- #	$(QUIET)$(CP) --changed -fv $< $(VBOX_XIDL_FILE).validated.ts
- #
- #OTHERS += $(VBOX_XIDL_FILE).validated.ts
- #OTHER_CLEAN += $(VBOX_XIDL_FILE).validated.ts
 
- testvalidxidl: $(VBOX_XIDL_FILE_SRC)
+ #
+ # If we have xmllint available, automatically lint VirtualBox.xidl.
+ #
+ ifdef VBOX_HAVE_XMLLINT
+  $(VBOX_XIDL_FILE).validated.ts: $(VBOX_XIDL_FILE_SRC)
+	$(VBOX_XMLLINT) --dtdvalid $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.dtd --noout $<
+	$(QUIET)$(TOUCH) -- "$@"
+
+  OTHERS += $(VBOX_XIDL_FILE).validated.ts
+  OTHER_CLEAN += $(VBOX_XIDL_FILE).validated.ts
+
+  testvalidxidl: $(VBOX_XIDL_FILE_SRC)
+	$(VBOX_XMLLINT) --dtdvalid $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.dtd --noout $<
+ else
+  testvalidxidl: $(VBOX_XIDL_FILE_SRC)
 	xmllint --dtdvalid $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.dtd --noout $<
+ endif
 
 
  #
@@ -1163,13 +1180,16 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-all/NvramStoreImpl.cpp \
  	$(if $(VBOX_WITH_MAIN_OBJECT_TRACKER),src-all/ObjectsTracker.cpp) \
  	src-all/PCIDeviceAttachmentImpl.cpp \
- 	src-all/PlatformPropertiesImpl.cpp \
  	src-all/ProgressImpl.cpp \
  	src-all/SecretKeyStore.cpp \
  	src-all/AutoCaller.cpp \
  	src-all/ThreadTask.cpp \
  	src-all/VirtualBoxBase.cpp \
  	src-all/VirtualBoxErrorInfoImpl.cpp \
+ 	$(if $(VBOX_WITH_FULL_VM_ENCRYPTION), \
+ 		src-all/VBoxCrypto.cpp \
+ 		src-all/VBoxCryptoVfs.cpp \
+ 		,) \
  	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
  	src-client/UsbWebcamInterface.cpp \
  	$(if $(VBOX_WITH_USB_CARDREADER),src-client/UsbCardReader.cpp,) \
@@ -1395,6 +1415,9 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  ifdef VBOX_WITH_EXTPACK
   PROGRAMS += VBoxExtPackHelperApp
   VBoxExtPackHelperApp_TEMPLATE = VBoxR3SetUidToRoot
+  ifdef VBOX_WITH_LIBLZMA
+   VBoxExtPackHelperApp_DEFS := VBOX_WITH_LIBLZMA
+  endif
   VBoxExtPackHelperApp_LDFLAGS.darwin = -framework Security
   VBoxExtPackHelperApp_LDFLAGS.win = /SUBSYSTEM:windows
   VBoxExtPackHelperApp_SOURCES = \

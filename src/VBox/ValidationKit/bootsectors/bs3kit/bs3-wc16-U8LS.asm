@@ -44,10 +44,10 @@
 ; @param    AX:BX:CX:DX Value to shift.
 ; @param    SI          Shift count.
 ;
-global $_?U8LS
-$_?U8LS:
-global $_?I8LS
-$_?I8LS:
+global _?U8LS
+_?U8LS:
+global _?I8LS
+_?I8LS:
         push    si
 
         ;

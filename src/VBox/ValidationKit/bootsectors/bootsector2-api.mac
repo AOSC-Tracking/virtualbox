@@ -52,7 +52,7 @@
 ;;
 ; API Template for lazy birds.
 ;
-%macro BS2_API_TEMPLATE 0,
+%macro BS2_API_TEMPLATE 0
 
  BS2_API_TEMPLATE_ACTION(Bs2DisableA20)
  BS2_API_TEMPLATE_ACTION(Bs2DisableA20ViaKbd)

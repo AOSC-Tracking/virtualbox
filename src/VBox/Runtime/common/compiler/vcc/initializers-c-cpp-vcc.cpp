@@ -75,6 +75,7 @@ __declspec(allocate(".CRT$XTZ"))    PFNVCINITTERM       g_apfnRTVccTerminators_C
 
 /** Start of the C++ initializer array. */
 __declspec(allocate(".CRT$XCA"))    PFNVCINITTERM       g_apfnRTVccInitializers_Cpp_Start   = NULL;
+/* The compiler output entries in the ".CRT$XCU" section. */
 /** End of the C++ initializer array. */
 __declspec(allocate(".CRT$XCZ"))    PFNVCINITTERM       g_apfnRTVccInitializers_Cpp_End     = NULL;
 

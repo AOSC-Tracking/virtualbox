@@ -48,8 +48,8 @@ BS3_EXTERN_CMN Bs3UInt64Div
 ;
 ; @uses     Nothing.
 ;
-global $_?U8DQ
-$_?U8DQ:
+global _?U8DQ
+_?U8DQ:
         push    es
         push    ss
         pop     es
@@ -73,8 +73,8 @@ $_?U8DQ:
 ;
 ; @uses     Nothing.
 ;
-global $_?U8DQE
-$_?U8DQE:
+global _?U8DQE
+_?U8DQE:
         push    ds
         push    es
 

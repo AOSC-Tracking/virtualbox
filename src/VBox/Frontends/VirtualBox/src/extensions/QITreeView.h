@@ -49,6 +49,9 @@ class SHARED_LIBRARY_STUFF QITreeViewItem : public QObject
 
 public:
 
+    /** Acquires QTreeViewItem* from passed @a idx. */
+    static QITreeViewItem *toItem(const QModelIndex &idx);
+
     /** Constructs tree-view item for passed @a pParent. */
     QITreeViewItem(QITreeView *pParent)
         : m_pParentTree(pParent)
@@ -67,9 +70,9 @@ public:
     QITreeViewItem *parentItem() const { return m_pParentItem; }
 
     /** Returns the number of children. */
-    virtual int childCount() const = 0;
+    int count() const;
     /** Returns the child item with @a iIndex. */
-    virtual QITreeViewItem *childItem(int iIndex) const = 0;
+    QITreeViewItem *child(int iIndex) const;
 
     /** Returns the item text. */
     virtual QString text() const = 0;
@@ -129,14 +132,21 @@ public:
     QITreeView(QWidget *pParent = 0);
 
     /** Returns the number of children. */
-    virtual int childCount() const { return 0; }
+    int count() const;
     /** Returns the child item with @a iIndex. */
-    virtual QITreeViewItem *childItem(int /* iIndex */) const { return 0; }
+    QITreeViewItem *child(int iIndex) const;
+
+    /** Returns current item. */
+    QITreeViewItem *currentItem() const;
 
 protected slots:
 
-    /** Handles index changed from @a previous to @a current.*/
-    void currentChanged(const QModelIndex &current, const QModelIndex &previous) RT_OVERRIDE;
+    /** This slot is called when a new item becomes the current item.
+      * The previous current item is specified by the @a previous index, and the new item by the @a current index. */
+    virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) RT_OVERRIDE RT_FINAL;
+    /** This slot is called when the selection is changed.
+      * The previous selection (which may be empty), is specified by @a deselected, and the new selection by @a selected. */
+    virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) RT_OVERRIDE RT_FINAL;
 
 protected:
 
@@ -163,11 +173,6 @@ protected:
     virtual void dragLeaveEvent(QDragLeaveEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse drop @a pEvent. */
     virtual void dropEvent(QDropEvent *pEvent) RT_OVERRIDE;
-
-private:
-
-    /** Prepares all. */
-    void prepare();
 };
 
 

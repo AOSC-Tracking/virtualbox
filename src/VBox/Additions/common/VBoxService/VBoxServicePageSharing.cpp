@@ -81,7 +81,6 @@
 #endif
 
 #include "VBoxServiceInternal.h"
-#include "VBoxServiceUtils.h"
 
 
 /*********************************************************************************************************************************
@@ -580,7 +579,7 @@ static DECLCALLBACK(int) vgsvcPageSharingInit(void)
     AssertRCReturn(rc, rc);
 
 #ifdef RT_OS_WINDOWS
-    rc = VbglR3GetSessionId(&g_idSession);
+    rc = VbglR3QuerySessionId(&g_idSession);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_IO_GEN_FAILURE)
@@ -640,7 +639,7 @@ static DECLCALLBACK(int) vgsvcPageSharingWorker(bool volatile *pfShutdown)
         }
 #ifdef RT_OS_WINDOWS
         uint64_t idNewSession = g_idSession;
-        rc =  VbglR3GetSessionId(&idNewSession);
+        rc =  VbglR3QuerySessionId(&idNewSession);
         AssertRC(rc);
 
         if (idNewSession != g_idSession)
@@ -793,6 +792,8 @@ VBOXSERVICE g_PageSharing =
     NULL,
     /* pszOptions. */
     NULL,
+    /* paOptions, cOptions. */
+    NULL, 0,
     /* methods */
     VGSvcDefaultPreInit,
     VGSvcDefaultOption,

@@ -3157,16 +3157,39 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 }
 
 
-SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
+SUPR0DECL(uint32_t) SUPR0FpuBegin(bool fCtxHook)
 {
     RT_NOREF(fCtxHook);
+    return 0;
+}
+
+
+SUPR0DECL(bool) SUPR0FpuEnsureCurrent(uint32_t fBegin)
+{
+    Assert(fBegin == 0);
+    RT_NOREF(fBegin);
     return false;
 }
 
 
-SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook)
+SUPR0DECL(uint32_t) SUPR0FpuLock(uint32_t fBegin)
 {
-    RT_NOREF(fCtxHook);
+    Assert(fBegin == 0);
+    return fBegin;
+}
+
+
+SUPR0DECL(uint32_t) SUPR0FpuUnlock(uint32_t fBegin)
+{
+    Assert(fBegin == 0);
+    return fBegin;
+}
+
+
+SUPR0DECL(void) SUPR0FpuEnd(uint32_t fBegin)
+{
+    RT_NOREF(fBegin);
+    Assert(fBegin == 0);
 }
 
 
@@ -3948,6 +3971,13 @@ static bool supdrvNtProtectIsWhitelistedDebugger(PEPROCESS pProcess)
             return true;
         if (RTStrICmp(pszImageFile, "dwwin.exe") == 0)
             return true;
+        if (RTStrICmp(pszImageFile, "dbgx.shell.exe") == 0) // ??
+            return true;
+    }
+    else if (pszImageFile[0] == 'e' || pszImageFile[0] == 'E')
+    {
+        if (RTStrICmp(pszImageFile, "EngHost.exe") == 0)
+            return true;
     }
 
     return false;
@@ -4481,7 +4511,7 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                    PROCESS_SET_LIMITED_INFORMATION right.  It seems like it need it for
                    some myserious and weirdly placed cpu set management of our process.
                    I'd love to understand what that's all about...
-                   Currently playing safe and only grand this right, however limited, to
+                   Currently playing safe and only grant this right, however limited, to
                    audiodg.exe. */
                 if (   g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(10, 0)
                     && (   fDesiredAccess == PROCESS_SET_LIMITED_INFORMATION

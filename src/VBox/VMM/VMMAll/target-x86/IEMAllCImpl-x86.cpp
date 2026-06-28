@@ -75,7 +75,7 @@
  * Flushes the prefetch buffer, light version.
  * @todo The \#if conditions here must match the ones in iemOpcodeFlushLight().
  */
-#ifndef IEM_WITH_CODE_TLB
+#ifndef IEM_WITH_CODE_TLB_IN_CUR_CTX
 # define IEM_FLUSH_PREFETCH_LIGHT(a_pVCpu, a_cbInstr) iemOpcodeFlushLight(a_pVCpu, a_cbInstr)
 #else
 # define IEM_FLUSH_PREFETCH_LIGHT(a_pVCpu, a_cbInstr) do { } while (0)
@@ -85,7 +85,7 @@
  * Flushes the prefetch buffer, heavy version.
  * @todo The \#if conditions here must match the ones in iemOpcodeFlushHeavy().
  */
-#if !defined(IEM_WITH_CODE_TLB) || 1
+#if !defined(IEM_WITH_CODE_TLB_IN_CUR_CTX) || 1
 # define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) iemOpcodeFlushHeavy(a_pVCpu, a_cbInstr)
 #else
 # define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { } while (0)
@@ -926,7 +926,7 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
      */
     Assert(fEflNew & RT_BIT_32(1));
     IEMMISC_SET_EFL(pVCpu, fEflNew);
-    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_X86_AC) | iemCalcExecAcFlag(pVCpu);
+    ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~IEM_F_X86_AC) | iemCalcExecAcFlag(pVCpu);
     return iemRegAddToRipAndFinishingClearingRfEx(pVCpu, cbInstr, fEflOld);
 }
 
@@ -1832,9 +1832,9 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
         if (RT_LIKELY(!IEM_IS_32BIT_CODE(pVCpu)))
         { /* likely */ }
         else if (uSel != 0)
-            pVCpu->iem.s.fExec &= ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK;
+            ICORE(pVCpu).fExec &= ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK;
         else
-            pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK)
+            ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK)
                                | iemCalc32BitFlatIndicator(pVCpu);
 
         return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
@@ -2782,7 +2782,7 @@ IEM_CIMPL_DEF_1(iemCImpl_leave, IEMMODE, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, IEMINT, enmInt)
 {
-    Assert(pVCpu->iem.s.cXcptRecursions == 0);
+    Assert(ICORE(pVCpu).cXcptRecursions == 0);
 
     /*
      * We must check if this INT3 might belong to DBGF before raising a #BP.
@@ -2939,7 +2939,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     /** @todo do we load attribs and limit as well? */
     Assert(uNewFlags & X86_EFL_1);
     IEMMISC_SET_EFL(pVCpu, uNewFlags);
-    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_X86_AC) | iemCalcExecAcFlag(pVCpu);
+    ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~IEM_F_X86_AC) | iemCalcExecAcFlag(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo can do light flush in real mode at least */
@@ -3021,7 +3021,7 @@ IEM_CIMPL_DEF_4(iemCImpl_iret_prot_v8086, uint32_t, uNewEip, uint16_t, uNewCs, u
     iemCImplCommonV8086LoadSeg(&pVCpu->cpum.GstCtx.gs, uNewGs);
     pVCpu->cpum.GstCtx.rip      = (uint16_t)uNewEip;
     pVCpu->cpum.GstCtx.rsp      = uNewEsp; /** @todo check this out! */
-    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
+    ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                        | (3 << IEM_F_X86_CPL_SHIFT)
                        | IEM_F_MODE_X86_16BIT_PROT_V86
                        | iemCalcExecAcFlag(pVCpu);
@@ -4094,7 +4094,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
         pVCpu->cpum.GstCtx.cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_L | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC;
         pVCpu->cpum.GstCtx.ss.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC;
 
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
+        ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_64BIT;
     }
     else
@@ -4110,7 +4110,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
         pVCpu->cpum.GstCtx.cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC;
         pVCpu->cpum.GstCtx.ss.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC;
 
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
+        ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_32BIT_PROT
                            | iemCalc32BitFlatIndicatorEsDs(pVCpu);
     }
@@ -4254,12 +4254,12 @@ IEM_CIMPL_DEF_1(iemCImpl_sysret, IEMMODE, enmEffOpSize)
      *        on sysret on AMD and not on intel. */
 
     if (!f32Bit)
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
+        ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | (3 << IEM_F_X86_CPL_SHIFT)
                            | IEM_F_MODE_X86_64BIT
                            | iemCalcExecAcFlag(pVCpu);
     else
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
+        ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | (3 << IEM_F_X86_CPL_SHIFT)
                            | IEM_F_MODE_X86_32BIT_PROT
                            /** @todo sort out the SS.BASE/LIM/ATTR claim by AMD and maybe we can switch to
@@ -4339,7 +4339,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
         pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.SysEnter.esp;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_L | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
                                         | X86_SEL_TYPE_ER_ACC;
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
+        ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_64BIT;
     }
     else
@@ -4350,7 +4350,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
         pVCpu->cpum.GstCtx.rsp          = (uint32_t)pVCpu->cpum.GstCtx.SysEnter.esp;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
                                         | X86_SEL_TYPE_ER_ACC;
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
+        ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_32BIT_PROT
                            | iemCalc32BitFlatIndicatorEsDs(pVCpu);
     }
@@ -4441,7 +4441,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
         pVCpu->cpum.GstCtx.ss.Sel       = (uNewCs | 3) + 40;
         pVCpu->cpum.GstCtx.ss.ValidSel  = (uNewCs | 3) + 40;
 
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+        ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
                            | (3 << IEM_F_X86_CPL_SHIFT)
                            | IEM_F_MODE_X86_64BIT
                            | iemCalcExecAcFlag(pVCpu);
@@ -4459,7 +4459,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
         pVCpu->cpum.GstCtx.ss.Sel       = (uNewCs | 3) + 24;
         pVCpu->cpum.GstCtx.ss.ValidSel  = (uNewCs | 3) + 24;
 
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+        ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
                            | (3 << IEM_F_X86_CPL_SHIFT)
                            | IEM_F_MODE_X86_32BIT_PROT
                            | iemCalc32BitFlatIndicatorEsDs(pVCpu)
@@ -4551,9 +4551,9 @@ static VBOXSTRICTRC iemCImpl_LoadSRegWorker(PVMCPUCC pVCpu, uint8_t iSegReg, uin
         if (RT_LIKELY(!IEM_IS_32BIT_CODE(pVCpu)))
         { /* likely */ }
         else if (uSel != 0)
-            pVCpu->iem.s.fExec &= ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK;
+            ICORE(pVCpu).fExec &= ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK;
         else
-            pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK)
+            ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK)
                                | iemCalc32BitFlatIndicator(pVCpu);
     }
     /*
@@ -4589,7 +4589,7 @@ static VBOXSTRICTRC iemCImpl_LoadSRegWorker(PVMCPUCC pVCpu, uint8_t iSegReg, uin
         /* This will affect the FLAT 32-bit mode flag: */
         if (   iSegReg < X86_SREG_FS
             && IEM_IS_32BIT_CODE(pVCpu))
-            pVCpu->iem.s.fExec &= ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK;
+            ICORE(pVCpu).fExec &= ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK;
     }
     /*
      * Protected / long mode.
@@ -4699,7 +4699,7 @@ static VBOXSTRICTRC iemCImpl_LoadSRegWorker(PVMCPUCC pVCpu, uint8_t iSegReg, uin
         /* This will affect the FLAT 32-bit mode flag: */
         if (   iSegReg < X86_SREG_FS
             && IEM_IS_32BIT_CODE(pVCpu))
-            pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK)
+            ICORE(pVCpu).fExec = (ICORE(pVCpu).fExec & ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK)
                                | iemCalc32BitFlatIndicator(pVCpu);
     }
 
@@ -5704,7 +5704,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
             }
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-            else if (pVCpu->iem.s.fExec & IEM_F_X86_CTX_SVM)
+            else if (ICORE(pVCpu).fExec & IEM_F_X86_CTX_SVM)
             {
                 PCSVMVMCBCTRL pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl;
                 if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, IEM_GET_CTX(pVCpu)))
@@ -5993,6 +5993,9 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
             }
 
+            /* Just count all of these as exits. */
+            ICORE(pVCpu).cPotentialExits++;
+
             /*
              * Change EFER.LMA if entering or leaving long mode.
              */
@@ -6226,6 +6229,9 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
             }
 
+            /* Just count all of these as exits. */
+            ICORE(pVCpu).cPotentialExits++;
+
             IEMTLBTRACE_LOAD_CR4(pVCpu, uNewCrX, uOldCrX);
 
             /*
@@ -6296,7 +6302,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             }
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-            else if (pVCpu->iem.s.fExec & IEM_F_X86_CTX_SVM)
+            else if (ICORE(pVCpu).fExec & IEM_F_X86_CTX_SVM)
             {
                 if (IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 8))
                 {
@@ -6507,22 +6513,27 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
     switch (iDrReg)
     {
         case 0:
+            ICORE(pVCpu).cPotentialExits++;
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
             drX = pVCpu->cpum.GstCtx.dr[0];
             break;
         case 1:
+            ICORE(pVCpu).cPotentialExits++;
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
             drX = pVCpu->cpum.GstCtx.dr[1];
             break;
         case 2:
+            ICORE(pVCpu).cPotentialExits++;
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
             drX = pVCpu->cpum.GstCtx.dr[2];
             break;
         case 3:
+            ICORE(pVCpu).cPotentialExits++;
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
             drX = pVCpu->cpum.GstCtx.dr[3];
             break;
         case 6:
+            ICORE(pVCpu).cPotentialExits++; /* not quite true... */
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
             drX = pVCpu->cpum.GstCtx.dr[6];
             drX |= X86_DR6_RA1_MASK;
@@ -6604,6 +6615,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
         }
         iDrReg += 2;
     }
+
+    /* Just count all these as potential exits for now. */
+    ICORE(pVCpu).cPotentialExits++;
 
     /* Raise #DB if general access detect is enabled. */
     /** @todo is \#DB/DR7.GD raised before any reserved high bits in DR7/DR6
@@ -6690,7 +6704,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
      * TLB entry can be correctly invalidated.
      */
     if (   iDrReg == 7
-#ifdef IEM_WITH_DATA_TLB
+#ifdef IEM_WITH_DATA_TLB_IN_CUR_CTX
         || (   iDrReg <= 3
             && (X86_DR7_L_G(iDrReg) & pVCpu->cpum.GstCtx.dr[7])
             && X86_DR7_IS_W_CFG(pVCpu->cpum.GstCtx.dr[7], iDrReg) )
@@ -6997,6 +7011,8 @@ IEM_CIMPL_DEF_0(iemCImpl_invd)
     else
         IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0, cbInstr);
 
+    ICORE(pVCpu).cPotentialExits++;
+
     /* We currently take no action here. */
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
@@ -7019,6 +7035,8 @@ IEM_CIMPL_DEF_0(iemCImpl_wbinvd)
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_WBINVD, cbInstr);
     else
         IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_WBINVD, SVM_EXIT_WBINVD, 0, 0, cbInstr);
+
+    ICORE(pVCpu).cPotentialExits++;
 
     /* We currently take no action here. */
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
@@ -7179,6 +7197,10 @@ IEM_CIMPL_DEF_0(iemCImpl_rdpmc)
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_RDPMC, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
+    /* This isn't necessarily so... */
+    ICORE(pVCpu).cPotentialExits++;
+
+
     /** @todo Emulate performance counters, for now just return 0. */
     pVCpu->cpum.GstCtx.rax = 0;
     pVCpu->cpum.GstCtx.rdx = 0;
@@ -7228,6 +7250,9 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
         }
     }
 #endif
+
+    /* Just count all these as exits (should filter a few, but too much work). */
+    ICORE(pVCpu).cPotentialExits++;
 
     /*
      * Do the job.
@@ -7315,6 +7340,9 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
         }
     }
 #endif
+
+    /* Just count all these as exits (should filter a few, but too much work). */
+    ICORE(pVCpu).cPotentialExits++;
 
     if (idMsr == MSR_K6_EFER)
         IEMTLBTRACE_LOAD_EFER(pVCpu, uValue.u, pVCpu->cpum.GstCtx.msrEFER);
@@ -7448,7 +7476,7 @@ IEM_CIMPL_DEF_3(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAnd
             default: AssertFailedReturn(VERR_IEM_IPE_3);
         }
 
-        pVCpu->iem.s.cPotentialExits++;
+        ICORE(pVCpu).cPotentialExits++;
         if (rcStrict != VINF_SUCCESS)
             iemSetPassUpStatus(pVCpu, rcStrict);
 
@@ -7563,7 +7591,7 @@ IEM_CIMPL_DEF_3(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAn
     rcStrict = IOMIOPortWrite(pVM, pVCpu, u16Port, u32Value, cbReg);
     if (IOM_SUCCESS(rcStrict))
     {
-        pVCpu->iem.s.cPotentialExits++;
+        ICORE(pVCpu).cPotentialExits++;
         if (rcStrict != VINF_SUCCESS)
             iemSetPassUpStatus(pVCpu, rcStrict);
 
@@ -7693,7 +7721,9 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
         /** @todo only set it the shadow flag if it was clear before? */
         CPUMSetInInterruptShadowSti(&pVCpu->cpum.GstCtx);
     }
-    pVCpu->iem.s.fTbCurInstrIsSti = true;
+#ifndef IN_RING0 /* No recompiler in ring-0 */
+    IRECM(pVCpu).fTbCurInstrIsSti = true;
+#endif
     Log2(("STI: %#x -> %#x\n", fEflOld, fEfl));
     return rcStrict;
 }
@@ -7721,6 +7751,8 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_HLT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
+
+    ICORE(pVCpu).cPotentialExits++;
 
     /** @todo finish: This ASSUMES that iemRegAddToRipAndFinishingClearingRF won't
      * be returning any status codes relating to non-guest events being raised, as
@@ -7914,6 +7946,8 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_MWAIT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
+
+    ICORE(pVCpu).cPotentialExits++;
 
     /*
      * Call EM to prepare the monitor/wait.
@@ -8110,7 +8144,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
     pVCpu->cpum.GstCtx.rdx &= UINT32_C(0xffffffff);
     pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX | CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RBX);
 
-    pVCpu->iem.s.cPotentialExits++;
+    ICORE(pVCpu).cPotentialExits++;
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
@@ -8437,6 +8471,8 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
             { /* probable */ }
             else
                 IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_XSETBV, cbInstr);
+
+            ICORE(pVCpu).cPotentialExits++;
 
             uint32_t uEcx = pVCpu->cpum.GstCtx.ecx;
             uint64_t uNewValue = RT_MAKE_U64(pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.edx);

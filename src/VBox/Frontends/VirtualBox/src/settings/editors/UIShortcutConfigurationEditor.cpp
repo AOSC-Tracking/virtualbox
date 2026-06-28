@@ -30,12 +30,12 @@
 #include <QHeaderView>
 #include <QItemEditorFactory>
 #include <QSortFilterProxyModel>
-#include <QTabWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIStyledItemDelegate.h"
 #include "QITableView.h"
+#include "QITabWidget.h"
 #include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
@@ -55,31 +55,6 @@ enum TableColumnIndex
     TableColumnIndex_Description,
     TableColumnIndex_Sequence,
     TableColumnIndex_Max
-};
-
-
-/** QITableViewCell subclass for shortcut configuration editor. */
-class UIShortcutTableViewCell : public QITableViewCell
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs table cell on the basis of passed arguments.
-      * @param  pParent  Brings the row this cell belongs too.
-      * @param  strText  Brings the text describing this cell. */
-    UIShortcutTableViewCell(QITableViewRow *pParent, const QString &strText)
-        : QITableViewCell(pParent)
-        , m_strText(strText)
-    {}
-
-    /** Returns the cell text. */
-    virtual QString text() const RT_OVERRIDE { return m_strText; }
-
-private:
-
-    /** Holds the cell text. */
-    QString m_strText;
 };
 
 
@@ -141,7 +116,7 @@ protected:
     /** Returns the number of children. */
     virtual int childCount() const RT_OVERRIDE
     {
-        return TableColumnIndex_Max;
+        return 2 /* cause children container represented by QPair */;
     }
 
     /** Returns the child item with @a iIndex. */
@@ -153,6 +128,7 @@ protected:
             case TableColumnIndex_Sequence: return m_cells.second;
             default: break;
         }
+        AssertMsgFailed(("Invalid index %d\n", iIndex));
         return 0;
     }
 
@@ -161,9 +137,10 @@ private:
     /** Creates cells. */
     void createCells()
     {
-        /* Create cells on the basis of description and current sequence: */
-        m_cells = qMakePair(new UIShortcutTableViewCell(this, description()),
-                            new UIShortcutTableViewCell(this, currentSequence()));
+        if (m_cells.first || m_cells.second)
+            destroyCells();
+        m_cells = qMakePair(new QITableViewCell(this, description()),
+                            new QITableViewCell(this, currentSequence()));
     }
 
     /** Destroys cells. */
@@ -177,7 +154,7 @@ private:
     }
 
     /** Holds the cell instances. */
-    QPair<UIShortcutTableViewCell*, UIShortcutTableViewCell*> m_cells;
+    QPair<QITableViewCell*, QITableViewCell*>  m_cells;
 };
 
 /** Shortcut configuration editor row list. */
@@ -881,7 +858,7 @@ void UIShortcutConfigurationEditor::prepareWidgets()
         pMainLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Prepare tab-widget: */
-        m_pTabWidget = new QTabWidget(this);
+        m_pTabWidget = new QITabWidget(this);
         if (m_pTabWidget)
         {
             /* Prepare 'Manager UI' tab: */

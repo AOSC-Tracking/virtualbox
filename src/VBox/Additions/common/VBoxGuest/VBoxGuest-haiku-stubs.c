@@ -217,9 +217,9 @@ RTR0DECL(int) RTR0MemObjLockKernelTag(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, 
 {
     return g_VBoxGuest->_RTR0MemObjLockKernelTag(pMemObj, pv, cb, fAccess, pszTag);
 }
-RTR0DECL(int) RTR0MemObjLockUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process, const char *pszTag)
+RTR0DECL(int) RTR0MemObjLockUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, uint32_t fFlags, RTR0PROCESS R0Process, const char *pszTag)
 {
-    return g_VBoxGuest->_RTR0MemObjLockUserTag(pMemObj, R3Ptr, cb, fAccess, R0Process, pszTag);
+    return g_VBoxGuest->_RTR0MemObjLockUserTag(pMemObj, R3Ptr, cb, fAccess, fFlags, R0Process, pszTag);
 }
 RTR0DECL(int) RTR0MemObjMapKernelExTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt, size_t offSub, size_t cbSub, const char *pszTag)
 {

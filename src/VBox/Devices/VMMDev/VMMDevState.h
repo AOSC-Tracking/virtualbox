@@ -59,9 +59,10 @@ typedef VMMDEVREQLOCK *PVMMDEVREQLOCK;
 typedef struct DISPLAYCHANGEREQUEST
 {
     bool fPending;
-    bool afAlignment[3];
-    VMMDevDisplayDef displayChangeRequest;
-    VMMDevDisplayDef lastReadDisplayChangeRequest;
+    bool fAcknowledged;
+    bool afAlignment[2];
+    VMMDevDisplayDef displayChangeDef;
+    VMMDevDisplayDef lastReadDisplayChangeDef;
 } DISPLAYCHANGEREQUEST;
 
 typedef struct DISPLAYCHANGEDATA

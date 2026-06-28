@@ -59,7 +59,6 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/shflsvc.h>
 #include "VBoxServiceInternal.h"
-#include "VBoxServiceUtils.h"
 
 #ifdef RT_OS_WINDOWS
 #elif defined(RT_OS_OS2)
@@ -613,7 +612,7 @@ static int vbsvcAutoMountWorkerOld(bool volatile *pfShutdown)
         && cMappings)
     {
         char *pszMountDir;
-        rc = VbglR3SharedFolderGetMountDir(&pszMountDir);
+        rc = VbglR3SharedFolderQueryMountDir(&pszMountDir);
         if (rc == VERR_NOT_FOUND)
             rc = RTStrDupEx(&pszMountDir, VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR);
         if (RT_SUCCESS(rc))
@@ -621,7 +620,7 @@ static int vbsvcAutoMountWorkerOld(bool volatile *pfShutdown)
             VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder mount dir set to '%s'\n", pszMountDir);
 
             char *pszSharePrefix;
-            rc = VbglR3SharedFolderGetMountPrefix(&pszSharePrefix);
+            rc = VbglR3SharedFolderQueryMountPrefix(&pszSharePrefix);
             if (RT_SUCCESS(rc))
             {
                 VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder mount prefix set to '%s'\n", pszSharePrefix);
@@ -692,7 +691,7 @@ static int vbsvcAutomounterQueryMountDirAndPrefix(char *pszDst, size_t cbDst)
     /* Mount directory: */
     const char *pszDir = VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR;
     char       *pszCfgDir;
-    int rc = VbglR3SharedFolderGetMountDir(&pszCfgDir);
+    int rc = VbglR3SharedFolderQueryMountDir(&pszCfgDir);
     if (RT_SUCCESS(rc))
     {
         if (*pszCfgDir == '/')
@@ -703,8 +702,8 @@ static int vbsvcAutomounterQueryMountDirAndPrefix(char *pszDst, size_t cbDst)
 
     /* Prefix: */
     const char *pszPrefix = VBOXSERVICE_AUTOMOUNT_DEFAULT_PREFIX;
-    char *pszCfgPrefix;
-    rc = VbglR3SharedFolderGetMountPrefix(&pszCfgPrefix);
+    char       *pszCfgPrefix;
+    rc = VbglR3SharedFolderQueryMountPrefix(&pszCfgPrefix);
     if (RT_SUCCESS(rc))
     {
         if (   strchr(pszCfgPrefix, '/')  == NULL
@@ -2200,6 +2199,8 @@ VBOXSERVICE g_AutoMount =
     NULL,
     /* pszOptions. */
     NULL,
+    /* paOptions, cOptions. */
+    NULL, 0,
     /* methods */
     VGSvcDefaultPreInit,
     VGSvcDefaultOption,

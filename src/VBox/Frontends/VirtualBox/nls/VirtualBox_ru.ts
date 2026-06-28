@@ -448,10 +448,6 @@
         <translation>&amp;Добавить...</translation>
     </message>
     <message>
-        <source>Cl&amp;one...</source>
-        <translation>&amp;Клонировать...</translation>
-    </message>
-    <message>
         <source>&amp;Remove...</source>
         <translation>&amp;Удалить...</translation>
     </message>
@@ -1780,7 +1776,7 @@
         <translation>Переместить в &amp;группу</translation>
     </message>
     <message>
-        <source>C&amp;onsole</source>
+        <source>Conso&amp;le</source>
         <translation>&amp;Консоль</translation>
     </message>
     <message>
@@ -2302,6 +2298,26 @@
     <message>
         <source>Send the ACPI shutdown signal to the virtual machine</source>
         <translation>Послать виртуальной машине сигнал завершения работы</translation>
+    </message>
+    <message>
+        <source>&amp;New</source>
+        <translation>&amp;Новая</translation>
+    </message>
+    <message>
+        <source>&amp;New Cloud Machine...</source>
+        <translation>&amp;Создать облачную машину...</translation>
+    </message>
+    <message>
+        <source>Create new cloud virtual machine</source>
+        <translation>Создать облачную виртуальную машину</translation>
+    </message>
+    <message>
+        <source>&amp;Open Cloud Machine...</source>
+        <translation>&amp;Открыть облачную машину...</translation>
+    </message>
+    <message>
+        <source>Open existing cloud virtual machine</source>
+        <translation>Открыть облачную виртуальную машину</translation>
     </message>
 </context>
 <context>
@@ -2898,7 +2914,7 @@
     <name>UIChooserNodeGroup</name>
     <message>
         <source>Machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Группа машин</translation>
     </message>
 </context>
 <context>
@@ -3153,6 +3169,14 @@
     <message>
         <source>Registered cloud providers and profiles</source>
         <translation>Содержит зарегистрированных провайдеров и профайлы</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Имя</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation>Значение</translation>
     </message>
 </context>
 <context>
@@ -4522,7 +4546,7 @@
     <message>
         <source>Intel 82583V Gigabit Network Connection [EXPERIMENTAL]</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel 82583V Gigabit Network Connection [ЭКСПЕРИМЕНТАЛЬНЫЙ]</translation>
     </message>
 </context>
 <context>
@@ -6377,16 +6401,8 @@
 <context>
     <name>UIHostnameDomainNameEditor</name>
     <message>
-        <source>Domain name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation>Имя домена должно быть длиной не менее 2х символов. Разрешены буквы, цифры, а также символы &quot;-&quot; и &quot;.&quot;</translation>
-    </message>
-    <message>
         <source>Domain name is valid</source>
         <translation>Имя домена корректно</translation>
-    </message>
-    <message>
-        <source>Host name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation>Имя хоста должно быть длиной не менее 2х символов. Разрешены буквы, цифры, а также символы &quot;-&quot; и &quot;.&quot;</translation>
     </message>
     <message>
         <source>Host name is valid</source>
@@ -6415,6 +6431,14 @@
     <message>
         <source>Domain name to be assigned to the virtual machine</source>
         <translation>Имя домена, назначаемое виртуальной машине</translation>
+    </message>
+    <message>
+        <source>Host name must be at least two alphanumeric characters. Hyphens are allowed between characters.</source>
+        <translation>Имя хоста должно включать как минимум два буквенно-цифровых символа. Дефисы между символами разрешены.</translation>
+    </message>
+    <message>
+        <source>Domain labels (1–63 chars) may use letters, digits, or hyphens, but not start or end with one. Labels are dot-separated, and the total length must be under 254 characters.</source>
+        <translation>Метки доменов (1-63 символа) могут использовать буквы, цифры и дефисы, но не могут начинаться с последних или заканчиваться ими. Метки разделяются точками, и общая длина не должна превышать 254 символа.</translation>
     </message>
 </context>
 <context>
@@ -6787,22 +6811,6 @@
 </context>
 <context>
     <name>UILanguageSettingsEditor</name>
-    <message>
-        <source>Author</source>
-        <translation>Автор(ы)</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>Язык</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>ИД</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Имя</translation>
-    </message>
     <message>
         <source>Language:</source>
         <translation>Язык:</translation>
@@ -9739,6 +9747,14 @@
         <source>Can&apos;t drop data to guest ...</source>
         <translation>Не удалось перенести данные в гостевую ОС ...</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;The VM folder contains files that were used for unattended guest OS installation and are no longer needed.&lt;/p&gt;&lt;p&gt;Delete them now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Папка машин содержит файлы, которые ранее использовались при установке ОС в автоматическом режиме и более не нужны.&lt;/p&gt;&lt;p&gt;Удалить их сейчас?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again</source>
+        <translation>Больше не спрашивать</translation>
+    </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
@@ -12399,7 +12415,7 @@
     <name>UIToolsItem</name>
     <message>
         <source>Tool item</source>
-        <translation type="unfinished"></translation>
+        <translation>Инструмент</translation>
     </message>
     <message>
         <source>Media</source>
@@ -13015,23 +13031,23 @@
     </message>
     <message>
         <source>The user name cannot contain following characters: / \ [ ] : | &lt; &gt; + = ; , ? * % @</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя не может содержать следующие символы: / \ [ ] : | &lt; &gt; + = ; , ? * % @</translation>
     </message>
     <message>
         <source>The user name cannot be &apos;NONE&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя не может быть равным &apos;NONE&apos;</translation>
     </message>
     <message>
         <source>The user name cannot be longer than 20 characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя не может быть длиннее 20и символов</translation>
     </message>
     <message>
         <source>The user name includes invalid characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя не может включать невалидные символы</translation>
     </message>
     <message>
         <source>The user name cannot be longer than 32 characters</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя не может быть длиннее 32х символов</translation>
     </message>
 </context>
 <context>

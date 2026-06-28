@@ -73,6 +73,347 @@ Rules for adding a changelog entry to make them look more uniform:
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
 
+    <title>Version 7.2.10 (2026-06-16)</title>
+
+    <para>This is a maintenance release. The following items were fixed or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: Fixed issue when CentOS 10 VM was not booting due to the
+          message "Fatal glibc error: CPU does not support x86-64-v3" (github:gh-642)</para>
+      </listitem>
+
+      <listitem>
+        <para>Devices/EFI: Fixed booting issue when ARM VM had less than 1024 MiB of RAM assigned (github:gh-679)</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: Fixed issue when it was not possible to attach USB device to
+          headless VM on Apple Silicon/macOS 26.4.1 (github:gh-631)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: Fixed issue when VIRTIO-SCSI device was not recognized as
+          SSD device by guest system (github:gh-634)</para>
+      </listitem>
+
+      <listitem>
+        <para>Network: Fixed issue in E1000 emulation code which triggered debug
+          log creation (github:gh-645)</para>
+      </listitem>
+
+      <listitem>
+        <para>Network: Fixed issue in E1000 emulation code which prevented OS/2 guest
+          from booting (github:gh-683)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host: Fixed issue when VMs could not be started due to
+          kernel oops (github:gh-639)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host and Guest: Fixed issue when kernel modules were
+          failing to build with openSUSE 16.0 kernel</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host and Guest: Added initial support for kernel 7.1</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host and Guest: Added extra fixes for RHEL 9.8 kernel (github:gh-676)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host and Guest: Added possibility to build source code using NASM instead of YASM as
+          the assembler (github:gh-520)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Added initial support for Extended Data Control Protocol
+          for clipboard sharing with Plasma on Wayland guests (github:gh-33)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Added extra fixes for preventing vboxvideo kernel module
+          build with kernel version 7.0 and newer (github:gh-655)</para>
+      </listitem>
+
+      <listitem>
+        <para>OS/2 Guest Additions: Fixed issue when Shared Folders automount and clipboard
+          sharing stopped working (github:gh-551)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+
+    <title>Version 7.2.8 (2026-04-21)</title>
+
+    <para>This is a maintenance release. The following items were fixed or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: Fixed issue which caused a Guru Meditation with VERR_IEM_IPE_4 if the guest
+          was trying to execute the wrong hypercall instruction but injected a UD exception
+          instead (github:gh-616)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT Network: Fixed issue when internal DNS server could not be reached</para>
+      </listitem>
+
+      <listitem>
+        <para>Graphics: Fixed issue when mouse cursor did not change shape by context
+          in Ubuntu 25.10 / Wayland (github:gh-464)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: Fixed crash on FreeBSD 16.0 shutdown with multiple devices
+          attached to LSI Logic SAS controller (github:gh-538)</para>
+      </listitem>
+
+      <listitem>
+        <para>IPRT: Merged Github pull request 503 (fix: infinite loop in vsscanf whitespace processing).
+          github-merge-author: lachlanharrisdev</para>
+      </listitem>
+
+      <listitem>
+        <para>Unattended: General improvements</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host: Added initial support for kernels 6.19 and 7.0 (github:gh-467, github:gh-623)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host: Added support for guest time accounting (github:gh-2)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host and Guest: Introduced additional fixes for RHEL 10.1 and 10.2 kernels (github:gh-455)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host and Guest: Added support for UEK9 kernel on Oracle Linux 9</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host and Guest: Added improvements to make 'rcvboxdrv/rcvboxadd setup' and installation process faster</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Deprecated vboxvideo kernel module for kernels 7.0 and newer; please consider
+          using VMSVGA graphics or vboxvideo module which comes with Linux kernel or provided by your Linux
+          distribution if guest running kernel 7.0+; vboxvideo will still be available for older kernels</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Fixed issue when clipboard sharing was not possible in combination of Wayland
+          guest and Windows host (github:gh-33)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Fixed issue when last character was not pasted into Windows
+          host clipboard when copying from Wayland guest (bug:22339)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Guest: Fixed issue when Windows 11 guest experienced
+          BSOD - DRIVER_OVERRAN_STACK_BUFFER (github:gh-590)</para>
+      </listitem>
+
+      <listitem>
+        <para>UEFI: Fixed errors with secure boot certificate updates and Windows 11 guests (github:gh-133)</para>
+      </listitem>
+
+      <listitem>
+        <para>DMI: Fixed issue when 0.0 value was provided for the BIOS release and BIOS firmware
+          version numbers so Windows did not populate the registry keys under HKLM\HARDWARE\System\BIOS which
+          some components rely on (bug:21943)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+
+    <title>Version 7.2.6 (2026-01-20)</title>
+
+    <para>This is a maintenance release. The following items were fixed or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: Fixed issue when VM process was crashing during RHEL5 guest boot</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed issue when VMX nested-guest VM-entry was checking the wrong
+          VM-execution control bit in the virtual VMCS (github:gh-313)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed issue when VM was crashing on start after recent
+          Windows update (KB5066793) (github:gh-360)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed issue when guest process was crashing inside Windows
+          guest on AMD system (github:gh-400)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed issue when VM process was crashing on Windows host (github:gh-426,
+          github:gh-407, github:gh-404, github:gh-369, github:gh-238, github:gh-207,
+          github:gh-187, github:gh-178)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed Guru Meditation issue on VM start on Windows host (github:gh-346)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed issue when VM was failing to shut down on Windows 11 ARM
+          host (github:gh-416)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: Fixed issue when booting Red Hat 6.1 i386 was failing on AMD Zen4
+          Windows 11 Pro host (github:gh-466)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Added fixes for full-screen support in multi-monitor
+          case (github:gh-197, github:gh-243)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Fixed issue when downloading update files was
+          failing (github:gh-327, github:gh-372)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Fixed issue when list of VMs was not properly displayed in
+          Resource Manager tab (github:gh-364)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Fixed issue when with switching between light/dark modes
+          on macOS host (github:gh-457)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Fixed issue when storage controller type list was displayed
+          incorrectly (github:gh-413)</para>
+      </listitem>
+
+      <listitem>
+        <para>DevACPI: Fixed issue with file path key names for Dsdt/Ssdt (github:gh-381)</para>
+      </listitem>
+
+      <listitem>
+        <para>DevACPI: Added change to make OemTabId configurable using AcpiOemTabId
+          option (github:gh-383)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: Fixed issue with high CPU usage when VM was using NAT (github:gh-356)</para>
+      </listitem>
+
+      <listitem>
+        <para>RDP: The VRDP server was moved to the open source base package</para>
+      </listitem>
+
+      <listitem>
+        <para>SmartCard: The USB smartcard emulation was moved to the open source base package</para>
+      </listitem>
+
+      <listitem>
+        <para>VM encryption: The disk and VM encryption feature was moved to the open source base package</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: Fixed issue when VBoxManage was not displaying interface
+          name for FreeBSD guests (github:gh-403)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: Fixed issue when VM could not be started from command line
+          in some circumstances (github:gh-418)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: Improved filename check for drag-and-drop operations (github:gh-68)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host: Fixed issue when vboxautostart-service did not start
+          corresponding VMs on system boot (github:gh-309)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Host: Fixed issue when VM was not able to start if host was
+          running realtime kernel configuration (github:gh-332)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: Fixed installation on Windows XP 64-bit guests (github:gh-142)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: Fixed issue when guest process was crashing due to
+          low memory in the system (github:gh-410)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Fixed build issue for kernels 2.5.52 and older</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Fixed issue when VBoxService was not started
+          due to abandoned pid file</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Fixed issue when user session services were
+          not started on old Linux distributions</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Fixed check if kernel modules were loaded
+          for old Linux distributions</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Fixed issue when Guest Additions processes
+          were left running on system reboot or shutdown (github:gh-311)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Added additional fixes for RHEL 9.8, 10.1 and 10.2 kernels</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Guest Additions: Added initial support for kernel 6.19 (github:gh-467)</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: Fixed issue with booting VM using IPXE (github:gh-417)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+
     <title>Version 7.2.4 (2025-10-21)</title>
 
     <para>This is a maintenance release. The following items were fixed or
@@ -101,12 +442,12 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>Linux Guest Additions: Introduced additional fixes for RHEL 9.6
-          and 9.7 kernels (github:GH-12)</para>
+          and 9.7 kernels (github:gh-12)</para>
       </listitem>
 
       <listitem>
         <para>Windows Guest Additions: Introduced additional fixes for issue
-          when installation was failing in Windows XP SP2 guest (github:GH-142)</para>
+          when installation was failing in Windows XP SP2 guest (github:gh-142)</para>
       </listitem>
 
     </itemizedlist>
@@ -304,7 +645,7 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>GUI: Fixed a bug in clone VM wizard which made impossible to include
-          snapshots in clone result (github:GH-59)</para>
+          snapshots in clone result (github:gh-59)</para>
       </listitem>
 
       <listitem>

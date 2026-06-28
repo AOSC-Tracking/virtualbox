@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170761 $"
+__version__ = "$Revision: 171049 $"
 
 
 # Standard Python imports.
@@ -117,6 +117,7 @@ class tdUnitTest1(vbox.TestDriver):
         'solaris.amd64': {
             'testcase/tstLdr-4': '',        # failed: Failed to get bits for '/home/vbox/test/tmp/bin/testcase/tstLdrObjR0.r0'/0,
                                                         # rc=VERR_SYMBOL_VALUE_TOO_BIG. aborting test
+            'tstVMMUnitTests-1': '',                    # Requires driverless mode not present on Solaris.
         },
         'win': {
             'testcase/tstFile': '',                     # ??

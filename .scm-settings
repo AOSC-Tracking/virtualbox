@@ -80,8 +80,6 @@
 --filter-out-files "*/COPYING.GPLv2"
 --filter-out-files "*/COPYING.UBDL"
 --filter-out-files "*.desktop"
---filter-out-files "*/.swagger-codegen-ignore"
---filter-out-files "*/.swagger-codegen/VERSION"
 
 
 #

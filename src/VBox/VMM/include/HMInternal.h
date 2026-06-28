@@ -511,6 +511,9 @@ typedef struct HMR0PERVM
     bool                        fAllow64BitGuests;
     bool                        afAlignment1[1];
 
+    /** State variable for SUPR0EnableHwvirtForVm. */
+    R0PTRTYPE(void *)           pvSupR0EnableState;
+
     /** AMD-V specific data. */
     struct HMR0SVMVM
     {
@@ -875,7 +878,6 @@ typedef struct HMCPU
     STAMPROFILEADV          StatExitVmentry;
     STAMPROFILEADV          StatImportGuestState;
     STAMPROFILEADV          StatExportGuestState;
-    STAMPROFILEADV          StatLoadGuestFpuState;
     STAMPROFILEADV          StatInGC;
     STAMPROFILEADV          StatPoke;
     STAMPROFILEADV          StatSpinPoke;
@@ -990,7 +992,7 @@ typedef struct HMCPU
 
     STAMCOUNTER             StatExportMinimal;
     STAMCOUNTER             StatExportFull;
-    STAMCOUNTER             StatLoadGuestFpu;
+    //STAMCOUNTER             StatLoadGuestFpu;
     STAMCOUNTER             StatExportHostState;
 
     STAMCOUNTER             StatVmxCheckBadRmSelBase;

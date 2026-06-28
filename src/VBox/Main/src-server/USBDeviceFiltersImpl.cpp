@@ -1036,7 +1036,7 @@ HRESULT USBDeviceFilters::i_notifyProxy(bool aInsertFilters)
     LogFlowThisFunc(("aInsertFilters=%RTbool\n", aInsertFilters));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.hrc(), false);
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

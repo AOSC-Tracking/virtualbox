@@ -63,6 +63,7 @@
 #include <package-generated.h>
 
 #include <algorithm>
+#include <map>
 #include <set>
 #include <vector>
 #include <memory> // for auto_ptr
@@ -291,9 +292,6 @@ struct VirtualBox::Data
 #if defined(RT_OS_WINDOWS) && defined(VBOXSVC_WITH_CLIENT_WATCHER)
         , fWatcherIsReliable(RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
 #endif
-        , hLdrModCrypto(NIL_RTLDRMOD)
-        , cRefsCrypto(0)
-        , pCryptoIf(NULL)
 #ifdef VBOX_WITH_MAIN_OBJECT_TRACKER
         , objectTrackerTask(NULL)
 #endif
@@ -332,6 +330,9 @@ struct VirtualBox::Data
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     const ComObjPtr<PerformanceCollector> pPerformanceCollector;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+    /** Per-platform-architecture singleton IPlatformProperties instances. */
+    std::map<PlatformArchitecture_T, const  ComObjPtr<PlatformProperties> >
+                                        mapPlatformProperties;
 
     // Each of the following lists use a particular lock handle that protects the
     // list as a whole. As opposed to version 3.1 and earlier, these lists no
@@ -421,19 +422,6 @@ struct VirtualBox::Data
      * process, or if the watcher thread gets messed up. */
     bool                                fWatcherIsReliable;
 #endif
-
-    /** @name Members related to the cryptographic support interface.
-     * @{ */
-    /** The loaded module handle if loaded. */
-    RTLDRMOD                            hLdrModCrypto;
-    /** Reference counter tracking how many users of the cryptographic support
-     * are there currently. */
-    volatile uint32_t                   cRefsCrypto;
-    /** Pointer to the cryptographic support interface. */
-    PCVBOXCRYPTOIF                      pCryptoIf;
-    /** Critical section protecting the module handle. */
-    RTCRITSECT                          CritSectModCrypto;
-    /** @} */
 
 #ifdef VBOX_WITH_MAIN_OBJECT_TRACKER
     /** The tracked object collector (better if it'll be a singleton) */
@@ -599,16 +587,6 @@ HRESULT VirtualBox::init()
 
         i_reportDriverVersions();
 
-        /* Create the critical section protecting the cryptographic module handle. */
-        {
-            int vrc = RTCritSectInit(&m->CritSectModCrypto);
-            if (RT_FAILURE(vrc))
-                throw setErrorBoth(E_FAIL, vrc,
-                                   tr("Could not create the cryptographic module critical section (%Rrc)"),
-                                   vrc);
-
-        }
-
         /* compose the VirtualBox.xml file name */
         unconst(m->strSettingsFilePath) = Utf8StrFmt("%s%c%s",
                                                      m->strHomeDir.c_str(),
@@ -660,8 +638,32 @@ HRESULT VirtualBox::init()
             hrc = m->pSystemProperties->init(this);
         ComAssertComRCThrowRC(hrc);
 
-        hrc = m->pSystemProperties->i_loadSettings(m->pMainConfigFile->systemProperties);
+        hrc = m->pSystemProperties->i_loadSettings(m->pMainConfigFile->systemProperties, m->pMainConfigFile->platformProperties);
         if (FAILED(hrc)) throw hrc;
+
+        /* Per-platform architecture properties.
+         * Note: Always handle all archs instead regardless if supported, to provide maximum compatibility. */
+        static const PlatformArchitecture_T s_aPlatformArchitectures[] =
+        {
+            PlatformArchitecture_x86,
+            PlatformArchitecture_ARM
+        };
+
+        for (size_t i = 0; i < RT_ELEMENTS(s_aPlatformArchitectures); i++)
+        {
+            ComObjPtr<PlatformProperties> platformProperties;
+            hrc = platformProperties.createObject();
+            ComAssertComRCThrowRC(hrc);
+
+            hrc = platformProperties->init(this);
+            ComAssertComRCThrowRC(hrc);
+
+            hrc = platformProperties->i_setArchitecture(s_aPlatformArchitectures[i]);
+            ComAssertComRCThrowRC(hrc);
+
+            unconst(m->mapPlatformProperties[s_aPlatformArchitectures[i]]) = platformProperties;
+        }
+
 #ifdef VBOX_WITH_MAIN_NLS
         m->pVBoxTranslator = VirtualBoxTranslator::instance();
         /* Do not throw an exception on language errors.
@@ -1111,6 +1113,18 @@ void VirtualBox::uninit()
         unconst(m->pCloudProviderManager).setNull();
     }
 
+    for (std::map<PlatformArchitecture_T, const ComObjPtr<PlatformProperties> >::iterator it = m->mapPlatformProperties.begin();
+         it != m->mapPlatformProperties.end();
+         ++it)
+    {
+        if (it->second)
+        {
+            unconst(it->second)->uninit();
+            unconst(it->second).setNull();
+        }
+    }
+    m->mapPlatformProperties.clear();
+
     if (m->pSystemProperties)
     {
         m->pSystemProperties->uninit();
@@ -1130,22 +1144,6 @@ void VirtualBox::uninit()
         unconst(m->pPerformanceCollector).setNull();
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-    /*
-     * Unload the cryptographic module if loaded before the extension
-     * pack manager is torn down.
-     */
-    Assert(!m->cRefsCrypto);
-    if (m->hLdrModCrypto != NIL_RTLDRMOD)
-    {
-        m->pCryptoIf = NULL;
-
-        int vrc = RTLdrClose(m->hLdrModCrypto);
-        AssertRC(vrc);
-        m->hLdrModCrypto = NIL_RTLDRMOD;
-    }
-
-    RTCritSectDelete(&m->CritSectModCrypto);
 
     m->mapProgressOperations.clear();
 
@@ -1299,18 +1297,20 @@ HRESULT VirtualBox::getHost(ComPtr<IHost> &aHost)
     return S_OK;
 }
 
+const ComObjPtr<PlatformProperties> &VirtualBox::i_getPlatformProperties(PlatformArchitecture_T enmPlatformArchitecture) const
+{
+    AssertReturn(enmPlatformArchitecture != PlatformArchitecture_None, m->mapPlatformProperties.begin()->second);
+    return m->mapPlatformProperties[enmPlatformArchitecture];
+}
+
 HRESULT VirtualBox::getPlatformProperties(PlatformArchitecture_T platformArchitecture,
                                           ComPtr<IPlatformProperties> &aPlatformProperties)
 {
-    ComObjPtr<PlatformProperties> platformProperties;
-    HRESULT hrc = platformProperties.createObject();
-    AssertComRCReturn(hrc, hrc);
+    if (   platformArchitecture != PlatformArchitecture_x86
+        && platformArchitecture != PlatformArchitecture_ARM)
+        return E_INVALIDARG;
 
-    hrc = platformProperties->init(this);
-    AssertComRCReturn(hrc, hrc);
-
-    hrc = platformProperties->i_setArchitecture(platformArchitecture);
-    AssertComRCReturn(hrc, hrc);
+    const ComObjPtr<PlatformProperties> &platformProperties = i_getPlatformProperties(platformArchitecture);
 
     return platformProperties.queryInterfaceTo(aPlatformProperties.asOutParam());
 }
@@ -3463,13 +3463,16 @@ HRESULT VirtualBox::i_startSVCHelperClient(bool aPrivileged,
 void VirtualBox::i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask)
 {
     LogFlowFuncEnter();
+
+    /* some paranoia */
+    AssertLogRelReturnVoid(pTask);
+    AssertLogRelReturnVoid(pTask->progress.isNotNull());
+
     HRESULT hrc = S_OK;
     bool userFuncCalled = false;
 
     do
     {
-        AssertBreakStmt(pTask, hrc = E_POINTER);
-        AssertReturnVoid(!pTask->progress.isNull());
 
         /* protect VirtualBox from uninitialization */
         AutoCaller autoCaller(pTask->that);
@@ -5413,7 +5416,7 @@ HRESULT VirtualBox::i_saveSettings()
         hrc = m->pHost->i_saveSettings(m->pMainConfigFile->host);
         if (FAILED(hrc)) throw hrc;
 
-        hrc = m->pSystemProperties->i_saveSettings(m->pMainConfigFile->systemProperties);
+        hrc = m->pSystemProperties->i_saveSettings(m->pMainConfigFile->systemProperties, m->pMainConfigFile->platformProperties);
         if (FAILED(hrc)) throw hrc;
 
         // and write out the XML, still under the lock
@@ -6688,6 +6691,8 @@ HRESULT VirtualBox::getTrackedObjectIds(const com::Utf8Str &aName,
 #endif
 }
 
+extern DECL_HIDDEN_CONST(VBOXCRYPTOIF) g_VBoxCryptoIf;
+
 /**
  * Retains a reference to the default cryptographic interface.
  *
@@ -6703,82 +6708,13 @@ HRESULT VirtualBox::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
 
-    /*
-     * No object lock due to some lock order fun with Machine objects.
-     * There is a dedicated critical section to protect against concurrency
-     * issues when loading the module.
-     */
-    RTCritSectEnter(&m->CritSectModCrypto);
-
-    /* Try to load the extension pack module if it isn't currently. */
     HRESULT hrc = S_OK;
-    if (m->hLdrModCrypto == NIL_RTLDRMOD)
-    {
-#ifdef VBOX_WITH_EXTPACK
-        /*
-         * Check that a crypto extension pack name is set and resolve it into a
-         * library path.
-         */
-        Utf8Str strExtPack;
-        hrc = m->pSystemProperties->getDefaultCryptoExtPack(strExtPack);
-        if (FAILED(hrc))
-        {
-            RTCritSectLeave(&m->CritSectModCrypto);
-            return hrc;
-        }
-        if (strExtPack.isEmpty())
-        {
-            RTCritSectLeave(&m->CritSectModCrypto);
-            return setError(VBOX_E_OBJECT_NOT_FOUND,
-                            tr("Ńo extension pack providing a cryptographic support module could be found"));
-        }
-
-        Utf8Str strCryptoLibrary;
-        int vrc = m->ptrExtPackManager->i_getCryptoLibraryPathForExtPack(&strExtPack, &strCryptoLibrary);
-        if (RT_SUCCESS(vrc))
-        {
-            RTERRINFOSTATIC ErrInfo;
-            vrc = SUPR3HardenedLdrLoadPlugIn(strCryptoLibrary.c_str(), &m->hLdrModCrypto, RTErrInfoInitStatic(&ErrInfo));
-            if (RT_SUCCESS(vrc))
-            {
-                /* Resolve the entry point and query the pointer to the cryptographic interface. */
-                PFNVBOXCRYPTOENTRY pfnCryptoEntry = NULL;
-                vrc = RTLdrGetSymbol(m->hLdrModCrypto, VBOX_CRYPTO_MOD_ENTRY_POINT, (void **)&pfnCryptoEntry);
-                if (RT_SUCCESS(vrc))
-                {
-                    vrc = pfnCryptoEntry(&m->pCryptoIf);
-                    if (RT_FAILURE(vrc))
-                        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                           tr("Failed to query the interface callback table from the cryptographic support module '%s' from extension pack '%s'"),
-                                           strCryptoLibrary.c_str(), strExtPack.c_str());
-                }
-                else
-                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                       tr("Failed to resolve the entry point for the cryptographic support module '%s' from extension pack '%s'"),
-                                       strCryptoLibrary.c_str(), strExtPack.c_str());
-            }
-            else
-                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                   tr("Couldn't load the cryptographic support module '%s' from extension pack '%s' (error: '%s')"),
-                                   strCryptoLibrary.c_str(), strExtPack.c_str(), ErrInfo.Core.pszMsg);
-        }
-        else
-            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                               tr("Couldn't resolve the library path of the crpytographic support module for extension pack '%s'"),
-                               strExtPack.c_str());
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    *ppCryptoIf = &g_VBoxCryptoIf;
 #else
-        hrc = setError(VBOX_E_NOT_SUPPORTED,
-                       tr("The cryptographic support module is not supported in this build because extension packs are not supported"));
+    hrc = setError(VBOX_E_NOT_SUPPORTED,
+                   tr("The cryptographic support module is not supported in this build because extension packs are not supported"));
 #endif
-    }
-
-    if (SUCCEEDED(hrc))
-    {
-        ASMAtomicIncU32(&m->cRefsCrypto);
-        *ppCryptoIf = m->pCryptoIf;
-    }
-
-    RTCritSectLeave(&m->CritSectModCrypto);
 
     return hrc;
 }
@@ -6797,9 +6733,8 @@ HRESULT VirtualBox::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
 
-    AssertReturn(pCryptoIf == m->pCryptoIf, E_INVALIDARG);
+    AssertReturn(pCryptoIf == &g_VBoxCryptoIf, E_INVALIDARG);
 
-    ASMAtomicDecU32(&m->cRefsCrypto);
     return S_OK;
 }
 
@@ -6815,22 +6750,6 @@ HRESULT VirtualBox::i_unloadCryptoIfModule(void)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
-
-    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->cRefsCrypto)
-        return setError(E_ACCESSDENIED,
-                        tr("The cryptographic support module is in use and can't be unloaded"));
-
-    RTCritSectEnter(&m->CritSectModCrypto);
-    if (m->hLdrModCrypto != NIL_RTLDRMOD)
-    {
-        int vrc = RTLdrClose(m->hLdrModCrypto);
-        AssertRC(vrc);
-        m->hLdrModCrypto = NIL_RTLDRMOD;
-    }
-    RTCritSectLeave(&m->CritSectModCrypto);
-
     return S_OK;
 }
 
@@ -6843,141 +6762,93 @@ HRESULT VirtualBox::i_unloadCryptoIfModule(void)
  */
 void VirtualBox::i_reportDriverVersions()
 {
-    /** @todo r=klaus this code is very confusing, as it uses TCHAR (and
-     * randomly also _TCHAR, which sounds to me like asking for trouble),
-     * the "sz" variable prefix but "%ls" for the format string - so the whole
-     * thing is better compiled with UNICODE and _UNICODE defined. Would be
-     * far easier to read if it would be coded explicitly for the unicode
-     * case, as it won't work otherwise. */
-    DWORD   err;
-    HRESULT hrc;
-    LPVOID  aDrivers[1024];
-    LPVOID *pDrivers      = aDrivers;
-    UINT    cNeeded       = 0;
-    TCHAR   szSystemRoot[MAX_PATH];
-    TCHAR  *pszSystemRoot = szSystemRoot;
-    LPVOID  pVerInfo      = NULL;
-    DWORD   cbVerInfo     = 0;
+    /* Get the system root path. */
+    WCHAR wszSystemRoot[MAX_PATH] = {0};
+    UINT const cwcNeeded = GetWindowsDirectory(wszSystemRoot, RT_ELEMENTS(wszSystemRoot) - 1);
+    AssertLogRelMsgReturnVoid(cwcNeeded > 0 && cwcNeeded < RT_ELEMENTS(wszSystemRoot),
+                              ("GetWindowsDirectory failed: err=%Rwrc (%#x), cwcNeeded=%#x\n",
+                               GetLastError(), GetLastError(), cwcNeeded));
 
-    do
+    /* Enumerate the loaded drivers. */
+    LPVOID  apvDrivers[1024] = {{NULL}};
+    LPVOID *papvDrivers      = apvDrivers;
+    DWORD   cbNeeded         = 0;
+    if (   !EnumDeviceDrivers(apvDrivers, sizeof(apvDrivers), &cbNeeded)
+        || cbNeeded > sizeof(apvDrivers))
     {
-        cNeeded = GetWindowsDirectory(szSystemRoot, RT_ELEMENTS(szSystemRoot));
-        if (cNeeded == 0)
-        {
-            err = GetLastError();
-            hrc = HRESULT_FROM_WIN32(err);
-            AssertLogRelMsgFailed(("GetWindowsDirectory failed, hrc=%Rhrc (0x%x) err=%u\n",
-                                                   hrc, hrc, err));
-            break;
-        }
-        else if (cNeeded > RT_ELEMENTS(szSystemRoot))
-        {
-            /* The buffer is too small, allocate big one. */
-            pszSystemRoot = (TCHAR *)RTMemTmpAlloc(cNeeded * sizeof(_TCHAR));
-            if (!pszSystemRoot)
-            {
-                AssertLogRelMsgFailed(("RTMemTmpAlloc failed to allocate %d bytes\n", cNeeded));
-                break;
-            }
-            if (GetWindowsDirectory(pszSystemRoot, cNeeded) == 0)
-            {
-                err = GetLastError();
-                hrc = HRESULT_FROM_WIN32(err);
-                AssertLogRelMsgFailed(("GetWindowsDirectory failed, hrc=%Rhrc (0x%x) err=%u\n",
-                                                   hrc, hrc, err));
-                break;
-            }
-        }
-
-        DWORD  cbNeeded = 0;
-        if (!EnumDeviceDrivers(aDrivers, sizeof(aDrivers), &cbNeeded) || cbNeeded > sizeof(aDrivers))
-        {
-            pDrivers = (LPVOID *)RTMemTmpAlloc(cbNeeded);
-            if (!EnumDeviceDrivers(pDrivers, cbNeeded, &cbNeeded))
-            {
-                err = GetLastError();
-                hrc = HRESULT_FROM_WIN32(err);
-                AssertLogRelMsgFailed(("EnumDeviceDrivers failed, hrc=%Rhrc (0x%x) err=%u\n",
-                                                   hrc, hrc, err));
-                break;
-            }
-        }
-
-        LogRel(("Installed Drivers:\n"));
-
-        TCHAR szDriver[1024];
-        int cDrivers = cbNeeded / sizeof(pDrivers[0]);
-        for (int i = 0; i < cDrivers; i++)
-        {
-            if (GetDeviceDriverBaseName(pDrivers[i], szDriver, sizeof(szDriver) / sizeof(szDriver[0])))
-            {
-                if (_tcsnicmp(TEXT("vbox"), szDriver, 4))
-                    continue;
-            }
-            else
-                continue;
-            if (GetDeviceDriverFileName(pDrivers[i], szDriver, sizeof(szDriver) / sizeof(szDriver[0])))
-            {
-                _TCHAR szTmpDrv[1024];
-                _TCHAR *pszDrv = szDriver;
-                if (!_tcsncmp(TEXT("\\SystemRoot"), szDriver, 11))
-                {
-                    _tcscpy_s(szTmpDrv, pszSystemRoot);
-                    _tcsncat_s(szTmpDrv, szDriver + 11, sizeof(szTmpDrv) / sizeof(szTmpDrv[0]) - _tclen(pszSystemRoot));
-                    pszDrv = szTmpDrv;
-                }
-                else if (!_tcsncmp(TEXT("\\??\\"), szDriver, 4))
-                    pszDrv = szDriver + 4;
-
-                /* Allocate a buffer for version info. Reuse if large enough. */
-                DWORD cbNewVerInfo = GetFileVersionInfoSize(pszDrv, NULL);
-                if (cbNewVerInfo > cbVerInfo)
-                {
-                    if (pVerInfo)
-                        RTMemTmpFree(pVerInfo);
-                    cbVerInfo = cbNewVerInfo;
-                    pVerInfo = RTMemTmpAlloc(cbVerInfo);
-                    if (!pVerInfo)
-                    {
-                        AssertLogRelMsgFailed(("RTMemTmpAlloc failed to allocate %d bytes\n", cbVerInfo));
-                        break;
-                    }
-                }
-
-                if (GetFileVersionInfo(pszDrv, NULL, cbVerInfo, pVerInfo))
-                {
-                    UINT   cbSize = 0;
-                    LPBYTE lpBuffer = NULL;
-                    if (VerQueryValue(pVerInfo, TEXT("\\"), (VOID FAR* FAR*)&lpBuffer, &cbSize))
-                    {
-                        if (cbSize)
-                        {
-                            VS_FIXEDFILEINFO *pFileInfo = (VS_FIXEDFILEINFO *)lpBuffer;
-                            if (pFileInfo->dwSignature == 0xfeef04bd)
-                            {
-                                LogRel(("  %ls (Version: %d.%d.%d.%d)\n", pszDrv,
-                                        (pFileInfo->dwFileVersionMS >> 16) & 0xffff,
-                                        (pFileInfo->dwFileVersionMS >> 0) & 0xffff,
-                                        (pFileInfo->dwFileVersionLS >> 16) & 0xffff,
-                                        (pFileInfo->dwFileVersionLS >> 0) & 0xffff));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+        papvDrivers = (LPVOID *)RTMemTmpAlloc(cbNeeded);
+        AssertLogRelMsgReturnVoid(EnumDeviceDrivers(papvDrivers, cbNeeded, &cbNeeded),
+                                  ("EnumDeviceDrivers failed: err=%Rwrc (%#x), cbNeeded=%#x\n",
+                                   GetLastError(), GetLastError(), cbNeeded));
     }
-    while (0);
 
-    if (pVerInfo)
-        RTMemTmpFree(pVerInfo);
+    /* Display info about all 'VBox*' drivers. */
+    LogRel(("Installed Drivers:\n"));
+    LPVOID         pvVerInfo = NULL;
+    DWORD          cbVerInfo = 0;
+    unsigned const cDrivers  = cbNeeded / sizeof(papvDrivers[0]);
+    for (unsigned i = 0; i < cDrivers; i++)
+    {
+        if (!papvDrivers[i]) /* MSC /analyze */
+            continue;
+        TCHAR wszDriver[1024];
+        if (!GetDeviceDriverBaseNameW(papvDrivers[i], wszDriver, RT_ELEMENTS(wszDriver)))
+            continue;
+        if (RTUtf16NICmpAscii(wszDriver, RT_STR_TUPLE("vbox")) != 0)
+            continue;
 
-    if (pDrivers != aDrivers)
-        RTMemTmpFree(pDrivers);
+        if (GetDeviceDriverFileNameW(papvDrivers[i], wszDriver, RT_ELEMENTS(wszDriver)))
+        {
+            /* Convert NT path to a plain win32 one. (wszTmpDrv is too big for overflows.) */
+            WCHAR *pwszDrv;
+            WCHAR  wszTmpDrv[MAX_PATH + 1024 + 16];
+            if (RTUtf16NICmpAscii(wszDriver, RT_STR_TUPLE("\\SystemRoot\\")) == 0)
+            {
+                RTUtf16Copy(wszTmpDrv, RT_ELEMENTS(wszTmpDrv), wszSystemRoot);
+                RTUtf16Cat(wszTmpDrv, RT_ELEMENTS(wszTmpDrv), &wszDriver[11]);
+                pwszDrv = wszTmpDrv;
+            }
+            else if (RTUtf16NCmpAscii(wszDriver, RT_STR_TUPLE("\\??\\")) == 0)
+                pwszDrv = &wszDriver[4];
+            else
+                pwszDrv = wszDriver;
 
-    if (pszSystemRoot != szSystemRoot)
-        RTMemTmpFree(pszSystemRoot);
+            /* Allocate a buffer for version info. Reuse previous if large enough. */
+            DWORD cbNewVerInfo = GetFileVersionInfoSizeW(pwszDrv, NULL);
+            if (!pvVerInfo || cbNewVerInfo > cbVerInfo)
+            {
+                if (pvVerInfo)
+                    RTMemTmpFree(pvVerInfo);
+                cbVerInfo = cbNewVerInfo;
+                pvVerInfo = RTMemTmpAlloc(cbVerInfo);
+                AssertLogRelMsgBreak(pvVerInfo, ("RTMemTmpAlloc failed to allocate %u bytes\n", cbVerInfo));
+            }
+
+            /* Get the version info and log it. */
+            if (GetFileVersionInfo(pwszDrv, NULL, cbVerInfo, pvVerInfo))
+            {
+                UINT   cbSize   = 0;
+                PVOID  pvBuffer = NULL;
+                if (   VerQueryValueW(pvVerInfo, L"\\", &pvBuffer, &cbSize)
+                    && cbSize > 0)
+                {
+                    VS_FIXEDFILEINFO const * const pFileInfo = (VS_FIXEDFILEINFO const *)pvBuffer;
+                    if (pFileInfo->dwSignature == VS_FFI_SIGNATURE)
+                        LogRel(("  %ls (Version: %d.%d.%d.%d)\n", pwszDrv,
+                                (pFileInfo->dwFileVersionMS >> 16) & 0xffff,
+                                (pFileInfo->dwFileVersionMS >>  0) & 0xffff,
+                                (pFileInfo->dwFileVersionLS >> 16) & 0xffff,
+                                (pFileInfo->dwFileVersionLS >>  0) & 0xffff));
+                }
+            }
+        }
+    }
+
+    if (pvVerInfo)
+        RTMemTmpFree(pvVerInfo);
+
+    if (papvDrivers != apvDrivers)
+        RTMemTmpFree(papvDrivers);
 }
 #else /* !RT_OS_WINDOWS */
 void VirtualBox::i_reportDriverVersions(void)

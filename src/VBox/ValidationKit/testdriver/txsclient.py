@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172152 $"
 
 # Standard Python imports.
 import array;
@@ -58,7 +58,9 @@ from testdriver.base    import TdTaskBase;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    long = int;     # pylint: disable=redefined-builtin,invalid-name
+    long = int;         # pylint: disable=redefined-builtin,invalid-name
+else:
+    long = long;        # pylint: disable=redefined-builtin,invalid-name,self-assigning-variable
 
 #
 # Helpers for decoding data received from the TXS.
@@ -479,6 +481,12 @@ class Session(TdTaskBase):
         self.resetTaskLocked();
         self.unlockTask();
 
+        #
+        # Make sure we don't try to max things like False, True, etc. because someone screwed
+        # up the argument order in the wrapper functions.
+        #
+        assert(isinstance(cMsTimeout, (int, float)));
+
         self.cMsTimeout     = max(cMsTimeout, 500);
         self.fErr           = not fIgnoreErrors;
         self.fnTask         = fnTask;
@@ -543,6 +551,7 @@ class Session(TdTaskBase):
                 oTaskRc = None;
         else:
             reporter.log('taskThread: cancelled already');
+            oTaskRc = None;
 
         self.lockTask();
 
@@ -772,7 +781,8 @@ class Session(TdTaskBase):
     # pylint: disable=missing-docstring
     #
 
-    def taskExecEx(self, sExecName, fFlags, asArgs, asAddEnv, oStdIn, oStdOut, oStdErr, oTestPipe, sAsUser): # pylint: disable=too-many-arguments,too-many-locals,too-many-statements,line-too-long
+    def taskExecEx(self, # pylint: disable=too-many-arguments,too-many-locals,too-many-statements,too-many-positional-arguments
+                   sExecName, fFlags, asArgs, asAddEnv, oStdIn, oStdOut, oStdErr, oTestPipe, sAsUser):
         # Construct the payload.
         aoPayload = [long(fFlags), '%s' % (sExecName), long(len(asArgs))];
         for sArg in asArgs:
@@ -1450,8 +1460,8 @@ class Session(TdTaskBase):
     # Public methods - execution.
     #
 
-    def asyncExecEx(self, sExecName, asArgs = (), asAddEnv = (), # pylint: disable=too-many-arguments
-                    oStdIn = None, oStdOut = None, oStdErr = None, oTestPipe = None,
+    def asyncExecEx(self, sExecName, asArgs = (), # pylint: disable=too-many-arguments,too-many-positional-arguments
+                    asAddEnv = (), oStdIn = None, oStdOut = None, oStdErr = None, oTestPipe = None,
                     sAsUser = "", cMsTimeout = 3600000, fIgnoreErrors = False):
         """
         Initiates a exec process task.
@@ -1479,7 +1489,7 @@ class Session(TdTaskBase):
                               (sExecName, long(0), asArgs, asAddEnv, oStdIn,
                                oStdOut, oStdErr, oTestPipe, sAsUser));
 
-    def syncExecEx(self, sExecName, asArgs = (), asAddEnv = (), # pylint: disable=too-many-arguments
+    def syncExecEx(self, sExecName, asArgs = (), asAddEnv = (), # pylint: disable=too-many-arguments,too-many-positional-arguments
                    oStdIn = '/dev/null', oStdOut = '/dev/null',
                    oStdErr = '/dev/null', oTestPipe = '/dev/null',
                    sAsUser = '', cMsTimeout = 3600000, fIgnoreErrors = False):
@@ -1765,9 +1775,9 @@ class Session(TdTaskBase):
         return self.startTask(cMsTimeout, fIgnoreErrors, "cpfile",
                               self.taskCopyFile, (sSrcFile, sDstFile, fMode, fFallbackOkay));
 
-    def syncCopyFile(self, sSrcFile, sDstFile, fMode = 0, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncCopyFile(self, sSrcFile, sDstFile, fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
-        return self.asyncToSync(self.asyncCopyFile, sSrcFile, sDstFile, fMode, cMsTimeout, fIgnoreErrors);
+        return self.asyncToSync(self.asyncCopyFile, sSrcFile, sDstFile, fMode, fFallbackOkay, cMsTimeout, fIgnoreErrors);
 
     def asyncUploadFile(self, sLocalFile, sRemoteFile,
                         fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):

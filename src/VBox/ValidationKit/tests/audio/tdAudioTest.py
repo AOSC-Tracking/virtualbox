@@ -40,7 +40,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172152 $"
 
 # Standard Python imports.
 from datetime import datetime
@@ -64,7 +64,6 @@ from testdriver import vboxcon;
 from testdriver import vboxtestvms
 from common     import utils;
 
-# pylint: disable=unnecessary-semicolon
 
 class tdDebugSettings(object):
     """

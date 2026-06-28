@@ -179,7 +179,7 @@ void CExeModule::MonitorShutdown()
                 }
             }
 #if _WIN32_WINNT >= 0x0400
-            CoSuspendClassObjects();
+            (void)CoSuspendClassObjects();
             if (!HasActiveConnection())
 #endif
                 break;
@@ -626,16 +626,14 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
 */
 static BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
 {
+    HMODULE const hmodUser32 = GetModuleHandle(L"User32.dll");
+    AssertReturn(hmodUser32, FALSE);
+
     typedef DECLCALLBACKPTR_EX(BOOL, WINAPI, PFNSHUTDOWNBLOCKREASONCREATE,(HWND hWnd, LPCWSTR pwszReason));
+    PFNSHUTDOWNBLOCKREASONCREATE pfn = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(hmodUser32, "ShutdownBlockReasonCreate");
+    AssertPtrReturn(pfn, FALSE);
 
-    PFNSHUTDOWNBLOCKREASONCREATE pfn
-        = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonCreate");
-    AssertPtr(pfn);
-
-    BOOL fResult = FALSE;
-    if (pfn)
-        fResult = pfn(hWnd, pwszReason);
-    return fResult;
+    return pfn(hWnd, pwszReason);
 }
 
 /*
@@ -644,15 +642,14 @@ static BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
 */
 static BOOL ShutdownBlockReasonDestroyAPI(HWND hWnd)
 {
-    typedef DECLCALLBACKPTR_EX(BOOL, WINAPI, PFNSHUTDOWNBLOCKREASONDESTROY,(HWND hWnd));
-    PFNSHUTDOWNBLOCKREASONDESTROY pfn
-        = (PFNSHUTDOWNBLOCKREASONDESTROY)GetProcAddress(GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonDestroy");
-    AssertPtr(pfn);
+    HMODULE const hmodUser32 = GetModuleHandle(L"User32.dll");
+    AssertReturn(hmodUser32, FALSE);
 
-    BOOL fResult = FALSE;
-    if (pfn)
-        fResult = pfn(hWnd);
-    return fResult;
+    typedef DECLCALLBACKPTR_EX(BOOL, WINAPI, PFNSHUTDOWNBLOCKREASONDESTROY,(HWND hWnd));
+    PFNSHUTDOWNBLOCKREASONDESTROY pfn = (PFNSHUTDOWNBLOCKREASONDESTROY)GetProcAddress(hmodUser32, "ShutdownBlockReasonDestroy");
+    AssertPtrReturn(pfn, FALSE);
+
+    return pfn(hWnd);
 }
 
 static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

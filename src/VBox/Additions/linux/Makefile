@@ -42,7 +42,9 @@ VBOX_QUIET    :=
 VBOX_QUIET_SH := set -x;
  endif
 
-all: vboxguest vboxsf vboxvideo
+KERN_MAJ = $(shell uname -r | cut -d . -f1)
+
+all: vboxguest vboxsf $(if $(shell [ "$(KERN_MAJ)" -lt 7 ] && echo y),vboxvideo,)
 
 vboxguest:
 	@echo "=== Building 'vboxguest' module ==="
@@ -94,7 +96,7 @@ install-vboxvideo:
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo install; \
 	fi
 
-install: install-vboxguest install-vboxsf install-vboxvideo
+install: install-vboxguest install-vboxsf $(if $(shell [ "$(KERN_MAJ)" -lt 7 ] && echo y),install-vboxvideo,)
 
 clean-vboxguest:
 	+ $(VBOX_QUIET)$(MAKE) -C vboxguest clean
@@ -112,7 +114,7 @@ clean-vboxvideo:
 	fi
 	rm -f vboxvideo.*o
 
-clean: clean-vboxguest clean-vboxsf clean-vboxvideo
+clean: clean-vboxguest clean-vboxsf $(if $(shell [ "$(KERN_MAJ)" -lt 7 ] && echo y),clean-vboxvideo,)
 
 check:
 	$(VBOX_QUIET)$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest check

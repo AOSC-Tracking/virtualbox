@@ -397,7 +397,7 @@ static int rtEfiSigDbWriteList(PRTLISTANCHOR pLst, PCRTEFISIGDBDESC pDesc, RTVFS
             EFI_SIGNATURE_DATA SigData;
             RTEfiGuidFromUuid(&SigData.GuidOwner, &pIt->UuidOwner);
 
-            Assert(pDesc->cbSig == pIt->cbSignature);
+            Assert(pDesc->cbSig - sizeof(SigData) == pIt->cbSignature);
             aSegs[0].pvSeg = &SigData;
             aSegs[0].cbSeg = sizeof(SigData);
             aSegs[1].pvSeg = &pIt->abSignature[0];

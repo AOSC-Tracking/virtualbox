@@ -83,6 +83,7 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   	tstIEMCheckMc \
   	tstIEMAImpl \
   	tstPDMQueue \
+  	tstPGMMemCopy \
   	tstSSM \
   	tstVMMUnitTests-1
   PROGRAMS.amd64 += tstIEMAImplAsm
@@ -93,10 +94,11 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
    PROGRAMS += tstPGMAllGst-armv8
   endif
 
+  if1of ($(KBUILD_TARGET_ARCH), amd64)
+   PROGRAMS += tstVMMR0CallHost-1
+  endif
   if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
-   PROGRAMS += \
-   	tstVMMR0CallHost-1 \
-   	tstX86-FpuSaveRestore
+   PROGRAMS += tstX86-FpuSaveRestore
    ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.x86 solaris.amd64 win.amd64)  ## TODO: Fix the code.
     PROGRAMS += tstX86-1
    endif
@@ -788,9 +790,8 @@ tstVMMR0CallHost-1_INCS = $(VBOX_PATH_VMM_SRC)/include
 tstVMMR0CallHost-1_SOURCES = \
 	tstVMMR0CallHost-1.cpp
 tstVMMR0CallHost-1_SOURCES.amd64 = \
-	$(VBOX_PATH_VMM_SRC)/VMMR0/VMMR0JmpA-amd64.asm
-tstVMMR0CallHost-1_SOURCES.x86 = \
-	$(VBOX_PATH_VMM_SRC)/VMMR0/VMMR0JmpA-x86.asm
+	$(VBOX_PATH_VMM_SRC)/VMMR0/VMMR0JmpA-amd64.asm \
+	$(VBOX_PATH_VMM_SRC)/../Runtime/common/misc/setjmp.asm
 
 
 #
@@ -849,6 +850,7 @@ tstArm64-1_TEMPLATE     := VBoxR3TstExe
 tstArm64-1_SOURCES       = tstArm64-1.S
 tstArm64-1_LDFLAGS.win  := -Entry:ExeEntrypoint -Subsystem:console -guard:no
 #tstArm64-1_ASFLAGS.win.arm64 := -g1 -gcodeview - doesn't work, clang -cc1as doesn't do codeview, only dwarf.
+tstArm64-1_ASFLAGS.linux := -march=armv9-a+rcpc
 tstArm64-1_INCS          = $(tstArm64-1_0_OUTDIR)
 tstArm64-1_INTERMEDIATES = $(tstArm64-1_0_OUTDIR)/tstArm64-1-generated.S
 tstArm64-1_CLEANS        = $(tstArm64-1_0_OUTDIR)/tstArm64-1-generated.S
@@ -963,24 +965,24 @@ if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  #
  # Special NEM host testcase.
  #
- if   ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "darwin.amd64" && (defined(VBOX_WITH_NATIVE_NEM) || "$(USERNAME)" == "bird")) \
-   || ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "linux.amd64"  && (defined(VBOX_WITH_NATIVE_NEM) || "$(USERNAME)" == "bird")) \
-   || ("$(KBUILD_TARGET_ARCH).$(KBUILD_TARGET_ARCH)" == "win.amd64"    &&  defined(VBOX_WITH_NATIVE_NEM))
-  PROGRAMS += NemRawBench-1
-  NemRawBench-1_TEMPLATE = VBoxR3Static
-  NemRawBench-1_SOURCES = NemRawBench-1.cpp
-  NemRawBench-1_BLD_TYPE = release
-  NemRawBench-1_INCS.win = \
-  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
-  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
-  NemRawBench-1_CXXFLAGS.darwin = \
-  	-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform//Developer/SDKs/MacOSX10.13.sdk/System/Library/Frameworks
-  #NemRawBench-1_LDFLAGS.darwin =  \
-#	-F/System/Library/Frameworks \
-#	-framework Hypervisor
-  NemRawBench-1_LDFLAGS.darwin = \
-  	/System/Library/Frameworks/Hypervisor.framework/Hypervisor
+ if1of ($(USERNAME), bird)
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 linux.amd64 win.amd64 linux.arm64)
+   PROGRAMS += NemRawBench-1
+  endif
+ else ifdef VBOX_WITH_NATIVE_NEM
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 linux.amd64 win.amd64)
+   PROGRAMS += NemRawBench-1
+  endif
  endif
+ NemRawBench-1_TEMPLATE = VBoxR3Static
+ NemRawBench-1_SOURCES = NemRawBench-1.cpp
+ ifneq ($(KBUILD_TYPE),asan)
+  NemRawBench-1_BLD_TYPE = release
+ endif
+ NemRawBench-1_INCS.win = \
+ 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
+ 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
+ NemRawBench-1_LDFLAGS.darwin = -framework Hypervisor
 endif
 
 #
@@ -990,7 +992,6 @@ tstPDMQueue_TEMPLATE := VBoxR3Exe
 tstPDMQueue_DEFS      = VBOX_VMM_TARGET_AGNOSTIC $(VMM_COMMON_DEFS)
 tstPDMQueue_SOURCES  := tstPDMQueue.cpp
 tstPDMQueue_LIBS     := $(LIB_VMM) $(LIB_RUNTIME)
-
 
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  #
@@ -1036,6 +1037,19 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  tstPDMAsyncCompletionStress_LIBS      = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 endif
 
+#
+# PGM memcpy replacement test.
+#
+tstPGMMemCopy_TEMPLATE   = VBoxR3TstExe
+tstPGMMemCopy_DEFS       = $(VMM_COMMON_DEFS)
+tstPGMMemCopy_DEFS.amd64 = VBOX_VMM_TARGET_X86
+tstPGMMemCopy_DEFS.arm64 = VBOX_VMM_TARGET_ARMV8
+tstPGMMemCopy_DEFS.x86   = VBOX_VMM_TARGET_X86
+tstPGMMemCopy_SOURCES    = tstPGMMemCopy.cpp
+
+#
+# ???
+#
 ifndef VBOX_ONLY_EXTPACKS
  PROGRAMS += tstSSM-2
  tstSSM-2_TEMPLATE      = VBoxR3TstExe

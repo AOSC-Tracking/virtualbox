@@ -100,9 +100,15 @@ TEMPLATE_VBoxBsTestImg = kBuild tool config for building boot sector stuff.
 TEMPLATE_VBoxBsTestImg_INST    = $(INST_VALIDATIONKIT)bootsectors/
 TEMPLATE_VBoxBsTestImg_BINSUFF = .img
 TEMPLATE_VBoxBsTestImg_MODE    = 0644
-TEMPLATE_VBoxBsTestImg_ASTOOL  = YASM
-TEMPLATE_VBoxBsTestImg_ASFLAGS = -f bin -P $(VBOX_PATH_BOOTSECTORS_SRC)/bootsector2-first.mac $(VBOX_YASM_Wno-segreg-in-64bit) --mapfile
-TEMPLATE_VBoxBsTestImg_ASDEFS  = ASM_FORMAT_BIN
+ifdef DONT_USE_YASM
+ TEMPLATE_VBoxBsTestImg_ASTOOL  = VBoxNasmBin
+ TEMPLATE_VBoxBsTestImg_ASFLAGS = -f bin -P $(VBOX_PATH_BOOTSECTORS_SRC)/bootsector2-first.mac
+ TEMPLATE_VBoxBsTestImg_ASDEFS  = ASM_FORMAT_BIN __NASM__
+else
+ TEMPLATE_VBoxBsTestImg_ASTOOL  = YASM
+ TEMPLATE_VBoxBsTestImg_ASFLAGS = -f bin -P $(VBOX_PATH_BOOTSECTORS_SRC)/bootsector2-first.mac $(VBOX_YASM_Wno-segreg-in-64bit) --mapfile
+ TEMPLATE_VBoxBsTestImg_ASDEFS  = ASM_FORMAT_BIN __YASM__
+endif
 TEMPLATE_VBoxBsTestImg_INCS    = \
 	. \
 	../../VMM/testcase/Instructions

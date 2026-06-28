@@ -96,7 +96,7 @@ BEGINPROC reportPostBiosValues
         mov     ax, .s_szzStart
         call    TestValueRegSZZ_rm
 
-.done
+.done:
         pop     bx
         pop     ax
         ret

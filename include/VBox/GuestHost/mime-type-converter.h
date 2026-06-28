@@ -43,6 +43,17 @@
 #include <iprt/cdefs.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 
+/** Mime-type cache handle. */
+typedef struct vbox_mime_conv_cache_s
+{
+    /** Cache lock. */
+    RTCRITSECT  CritSect;
+    /** Number of elements in cache table. */
+    size_t      iCacheElements;
+    /** Opaque cache storage. */
+    void        *pvCache;
+} vbox_mime_conv_cache_t;
+
 /**
  * Mime-type enumeration callback function.
  *
@@ -113,6 +124,67 @@ extern RTDECL(int) VBoxMimeConvVBoxToNative(const char *pcszMimeType, void *pvBu
  */
 extern RTDECL(int) VBoxMimeConvNativeToVBox(const char *pcszMimeType, void *pvBufIn, int cbBufIn,
                                             void **ppvBufOut, size_t *pcbBufOut);
+
+/**
+ * Initializes mapping table cache.
+ *
+ * Must be called before any other VBoxMimeConvXXXCacheYYY call.
+ *
+ * @returns IPRT status code.
+ * @param   pCache          Cache handle.
+ */
+RTDECL(int) VBoxMimeConvInitCache(vbox_mime_conv_cache_t *pCache);
+
+/**
+ * Destroys mapping table cache.
+ *
+ * @returns IPRT status code.
+ * @param   pCache          Cache handle.
+ */
+RTDECL(int) VBoxMimeConvDestroyCache(vbox_mime_conv_cache_t *pCache);
+
+/**
+ * Clears mapping table cache.
+ *
+ * @returns IPRT status code.
+ * @param   pCache          Cache handle.
+ */
+RTDECL(int) VBoxMimeConvClearCache(vbox_mime_conv_cache_t *pCache);
+
+/**
+ * Adds data into cache using mime-type as a key.
+ *
+ * @returns VINF_SUCCESS on success, VERR_NOT_FOUND if given memi-type is unknown or IPRT error code.
+ * @param   pCache          Cache handle.
+ * @param   pcszMimeType    Mime-type in string representation.
+ * @param   pvBuf           Input buffer which contains data in specified mime-type format.
+ * @param   cbBuf           Size of input buffer in bytes.
+ */
+RTDECL(int) VBoxMimeConvSetCacheByMime(vbox_mime_conv_cache_t *pCache, const char *pcszMimeType, void *pvBuf, int cbBuf);
+
+/**
+ * Extracts data from cache using mime-type as a key.
+ *
+ * @returns VINF_SUCCESS on success, VERR_NOT_FOUND if no cache entry corresponds to
+ *          given memi-type or IPRT error code.
+ * @param   pCache          Cache handle.
+ * @param   pcszMimeType    Mime-type in string representation.
+ * @param   ppvBufOut       Data which corresponds to given mime-type.
+ * @param   pcbBufOut       Size of output buffer.
+ */
+RTDECL(int) VBoxMimeConvGetCacheByMime(vbox_mime_conv_cache_t *pCache, const char *pcszMimeType, void **ppvBufOut, size_t *pcbBufOut);
+
+/**
+ * Extracts data from cache using format ID as a key.
+ *
+ * @returns VINF_SUCCESS on success, VERR_NOT_FOUND if no cache entry corresponds to
+ *          given memi-type or IPRT error code.
+ * @param   pCache          Cache handle.
+ * @param   uFmtVBox        Format ID in VBox representation.
+ * @param   ppvBufOut       Data which corresponds to given mime-type.
+ * @param   pcbBufOut       Size of output buffer.
+ */
+RTDECL(int) VBoxMimeConvGetCacheById(vbox_mime_conv_cache_t *pCache, const SHCLFORMAT uFmtVBox, void **ppvBufOut, size_t *pcbBufOut);
 
 #endif /* !VBOX_INCLUDED_GuestHost_mime_type_converter_h */
 

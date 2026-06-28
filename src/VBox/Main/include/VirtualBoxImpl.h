@@ -55,6 +55,7 @@ class SessionMachine;
 class GuestOSType;
 class Progress;
 class Host;
+class PlatformProperties;
 class SystemProperties;
 class DHCPServer;
 class PerformanceCollector;
@@ -233,6 +234,8 @@ public:
 #endif /* VBOX_WITH_CLOUD_NET */
 
     ComObjPtr<GuestOSType> i_getUnknownOSType();
+
+    const ComObjPtr<PlatformProperties> &i_getPlatformProperties(PlatformArchitecture_T enmPlatformArchitecture) const;
 
     void i_getOpenedMachines(SessionMachinesList &aMachines,
                            InternalControlList *aControls = NULL);

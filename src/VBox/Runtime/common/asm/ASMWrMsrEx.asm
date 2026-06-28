@@ -37,6 +37,7 @@
 ;*******************************************************************************
 ;* Header Files                                                                *
 ;*******************************************************************************
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
 
 BEGINCODE
@@ -50,10 +51,9 @@ BEGINCODE
 ;
 RT_BEGINPROC ASMWrMsrEx
 %ifdef ASM_CALL64_MSC
-proc_frame ASMWrMsrEx_DupWarningHack
         push    rdi
-        [pushreg rdi]
-[endprolog]
+        SEH64_PUSH_GREG rdi
+SEH64_END_PROLOGUE
         and     ecx, ecx                ; serious paranoia
         mov     rdi, rdx
         mov     eax, r8d
@@ -62,7 +62,6 @@ proc_frame ASMWrMsrEx_DupWarningHack
         wrmsr
         pop     rdi
         ret
-endproc_frame
 %elifdef ASM_CALL64_GCC
         mov     ecx, edi
         mov     rdi, rsi

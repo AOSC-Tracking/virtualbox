@@ -113,12 +113,14 @@ typedef uint64_t STAMCOUNTER;
  *  @todo AMD64:When bumping to next version, add CPUMCTX::enmHwVirt and
  *        uMicrocodeRevision to the saved state. */
 #if defined(VBOX_VMM_TARGET_X86)
-# define CPUM_SAVED_STATE_VERSION               CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_4
+# define CPUM_SAVED_STATE_VERSION               CPUM_SAVED_STATE_VERSION_HWVIRT_CFG
 #elif defined(VBOX_VMM_TARGET_ARMV8)
 # define CPUM_SAVED_STATE_VERSION               CPUM_SAVED_STATE_VERSION_ARMV8_IDREGS2
 #endif
 
 #if defined(VBOX_VMM_TARGET_X86)
+/** The saved state version with nested hardware virtualization config. */
+# define CPUM_SAVED_STATE_VERSION_HWVIRT_CFG    24
 /** The saved state version with u32RestoreProcCtls2 for Nested Microsoft
  *  Hyper-V. */
 # define CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_4  23
@@ -522,11 +524,30 @@ typedef struct CPUMCPU
     /** Saved host context.  Only valid while inside RC or HM contexts.
      * Must be aligned on a 64-byte boundary. */
     CPUMHOSTCTX             Host;
+    /** Release stat: Calls to cpumR0LoadGuestFPU. */
+    STAMCOUNTER             StatGuestFpuLoad;
+    /** Release stat: Calls to SUPR0FpuEnsureCurrent. */
+    STAMCOUNTER             StatGuestFpuReload;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 0, locking FPU. */
+    STAMCOUNTER             StatPrepHostFpu0Lock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 0, no locking. */
+    STAMCOUNTER             StatPrepHostFpu0NoLock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 1, locking FPU. */
+    STAMCOUNTER             StatPrepHostFpu1Lock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 1, no locking. */
+    STAMCOUNTER             StatPrepHostFpu1NoLock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 2, locking FPU. */
+    STAMCOUNTER             StatPrepHostFpu2Lock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 2, no locking. */
+    STAMCOUNTER             StatPrepHostFpu2NoLock;
+    /** Profiling SUPR0FpuEnsureCurrent. */
+    STAMPROFILE             StatGuestFpuLoadPerf;
 #endif
 
     /** Use flags.
-     * These flags indicates both what is to be used and what has been used. */
-    uint32_t                fUseFlags;
+     * These flags indicates both what is to be used and what has been used.
+     * @note Marked volatile as it can be modified by the preemption hook.  */
+    uint32_t volatile       fUseFlags;
 
     /** Changed flags.
      * These flags indicates to REM (and others) which important guest
@@ -576,6 +597,23 @@ AssertCompileAdjacentMembers(CPUMCPU, Guest, GuestMsrs); /* HACK ALERT! HMR0A.as
 #endif
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;
+
+
+/**
+ * CPUM per-VCpu ring-0 only instance data.
+ */
+typedef struct CPUMR0PERVCPU
+{
+#if defined(VBOX_VMM_TARGET_X86) /** @todo temporary: */ || defined(VBOX_VMM_TARGET_AGNOSTIC)
+    /** The SUPR0FpuBegin return value (state).
+     * @note Not marked volatile, as all tests and modifications should be done
+     *       with interrupts disabled. */
+    uint32_t                fFpuBegin;
+#else
+    uint32_t                uDummy;
+#endif
+} CPUMR0PERVCPU;
+
 
 #ifndef VBOX_FOR_DTRACE_LIB
 RT_C_DECLS_BEGIN
@@ -728,9 +766,6 @@ PCPUMMSRRANGE       cpumLookupMsrRange(PVM pVM, uint32_t idMsr);
 #  if defined(VBOX_VMM_TARGET_X86) /** @todo temporary: */ || defined(VBOX_VMM_TARGET_AGNOSTIC)
 DECLASM(int)        cpumR0SaveHostRestoreGuestFPUState(PCPUMCPU pCPUM);
 DECLASM(void)       cpumR0SaveGuestRestoreHostFPUState(PCPUMCPU pCPUM);
-#   if ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-DECLASM(void)       cpumR0RestoreHostFPUState(PCPUMCPU pCPUM);
-#   endif
 #  endif
 # endif
 

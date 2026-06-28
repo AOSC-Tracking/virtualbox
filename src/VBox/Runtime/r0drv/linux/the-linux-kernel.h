@@ -307,8 +307,10 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 # else
 #  define MY_PAGE_KERNEL_EXEC   __pgprot(boot_cpu_has(X86_FEATURE_PGE) ? _PAGE_KERNEL_EXEC | _PAGE_GLOBAL : _PAGE_KERNEL_EXEC)
 # endif
-#else
+#elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # define MY_PAGE_KERNEL_EXEC    PAGE_KERNEL
+#else
+# define MY_PAGE_KERNEL_EXEC    PAGE_KERNEL_EXEC
 #endif
 
 
@@ -468,6 +470,21 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 #endif
 
 /*
+ * Wrappers around mmap_lock/mmap_sem difference.
+ */
+#if RTLNX_VER_MIN(5,8,0)
+# define LNX_MM_DOWN_READ(a_pMm)    down_read(&(a_pMm)->mmap_lock)
+# define LNX_MM_UP_READ(a_pMm)        up_read(&(a_pMm)->mmap_lock)
+# define LNX_MM_DOWN_WRITE(a_pMm)   down_write(&(a_pMm)->mmap_lock)
+# define LNX_MM_UP_WRITE(a_pMm)       up_write(&(a_pMm)->mmap_lock)
+#else
+# define LNX_MM_DOWN_READ(a_pMm)    down_read(&(a_pMm)->mmap_sem)
+# define LNX_MM_UP_READ(a_pMm)        up_read(&(a_pMm)->mmap_sem)
+# define LNX_MM_DOWN_WRITE(a_pMm)   down_write(&(a_pMm)->mmap_sem)
+# define LNX_MM_UP_WRITE(a_pMm)       up_write(&(a_pMm)->mmap_sem)
+#endif
+
+/*
  * Some global indicator macros.
  */
 /** @def IPRT_LINUX_HAS_HRTIMER
@@ -492,5 +509,68 @@ DECLHIDDEN(void) rtR0LnxWorkqueueFlush(void);
  * Memory hacks from memobj-r0drv-linux.c that shared folders need.
  */
 RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv);
+
+
+extern struct mm_struct *g_pLnxInitMm;
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+extern void (*g_pfnLinuxFlushTlbAll)(void);
+#endif
+
+/*
+ * Support machinery for calling dynamically resolved code.
+ */
+
+/** @def RTLNX_CET_UNSAFE_CALL
+ * Wrapper for calling code that may be missing an ENDBR instruction.
+ *
+ * This will disable preemption and, if necessary, disable ENDBR checks.
+ *
+ * @param a_pfn         The function being called.
+ * @param a_CallExpr    The call expression.
+ */
+#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && defined(CONFIG_X86_CET)
+# define RTLNX_CET_UNSAFE_CALL(a_pfn, a_CallExpr) do { \
+        RTTHREADPREEMPTSTATE Preempt = RTTHREADPREEMPTSTATE_INITIALIZER; \
+        RTThreadPreemptDisable(&Preempt); \
+        if (!g_fLnxIsCetSupported || *(uint32_t const *)(uintptr_t)(a_pfn) == RTLNX_CET_ENDBR) \
+        { \
+            a_CallExpr; \
+        } \
+        else \
+        { \
+            uint64_t const fSupCet = ASMRdMsr(MSR_IA32_S_CET); \
+            ASMWrMsr(MSR_IA32_S_CET, fSupCet & ~MSR_IA32_CET_ENDBR_EN); \
+            a_CallExpr; \
+            ASMWrMsr(MSR_IA32_S_CET, fSupCet); \
+        } \
+        RTThreadPreemptRestore(&Preempt); \
+    } while (0)
+#else
+# define RTLNX_CET_UNSAFE_CALL(a_pfn, a_CallExpr) do { \
+        RTTHREADPREEMPTSTATE Preempt = RTTHREADPREEMPTSTATE_INITIALIZER; \
+        RTThreadPreemptDisable(&Preempt); \
+        a_CallExpr; \
+        RTThreadPreemptRestore(&Preempt); \
+    } while (0)
+#endif
+
+#ifdef RT_ARCH_AMD64
+# define RTLNX_CET_ENDBR                    UINT32_C(0xfa1e0ff3) /* endbr64 */
+#elif defined(RT_ARCH_X86)
+# define RTLNX_CET_ENDBR                    UINT32_C(0xfb1e0ff3) /* endbr32 */
+#endif
+
+#ifndef MSR_IA32_S_CET
+# define MSR_IA32_S_CET                     0x6a2
+#endif
+#ifndef MSR_IA32_CET_ENDBR_EN
+# define MSR_IA32_CET_ENDBR_EN              RT_BIT_64(2)
+#endif
+#ifndef MSR_IA32_CET_SUPPRESS
+# define MSR_IA32_CET_SUPPRESS              RT_BIT_64(10)
+#endif
+
+extern bool g_fLnxIsCetSupported;
+extern bool g_fLnxIsCetEnabled;
 
 #endif /* !IPRT_INCLUDED_SRC_r0drv_linux_the_linux_kernel_h */

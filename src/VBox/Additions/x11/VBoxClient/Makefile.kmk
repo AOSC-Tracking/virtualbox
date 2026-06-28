@@ -204,14 +204,17 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
   VBoxClient_DEFS.linux += VBOX_WITH_WAYLAND_ADDITIONS
   VBoxClient_INCS.linux += ../wlInclude/
   VBoxClient_SOURCES.linux += \
+  	wayland-helper-xdcp-common.cpp \
   	wayland-helper-dcp.cpp \
+  	wayland-helper-edcp.cpp \
   	wayland-helper-gtk.cpp \
   	wayland-helper.cpp \
   	wayland.cpp \
   	wayland-helper-ipc.cpp \
   	$(PATH_ROOT)/src/VBox/GuestHost/common/mime-type-converter.cpp \
   	../wlInclude/wayland-protocol.c \
-  	../wlInclude/wlr-data-control-unstable-v1.c
+  	../wlInclude/wlr-data-control-unstable-v1.c \
+  	../wlInclude/ext-data-control-v1.c
  endif
 endif
 

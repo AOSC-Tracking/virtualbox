@@ -738,7 +738,7 @@ static DECLCALLBACK(int) qemuFwCfgR3ReadFileDir(PDEVQEMUFWCFG pThis, PCQEMUFWCFG
         AssertReturn(idxEntry < pThis->cCfgFiles, VERR_INTERNAL_ERROR);
 
         off %= sizeof(pThis->u.CfgFile);
-        cbToRead = RT_MIN(cbToRead, sizeof(pThis->u.CfgFile));
+        cbToRead = RT_MIN(cbToRead, sizeof(pThis->u.CfgFile) - off);
 
         /* Setup the config file item. */
         PCQEMUFWCFGFILEENTRY pEntry = &pThis->paCfgFiles[idxEntry];
@@ -1739,6 +1739,10 @@ static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplay(PPDMIDISPLAYPORT pInt
 {
     PDEVQEMUFWCFG pThis = RT_FROM_MEMBER(pInterface, DEVQEMUFWCFG, IPortRamfb);
     PPDMDEVINS pDevIns = pThis->pDevIns;
+    unsigned const cGuestPageShift = PDMDevHlpPhysGetPageShift(pDevIns);
+    AssertReturn(cGuestPageShift >= 10 && cGuestPageShift <= 24, VERR_INTERNAL_ERROR);
+    uint32_t const cbGuestPage = RT_BIT_32(cGuestPageShift);
+    RTGCPHYS const offGuestPageMask = cbGuestPage - 1U;
 
     LogFlowFunc(("\n"));
 
@@ -1757,9 +1761,9 @@ static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplay(PPDMIDISPLAYPORT pInt
             if (RT_UNLIKELY(!pThis->Ramfb.cPgLocks))
             {
                 size_t const cbFb = pThis->RamfbCfg.cbStride * pThis->RamfbCfg.cHeight;
-                uint32_t const cPages = (uint32_t)((cbFb + GUEST_PAGE_SIZE - 1) >> GUEST_PAGE_SHIFT);
-                RTGCPHYS GCPhysStart = pThis->RamfbCfg.GCPhysRamfbBase & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
-                RTGCPHYS const offPage = pThis->RamfbCfg.GCPhysRamfbBase & (RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+                uint32_t const cPages = (uint32_t)((cbFb + cbGuestPage - 1) >> cGuestPageShift);
+                RTGCPHYS GCPhysStart = pThis->RamfbCfg.GCPhysRamfbBase & ~offGuestPageMask;
+                RTGCPHYS const offPage = pThis->RamfbCfg.GCPhysRamfbBase & offGuestPageMask;
 
                 pThis->Ramfb.paPgLocks = (PPGMPAGEMAPLOCK)RTMemAllocZ(cPages * (  sizeof(PGMPAGEMAPLOCK)
                                                                                 + sizeof(void *)
@@ -1776,7 +1780,7 @@ static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplay(PPDMIDISPLAYPORT pInt
                 for (uint32_t i = 0; i < cPages; i++)
                 {
                     paGCPhysPages[i] = GCPhysStart;
-                    GCPhysStart += GUEST_PAGE_SIZE;
+                    GCPhysStart += cbGuestPage;
                 }
 
                 int rc = PDMDevHlpPhysBulkGCPhys2CCPtrReadOnly(pDevIns, cPages, paGCPhysPages, 0 /*fFlags*/,
@@ -1795,7 +1799,7 @@ static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplay(PPDMIDISPLAYPORT pInt
                 uint32_t iSeg = 0;
 
                 pThis->Ramfb.paSegs[0].pvSeg = (void *)((const uint8_t *)pThis->Ramfb.papvPages[0] + offPage);
-                pThis->Ramfb.paSegs[0].cbSeg = GUEST_PAGE_SIZE - offPage;
+                pThis->Ramfb.paSegs[0].cbSeg = cbGuestPage - offPage;
 
                 for (uint32_t i = 1; i < pThis->Ramfb.cPgLocks; ++i)
                 {
@@ -1803,13 +1807,13 @@ static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplay(PPDMIDISPLAYPORT pInt
                     if ((uintptr_t)pThis->Ramfb.papvPages[i] == (uintptr_t)pThis->Ramfb.paSegs[iSeg].pvSeg + pThis->Ramfb.paSegs[iSeg].cbSeg)
                     {
                         Assert(pThis->Ramfb.paSegs[iSeg].cbSeg);
-                        pThis->Ramfb.paSegs[iSeg].cbSeg += GUEST_PAGE_SIZE;
+                        pThis->Ramfb.paSegs[iSeg].cbSeg += cbGuestPage;
                     }
                     else
                     {
                         iSeg++;
                         pThis->Ramfb.paSegs[iSeg].pvSeg = (void *)pThis->Ramfb.papvPages[i];
-                        pThis->Ramfb.paSegs[iSeg].cbSeg = GUEST_PAGE_SIZE;
+                        pThis->Ramfb.paSegs[iSeg].cbSeg = cbGuestPage;
                     }
                 }
 
@@ -2014,6 +2018,18 @@ static DECLCALLBACK(void) qemuFwCfgR3RamfbPortReportHostCursorCapabilities(PPDMI
 static DECLCALLBACK(void) qemuFwCfgR3RamfbPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y, bool fOutOfRange)
 {
     RT_NOREF(pInterface, x, y, fOutOfRange);
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnQueryDefaultOutputTargetToken}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3RamfbPortQueryDefaultOutputTargetToken(PPDMIDISPLAYPORT pInterface,
+                                                                           uint32_t idScreen,
+                                                                           uint64_t *pu64OutputTargetToken)
+{
+    RT_NOREF(pInterface, idScreen, pu64OutputTargetToken);
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -2260,6 +2276,7 @@ static DECLCALLBACK(int) qemuFwCfgConstruct(PPDMDEVINS pDevIns, int iInstance, P
     pThis->IPortRamfb.pfnSendModeHint                   = qemuFwCfgR3RamfbPortSendModeHint;
     pThis->IPortRamfb.pfnReportHostCursorCapabilities   = qemuFwCfgR3RamfbPortReportHostCursorCapabilities;
     pThis->IPortRamfb.pfnReportHostCursorPosition       = qemuFwCfgR3RamfbPortReportHostCursorPosition;
+    pThis->IPortRamfb.pfnQueryDefaultOutputTargetToken  = qemuFwCfgR3RamfbPortQueryDefaultOutputTargetToken;
 
     RTGCPHYS GCPhysMmioBase = 0;
     rc = pHlp->pfnCFGMQueryU64(pCfg, "MmioBase", &GCPhysMmioBase);

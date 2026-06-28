@@ -239,11 +239,13 @@ public:
     virtual ItemType rtti() const = 0;
 
     /** Returns child item with specified @a iIndex. */
-    virtual AbstractItem *childItem(int iIndex) const RT_OVERRIDE = 0;
+    virtual AbstractItem *childItem(int iIndex) const = 0;
     /** Returns child item with specified @a uId. */
     virtual AbstractItem *childItemById(const QUuid &uId) const = 0;
     /** Returns position of specified child @a pItem. */
     virtual int posOfChild(AbstractItem *pItem) const = 0;
+    /** Returns the number of children. */
+    virtual int childCount() const = 0;
 
     /** Returns tool-tip information. */
     virtual QString toolTip() const = 0;
@@ -1352,17 +1354,21 @@ void ControllerItem::updateBusInfo()
     /* Clear the buses initially: */
     m_buses.clear();
 
-    /* Load currently supported storage buses: */
-    CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(arch());
-    const QVector<KStorageBus> supportedBuses = comProperties.GetSupportedStorageBuses();
-
-    /* If current bus is NOT KStorageBus_Floppy: */
+    /* For others than the KStorageBus_Floppy bus we'll
+     * have to check for a list of supported values.
+     * For floppies we'll prepend current one item only. */
     if (m_enmBus != KStorageBus_Floppy)
     {
-        /* We update the list with all supported buses
-         * and remove the current one from that list. */
-        m_buses << supportedBuses.toList();
+        /* Update the list with all supported buses: */
+        CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(arch());
+        m_buses << comProperties.GetSupportedStorageBuses();
+
+        /* Remove the current one from that list,
+         * it will be prepended in any cases: */
         m_buses.removeAll(m_enmBus);
+        /* Remove KStorageBus_Floppy as well,
+         * as this list is not for floppies: */
+        m_buses.removeAll(KStorageBus_Floppy);
     }
 
     /* And prepend current bus finally: */

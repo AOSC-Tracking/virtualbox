@@ -193,6 +193,10 @@
 # include <drm/drm_framebuffer.h>
 #endif
 
+#if RTLNX_VER_MIN(6,19,0)
+#include <drm/drm_print.h>
+#endif
+
 #include "vboxvideo_guest.h"
 #include "vboxvideo_vbe.h"
 #include "hgsmi_ch_setup.h"
@@ -302,7 +306,7 @@ struct vbox_private {
 	} ttm;
 
 	struct mutex hw_mutex; /* protects modeset and accel/vbva accesses */
-#if RTLNX_VER_MIN(6,18,0)
+#if RTLNX_VER_MIN(6,18,0) || RTLNX_RHEL_RANGE(9,8, 9,99) || RTLNX_RHEL_RANGE(10,2, 10,99)
 	/** Replacement for struct drm_device .struct_mutex. */
 	struct mutex struct_mutex;
 #endif

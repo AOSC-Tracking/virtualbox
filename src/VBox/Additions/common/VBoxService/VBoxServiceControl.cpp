@@ -73,7 +73,6 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceControl.h"
-#include "VBoxServiceUtils.h"
 
 using namespace guestControl;
 
@@ -126,68 +125,32 @@ static void vgsvcGstCtrlShutdown(void);
  */
 static DECLCALLBACK(int) vgsvcGstCtrlPreInit(void)
 {
-    int rc;
-#ifdef VBOX_WITH_GUEST_PROPS
-    /*
-     * Read the service options from the VM's guest properties.
-     * Note that these options can be overridden by the command line options later.
-     */
-    uint32_t uGuestPropSvcClientID;
-    rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
-    if (RT_FAILURE(rc))
-    {
-        if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
-        {
-            VGSvcVerbose(0, "Guest property service is not available, skipping\n");
-            rc = VINF_SUCCESS;
-        }
-        else
-            VGSvcError("Failed to connect to the guest property service, rc=%Rrc\n", rc);
-    }
-    else
-        VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
-
-    if (rc == VERR_NOT_FOUND) /* If a value is not found, don't be sad! */
-        rc = VINF_SUCCESS;
-#else
-    /* Nothing to do here yet. */
-    rc = VINF_SUCCESS;
-#endif
-
-    if (RT_SUCCESS(rc))
-    {
-        /* Init session object. */
-        rc = VGSvcGstCtrlSessionInit(&g_Session, 0 /* Flags */);
-    }
-
-    return rc;
+    /* Init session object. */
+    return VGSvcGstCtrlSessionInit(&g_Session, 0 /* Flags */);
 }
 
 
 /**
  * @interface_method_impl{VBOXSERVICE,pfnOption}
  */
-static DECLCALLBACK(int) vgsvcGstCtrlOption(const char **ppszShort, int argc, char **argv, int *pi)
+static DECLCALLBACK(RTEXITCODE) vgsvcGstCtrlOption(int iShort, PCRTGETOPTUNION pValueUnion, bool fCmdLine)
 {
-    int rc = -1;
-    if (ppszShort)
-        /* no short options */;
-    else if (!strcmp(argv[*pi], "--control-interval"))
-        rc = VGSvcArgUInt32(argc, argv, "", pi,
-                                  &g_msControlInterval, 1, UINT32_MAX - 1);
+    switch (iShort)
+    {
+        case kVGSvcOptGstCtrlInterval:
+            return VGSvcOptUInt32(&g_msControlInterval, pValueUnion, 1, UINT32_MAX - 1, "ms", "interval",
+                                  "guest control", fCmdLine);
 #ifdef DEBUG
-    else if (!strcmp(argv[*pi], "--control-dump-stdout"))
-    {
-        g_Session.fFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT;
-        rc = 0; /* Flag this command as parsed. */
-    }
-    else if (!strcmp(argv[*pi], "--control-dump-stderr"))
-    {
-        g_Session.fFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR;
-        rc = 0; /* Flag this command as parsed. */
-    }
+        case kVGSvcOptGstCtrlDumpStdOut:
+            g_Session.fFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT;
+            return RTEXITCODE_SUCCESS;
+        case kVGSvcOptGstCtrlDumpStdErr:
+            g_Session.fFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR;
+            return RTEXITCODE_SUCCESS;
 #endif
-    return rc;
+        default:
+            return VGSvcDefaultOption(iShort, pValueUnion, fCmdLine);
+    }
 }
 
 
@@ -206,7 +169,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlInit(void)
     int rc = RTSemEventMultiCreate(&g_hControlEvent);
     AssertRCReturn(rc, rc);
 
-    VbglR3GetSessionId(&g_idControlSession); /* The status code is ignored as this information is not available with VBox < 3.2.10. */
+    VbglR3QuerySessionId(&g_idControlSession); /* The status code is ignored as this information is not available with VBox < 3.2.10. */
 
     RTListInit(&g_lstControlSessionThreads);
 
@@ -394,7 +357,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
             /* Check for VM session change. */
             /** @todo  We don't need to check the host here.  */
             uint64_t idNewSession = g_idControlSession;
-            int rc2 = VbglR3GetSessionId(&idNewSession);
+            int rc2 = VbglR3QuerySessionId(&idNewSession);
             if (   RT_SUCCESS(rc2)
                 && (idNewSession != g_idControlSession))
             {
@@ -608,6 +571,19 @@ static DECLCALLBACK(void) vgsvcGstCtrlTerm(void)
 
 
 /**
+ * Guest control option definitions.
+ */
+static const RTGETOPTDEF g_aGstCtrlOptions[] =
+{
+    { "--control-interval",     kVGSvcOptGstCtrlInterval,   RTGETOPT_REQ_UINT32 },
+#ifdef DEBUG
+    { "--control-dump-stdout",  kVGSvcOptGstCtrlDumpStdOut, RTGETOPT_REQ_NOTHING },
+    { "--control-dump-stderr",  kVGSvcOptGstCtrlDumpStdErr, RTGETOPT_REQ_NOTHING },
+#endif
+};
+
+
+/**
  * The 'control' service description.
  */
 VBOXSERVICE g_Control =
@@ -632,6 +608,9 @@ VBOXSERVICE g_Control =
     "    --control-interval      Specifies the interval at which to check for\n"
     "                            new control messages. The default is 1000 ms.\n"
     ,
+    /* paOptions, cOptions. */
+    g_aGstCtrlOptions,
+    RT_ELEMENTS(g_aGstCtrlOptions),
     /* methods */
     vgsvcGstCtrlPreInit,
     vgsvcGstCtrlOption,

@@ -45,6 +45,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #if   defined(RT_ARCH_AMD64)
 # include <iprt/x86.h>
 #elif defined(RT_ARCH_ARM64)
@@ -55,6 +56,8 @@
 # include <iprt/formats/pecoff.h> /* this is incomaptible with windows.h, thus: */
 extern "C" DECLIMPORT(uint8_t) __cdecl RtlAddFunctionTable(void *pvFunctionTable, uint32_t cEntries, uintptr_t uBaseAddress);
 extern "C" DECLIMPORT(uint8_t) __cdecl RtlDelFunctionTable(void *pvFunctionTable);
+extern "C" DECLIMPORT(void *)  __cdecl GetCurrentProcess();
+extern "C" DECLIMPORT(uint8_t) __cdecl FlushInstructionCache(void *hProcess, const void *lpBaseAddress, size_t dwSize);
 #else
 # include <iprt/formats/dwarf.h>
 # if defined(RT_OS_DARWIN)
@@ -373,7 +376,7 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
 #if 1
     PIEMTBALLOCATOR const pTbAllocator = iemTbAllocatorFreeBulkStart(pVCpu);
 #else
-    iemTbAllocatorProcessDelayedFrees(pVCpu, pVCpu->iem.s.pTbAllocatorR3);
+    iemTbAllocatorProcessDelayedFrees(pVCpu, IRECM(pVCpu).pTbAllocatorR3);
 #endif
 
     AssertCompile(RT_IS_POWER_OF_TWO(IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE));
@@ -386,7 +389,7 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
     AssertReturnVoid(cChunks == pExecMemAllocator->cMaxChunks);
     AssertReturnVoid(cChunks >= 1);
 
-    Assert(!pVCpu->iem.s.pCurTbR3);
+    Assert(!IRECM(pVCpu).pCurTbR3);
 
     /*
      * Decide how much to prune.  The chunk is is a multiple of two, so we'll be
@@ -474,7 +477,7 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
     }
     STAM_REL_PROFILE_ADD_PERIOD(&pExecMemAllocator->StatPruneRecovered, cbPruned);
 
-    pVCpu->iem.s.ppTbLookupEntryR3 = &pVCpu->iem.s.pTbLookupEntryDummyR3;
+    IRECM(pVCpu).ppTbLookupEntryR3 = &IRECM(pVCpu).pTbLookupEntryDummyR3;
 
     /*
      * Save the current pruning point.
@@ -974,7 +977,7 @@ iemExecMemAllocatorAllocBytesInChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, uin
 DECLHIDDEN(PIEMNATIVEINSTR) iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB pTb,
                                                      PIEMNATIVEINSTR *ppaExec, PCIEMNATIVEPERCHUNKCTX *ppChunkCtx) RT_NOEXCEPT
 {
-    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
+    PIEMEXECMEMALLOCATOR const pExecMemAllocator = IRECM(pVCpu).pExecMemAllocatorR3;
     AssertReturn(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC, NULL);
     AssertMsgReturn(cbReq > 32 && cbReq < _512K, ("%#x\n", cbReq), NULL);
     STAM_PROFILE_START(&pExecMemAllocator->StatAlloc, a);
@@ -1116,7 +1119,7 @@ DECLHIDDEN(void) iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t
      * Note! The CFG value "/IEM/HostICacheInvalidationViaHostAPI" can be used
      *       to disabling the experimental code should it misbehave.
      */
-    uint8_t const fHostICacheInvalidation = pVCpu->iem.s.fHostICacheInvalidation;
+    uint8_t const fHostICacheInvalidation = IRECM(pVCpu).fHostICacheInvalidation;
     if (!(fHostICacheInvalidation & IEMNATIVE_ICACHE_F_USE_HOST_API))
     {
 #  define DCACHE_ICACHE_SYNC_DSB_OPTION "nshst"
@@ -1189,6 +1192,17 @@ DECLHIDDEN(void) iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t
 
     asm volatile ("dsb ish\n\t isb\n\t" : : : "memory");
 
+#elif defined(RT_OS_WINDOWS) && defined(RT_ARCH_ARM64)
+    RT_NOREF(pVCpu);
+    /*
+     * We don't have access to "ic ivau" on Windows/ARM as SCTLR_EL1.UCI is probably 0
+     * trapping the instruction to EL1, and Windows responds with an illegal instruction
+     * exception.
+     * However there is the FlushInstructionCache() API which does exactly what we want
+     * (though it might be more expensive, still better than crashing in the middle of
+     * a TB).
+     */
+    FlushInstructionCache(GetCurrentProcess(), pv, cb);
 #else
     RT_NOREF(pVCpu, pv, cb);
 #endif
@@ -1200,7 +1214,7 @@ DECLHIDDEN(void) iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t
  */
 DECLHIDDEN(void) iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_NOEXCEPT
 {
-    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = IRECM(pVCpu).pExecMemAllocatorR3;
     Assert(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC);
     AssertPtr(pv);
 #ifdef VBOX_WITH_STATISTICS
@@ -1277,7 +1291,7 @@ DECLHIDDEN(void) iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_N
 DECLHIDDEN(PIEMNATIVEINSTR)
 iemExecMemAllocatorAllocFromChunk(PVMCPU pVCpu, uint32_t idxChunk, uint32_t cbReq, PIEMNATIVEINSTR *ppaExec)
 {
-    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = IRECM(pVCpu).pExecMemAllocatorR3;
     AssertReturn(idxChunk < pExecMemAllocator->cChunks, NULL);
     Assert(cbReq < _1M);
     return iemExecMemAllocatorAllocBytesInChunk(pExecMemAllocator, idxChunk, cbReq, ppaExec);
@@ -1291,7 +1305,7 @@ iemExecMemAllocatorAllocFromChunk(PVMCPU pVCpu, uint32_t idxChunk, uint32_t cbRe
  */
 DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemExecMemGetTbChunkCtx(PVMCPU pVCpu, PCIEMTB pTb)
 {
-    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = IRECM(pVCpu).pExecMemAllocatorR3;
     if ((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE)
     {
         uintptr_t const uAddress = (uintptr_t)pTb->Native.paInstructions;
@@ -1867,7 +1881,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PVMCPUCC pVCpu, PIEMEXECMEM
         = pSymFile->aPhdrs[i].p_paddr   = 0;
     pSymFile->aPhdrs[i].p_filesz         /* Size of segment in file. */
         = pSymFile->aPhdrs[i].p_memsz   = pExecMemAllocator->cbChunk - offSymFileInChunk;
-    pSymFile->aPhdrs[i].p_align         = HOST_PAGE_SIZE;
+    pSymFile->aPhdrs[i].p_align         = RTSystemGetPageSize(); //HOST_PAGE_SIZE;
     i++;
     /* The .dynamic segment. */
     pSymFile->aPhdrs[i].p_type          = PT_DYNAMIC;
@@ -2215,7 +2229,7 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
         pExecMemAllocator->aChunks[i].pvUnwindInfo = NULL;
 #endif
     }
-    pVCpu->iem.s.pExecMemAllocatorR3 = pExecMemAllocator;
+    IRECM(pVCpu).pExecMemAllocatorR3 = pExecMemAllocator;
 
     /*
      * Do the initial allocations.

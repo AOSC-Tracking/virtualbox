@@ -99,7 +99,7 @@
 %undef xDX
 %undef xDI
 %undef xSI
-%undef xWrtRIP
+%undef RT_WRT_RIP
 
 %undef sCB
 %undef sDEF

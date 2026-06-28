@@ -1707,10 +1707,31 @@ SystemProperties::SystemProperties()
 }
 
 PlatformProperties::PlatformProperties()
-    : fExclusiveHwVirt(true)
+{
+    applyDefaults();
+}
+
+/**
+ * Check if all settings have default values.
+ */
+bool PlatformProperties::areDefaultSettings() const
 {
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
-    fExclusiveHwVirt = false; /** @todo BUGBUG Does this apply to MacOS on ARM as well? */
+    return fExclusiveHwVirt == false;
+#else
+    return fExclusiveHwVirt == true;
+#endif
+}
+
+/**
+ * Applies the default settings.
+ */
+void PlatformProperties::applyDefaults(void)
+{
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
+    fExclusiveHwVirt = false;
+#else
+    fExclusiveHwVirt = true;
 #endif
 }
 
@@ -2560,6 +2581,20 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
 
 void MainConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_21)
+    {
+        // VirtualBox 7.2 adds global shared folders.
+        if (!llGlobalSharedFolders.empty())
+            m->sv = SettingsVersion_v1_21;
+    }
+
+    if (m->sv < SettingsVersion_v1_20)
+    {
+    	// VirtualBox 7.1 adds platform support (i.e. for ARM).
+        if (!platformProperties.areDefaultSettings())
+            m->sv = SettingsVersion_v1_20;
+    }
+
 #ifdef VBOX_WITH_VMNET
     if (m->sv < SettingsVersion_v1_19)
     {
@@ -2590,13 +2625,6 @@ void MainConfigFile::bumpSettingsVersionIfNeeded()
         if (   !llNATNetworks.empty())
             m->sv = SettingsVersion_v1_14;
     }
-    if (m->sv < SettingsVersion_v1_21)
-    {
-        // VirtualBox 7.2 adds global shared folders.
-        if (!llGlobalSharedFolders.empty())
-            m->sv = SettingsVersion_v1_21;
-    }
-
 }
 
 
@@ -4039,7 +4067,7 @@ PlatformX86::PlatformX86() :
     fAPIC(true),
     fX2APIC(false),
     fHPETEnabled(false),
-    enmLongMode(HC_ARCH_BITS == 64 ? PlatformX86::LongMode_Enabled : PlatformX86::LongMode_Disabled),
+    enmLongMode(PlatformX86::LongMode_Enabled),
     fTripleFaultReset(false),
     fIBPBOnVMExit(false),
     fIBPBOnVMEntry(false),
@@ -4058,6 +4086,7 @@ PlatformX86::PlatformX86() :
     fHWVirtExVirtVmsaveVmload(true),
     fNestedHWVirt(false)
 {
+    AssertCompile(HC_ARCH_BITS == 64);
     /* The default value for PAE depends on the host:
      * - 64 bits host -> always true
      * - 32 bits host -> true for Windows & Darwin (masked off if the host cpu doesn't support it anyway)

@@ -66,7 +66,7 @@ Unattended::Unattended()
     , mfIsDefaultAuxiliaryBasePath(true)
     , midxImage(0)
     , mfDoneDetectIsoOS(false)
-    , mEnmOsType(VBOXOSTYPE_Unknown)
+    , mEnmOsType(VBOXOSTYPE_x86)
     , mfAvoidUpdatesOverNetwork(false)
     , mfDoneSupportedGuestOSList(false)
 {
@@ -588,6 +588,11 @@ Utf8Str const &Unattended::i_getAdminPassword() const
     return mStrAdminPassword.isEmpty() ? mStrUserPassword : mStrAdminPassword;
 }
 
+bool          Unattended::i_getIsAdminPasswordEmpty() const
+{
+    return mStrAdminPassword.isEmpty();
+}
+
 Utf8Str const &Unattended::i_getFullUserName() const
 {
     return mStrFullUserName.isNotEmpty() ? mStrFullUserName : mStrUser;
@@ -726,6 +731,11 @@ Utf8Str const &Unattended::i_getDetectedOSVersion()
 bool Unattended::i_getAvoidUpdatesOverNetwork() const
 {
     return mfAvoidUpdatesOverNetwork;
+}
+
+VBOXOSTYPE Unattended::i_getGuestOsArch() const
+{
+    return (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_ArchitectureMask);
 }
 
 

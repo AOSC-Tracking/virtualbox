@@ -104,6 +104,7 @@ KERN_VER=`uname -r`
 case "$KERN_VER" in
     5.15.0-*.el8uek*) PATH="/opt/rh/gcc-toolset-11/root/usr/bin:$PATH";;
     6.12.0-*.el9uek*)PATH="/opt/rh/gcc-toolset-14/root/usr/bin:$PATH";;
+    6.18.0-*.el9uek*)PATH="/opt/rh/gcc-toolset-14/root/usr/bin:$PATH";;
 esac
 
 if test -e "${MODULE_SRC}/vboxpci"; then
@@ -722,6 +723,7 @@ setup()
     if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxdrv" \
+        --skip-depmod \
         --no-print-directory install 2>&1`; then
         "${INSTALL_DIR}/check_module_dependencies.sh" || exit 1
         log "Error building the module:"
@@ -732,6 +734,7 @@ setup()
     if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxnetflt" \
+        --skip-depmod \
         --no-print-directory install 2>&1`; then
         log "Error building the module:"
         module_build_log "$myerr"
@@ -741,6 +744,7 @@ setup()
     if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxnetadp" \
+        --skip-depmod \
         --no-print-directory install 2>&1`; then
         log "Error building the module:"
         module_build_log "$myerr"
@@ -751,6 +755,7 @@ setup()
         if ! myerr=`$BUILDINTMP \
             --use-module-symvers /tmp/vboxdrv-Module.symvers \
             --module-source "$MODULE_SRC/vboxpci" \
+            --skip-depmod \
             --no-print-directory install 2>&1`; then
             log "Error building the module:"
             module_build_log "$myerr"
@@ -785,7 +790,7 @@ System is running in Secure Boot mode, however your distribution
 does not provide tools for automatic generation of keys needed for
 modules signing. Please consider to generate and enroll them manually:
 
-    sudo mkdir -p /var/lib/shim-signed/mok
+    sudo mkdir -m 0700 -p /var/lib/shim-signed/mok
     sudo openssl req -nodes -new -x509 -newkey rsa:2048 -outform DER -addext \"extendedKeyUsage=codeSigning\" -keyout $DEB_PRIV_KEY -out $DEB_PUB_KEY
     sudo mokutil --import $DEB_PUB_KEY
     sudo reboot

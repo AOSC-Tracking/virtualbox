@@ -421,5 +421,7 @@ RTDECL(int) vbcl_wayland_thread_start(PRTTHREAD pThread, PFNRTTHREAD pfnThread, 
 extern const VBCLWAYLANDHELPER g_WaylandHelperGtk;
 /** Wayland helper which uses Data Control Protocol. */
 extern const VBCLWAYLANDHELPER g_WaylandHelperDcp;
+/** Wayland helper which uses Ext Data Control Protocol. */
+extern const VBCLWAYLANDHELPER g_WaylandHelperEdcp;
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_wayland_helper_h */

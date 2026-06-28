@@ -168,7 +168,6 @@ ifdef VBOX_WITH_TESTCASES # The whole file
   	tstRTThreadPoke \
   	tstRTThreadExecutionTime \
   	tstRTTime \
-  	tstTime-2 \
   	tstTime-3 \
   	tstTime-4 \
   	tstTimer \
@@ -202,7 +201,8 @@ ifdef VBOX_WITH_TESTCASES # The whole file
   	tstRTProcIsRunningByName \
   	tstRTBitOperationsPIC3 \
   	tstRTInlineAsmPIC \
-  	tstRTInlineAsmPIC3
+  	tstRTInlineAsmPIC3 \
+  	tstRTLinuxKallsyms
   PROGRAMS.solaris += \
   	tstRTCoreDump
   PROGRAMS.darwin += \
@@ -230,6 +230,7 @@ ifdef VBOX_WITH_TESTCASES # The whole file
    	tstLdr-2 \
    	tstLdr-3 \
    	tstLdr-4 \
+   	tstTime-2 \
    	tstTSC
    if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
     PROGRAMS += \
@@ -643,8 +644,27 @@ ifdef VBOX_WITH_TESTCASES # The whole file
  tstRTNetIPv6_SOURCES = tstRTNetIPv6.cpp
 
  tstNoCrt-1_TEMPLATE = VBoxR3TstExe
- tstNoCrt-1_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
+ tstNoCrt-1_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES IPRT_WITHOUT_NLG_STUFF
+ tstNoCrt-1_DEFS.asan = IPRT_BUILD_TYPE_ASAN
  tstNoCrt-1_SOURCES = \
+ 	tstNoCrt-1.cpp \
+ 	../common/string/memcpy.asm \
+ 	../common/string/mempcpy.asm \
+ 	../common/string/memmove.asm \
+ 	../common/string/memset.asm \
+ 	../common/string/memchr.asm \
+ 	../common/string/memcmp.asm \
+ 	../common/string/strchr.asm \
+ 	../common/string/strcmp.asm \
+ 	../common/string/strcpy.asm \
+ 	../common/string/strlen.asm \
+ 	../common/string/wcslen.asm \
+ 	../common/misc/setjmp.asm
+
+ #PROGRAMS += tstNoCrt-1-ucrt
+ tstNoCrt-1-ucrt_TEMPLATE = VBoxR3TstExe
+ tstNoCrt-1-ucrt_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES IPRT_WITHOUT_NLG_STUFF IPRT_WITH_NATIVE_SETJMP
+ tstNoCrt-1-ucrt_SOURCES = \
  	tstNoCrt-1.cpp \
  	../common/string/memcpy.asm \
  	../common/string/mempcpy.asm \
@@ -797,6 +817,7 @@ ifdef VBOX_WITH_TESTCASES # The whole file
   tstRTNoCrt-5_BLD_TRG_ARCH := x86
  endif
  tstRTNoCrt-5_SOURCES := tstRTNoCrt-5.cpp
+ tstRTNoCrt-5_ASINCS.win.x86 = ../common/compiler/vcc/ # NASM crap
  tstRTNoCrt-5_SOURCES.win.x86 := \
  	../common/compiler/vcc/x86-allshl.asm \
  	../common/compiler/vcc/x86-allshr.asm \
@@ -954,7 +975,10 @@ ifdef VBOX_WITH_TESTCASES # The whole file
  tstRTThreadExecutionTime_SOURCES = tstRTThreadExecutionTime.cpp
 
  tstRTTime_TEMPLATE = VBoxR3TstExe
- tstRTTime_SOURCES = tstRTTime.cpp
+ tstRTTime_SOURCES := tstRTTime.cpp
+ ifdef VBOX_WITH_R0_MODULES
+  tstRTTime_DEFS   := MAY_USE_GIP
+ endif
 
  tstRTTls-1_TEMPLATE = VBoxR3TstExe
  tstRTTls-1_SOURCES = tstRTTls-1.cpp
@@ -1190,6 +1214,12 @@ ifdef VBOX_WITH_TESTCASES # The whole file
  tstRTDarwinMachKernel_SOURCES = \
  	tstRTDarwinMachKernel.cpp \
  	../r0drv/darwin/dbgkrnlinfo-r0drv-darwin.cpp
+
+ tstRTLinuxKallsyms_TEMPLATE = VBoxR3TstExe
+ tstRTLinuxKallsyms_INCS    = ../include
+ tstRTLinuxKallsyms_SOURCES = \
+ 	tstRTLinuxKallsyms.cpp \
+ 	../r0drv/linux/dbgkrnlinfo-r0drv-linux.c
 
  ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
  ntGetTimerResolution_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBoxNtDll

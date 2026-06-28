@@ -48,8 +48,8 @@ BS3_EXTERN_CMN Bs3Int64Div
 ;
 ; @uses     Nothing.
 ;
-global $_?I8DR
-$_?I8DR:
+global _?I8DR
+_?I8DR:
         push    es
         push    ss
         pop     es
@@ -73,8 +73,8 @@ $_?I8DR:
 ;
 ; @uses     Nothing.
 ;
-global $_?I8DRE
-$_?I8DRE:
+global _?I8DRE
+_?I8DRE:
         push    ds
         push    es
 

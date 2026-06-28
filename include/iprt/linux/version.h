@@ -133,6 +133,23 @@
 # define RTLNX_SUSE_MAJ_PREREQ(a_iMajor, a_iMinor) (0)
 #endif
 
+/** @def RTLNX_SUSE_ADLP_MAJ_LNX_PREREQ
+ * Require a minimum minor release number for the given SUSE release.
+ *
+ * Starting from openSUSE 16.0 (SUSE Adaptable Linux Platform X.Y) kernel versioning
+ * system has been changed. We no longer can rely on CONFIG_SUSE_VERSION and CONFIG_SUSE_PATCHLEVEL 
+ * since their values now overlap with pre-16.0 ones. Instead, let's rely on original kernel version once
+ * openSUSE kernel is detected.
+ *
+ * @param a_iMajor      LINUX_VERSION_MAJOR must _equal_ this.
+ * @param a_iMinor      LINUX_VERSION_PATCHLEVEL must be greater or equal to this.
+ */
+#if defined(CONFIG_SUSE_VERSION) && defined(CONFIG_SUSE_PATCHLEVEL)
+# define RTLNX_SUSE_ADLP_MAJ_LNX_PREREQ(a_iMajor, a_iMinor) ((LINUX_VERSION_MAJOR) == (a_iMajor) && (LINUX_VERSION_PATCHLEVEL) >= (a_iMinor))
+#else
+# define RTLNX_SUSE_ADLP_MAJ_LNX_PREREQ(a_iMajor, a_iMinor) (0)
+#endif
+
 
 #if defined(UTS_UBUNTU_RELEASE_ABI) || defined(DOXYGEN_RUNNING)
 

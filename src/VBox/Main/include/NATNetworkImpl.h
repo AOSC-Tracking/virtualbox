@@ -143,6 +143,7 @@ private:
     void i_updateDnsOptions();
     void i_updateDomainNameOption(ComPtr<IHost> &host);
     void i_updateDomainNameServerOption(ComPtr<IHost> &host);
+    void i_updateDomainSearchOption(ComPtr<IHost> &host);
 
     struct Data;
     Data *m;

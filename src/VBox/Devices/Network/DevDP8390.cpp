@@ -749,6 +749,12 @@ typedef struct DP_PG1 {
 AssertCompile(sizeof(DP_PG1) == 16);
 
 /** DP8390 FIFO. Not all of the state is explicitly accessible. */
+/* The hardware FIFO is 16 bytes. However, it can only be safely
+ * accessed in loopback mode, where it is split into 8 bytes for
+ * receive and 8 bytes for transmit. The behavior of the receive
+ * FIFO is documented, the transmit FIFO is not. It is unclear
+ * if more than 8 bytes can be accessed by software at all.
+ */
 typedef struct DP_FIFO {
     uint8_t     rp;             /* Read pointer. */
     uint8_t     wp;             /* Write pointer. */
@@ -2195,8 +2201,8 @@ static int dp8390CoreAsyncXmitLocked(PPDMDEVINS pDevIns, PDPNICSTATE pThis, PDPN
          * Sending is easy peasy, there is by definition always
          * a complete packet on hand.
          */
-        unsigned    cb  = pThis->core.TBCR; /* Packet size. */
-        const int   adr = RT_MAKE_U16(0, pThis->core.TPSR);
+        unsigned        cb  = pThis->core.TBCR; /* Packet size. */
+        const unsigned  adr = RT_MAKE_U16(0, pThis->core.TPSR);
         LogFunc(("#%d: cb=%d, adr=%04X\n", pThis->iInstance, cb, adr));
 
         if (RT_LIKELY(dp8390IsLinkUp(pThis) || fLoopback))
@@ -2271,7 +2277,7 @@ static int dp8390CoreAsyncXmitLocked(PPDMDEVINS pDevIns, PDPNICSTATE pThis, PDPN
 /* -=-=-=-=-=- I/O Port access -=-=-=-=-=- */
 
 
-static uint32_t dp8390CoreRead(PPDMDEVINS pDevIns, PDPNICSTATE pThis, int ofs)
+static uint8_t dp8390CoreRead(PPDMDEVINS pDevIns, PDPNICSTATE pThis, int ofs)
 {
     uint8_t     val;
 
@@ -3661,9 +3667,8 @@ dp8390CoreIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t 
         case 2:
             /* Manually split word access. */
             rc = dp8390CoreWrite(pDevIns, pThis, reg + 0, RT_LOBYTE(RT_LOWORD(u32)));
-            if (!RT_SUCCESS(rc))
-                break;
-            rc = dp8390CoreWrite(pDevIns, pThis, reg + 1, RT_HIBYTE(RT_LOWORD(u32)));
+            if (RT_SUCCESS(rc) && (reg < 0xf))
+                rc = dp8390CoreWrite(pDevIns, pThis, reg + 1, RT_HIBYTE(RT_LOWORD(u32)));
             break;
         default:
             rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
@@ -3887,9 +3892,9 @@ static DECLCALLBACK(uint32_t) elnk3R3DMAXferHandler(PPDMDEVINS pDevIns, void *op
             if (!pThis->ga.gacr.ddir)
             {
                 Log2Func(("DMAWriteMemory uDmaAddr=%04X cbToXfer=%u\n", uDmaAddr, cbToXfer));
-                rc = PDMDevHlpDMAWriteMemory(pDevIns, nchan,
-                                             &pThis->abLocalRAM[uDmaAddr - 0x2000],
-                                             dma_pos, cbToXfer, &cbXferred);
+                rc = PDMDevHlpDMAWriteMemoryEx(pDevIns, nchan,
+                                               pThis->abLocalRAM, uDmaAddr - 0x2000, sizeof(pThis->abLocalRAM),
+                                               dma_pos, cbToXfer, &cbXferred);
                 AssertMsgRC(rc, ("DMAWriteMemory -> %Rrc\n", rc));
             }
             else
@@ -3905,9 +3910,9 @@ static DECLCALLBACK(uint32_t) elnk3R3DMAXferHandler(PPDMDEVINS pDevIns, void *op
             if (pThis->ga.gacr.ddir)
             {
                 Log2Func(("DMAReadMemory uDmaAddr=%04X cbToXfer=%u\n", uDmaAddr, cbToXfer));
-                rc = PDMDevHlpDMAReadMemory(pDevIns, nchan,
-                                            &pThis->abLocalRAM[uDmaAddr - 0x2000],
-                                            dma_pos, cbToXfer, &cbXferred);
+                rc = PDMDevHlpDMAReadMemoryEx(pDevIns, nchan,
+                                              pThis->abLocalRAM, uDmaAddr - 0x2000, sizeof(pThis->abLocalRAM),
+                                              dma_pos, cbToXfer, &cbXferred);
                 AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
             }
             else

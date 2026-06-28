@@ -53,7 +53,7 @@ RT_NOCRT_BEGINPROC fabsf
         SEH64_END_PROLOGUE
 
 %ifdef RT_ARCH_AMD64
-        andps   xmm0, [g_r32ClearSignMask xWrtRIP]
+        andps   xmm0, [RT_WRT_RIP(g_r32ClearSignMask)]
 %else
         fld     dword [xBP + xCB*2]     ; This turns SNaN into QNaN.
         fabs

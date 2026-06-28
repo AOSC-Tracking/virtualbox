@@ -63,9 +63,9 @@
 
 /* type 0 -- DMI BIOS information */
 static const int32_t g_iDefDmiBIOSReleaseMajor  = 0;
-static const int32_t g_iDefDmiBIOSReleaseMinor  = 0;
+static const int32_t g_iDefDmiBIOSReleaseMinor  = 1;
 static const int32_t g_iDefDmiBIOSFirmwareMajor = 0;
-static const int32_t g_iDefDmiBIOSFirmwareMinor = 0;
+static const int32_t g_iDefDmiBIOSFirmwareMinor = 1;
 static const char   *g_pszDefDmiBIOSVendor      = "innotek GmbH";
 static const char   *g_pszDefDmiBIOSVersion     = "VirtualBox";
 static const char   *g_pszDefDmiBIOSReleaseDate = "12/01/2006";

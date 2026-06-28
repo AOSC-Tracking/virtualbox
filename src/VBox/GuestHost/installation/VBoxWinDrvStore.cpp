@@ -72,7 +72,7 @@ typedef int (*PFNVBOXWINDRVSTORE_ENUM_FILES_CALLBACK)(const char *pszFilePathAbs
 /**
  * Structure for keeping a generic Windows driver store file enumeration context.
  */
-typedef struct _VBOXWINDRVENUMFILESCTX
+typedef struct VBOXWINDRVENUMFILESCTX
 {
     /** Pointer to driver store instance. */
     PVBOXWINDRVSTORE     pDrvStore;
@@ -91,7 +91,7 @@ typedef VBOXWINDRVENUMFILESCTX *PVBOXWINDRVENUMFILESCTX;
  * @returns VBox status code.
  * @param   ppEntry             Where to return the created Windows driver store entry on success.
  */
-int vboxWinDrvStoreEntryCreate(PVBOXWINDRVSTOREENTRY *ppEntry)
+static int vboxWinDrvStoreEntryCreate(PVBOXWINDRVSTOREENTRY *ppEntry)
 {
     PVBOXWINDRVSTOREENTRY pEntry = (PVBOXWINDRVSTOREENTRY)RTMemAllocZ(sizeof(VBOXWINDRVSTOREENTRY));
     AssertPtrReturn(pEntry, VERR_NO_MEMORY);
@@ -106,10 +106,13 @@ int vboxWinDrvStoreEntryCreate(PVBOXWINDRVSTOREENTRY *ppEntry)
  *
  * @param   pEntry              Windows driver store entry to destroy.
  */
-void vboxWinDrvStoreEntryDestroy(PVBOXWINDRVSTOREENTRY pEntry)
+static void vboxWinDrvStoreEntryDestroy(PVBOXWINDRVSTOREENTRY pEntry)
 {
     if (!pEntry)
         return;
+
+    VBoxWinDrvInfListDestroy(pEntry->pCopyFileList);
+    pEntry->pCopyFileList = NULL;
 
     RTMemFree(pEntry);
     pEntry = NULL;
@@ -124,7 +127,14 @@ void vboxWinDrvStoreEntryDestroy(PVBOXWINDRVSTOREENTRY pEntry)
  */
 static PVBOXWINDRVSTOREENTRY vboxWinDrvStoreEntryDup(PVBOXWINDRVSTOREENTRY pEntry)
 {
-    return (PVBOXWINDRVSTOREENTRY)RTMemDup(pEntry, sizeof(VBOXWINDRVSTOREENTRY));
+    PVBOXWINDRVSTOREENTRY pDup = (PVBOXWINDRVSTOREENTRY)RTMemDup(pEntry, sizeof(VBOXWINDRVSTOREENTRY));
+    if (pDup)
+    {
+        if (pEntry->pCopyFileList)
+            pDup->pCopyFileList = VBoxWinDrvInfListDup(pEntry->pCopyFileList);
+    }
+
+    return pDup;
 }
 
 /**
@@ -410,34 +420,24 @@ static int vboxWinDrvStoreEntryInitFromInf(PVBOXWINDRVSTOREENTRY pEntry, const c
         rc = RTUtf16Copy(pEntry->wszInfFile, RT_ELEMENTS(pEntry->wszInfFile), pwszFile);
         if (RT_SUCCESS(rc))
         {
-            PRTUTF16 pwszMainSection;
-            VBOXWINDRVINFTYPE enmType = VBoxWinDrvInfGetTypeEx(hInf, &pwszMainSection);
-            if (enmType != VBOXWINDRVINFTYPE_INVALID)
+            VBOXWINDRVINFPARMS InfParms;
+            RT_ZERO(InfParms);
+            rc = VBoxWinDrvInfQueryParms(hInf, &InfParms, false /* fForce */);
+            if (RT_SUCCESS(rc))
             {
-                PRTUTF16 pwszModel;
-                rc = VBoxWinDrvInfQueryFirstModel(hInf, pwszMainSection, &pwszModel);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = RTUtf16Copy(pEntry->wszModel, RT_ELEMENTS(pEntry->wszModel), pwszModel);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* PnP ID is optional. */
-                        PRTUTF16 pwszPnpId;
-                        int rc2 = VBoxWinDrvInfQueryFirstPnPId(hInf, pEntry->wszModel, &pwszPnpId);
-                        if (RT_SUCCESS(rc2))
-                        {
-                            rc = RTUtf16Copy(pEntry->wszPnpId, RT_ELEMENTS(pEntry->wszPnpId), pwszPnpId);
-                            RTUtf16Free(pwszPnpId);
-                        }
-                    }
-
-                    RTUtf16Free(pwszModel);
-                }
-
-                RTUtf16Free(pwszMainSection);
+                /* ignore rc */ VBoxWinDrvInfQueryCopyFiles(hInf, InfParms.pwszSection, &pEntry->pCopyFileList);
             }
             else
                 rc = VERR_INVALID_PARAMETER;
+
+            if (RT_SUCCESS(rc))
+            {
+                if (InfParms.pwszModel)
+                    rc = RTUtf16Copy(pEntry->wszModel, RT_ELEMENTS(pEntry->wszModel), InfParms.pwszModel);
+                if (   RT_SUCCESS(rc)
+                    && InfParms.pwszPnpId)
+                    rc = RTUtf16Copy(pEntry->wszPnpId, RT_ELEMENTS(pEntry->wszPnpId), InfParms.pwszPnpId);
+            }
         }
 
         int rc2 = VBoxWinDrvInfQuerySectionVer(hInf, &pEntry->Ver);

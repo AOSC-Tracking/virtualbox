@@ -111,7 +111,7 @@ typedef uint32_t        ISO9660U32BE;
  */
 typedef struct ISO9660TIMESTAMP
 {
-    /** 0x00: For digit year (0001-9999). */
+    /** 0x00: Year (0001-9999). */
     char                achYear[4];
     /** 0x04: Month of the year (01-12). */
     char                achMonth[2];
@@ -753,8 +753,8 @@ typedef ISO9660ELTORITOVALIDATIONENTRY const *PCISO9660ELTORITOVALIDATIONENTRY;
 /**
  * El Torito boot catalog: Section header entry.
  *
- * A non-final section header entry is followed by
- * ISO9660ELTORITOSECTIONHEADER::cEntries ISO9660ELTORITOSECTIONTENTRY instances.
+ * A section header entry is followed by ISO9660ELTORITOSECTIONHEADER::cEntries
+ * of ISO9660ELTORITOSECTIONENTRY instances.
  */
 typedef struct ISO9660ELTORITOSECTIONHEADER
 {
@@ -1227,7 +1227,7 @@ typedef ISO9660RRIPTF const *PCISO9660RRIPTF;
 #define ISO9660RRIPTF_SIG2     'F'             /**< RRIP child link entry signature byte 2. */
 #define ISO9660RRIPTF_VER       1              /**< RRIP child link entry version number. */
 
-/** @name ISO9660RRIPTF_F_XXX - Timestmap flags.
+/** @name ISO9660RRIPTF_F_XXX - Timestamp flags.
  * @{ */
 #define ISO9660RRIPTF_F_BIRTH           UINT8_C(0x01) /**< Birth (creation) timestamp is recorded. */
 #define ISO9660RRIPTF_F_MODIFY          UINT8_C(0x02) /**< Modification timestamp is recorded. */

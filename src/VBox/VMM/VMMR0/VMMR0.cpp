@@ -44,6 +44,7 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/tm.h>
+#include <iprt/nocrt/setjmp.h>
 #include "VMMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvm.h>
@@ -1110,17 +1111,19 @@ VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPUCC pVCpu)
     Assert(pVCpu->vmmr0.s.hCtxHook == NIL_RTTHREADCTXHOOK);
 
 #ifndef VBOX_WITH_MINIMAL_R0
-
+    int rc = VERR_NOT_SUPPORTED;
 # if 1 /* To disable this stuff change to zero. */
-    int rc = RTThreadCtxHookCreate(&pVCpu->vmmr0.s.hCtxHook, 0, vmmR0ThreadCtxCallback, pVCpu);
-    if (RT_SUCCESS(rc))
+    if (!(SUPR0GetKernelFeatures() & SUPKERNELFEATURES_FPU_NO_PREEMPT))
     {
-        pVCpu->pGVM->vmm.s.fIsUsingContextHooks = true;
-        return rc;
+        rc = RTThreadCtxHookCreate(&pVCpu->vmmr0.s.hCtxHook, 0, vmmR0ThreadCtxCallback, pVCpu);
+        if (RT_SUCCESS(rc))
+        {
+            pVCpu->pGVM->vmm.s.fIsUsingContextHooks = true;
+            return rc;
+        }
     }
 # else
     RT_NOREF(vmmR0ThreadCtxCallback);
-    int rc = VERR_NOT_SUPPORTED;
 # endif
 #endif
 
@@ -1228,7 +1231,7 @@ VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu)
 }
 
 
-#ifdef VBOX_WITH_STATISTICS
+#if defined(VBOX_WITH_STATISTICS) && !defined(VBOX_WITH_MINIMAL_R0)
 /**
  * Record return code statistics
  * @param   pVM         The cross context VM structure.
@@ -1387,7 +1390,7 @@ static void vmmR0RecordRC(PVMCC pVM, PVMCPUCC pVCpu, int rc)
             break;
     }
 }
-#endif /* VBOX_WITH_STATISTICS */
+#endif /* VBOX_WITH_STATISTICS || !VBOX_WITH_MINIMAL_R0 */
 
 
 /**
@@ -1493,7 +1496,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                     CPUMR0TouchHostFpu();
 # endif
                     int  rc;
-                    bool fPreemptRestored = false;
+                    bool volatile fPreemptRestored = false; /* volatile is courtesy of gcc */
                     if (!HMR0SuspendPending())
                     {
                         /*
@@ -1528,7 +1531,13 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                             /*
                              * Setup the longjmp machinery and execute guest code (calls HMR0RunGuestCode).
                              */
-                            rc = vmmR0CallRing3SetJmp(&pGVCpu->vmmr0.s.AssertJmpBuf, HMR0RunGuestCode, pGVM, pGVCpu);
+                            pGVCpu->vmmr0.s.AssertJmpBuf.rflags     = ASMGetFlags();
+                            pGVCpu->vmmr0.s.AssertJmpBuf.uOperation = (uintptr_t)VMMR0_DO_HM_RUN;
+                            rc = setjmp(pGVCpu->vmmr0.s.AssertJmpBuf.Core.JmpBuf);
+                            if (rc == 0)
+                                rc = HMR0RunGuestCode(pGVM, pGVCpu);
+                            ASMSetFlags(pGVCpu->vmmr0.s.AssertJmpBuf.rflags);
+                            pGVCpu->vmmr0.s.AssertJmpBuf.Core.s.rip = 0;
 
                             /*
                              * Assert sanity on the way out.  Using manual assertions code here as normal
@@ -1659,13 +1668,15 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                 /*
                  * Setup the longjmp machinery and execute guest code (calls NEMR0RunGuestCode).
                  */
-#   ifdef VBOXSTRICTRC_STRICT_ENABLED
-                int rc = vmmR0CallRing3SetJmp2(&pGVCpu->vmmr0.s.AssertJmpBuf, (PFNVMMR0SETJMP2)NEMR0RunGuestCode, pGVM, idCpu);
-#   else
-                int rc = vmmR0CallRing3SetJmp2(&pGVCpu->vmmr0.s.AssertJmpBuf, NEMR0RunGuestCode, pGVM, idCpu);
-#   endif
-                STAM_COUNTER_INC(&pGVM->vmm.s.StatRunGC);
+                pGVCpu->vmmr0.s.AssertJmpBuf.rflags     = ASMGetFlags();
+                pGVCpu->vmmr0.s.AssertJmpBuf.uOperation = (uintptr_t)VMMR0_DO_NEM_RUN;
+                int rc = setjmp(pGVCpu->vmmr0.s.AssertJmpBuf.Core.JmpBuf);
+                if (rc == 0)
+                    rc = VBOXSTRICTRC_VAL(NEMR0RunGuestCode(pGVM, idCpu));
+                ASMSetFlags(pGVCpu->vmmr0.s.AssertJmpBuf.rflags);
+                pGVCpu->vmmr0.s.AssertJmpBuf.Core.s.rip = 0;
 
+                STAM_COUNTER_INC(&pGVM->vmm.s.StatRunGC);
                 pGVCpu->vmm.s.iLastGZRc = rc;
 
                 /*
@@ -1751,7 +1762,7 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
      */
     if (pGVM != NULL)
     {
-        if (RT_LIKELY(((uintptr_t)pGVM & HOST_PAGE_OFFSET_MASK) == 0))
+        if (RT_LIKELY(((uintptr_t)pGVM & RT_MIN_PAGE_OFFSET_MASK) == 0))
         { /* likely */ }
         else
         {
@@ -2148,7 +2159,7 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
         }
 # endif
 
-# if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+# if defined(VBOX_STRICT)
         case VMMR0_DO_GMM_FIND_DUPLICATE_PAGE:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
@@ -2632,8 +2643,16 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
             pGVCpu->vmmr0.s.pReq         = pReq;
             pGVCpu->vmmr0.s.u64Arg       = u64Arg;
             pGVCpu->vmmr0.s.pSession     = pSession;
-            return vmmR0CallRing3SetJmpEx(&pGVCpu->vmmr0.s.AssertJmpBuf, vmmR0EntryExWrapper, pGVCpu,
-                                          ((uintptr_t)u64Arg << 16) | (uintptr_t)enmOperation);
+
+            /* (this used to be done by vmmR0CallRing3SetJmpEx) */
+            pGVCpu->vmmr0.s.AssertJmpBuf.rflags     = ASMGetFlags();
+            pGVCpu->vmmr0.s.AssertJmpBuf.uOperation = ((uintptr_t)u64Arg << 16) | (uintptr_t)enmOperation;
+            int rc = setjmp(pGVCpu->vmmr0.s.AssertJmpBuf.Core.JmpBuf);
+            if (rc == 0)
+                rc = vmmR0EntryExWrapper(pGVCpu);
+            ASMSetFlags(pGVCpu->vmmr0.s.AssertJmpBuf.rflags);
+            pGVCpu->vmmr0.s.AssertJmpBuf.Core.s.rip = 0;
+            return rc;
         }
         return VERR_VM_THREAD_NOT_EMT;
     }
@@ -2659,9 +2678,9 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
 VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPUCC pVCpu)
 {
 #ifdef RT_ARCH_X86
-    return pVCpu->vmmr0.s.AssertJmpBuf.eip != 0;
+    return pVCpu->vmmr0.s.AssertJmpBuf.Core.s.eip != 0;
 #else
-    return pVCpu->vmmr0.s.AssertJmpBuf.rip != 0;
+    return pVCpu->vmmr0.s.AssertJmpBuf.Core.s.rip != 0;
 #endif
 }
 
@@ -3374,7 +3393,7 @@ static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc,
         {
             PGVMCPU const pGVCpu = (PGVMCPU)(uintptr_t)pLogger->u64UserValue2;
             if (   RT_VALID_PTR(pGVCpu)
-                && ((uintptr_t)pGVCpu & HOST_PAGE_OFFSET_MASK) == 0)
+                && ((uintptr_t)pGVCpu & RT_MIN_PAGE_OFFSET_MASK) == 0)
             {
                 RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
                 PGVM const           pGVM        = pGVCpu->pGVM;
@@ -3789,9 +3808,9 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
         if (pVCpu)
         {
 # ifdef RT_ARCH_X86
-            if (pVCpu->vmmr0.s.AssertJmpBuf.eip)
+            if (pVCpu->vmmr0.s.AssertJmpBuf.Core.s.eip)
 # else
-            if (pVCpu->vmmr0.s.AssertJmpBuf.rip)
+            if (pVCpu->vmmr0.s.AssertJmpBuf.Core.s.rip)
 # endif
             {
                 if (pVCpu->vmmr0.s.pfnAssertCallback)

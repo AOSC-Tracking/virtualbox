@@ -1516,10 +1516,11 @@ static int vmmdevReqHandler_GetDisplayChangeRequest(PVMMDEV pThis, VMMDevRequest
     {
         /* Current request has been read at least once. */
         pDispRequest->fPending = false;
+        pDispRequest->fAcknowledged = true;
 
         /* Remember which resolution the client has queried, subsequent reads
          * will return the same values. */
-        pDispRequest->lastReadDisplayChangeRequest = pDispRequest->displayChangeRequest;
+        pDispRequest->lastReadDisplayChangeDef = pDispRequest->displayChangeDef;
         pThis->displayChangeData.fGuestSentChangeEventAck = true;
     }
 
@@ -1527,8 +1528,8 @@ static int vmmdevReqHandler_GetDisplayChangeRequest(PVMMDEV pThis, VMMDevRequest
      * read the last valid video mode hint. This happens when the guest X server
      * determines the initial mode. */
     VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
-                                              &pDispRequest->lastReadDisplayChangeRequest :
-                                              &pDispRequest->displayChangeRequest;
+                                              &pDispRequest->lastReadDisplayChangeDef :
+                                              &pDispRequest->displayChangeDef;
     pReq->xres = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CX)  ? pDisplayDef->cx : 0;
     pReq->yres = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CY)  ? pDisplayDef->cy : 0;
     pReq->bpp  = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_BPP) ? pDisplayDef->cBitsPerPixel : 0;
@@ -1588,10 +1589,11 @@ static int vmmdevReqHandler_GetDisplayChangeRequest2(PPDMDEVINS pDevIns, PVMMDEV
         {
             /* Current request has been read at least once. */
             pDispRequest->fPending = false;
+            pDispRequest->fAcknowledged = true;
 
             /* Remember which resolution the client has queried, subsequent reads
              * will return the same values. */
-            pDispRequest->lastReadDisplayChangeRequest = pDispRequest->displayChangeRequest;
+            pDispRequest->lastReadDisplayChangeDef = pDispRequest->displayChangeDef;
             pThis->displayChangeData.fGuestSentChangeEventAck = true;
         }
         else
@@ -1610,8 +1612,8 @@ static int vmmdevReqHandler_GetDisplayChangeRequest2(PPDMDEVINS pDevIns, PVMMDEV
      * read the last valid video mode hint. This happens when the guest X server
      * determines the initial mode. */
     VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
-                                              &pDispRequest->lastReadDisplayChangeRequest :
-                                              &pDispRequest->displayChangeRequest;
+                                              &pDispRequest->lastReadDisplayChangeDef :
+                                              &pDispRequest->displayChangeDef;
     pReq->xres    = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CX)  ? pDisplayDef->cx : 0;
     pReq->yres    = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CY)  ? pDisplayDef->cy : 0;
     pReq->bpp     = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_BPP) ? pDisplayDef->cBitsPerPixel : 0;
@@ -1675,10 +1677,11 @@ static int vmmdevReqHandler_GetDisplayChangeRequestEx(PPDMDEVINS pDevIns, PVMMDE
         {
             /* Current request has been read at least once. */
             pDispRequest->fPending = false;
+            pDispRequest->fAcknowledged = true;
 
             /* Remember which resolution the client has queried, subsequent reads
              * will return the same values. */
-            pDispRequest->lastReadDisplayChangeRequest = pDispRequest->displayChangeRequest;
+            pDispRequest->lastReadDisplayChangeDef = pDispRequest->displayChangeDef;
             pThis->displayChangeData.fGuestSentChangeEventAck = true;
         }
         else
@@ -1698,8 +1701,8 @@ static int vmmdevReqHandler_GetDisplayChangeRequestEx(PPDMDEVINS pDevIns, PVMMDE
      * read the last valid video mode hint. This happens when the guest X server
      * determines the initial mode. */
     VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
-                                              &pDispRequest->lastReadDisplayChangeRequest :
-                                              &pDispRequest->displayChangeRequest;
+                                              &pDispRequest->lastReadDisplayChangeDef :
+                                              &pDispRequest->displayChangeDef;
     pReq->xres          = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CX)  ? pDisplayDef->cx : 0;
     pReq->yres          = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CY)  ? pDisplayDef->cy : 0;
     pReq->bpp           = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_BPP) ? pDisplayDef->cBitsPerPixel : 0;
@@ -1717,7 +1720,7 @@ static int vmmdevReqHandler_GetDisplayChangeRequestEx(PPDMDEVINS pDevIns, PVMMDE
 
 
 /**
- * Handles VMMDevReq_GetDisplayChangeRequestMulti.
+ * Handles VMMDevReq_GetDisplayChangeRequestMulti and VMMDevReq_GetDisplayChangeRequestMulti2.
  *
  * @returns VBox status code that the guest should see.
  * @param   pThis           The VMMDev shared instance data.
@@ -1750,15 +1753,16 @@ static int vmmdevReqHandler_GetDisplayChangeRequestMulti(PVMMDEV pThis, VMMDevRe
         {
             DISPLAYCHANGEREQUEST *pDCR = &pThis->displayChangeData.aRequests[i];
 
-            pDCR->lastReadDisplayChangeRequest = pDCR->displayChangeRequest;
+            pDCR->lastReadDisplayChangeDef = pDCR->displayChangeDef;
 
             if (pDCR->fPending)
             {
                 if (cDisplaysOut < cDisplays)
-                    pReq->aDisplays[cDisplaysOut] = pDCR->lastReadDisplayChangeRequest;
+                    pReq->aDisplays[cDisplaysOut] = pDCR->lastReadDisplayChangeDef;
 
                 cDisplaysOut++;
                 pDCR->fPending = false;
+                pDCR->fAcknowledged = true;
             }
         }
 
@@ -1775,9 +1779,15 @@ static int vmmdevReqHandler_GetDisplayChangeRequestMulti(PVMMDEV pThis, VMMDevRe
              * determines the initial mode. */
             DISPLAYCHANGEREQUEST const *pDCR = &pThis->displayChangeData.aRequests[i];
             VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
-                &pDCR->lastReadDisplayChangeRequest :
-                &pDCR->displayChangeRequest;
+                &pDCR->lastReadDisplayChangeDef :
+                &pDCR->displayChangeDef;
             pReq->aDisplays[i] = *pDisplayDef;
+            if (pReqHdr->requestType == VMMDevReq_GetDisplayChangeRequestMulti2)
+            {
+                /* Let the guest know whether this was lastReadDisplayChangeDef, so the guest does not have to guess */
+                if (pDCR->fAcknowledged)
+                    pReq->aDisplays[i].fDisplayFlags |= VMMDEV_DISPLAY_CHGREQ;
+            }
         }
     }
 
@@ -2953,6 +2963,7 @@ static VBOXSTRICTRC vmmdevReqDispatcher(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMD
             break;
 
         case VMMDevReq_GetDisplayChangeRequestMulti:
+        case VMMDevReq_GetDisplayChangeRequestMulti2:
             pReqHdr->rc = vmmdevReqHandler_GetDisplayChangeRequestMulti(pThis, pReqHdr);
             break;
 
@@ -2993,9 +3004,7 @@ static VBOXSTRICTRC vmmdevReqDispatcher(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMD
                 *pfPostOptimize |= VMMDEVREQDISP_POST_F_NO_WRITE_OUT;
             break;
 
-# ifdef VBOX_WITH_64_BITS_GUESTS
         case VMMDevReq_HGCMCall64:
-# endif
         case VMMDevReq_HGCMCall32:
             vmmdevReqHdrSetHgcmAsyncExecute(pDevIns, GCPhysReqHdr, *ppLock);
             pReqHdr->rc = vmmdevReqHandler_HGCMCall(pDevIns, pThis, pThisCC, pReqHdr, GCPhysReqHdr, tsArrival, ppLock);
@@ -3974,7 +3983,7 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays,
 
         DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[p->idDisplay];
 
-        VMMDevDisplayDef const *pLastRead = &pRequest->lastReadDisplayChangeRequest;
+        VMMDevDisplayDef const *pLastRead = &pRequest->lastReadDisplayChangeDef;
 
         /* Verify that the new resolution is different and that guest does not yet know about it. */
         bool const fDifferentResolution = fForce || !vmmdevIsMonitorDefEqual(p, pLastRead);
@@ -3987,8 +3996,9 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays,
                  RT_BOOL(p->fDisplayFlags & VMMDEV_DISPLAY_ORIGIN)));
 
         /* We could validate the information here but hey, the guest can do that as well! */
-        pRequest->displayChangeRequest = *p;
+        pRequest->displayChangeDef = *p;
         pRequest->fPending = fDifferentResolution && fMayNotify;
+        pRequest->fAcknowledged = false;
 
         fNotifyGuest = fNotifyGuest || fDifferentResolution;
     }
@@ -4002,7 +4012,7 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays,
                 DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[i];
                 if (pRequest->fPending)
                 {
-                    VMMDevDisplayDef const *p = &pRequest->displayChangeRequest;
+                    VMMDevDisplayDef const *p = &pRequest->displayChangeDef;
                     LogRel(("VMMDev: SetVideoModeHint: Got a video mode hint (%dx%dx%d)@(%dx%d),(%d;%d) at %d\n",
                             p->cx, p->cy, p->cBitsPerPixel, p->xOrigin, p->yOrigin,
                             !RT_BOOL(p->fDisplayFlags & VMMDEV_DISPLAY_DISABLED),
@@ -4664,9 +4674,9 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
     {
         DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[i];
-        memset(&pRequest->lastReadDisplayChangeRequest, 0, sizeof(pRequest->lastReadDisplayChangeRequest));
-        pRequest->lastReadDisplayChangeRequest.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
-        pRequest->lastReadDisplayChangeRequest.idDisplay = i;
+        memset(&pRequest->lastReadDisplayChangeDef, 0, sizeof(pRequest->lastReadDisplayChangeDef));
+        pRequest->lastReadDisplayChangeDef.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
+        pRequest->lastReadDisplayChangeDef.idDisplay = i;
     }
     pThis->displayChangeData.iCurrentMonitor = 0;
     pThis->displayChangeData.fGuestSentChangeEventAck = false;
@@ -4858,10 +4868,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
     {
         DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[i];
-        pRequest->displayChangeRequest.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
-        pRequest->displayChangeRequest.idDisplay = i;
-        pRequest->lastReadDisplayChangeRequest.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
-        pRequest->lastReadDisplayChangeRequest.idDisplay = i;
+        pRequest->displayChangeDef.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
+        pRequest->displayChangeDef.idDisplay = i;
+        pRequest->lastReadDisplayChangeDef.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
+        pRequest->lastReadDisplayChangeDef.idDisplay = i;
     }
 
     /*
@@ -5048,6 +5058,13 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /** @todo image-to-load-filename? */
 #endif
 
+    /*
+     * Check PGM page size assumption.
+     */
+    uint32_t const cbPage = PDMDevHlpPhysGetPageSize(pDevIns);
+    AssertLogRelMsgReturn(cbPage == VMMDEV_PAGE_SIZE, ("VMMDev: cbPage=%#x, expected %#x!\n", cbPage, VMMDEV_PAGE_SIZE),
+                          VERR_INTERNAL_ERROR);
+
 #ifdef VBOX_WITH_HGCM
     /*
      * Heap budgets for HGCM requestor categories.  Take the available host
@@ -5176,7 +5193,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     if (pThis->fHeapEnabled)
     {
-        rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, 2 /*iPciRegion*/, VMMDEV_HEAP_SIZE, PCI_ADDRESS_SPACE_MEM_PREFETCH,
+        rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, pDevIns->apPciDevs[0], 2 /*iPciRegion*/, VMMDEV_HEAP_SIZE, PCI_ADDRESS_SPACE_MEM_PREFETCH,
                                                0 /*fFlags*/, vmmdevMmio2HeapRegionMap, "VMMDev Heap",
                                                (void **)&pThisCC->pVMMDevHeapR3, &pThis->hMmio2Heap);
         if (RT_FAILURE(rc))

@@ -703,6 +703,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_STEXT_FEATURE_ECX_OSPKE             RT_BIT_32(4)
 /** ECX Bit 7 - CET_SS - Supports CET shadow stack features. */
 #define X86_CPUID_STEXT_FEATURE_ECX_CET_SS            RT_BIT_32(7)
+/** ECX Bit 15 - LA57  - Supports 5-level paging. */
+#define X86_CPUID_STEXT_FEATURE_ECX_LA57              RT_BIT_32(16)
 /** ECX Bits 17-21 - MAWAU - Value used by BNDLDX and BNDSTX. */
 #define X86_CPUID_STEXT_FEATURE_ECX_MAWAU             UINT32_C(0x003e0000)
 /** ECX Bit 22 - RDPID - Support pread process ID. */
@@ -1014,7 +1016,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_SVM_FEATURE_EDX_EXT_LVT_AVIC_ACCESS_CHG   RT_BIT(27)
 /** Bit 28 - TlbiCtl - Supports guest VMCB address check. */
 #define X86_CPUID_SVM_FEATURE_EDX_NST_VIRT_VMCB_ADDR_CHK    RT_BIT(28)
-/** Bit 29 - TlbiCtl - Supports INVLPGB/TLBSYNC in VMCB and TLBSYNC intercept. */
+/** Bit 29 - BusLockThreshold - Supports Bus lock threshold intercepts. */
 #define X86_CPUID_SVM_FEATURE_EDX_BUS_LOCK_THRESHOLD        RT_BIT(29)
 /** @} */
 

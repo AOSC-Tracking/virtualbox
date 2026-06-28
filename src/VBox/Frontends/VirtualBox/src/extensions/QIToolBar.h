@@ -97,10 +97,20 @@ protected:
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
 
+private slots:
+
+    /** @name Theme stuff stuff.
+      * @{ */
+        /** Updates palette. */
+        void sltUpdatePalette() { preparePalette(); }
+    /** @} */
+
 private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares palette. */
+    void preparePalette();
 
     /** Recalculates overall contents width. */
     void recalculateOverallContentsWidth();

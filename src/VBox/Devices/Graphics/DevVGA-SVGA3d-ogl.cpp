@@ -2083,6 +2083,10 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
     rc = vmsvga3dSurfaceFromSid(pState, dest.sid, &pSurfaceDst);
     AssertRCReturn(rc, rc);
 
+    /* Emulation of formats was implemented for a specific case of video playback which does not involve SurfaceCopy. */
+    if (pSurfaceSrc->fEmulated || pSurfaceDst->fEmulated)
+        return VERR_NOT_SUPPORTED;
+
     if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurfaceSrc))
     {
         /* The source surface is still in memory. */
@@ -2921,7 +2925,9 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTAT
         }
 
         /* The buffer must be large enough to hold entire texture in the OpenGL format. */
-        pDoubleBuffer = (uint8_t *)RTMemAlloc(pSurface->cbBlockGL * pMipLevel->cBlocks);
+        uint64_t const cbDoubleBuffer = (uint64_t)pSurface->cbBlockGL * (uint64_t)pMipLevel->cBlocks;
+        AssertReturn(cbDoubleBuffer <= SVGA3D_MAX_SURFACE_MEM_SIZE, VERR_NO_MEMORY);
+        pDoubleBuffer = (uint8_t *)RTMemAlloc((size_t)cbDoubleBuffer);
         AssertReturn(pDoubleBuffer, VERR_NO_MEMORY);
 
         if (transfer == SVGA3D_READ_HOST_VRAM)
@@ -5634,15 +5640,15 @@ static DECLCALLBACK(int) vmsvga3dBackSetTextureState(PVGASTATECC pThisCC, uint32
         LogFunc(("cid=%u stage=%d type=%s (%x) val=%x\n",
                  cid, pTextureState[i].stage, vmsvga3dTextureStateToString(pTextureState[i].name), pTextureState[i].name, pTextureState[i].value));
 
+        ASSERT_GUEST_CONTINUE(   pTextureState[i].stage < RT_ELEMENTS(pContext->state.aTextureStates)
+                              && (unsigned)pTextureState[i].name < RT_ELEMENTS(pContext->state.aTextureStates[0]));
+        AssertCompile(RT_ELEMENTS(pContext->state.aTextureStates) == RT_ELEMENTS(pContext->aSidActiveTextures));
+
         /* Record the texture state for vm state saving. */
-        if (    pTextureState[i].stage < RT_ELEMENTS(pContext->state.aTextureStates)
-            &&  (unsigned)pTextureState[i].name < RT_ELEMENTS(pContext->state.aTextureStates[0]))
-        {
-            pContext->state.aTextureStates[pTextureState[i].stage][pTextureState[i].name] = pTextureState[i];
-        }
+        pContext->state.aTextureStates[pTextureState[i].stage][pTextureState[i].name] = pTextureState[i];
 
         /* Activate the right texture unit for subsequent texture state changes. */
-        if (pTextureState[i].stage != currentStage || i == 0)
+        if (pTextureState[i].stage != currentStage)
         {
             /** @todo Is this the appropriate limit for all kinds of textures?  It is the
              * size of aSidActiveTextures and for binding/unbinding we cannot exceed it. */

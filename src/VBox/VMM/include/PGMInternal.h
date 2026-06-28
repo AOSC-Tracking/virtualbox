@@ -382,29 +382,6 @@ AssertCompile(PGM_MAX_PAGES_PER_ROM_RANGE <= PGM_MAX_PAGES_PER_RAM_RANGE);
 #define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) \
     pgmPhysGCPhys2R3Ptr(pVM, GCPhys, (PRTR3PTR)(ppv)) /** @todo this isn't asserting! */
 
-/** @def PGM_DYNMAP_UNUSED_HINT
- * Hints to the dynamic mapping code in RC and R0/darwin that the specified page
- * is no longer used.
- *
- * For best effect only apply this to the page that was mapped most recently.
- *
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   pvPage  The pool page.
- */
-#define PGM_DYNMAP_UNUSED_HINT(pVCpu, pvPage)  do {} while (0)
-
-/** @def PGM_DYNMAP_UNUSED_HINT_VM
- * Hints to the dynamic mapping code in RC and R0/darwin that the specified page
- * is no longer used.
- *
- * For best effect only apply this to the page that was mapped most recently.
- *
- * @param   pVM     The cross context VM structure.
- * @param   pvPage  The pool page.
- */
-#define PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvPage)  PGM_DYNMAP_UNUSED_HINT(VMMGetCpu(pVM), pvPage)
-
-
 /** @def PGM_INVL_PG
  * Invalidates a page.
  *
@@ -1411,10 +1388,8 @@ typedef struct PGMRAMRANGE
     R3PTRTYPE(uint8_t *)                pbR3;
     /** The RAM range identifier (index into the pointer table). */
     uint32_t                            idRange;
-#if HC_ARCH_BITS != 32
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
-    uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 0 : 1];
-#endif
+    uint32_t                            au32Alignment2[1];
     /** Live save per page tracking data. */
     R3PTRTYPE(PPGMLIVESAVERAMPAGE)      paLSPages;
     /** The range description. */
@@ -1688,9 +1663,6 @@ typedef struct PGMPHYSCACHEENTRY
     R3PTRTYPE(uint8_t *)                pbR3;
     /** GC Physical address for cache entry */
     RTGCPHYS                            GCPhys;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    RTGCPHYS                            u32Padding0; /**< alignment padding. */
-#endif
 } PGMPHYSCACHEENTRY;
 
 /**
@@ -1740,9 +1712,7 @@ typedef struct PGMCHUNKR3MAPTLBE
 {
     /** The chunk id. */
     uint32_t volatile                   idChunk;
-#if HC_ARCH_BITS == 64
     uint32_t                            u32Padding; /**< alignment padding. */
-#endif
     /** The chunk map. */
     R3PTRTYPE(PPGMCHUNKR3MAP) volatile  pChunk;
 } PGMCHUNKR3MAPTLBE;
@@ -1797,9 +1767,6 @@ typedef struct PGMPAGER3MAPTLBE
     R3PTRTYPE(PPGMCHUNKR3MAP) volatile  pMap;
     /** The address */
     R3PTRTYPE(void *) volatile          pv;
-#if HC_ARCH_BITS == 32
-    uint32_t                            u32Padding; /**< alignment padding. */
-#endif
 } PGMPAGER3MAPTLBE;
 /** Pointer to an entry in the HC physical TLB. */
 typedef PGMPAGER3MAPTLBE *PPGMPAGER3MAPTLBE;
@@ -2160,9 +2127,7 @@ typedef struct PGMPOOLPAGE
     /** @} */
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages. */
     uint32_t volatile   cLocked;
-#if GC_ARCH_BITS == 64
     uint32_t            u32Alignment3;
-#endif
 # ifdef VBOX_STRICT
     RTGCPTR             GCPtrDirtyFault;
 # endif
@@ -2870,11 +2835,7 @@ typedef struct PGMMODEDATAGST
 
 #if defined(VBOX_VMM_TARGET_X86) || defined(VBOX_VMM_TARGET_AGNOSTIC)
 /** The length of g_aPgmGuestModeData. */
-# if VBOX_WITH_64_BITS_GUESTS
-#  define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_AMD64 + 1)
-# else
-#  define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_PAE + 1)
-# endif
+# define PGM_GUEST_MODE_DATA_ARRAY_SIZE      (PGM_TYPE_AMD64 + 1)
 #elif defined(VBOX_VMM_TARGET_ARMV8)
 # define PGM_GUEST_MODE_DATA_ARRAY_SIZE      (512 + 2) /** @todo Find a better way to express that. */
 #else
@@ -3231,9 +3192,6 @@ typedef struct PGM
         PGMCHUNKR3MAPTLB            Tlb;
         /** The chunk tree, ordered by chunk id. */
         R3PTRTYPE(PAVLU32NODECORE)  pTree;
-# if HC_ARCH_BITS == 32
-        uint32_t                    u32Alignment0;
-# endif
         /** The number of mapped chunks. */
         uint32_t                    c;
         /** @cfgm{/PGM/MaxRing3Chunks, uint32_t, host dependent}
@@ -4027,9 +3985,13 @@ DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  pgmPhysRomWritePfHandler;
 DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  pgmPhysMmio2WritePfHandler;
 #endif
 DECLHIDDEN(uint16_t) pgmPhysMmio2CalcChunkCount(RTGCPHYS cb, uint32_t *pcPagesPerChunk);
-DECLHIDDEN(int) pgmPhysMmio2RegisterWorker(PVMCC pVM, uint32_t const cGuestPages, uint8_t const idMmio2,
-                                           const uint8_t cChunks, PPDMDEVINSR3 const pDevIns, uint8_t
-                                           const iSubDev, uint8_t const iRegion, uint32_t const fFlags);
+DECLHIDDEN(int) pgmPhysMmio2RegisterWorkerAlloc(PVMCC pVM, uint32_t const cGuestPages, uint8_t const idMmio2,
+                                                const uint8_t cChunks, PPDMDEVINSR3 const pDevIns, uint8_t
+                                                const iSubDev, uint8_t const iRegion, uint32_t const fFlags);
+DECLHIDDEN(int) pgmPhysMmio2RegisterWorkerExisting(PVMCC pVM, uint32_t const cGuestPages, uint8_t const idMmio2,
+                                                   const uint8_t cChunks, PPDMDEVINSR3 const pDevIns, uint8_t
+                                                   const iSubDev, uint8_t const iRegion, uint32_t const fFlags,
+                                                   R3PTRTYPE(uint8_t *)pbR3);
 DECLHIDDEN(int) pgmPhysMmio2DeregisterWorker(PVMCC pVM, uint8_t idMmio2, uint8_t cChunks, PPDMDEVINSR3 pDevIns);
 int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys,
                                 PGMPAGETYPE enmNewType);
@@ -4160,7 +4122,7 @@ int             pgmGstLazyMapEptPml4(PVMCPUCC pVCpu, PEPTPML4 *ppPml4);
 int             pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk);
 int             pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk);
 
-# if defined(VBOX_STRICT) && HC_ARCH_BITS == 64 && defined(IN_RING3)
+# if defined(VBOX_STRICT) && defined(IN_RING3)
 FNDBGCCMD       pgmR3CmdCheckDuplicatePages;
 FNDBGCCMD       pgmR3CmdShowSharedModules;
 # endif

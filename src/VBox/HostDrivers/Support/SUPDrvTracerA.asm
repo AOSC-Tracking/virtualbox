@@ -53,13 +53,8 @@ ENDPROC   supdrvTracerProbeFireStub
 
 
 ;; Tail jump function.
-EXPORTEDNAME SUPR0TracerFireProbe
-%ifdef RT_ARCH_AMD64
-        mov     rax, [NAME(g_pfnSupdrvProbeFireKernel) wrt rip]
-        jmp     rax
-%else
-        mov     eax, [NAME(g_pfnSupdrvProbeFireKernel)]
-        jmp     eax
-%endif
+BEGINPROC_EXPORTED SUPR0TracerFireProbe
+        mov     xAX, [RT_WRT_RIP(NAME(g_pfnSupdrvProbeFireKernel))]
+        jmp     xAX
 ENDPROC SUPR0TracerFireProbe
 

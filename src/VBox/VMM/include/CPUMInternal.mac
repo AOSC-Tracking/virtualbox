@@ -27,6 +27,7 @@
 
 %include "VBox/asmdefs.mac"
 %include "VBox/vmm/cpum.mac"
+%include "VBox/vmm/stam.mac"
 
 ;; Check sanity.
 %ifdef VBOX_WITH_KERNEL_USING_XMM
@@ -331,7 +332,6 @@ struc CPUMCPU
     .Host.cs                    resw    1
     .Host.csPadding             resw    1
 
-    .Host.cr0Fpu:
     .Host.cr0                   resq    1
     ;.Host.cr2                   resq    1 - scratch
     .Host.cr3                   resq    1
@@ -364,6 +364,15 @@ struc CPUMCPU
     .Host.xcr0                  resq    1
     .Host.fXStateMask           resq    1
     alignb 64
+    .StatGuestFpuLoad           resq    1
+    .StatGuestFpuReload         resq    1
+    .StatPrepHostFpu0Lock       resq    1
+    .StatPrepHostFpu0NoLock     resq    1
+    .StatPrepHostFpu1Lock       resq    1
+    .StatPrepHostFpu1NoLock     resq    1
+    .StatPrepHostFpu2Lock       resq    1
+    .StatPrepHostFpu2NoLock     resq    1
+    .StatGuestFpuLoadPerf       resb    STAMPROFILE_size
 
     ;
     ; Other stuff.
@@ -418,7 +427,7 @@ endstruc
 .clean_fpu:
         ffree   st7                     ; Clear FPU stack register(7)'s tag entry to prevent overflow if a wraparound occurs.
                                         ; for the upcoming push (load)
-        fild    dword [g_r32_Zero xWrtRIP] ; Explicit FPU load to overwrite FIP, FOP, FDP registers in the FPU.
+        fild    dword [RT_WRT_RIP(g_r32_Zero)] ; Explicit FPU load to overwrite FIP, FOP, FDP registers in the FPU.
 .nothing_to_clean:
 %endmacro
 %endif ; Unused.
@@ -432,7 +441,7 @@ endstruc
 ; via the VINF_CPUM_HOST_CR0_MODIFIED status code.
 ;
 ; If we end up clearing CR0.TS/EM ourselves in ring-0, we'll save the original
-; value in CPUMCPU.Host.cr0Fpu.  If we don't, we'll store zero there.  (See also
+; value in CPUMCPU.Host.cr0.  If we don't, we'll store zero there.  (See also
 ; CPUMRZ_RESTORE_CR0_IF_TS_OR_EM_SET.)
 ;
 ; In raw-mode we will always have to clear TS and it will be recalculated
@@ -449,7 +458,7 @@ endstruc
         ; ring-0 - slightly complicated (than old raw-mode).
         ;
         xor     %1, %1                          ; 0 / VINF_SUCCESS. Wishing for no CR0 changes.
-        mov     [%3 + CPUMCPU.Host.cr0Fpu], %1
+        mov     [%3 + CPUMCPU.Host.cr0], %1
 
         mov     %2, cr0
         test    %2, X86_CR0_TS | X86_CR0_EM ; Make sure its safe to access the FPU state.
@@ -464,7 +473,7 @@ endstruc
  %endif
 
         ; Save CR0 and clear them flags ourselves.
-        mov     [%3 + CPUMCPU.Host.cr0Fpu], %2
+        mov     [%3 + CPUMCPU.Host.cr0], %2
         and     %2, ~(X86_CR0_TS | X86_CR0_EM)
         mov     cr0, %2
 

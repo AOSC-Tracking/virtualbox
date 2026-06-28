@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172152 $"
 
 
 # Standard Python imports.
@@ -49,7 +49,9 @@ from testmanager.core.useraccount   import UserAccountLogic;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    xrange = range; # pylint: disable=redefined-builtin,invalid-name
+    xrange = range;  # pylint: disable=redefined-builtin,invalid-name
+else:
+    xrange = xrange; # pylint: disable=redefined-builtin,invalid-name,self-assigning-variable
 
 
 class FailureCategoryData(ModelDataBase):

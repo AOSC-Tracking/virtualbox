@@ -289,6 +289,7 @@ static int drvR3IntNetCallSvcAsync(PDRVINTNET pThis, uint32_t uOperation, void *
         xpc_dictionary_set_uint64(hObj, "req-id", uOperation);
         xpc_dictionary_set_data(hObj, "req", pvArg, cbArg);
         xpc_connection_send_message(pThis->hXpcCon, hObj);
+        xpc_release(hObj);
         return VINF_SUCCESS;
     }
     else

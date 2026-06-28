@@ -66,19 +66,49 @@ typedef struct
 typedef struct VMSVGACMDBUF *PVMSVGACMDBUF;
 typedef struct VMSVGACMDBUFCTX *PVMSVGACMDBUFCTX;
 
+typedef enum VMSVGACMDBUFTYPE
+{
+    VMSVGACMDBUFTYPE_GUEST, /* A guest command buffer submitted via SVGA_REG_COMMAND_LOW. */
+    VMSVGACMDBUFTYPE_HOST, /* A host command to be processed synchronously by FIFO thread. */
+    VMSVGACMDBUFTYPE_32BIT_HACK = 0x7fffffff
+} VMSVGACMDBUFTYPE;
+
+#define VMSVGACMDBUF_HOSTCOMMAND_CURSOR_MOBID 1
+
 /* Command buffer. */
+#include "vmsvga_headers_begin.h" /* GCC complains that 'ISO C++ prohibits anonymous structs' when "-Wpedantic" is enabled. */
 typedef struct VMSVGACMDBUF
 {
     RTLISTNODE nodeBuffer;
     /* Context of the buffer. */
     PVMSVGACMDBUFCTX pCmdBufCtx;
-    /* PA of the buffer. */
-    RTGCPHYS GCPhysCB;
-    /* A copy of the buffer header. */
-    SVGACBHeader hdr;
-    /* A copy of the commands. Size of the memory buffer is hdr.length */
-    void *pvCommands;
+    VMSVGACMDBUFTYPE enmCBType;
+    union
+    {
+        /* VMSVGACMDBUFTYPE_GUEST */
+        struct
+        {
+            /* PA of the buffer. */
+            RTGCPHYS GCPhysCB;
+            /* A copy of the buffer header. */
+            SVGACBHeader hdr;
+            /* A copy of the commands. Size of the memory buffer is hdr.length */
+            void *pvCommands;
+        };
+        /* VMSVGACMDBUFTYPE_HOST */
+        struct
+        {
+            uint32_t idHostCommand;
+            uint32_t cbHostCommandData;
+            union
+            {
+                void *pvHostCommandData;         /* Allocated buffer (cbCommandData != 0) */
+                uint32_t au32HostCommandData[2]; /* Command specific data (cbCommandData == 0) */
+            };
+        };
+    };
 } VMSVGACMDBUF;
+#include "vmsvga_headers_end.h"
 
 /* Command buffer context. */
 typedef struct VMSVGACMDBUFCTX
@@ -105,6 +135,9 @@ typedef struct VMSVGAR3STATE
     struct
     {
         bool                fActive;
+        /** The current cursor MOB ID. See @bugref{11042}.
+         *  Set to SVGA_ID_INVALID if not set (yet). */
+        SVGAMobId volatile  mobId;
         uint32_t            xHotspot;
         uint32_t            yHotspot;
         uint32_t            width;
@@ -129,6 +162,17 @@ typedef struct VMSVGAR3STATE
 
     /** Information about screens. */
     VMSVGASCREENOBJECT      aScreens[64];
+
+    /** Critical section for accessing the output targets data. */
+    RTCRITSECT              critSectOutputTargets;
+    /** All output targets. The key is u64OutputTargetToken. Access serialized by critSectOutputTargets. */
+    AVLU64TREE              treeOutputTargets;
+    /** Parameters for output targets to be created by FIFO thread (VMSVGAOUTPUTTARGETCREATEPARMS). */
+    RTLISTANCHOR            listOutputTargetCreating;
+    /** Output targets to be deleted by FIFO thread once their reference count reaches 0. */
+    RTLISTANCHOR            listOutputTargetDeleting;
+    /** New output target tokens are taken from this value. */
+    uint64_t volatile       u64OutputTargetTokenSource;
 
     /** Command buffer contexts. */
     PVMSVGACMDBUFCTX        apCmdBufCtxs[SVGA_CB_CONTEXT_MAX];
@@ -261,11 +305,21 @@ DECLCALLBACK(int) vmsvgaR3DeregisterGmr(PPDMDEVINS pDevIns, uint32_t gmrId);
 
 int vmsvgaR3DestroyScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 
+int vmsvgaR3CreateScreenOutputTarget(PVGASTATE pThis, PVGASTATECC pThisCC,
+                                     VMSVGASCREENOBJECT *pScreen,
+                                     VMSVGAOUTPUTTARGET **ppOutputTarget);
+void vmsvgaR3RetireOutputTargets(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
+void vmsvgaR3CleanupOutputTargets(PVGASTATECC pThisCC);
+
 void vmsvgaR3ResetScreens(PVGASTATE pThis, PVGASTATECC pThisCC);
 void vmsvgaR3ResetSvgaState(PVGASTATE pThis, PVGASTATECC pThisCC);
 
 void vmsvgaR3TerminateSvgaState(PVGASTATE pThis, PVGASTATECC pThisCC);
 
+void vmsvgaR3InstallColorCursor(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAGBColorCursorHeader const *pCursorHdr,
+                                uint8_t const *pbData, uint32_t cbData, uint32_t idMOb);
+void vmsvgaR3InstallAlphaCursor(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAGBAlphaCursorHeader const *pCursorHdr,
+                                uint8_t const *pbData, uint32_t cbData, uint32_t idMOb);
 int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC);
 int vmsvgaR3UpdateScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);
 
@@ -282,7 +336,7 @@ void vmsvgaR3CmdRectCopy(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdRectCo
 void vmsvgaR3CmdRectRopCopy(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdRectRopCopy const *pCmd);
 void vmsvgaR3CmdDisplayCursor(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDisplayCursor const *pCmd);
 void vmsvgaR3CmdMoveCursor(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdMoveCursor const *pCmd);
-void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDefineCursor const *pCmd);
+void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDefineCursor const *pCmd, uint32_t cbData);
 void vmsvgaR3CmdDefineAlphaCursor(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDefineAlphaCursor const *pCmd);
 void vmsvgaR3CmdEscape(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdEscape const *pCmd);
 void vmsvgaR3CmdDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDefineScreen const *pCmd);
@@ -302,6 +356,5 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT) || defined(VMSVGA_CMD_STATS)
 const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd);
 #endif
-
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_internal_h */

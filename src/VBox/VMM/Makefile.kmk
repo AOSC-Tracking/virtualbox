@@ -109,9 +109,9 @@ endif
 VBoxVMM_SOURCES  = \
 	VBoxVMM.d \
 	VMMR3/VMMR3VTable.cpp \
-	VMMR3/APIC.cpp \
-	VMMR3/CFGM.cpp \
-	VMMR3/CPUM.cpp \
+	VMMR3/target-x86/APICR3-x86.cpp \
+	VMMR3/CFGMR3.cpp \
+	VMMR3/CPUMR3.cpp \
 	VMMR3/target-x86/CPUMR3-x86.cpp \
 	VMMR3/target-x86/CPUMR3CpuId-x86.cpp \
 	VMMR3/target-x86/CPUMR3Msr-x86.cpp \
@@ -119,86 +119,86 @@ VBoxVMM_SOURCES  = \
 	VMMR3/CPUMR3Db.cpp \
 	VMMR3/CPUMR3CpuIdInfo.cpp \
 	VMMR3/CPUMR3CpuIdInfo-x86.cpp \
-	VMMR3/DBGF.cpp \
-	VMMR3/DBGFAddr.cpp \
-	VMMR3/DBGFAddrSpace.cpp \
+	VMMR3/DBGFR3.cpp \
+	VMMR3/DBGFR3Addr.cpp \
+	VMMR3/DBGFR3AddrSpace.cpp \
 	VMMR3/DBGFR3Bp.cpp \
 	VMMR3/DBGFR3BugCheck.cpp \
-	VMMR3/DBGFCoreWrite.cpp \
-	VMMR3/DBGFCpu.cpp \
-	VMMR3/DBGFDisas.cpp \
-	VMMR3/DBGFInfo.cpp \
-	VMMR3/DBGFLog.cpp \
-	VMMR3/DBGFMem.cpp \
+	VMMR3/DBGFR3CoreWrite.cpp \
+	VMMR3/DBGFR3Cpu.cpp \
+	VMMR3/DBGFR3Disas.cpp \
+	VMMR3/DBGFR3Info.cpp \
+	VMMR3/DBGFR3Log.cpp \
+	VMMR3/DBGFR3Mem.cpp \
 	VMMR3/DBGFR3ModInMem.cpp \
-	VMMR3/DBGFOS.cpp \
+	VMMR3/DBGFR3OS.cpp \
 	VMMR3/DBGFR3PlugIn.cpp \
-	VMMR3/DBGFReg.cpp \
-	VMMR3/DBGFStack.cpp \
+	VMMR3/DBGFR3Reg.cpp \
+	VMMR3/DBGFR3Stack.cpp \
 	VMMR3/DBGFR3Flow.cpp \
 	$(if-expr defined(VBOX_WITH_DBGF_FLOW_TRACING), VMMR3/DBGFR3FlowTrace.cpp,) \
 	VMMR3/DBGFR3Trace.cpp \
 	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR3/DBGFR3Tracer.cpp,) \
 	VMMR3/DBGFR3SampleReport.cpp \
 	VMMR3/DBGFR3Type.cpp \
-	VMMR3/EM.cpp \
+	VMMR3/EMR3.cpp \
 	VMMR3/EMR3Dbg.cpp \
-	$(if-expr defined(VBOX_WITH_HWVIRT),VMMR3/EMHM.cpp,) \
+	$(if-expr defined(VBOX_WITH_HWVIRT),VMMR3/EMR3HM.cpp,) \
 	VMMR3/EMR3Nem.cpp \
-	VMMR3/GCM.cpp \
-	VMMR3/GIM.cpp \
-	VMMR3/GIMHv.cpp \
-	VMMR3/GIMKvm.cpp \
-	VMMR3/GIMMinimal.cpp \
+	VMMR3/GCMR3.cpp \
+	VMMR3/GIMR3.cpp \
+	VMMR3/GIMR3Hv.cpp \
+	VMMR3/GIMR3Kvm.cpp \
+	VMMR3/GIMR3Minimal.cpp \
 	VMMR3/IEMR3.cpp \
-	VMMR3/IOM.cpp \
+	VMMR3/IOMR3.cpp \
 	VMMR3/IOMR3IoPort.cpp \
 	VMMR3/IOMR3Mmio.cpp \
-	VMMR3/GMM.cpp \
+	VMMR3/GMMR3.cpp \
 	VMMR3/GVMMR3.cpp \
-	VMMR3/MM.cpp \
-	VMMR3/MMHeap.cpp \
+	VMMR3/MMR3.cpp \
+	VMMR3/MMR3Heap.cpp \
 	VMMR3/NEMR3.cpp \
-	VMMR3/PDM.cpp \
-	VMMR3/PDMBlkCache.cpp \
-	VMMR3/PDMDevice.cpp \
-	VMMR3/PDMDevHlp.cpp \
-	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR3/PDMDevHlpTracing.cpp,) \
-	VMMR3/PDMDevMiscHlp.cpp \
-	VMMR3/PDMDriver.cpp \
-	VMMR3/PDMLdr.cpp \
-	VMMR3/PDMCritSect.cpp \
-	VMMR3/PDMQueue.cpp \
+	VMMR3/PDMR3.cpp \
+	VMMR3/PDMR3BlkCache.cpp \
+	VMMR3/PDMR3Device.cpp \
+	VMMR3/PDMR3DevHlp.cpp \
+	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR3/PDMR3DevHlpTracing.cpp,) \
+	VMMR3/PDMR3DevMiscHlp.cpp \
+	VMMR3/PDMR3Driver.cpp \
+	VMMR3/PDMR3Ldr.cpp \
+	VMMR3/PDMR3CritSect.cpp \
+	VMMR3/PDMR3Queue.cpp \
 	VMMR3/PDMR3Task.cpp \
-	VMMR3/PDMThread.cpp \
-	VMMR3/PGM.cpp \
-	VMMR3/PGMDbg.cpp \
-	VMMR3/PGMHandler.cpp \
-	VMMR3/PGMPhys.cpp \
-	VMMR3/PGMSavedState.cpp \
-	VMMR3/PGMSharedPage.cpp \
-	VMMR3/SELM.cpp \
-	VMMR3/SSM.cpp \
-	VMMR3/STAM.cpp \
-	VMMR3/TM.cpp \
-	VMMR3/TRPM.cpp \
-	VMMR3/VM.cpp \
-	VMMR3/VMEmt.cpp \
-	VMMR3/VMReq.cpp \
-	VMMR3/VMM.cpp \
-	VMMR3/VMMGuruMeditation.cpp \
-	VMMR3/VMMTests.cpp \
-	VMMR3/HM.cpp \
-	VMMAll/APICAll.cpp \
+	VMMR3/PDMR3Thread.cpp \
+	VMMR3/PGMR3.cpp \
+	VMMR3/PGMR3Dbg.cpp \
+	VMMR3/PGMR3Handler.cpp \
+	VMMR3/PGMR3Phys.cpp \
+	VMMR3/PGMR3SavedState.cpp \
+	VMMR3/PGMR3SharedPage.cpp \
+	VMMR3/target-x86/SELMR3-x86.cpp \
+	VMMR3/SSMR3.cpp \
+	VMMR3/STAMR3.cpp \
+	VMMR3/TMR3.cpp \
+	VMMR3/TRPMR3.cpp \
+	VMMR3/VMR3.cpp \
+	VMMR3/VMR3Emt.cpp \
+	VMMR3/VMR3Req.cpp \
+	VMMR3/VMMR3.cpp \
+	VMMR3/VMMR3GuruMeditation.cpp \
+	VMMR3/VMMR3Tests.cpp \
+	VMMR3/target-x86/HMR3-x86.cpp \
+	VMMAll/target-x86/APICAll-x86.cpp \
 	VMMAll/CPUMAllCpuId.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/DBGFAllBp.cpp \
 	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMAll/DBGFAllTracer.cpp,) \
-	VMMAll/HMAll.cpp \
-	VMMAll/HMSVMAll.cpp \
-	VMMAll/HMVMXAll.cpp \
+	VMMAll/target-x86/HMAll-x86.cpp \
+	VMMAll/target-x86/HMAllSVM-x86.cpp \
+	VMMAll/target-x86/HMAllVMX-x86.cpp \
 	VMMAll/IEMAll.cpp \
 	VMMAll/IEMAllMem.cpp \
 	VMMAll/IEMAllTlb.cpp \
@@ -223,17 +223,17 @@ VBoxVMM_SOURCES  = \
 	VMMAll/MMAll.cpp \
 	VMMAll/NEMAll.cpp \
 	VMMAll/PDMAll.cpp \
-	VMMAll/PDMAllApic.cpp \
+	VMMAll/target-x86/PDMAllApic-x86.cpp \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllCritSectRw.cpp \
 	VMMAll/PDMAllCritSectBoth.cpp \
-	$(if-expr defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL), VMMAll/PDMAllIommu.cpp,) \
+	$(if-expr defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL), VMMAll/target-x86/PDMAllIommu-x86.cpp,) \
 	VMMAll/PDMAllQueue.cpp \
 	VMMAll/PDMAllTask.cpp \
 	VMMAll/PGMAll.cpp \
 	VMMAll/PGMAllHandler.cpp \
 	VMMAll/PGMAllPhys.cpp \
-	VMMAll/SELMAll.cpp \
+	VMMAll/target-x86/SELMAll-x86.cpp \
 	VMMAll/EMAll.cpp \
 	VMMAll/GCMAll.cpp \
 	VMMAll/GIMAll.cpp \
@@ -248,8 +248,8 @@ VBoxVMM_SOURCES  = \
 	VMMAll/VMMAll.cpp
 ifn1of (VBOX_WITH_ONLY_PGM_NEM_MODE, $(VBoxVMM_DEFS))
  VBoxVMM_SOURCES += \
- 	VMMR3/PGMPool.cpp \
- 	VMMAll/PGMAllPool.cpp
+ 	VMMR3/target-x86/PGMR3Pool-x86.cpp \
+ 	VMMAll/target-x86/PGMAllPool-x86.cpp
 endif
 VBoxVMM_SOURCES.amd64 += \
 	VMMR3/CPUMR3Host-x86.cpp \
@@ -260,18 +260,18 @@ VBoxVMM_SOURCES.arm64 += \
 	VMMAll/target-x86/IEMAllAImpl-x86-arm64.S \
 	VMMR3/CPUMR3CpuIdInfo-armv8.cpp
 ifdef VBOX_WITH_VUSB
- VBoxVMM_SOURCES += VMMR3/PDMUsb.cpp
+ VBoxVMM_SOURCES += VMMR3/PDMR3Usb.cpp
 endif
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  VBoxVMM_SOURCES += \
- 	VMMR3/PDMAsyncCompletion.cpp \
- 	VMMR3/PDMAsyncCompletionFile.cpp \
- 	VMMR3/PDMAsyncCompletionFileFailsafe.cpp \
- 	VMMR3/PDMAsyncCompletionFileNormal.cpp
+ 	VMMR3/PDMR3AsyncCompletion.cpp \
+ 	VMMR3/PDMR3AsyncCompletionFile.cpp \
+ 	VMMR3/PDMR3AsyncCompletionFileFailsafe.cpp \
+ 	VMMR3/PDMR3AsyncCompletionFileNormal.cpp
 endif
 ifdef VBOX_WITH_NETSHAPER
  VBoxVMM_SOURCES += \
- 	VMMR3/PDMNetShaper.cpp \
+ 	VMMR3/PDMR3NetShaper.cpp \
  	VMMAll/PDMAllNetShaper.cpp
 endif
 
@@ -316,21 +316,22 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 endif
 
 ifdef VBOX_WITH_NATIVE_NEM
- VBoxVMM_SOURCES.linux.amd64 += VMMR3/NEMR3Native-linux.cpp
+ VBoxVMM_SOURCES.linux.amd64 += \
+ 	VMMR3/target-x86/NEMR3Native-linux-x86.cpp
 
  VBoxVMM_SOURCES.win.amd64 += \
- 	VMMR3/NEMR3Native-win.cpp \
- 	VMMR3/APICR3Nem-win.cpp
+ 	VMMR3/target-x86/NEMR3Native-win-x86.cpp \
+ 	VMMR3/target-x86/APICR3Nem-win-x86.cpp
 
  VBoxVMM_DEFS.win.amd64   += VBOX_WITH_NATIVE_NEM
  VBoxVMM_SDKS.win         += VBoxNtDll
- VMMR3/NEMR3Native-win.cpp_DEFS.amd64 = _AMD64_
- VMMR3/NEMR3Native-win.cpp_INCS = \
+ VMMR3/target-x86/NEMR3Native-win-x86.cpp_DEFS.amd64 = _AMD64_
+ VMMR3/target-x86/NEMR3Native-win-x86.cpp_INCS = \
  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
  	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
 
  VBoxVMM_SOURCES.darwin.amd64 += \
- 	VMMR3/NEMR3Native-darwin.cpp
+ 	VMMR3/target-x86/NEMR3Native-darwin-x86.cpp
  VBoxVMM_DEFS.darwin.amd64   += VBOX_WITH_NATIVE_NEM
 endif
 
@@ -351,19 +352,19 @@ VBoxVMM_LDFLAGS.solaris = -mimpure-text
 
 # SSM wish to know the build type, host os and arch.
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
- VMMR3/SSM.cpp_DEFS += \
+ VMMR3/SSMR3.cpp_DEFS += \
  	KBUILD_TYPE="$(KBUILD_TYPE)" \
  	KBUILD_TARGET="$(KBUILD_TARGET)" \
  	KBUILD_TARGET_ARCH="$(KBUILD_TARGET_ARCH)"
 else
- VMMR3/SSM.cpp_DEFS += \
+ VMMR3/SSMR3.cpp_DEFS += \
  	KBUILD_TYPE=\"$(KBUILD_TYPE)\" \
  	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
  	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
 endif
 
 ifdef VBOX_WITH_GCC_SANITIZER
- VMMR3/PGMPool.cpp_CXXFLAGS.linux += -fno-sanitize=address
+ VMMR3/target-x86/PGMR3Pool-x86.cpp_CXXFLAGS.linux += -fno-sanitize=address
 endif
 
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
@@ -457,8 +458,8 @@ ifdef VBOX_WITH_VIRT_ARMV8
  VBoxVMMArm_SOURCES  = \
  	VBoxVMM.d \
  	VMMR3/VMMR3VTable.cpp \
- 	VMMR3/CFGM.cpp \
- 	VMMR3/CPUM.cpp \
+ 	VMMR3/CFGMR3.cpp \
+ 	VMMR3/CPUMR3.cpp \
  	VMMR3/target-armv8/CPUMR3-armv8.cpp \
  	VMMR3/target-armv8/CPUMR3CpuId-armv8.cpp \
  	VMMR3/target-armv8/CPUMR3SysReg-armv8.cpp \
@@ -467,70 +468,70 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/CPUMR3CpuIdInfo.cpp \
  	VMMR3/CPUMR3CpuIdInfo-armv8.cpp \
  	VMMAll/CPUMAllCpuId.cpp \
- 	VMMR3/DBGF.cpp \
- 	VMMR3/DBGFAddr.cpp \
- 	VMMR3/DBGFAddrSpace.cpp \
+ 	VMMR3/DBGFR3.cpp \
+ 	VMMR3/DBGFR3Addr.cpp \
+ 	VMMR3/DBGFR3AddrSpace.cpp \
  	VMMR3/DBGFR3Bp.cpp \
  	VMMR3/DBGFR3BugCheck.cpp \
- 	VMMR3/DBGFCoreWrite.cpp \
- 	VMMR3/DBGFCpu.cpp \
- 	VMMR3/DBGFDisas.cpp \
- 	VMMR3/DBGFInfo.cpp \
- 	VMMR3/DBGFLog.cpp \
- 	VMMR3/DBGFMem.cpp \
+ 	VMMR3/DBGFR3CoreWrite.cpp \
+ 	VMMR3/DBGFR3Cpu.cpp \
+ 	VMMR3/DBGFR3Disas.cpp \
+ 	VMMR3/DBGFR3Info.cpp \
+ 	VMMR3/DBGFR3Log.cpp \
+ 	VMMR3/DBGFR3Mem.cpp \
  	VMMR3/DBGFR3ModInMem.cpp \
- 	VMMR3/DBGFOS.cpp \
+ 	VMMR3/DBGFR3OS.cpp \
  	VMMR3/DBGFR3PlugIn.cpp \
- 	VMMR3/DBGFReg.cpp \
- 	VMMR3/DBGFStack.cpp \
+ 	VMMR3/DBGFR3Reg.cpp \
+ 	VMMR3/DBGFR3Stack.cpp \
  	VMMR3/DBGFR3Flow.cpp \
  	VMMR3/DBGFR3FlowTrace.cpp \
  	VMMR3/DBGFR3Trace.cpp \
  	VMMR3/DBGFR3SampleReport.cpp \
  	VMMR3/DBGFR3Type.cpp \
- 	VMMR3/EM.cpp \
+ 	VMMR3/EMR3.cpp \
  	VMMR3/EMR3Dbg.cpp \
  	VMMR3/EMR3Nem.cpp \
- 	VMMR3/GICR3.cpp \
- 	VMMR3/GIM.cpp \
+ 	VMMR3/target-armv8/GICR3-armv8.cpp \
+ 	VMMR3/GIMR3.cpp \
  	VMMR3/IEMR3.cpp \
- 	VMMR3/IOM.cpp \
+ 	VMMR3/IOMR3.cpp \
  	VMMR3/IOMR3IoPort.cpp \
  	VMMR3/IOMR3Mmio.cpp \
- 	VMMR3/GMM.cpp \
+ 	VMMR3/GMMR3.cpp \
  	VMMR3/GVMMR3.cpp \
- 	VMMR3/MM.cpp \
- 	VMMR3/MMHeap.cpp \
+ 	VMMR3/MMR3.cpp \
+ 	VMMR3/MMR3Heap.cpp \
  	VMMR3/NEMR3.cpp \
- 	VMMR3/PDM.cpp \
- 	VMMR3/PDMBlkCache.cpp \
- 	VMMR3/PDMDevice.cpp \
- 	VMMR3/PDMDevHlp.cpp \
- 	VMMR3/PDMDevMiscHlp.cpp \
- 	VMMR3/PDMDriver.cpp \
- 	VMMR3/PDMLdr.cpp \
- 	VMMR3/PDMCritSect.cpp \
- 	VMMR3/PDMQueue.cpp \
+ 	VMMR3/PDMR3.cpp \
+ 	VMMR3/PDMR3BlkCache.cpp \
+ 	VMMR3/PDMR3Device.cpp \
+ 	VMMR3/PDMR3DevHlp.cpp \
+ 	VMMR3/PDMR3DevMiscHlp.cpp \
+ 	VMMR3/PDMR3Driver.cpp \
+ 	VMMR3/PDMR3Ldr.cpp \
+ 	VMMR3/PDMR3CritSect.cpp \
+ 	VMMR3/PDMR3Queue.cpp \
  	VMMR3/PDMR3Task.cpp \
- 	VMMR3/PDMThread.cpp \
- 	VMMR3/PGM.cpp \
- 	VMMR3/PGMDbg.cpp \
- 	VMMR3/PGMHandler.cpp \
- 	VMMR3/PGMPhys.cpp \
- 	VMMR3/PGMSavedState.cpp \
- 	VMMR3/PGMSharedPage.cpp \
- 	VMMR3/PMUR3.cpp \
- 	VMMR3/SSM.cpp \
- 	VMMR3/STAM.cpp \
- 	VMMR3/TM.cpp \
- 	VMMR3/TRPM.cpp \
- 	VMMR3/VM.cpp \
- 	VMMR3/VMEmt.cpp \
- 	VMMR3/VMReq.cpp \
- 	VMMR3/VMM.cpp \
- 	VMMR3/VMMGuruMeditation.cpp \
- 	VMMR3/VMMTests.cpp \
- 	VMMR3/HM-armv8.cpp \
+ 	VMMR3/PDMR3Thread.cpp \
+ 	VMMR3/PGMR3.cpp \
+ 	VMMR3/PGMR3Dbg.cpp \
+ 	VMMR3/PGMR3Handler.cpp \
+ 	VMMR3/PGMR3Phys.cpp \
+ 	VMMR3/PGMR3SavedState.cpp \
+ 	VMMR3/PGMR3SharedPage.cpp \
+ 	VMMR3/target-armv8/PMUR3-armv8.cpp \
+ 	VMMR3/SSMR3.cpp \
+ 	VMMR3/STAMR3.cpp \
+ 	VMMR3/TMR3.cpp \
+ 	VMMR3/TRPMR3.cpp \
+ 	VMMR3/VMR3.cpp \
+ 	VMMR3/VMR3Emt.cpp \
+ 	VMMR3/VMR3Req.cpp \
+ 	VMMR3/VMMR3.cpp \
+ 	VMMR3/VMMR3GuruMeditation.cpp \
+ 	VMMR3/VMMR3Tests.cpp \
+ 	VMMR3/target-armv8/HMR3-armv8.cpp \
  	VMMAll/CPUMAllRegs-armv8.cpp \
  	VMMAll/CPUMAllSysRegs-armv8.cpp \
  	VMMAll/DBGFAll.cpp \
@@ -544,15 +545,15 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMAll/PDMAllCritSect.cpp \
  	VMMAll/PDMAllCritSectRw.cpp \
  	VMMAll/PDMAllCritSectBoth.cpp \
- 	VMMAll/PDMAllGic.cpp \
+ 	VMMAll/target-armv8/PDMAllGic-armv8.cpp \
  	VMMAll/PDMAllQueue.cpp \
  	VMMAll/PDMAllTask.cpp \
  	VMMAll/PGMAll.cpp \
  	VMMAll/PGMAllHandler.cpp \
  	VMMAll/PGMAllPhys.cpp \
  	VMMAll/EMAll.cpp \
- 	VMMAll/GICAll.cpp \
- 	VMMAll/GITSAll.cpp \
+ 	VMMAll/target-armv8/GICAll-armv8.cpp \
+ 	VMMAll/target-armv8/GITSAll-armv8.cpp \
  	VMMAll/GIMAll.cpp \
  	VMMAll/PMUAll.cpp \
  	VMMAll/TMAll.cpp \
@@ -563,18 +564,18 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMAll/VMAll.cpp \
  	VMMAll/VMMAll.cpp
  ifdef VBOX_WITH_VUSB
-  VBoxVMMArm_SOURCES += VMMR3/PDMUsb.cpp
+  VBoxVMMArm_SOURCES += VMMR3/PDMR3Usb.cpp
  endif
  ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
   VBoxVMMArm_SOURCES += \
-  	VMMR3/PDMAsyncCompletion.cpp \
-  	VMMR3/PDMAsyncCompletionFile.cpp \
-  	VMMR3/PDMAsyncCompletionFileFailsafe.cpp \
-  	VMMR3/PDMAsyncCompletionFileNormal.cpp
+  	VMMR3/PDMR3AsyncCompletion.cpp \
+  	VMMR3/PDMR3AsyncCompletionFile.cpp \
+  	VMMR3/PDMR3AsyncCompletionFileFailsafe.cpp \
+  	VMMR3/PDMR3AsyncCompletionFileNormal.cpp
  endif
  ifdef VBOX_WITH_NETSHAPER
   VBoxVMMArm_SOURCES += \
-  	VMMR3/PDMNetShaper.cpp \
+  	VMMR3/PDMR3NetShaper.cpp \
   	VMMAll/PDMAllNetShaper.cpp
  endif
  ifdef VBOX_WITH_IEM_TARGETING_ARM
@@ -601,19 +602,19 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/PGMR3DbgA.asm
 
  VBoxVMMArm_SOURCES.darwin.arm64 += \
- 	VMMR3/NEMR3Native-darwin-armv8.cpp \
- 	VMMR3/GICR3Nem-darwin.cpp
+ 	VMMR3/target-armv8/NEMR3Native-darwin-armv8.cpp \
+ 	VMMR3/target-armv8/GICR3Nem-darwin-armv8.cpp
  VBoxVMMArm_DEFS.darwin.arm64   += VBOX_WITH_NATIVE_NEM
  VBoxVMMArm_LDFLAGS.darwin.arm64 = -framework Hypervisor
 
  VBoxVMMArm_SOURCES.linux.arm64 += \
- 	VMMR3/NEMR3Native-linux-armv8.cpp \
- 	VMMR3/GICR3Nem-linux.cpp
+ 	VMMR3/target-armv8/NEMR3Native-linux-armv8.cpp \
+ 	VMMR3/target-armv8/GICR3Nem-linux-armv8.cpp
  VBoxVMMArm_DEFS.linux.arm64    += VBOX_WITH_NATIVE_NEM
 
  VBoxVMMArm_SOURCES.win.arm64 += \
- 	VMMR3/NEMR3Native-win-armv8.cpp \
- 	VMMR3/GICR3Nem-win.cpp
+ 	VMMR3/target-armv8/NEMR3Native-win-armv8.cpp \
+ 	VMMR3/target-armv8/GICR3Nem-win-armv8.cpp
  VBoxVMMArm_DEFS.win.arm64   += VBOX_WITH_NATIVE_NEM
 
  VBoxVMMArm_LIBS = \
@@ -779,7 +780,8 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(QUIET)$(REDIRECT) -0 /dev/null -o "$@.tmp" -- \
 		$(TOOL_VCC143-CLANGXX_PREFIX2)pdbutil$(TOOL_VCC143-CLANGXX_SUFFIX2) \
-			pretty --with-name=VMCPU --with-name=IEMCPU "$(VBoxVMM_0_OUTDIR)/VMMAll/IEMAllN8veRecompiler-obj.pdb"
+			pretty --with-name=VMCPU --with-name=IEMCPU --with-name=IEMCPUCORE --with-name=IEMCPURECOMP \
+			"$(VBoxVMM_0_OUTDIR)/VMMAll/IEMAllN8veRecompiler-obj.pdb"
 	$(QUIET)$(SED) -n -f "$(filter %.sed,$^)" --output "$@" "$@.tmp"
 	$(QUIET)$(RM) -f "$@.tmp"
 	$(QUIET)$(CP) -v -f --changed -- "$@" "$(basename $@)"
@@ -793,7 +795,8 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(QUIET)$(REDIRECT) -0 /dev/null -o "$@.tmp" -- \
-		$(if-expr "$(KBUILD_HOST)"=="linux",llvm-,)dwarfdump --regex --name='^(VMCPU|IEMCPU)$(DOLLAR)' --show-children --recurse-depth=1 "$<"
+		$(if-expr "$(KBUILD_HOST)"=="linux",llvm-,)dwarfdump --regex --name='^(VMCPU|IEMCPU|IEMCPUCORE|IEMCPURECOMP)$(DOLLAR)' \
+			--show-children --recurse-depth=1 "$<"
 	$(QUIET)$(SED) -n -f "$(filter %.sed,$^)" --output "$@" "$@.tmp"
 	$(QUIET)$(RM) -f "$@.tmp"
 	$(QUIET)$(CP) -v -f --changed -- "$@" "$(basename $@)"
@@ -907,6 +910,7 @@ else
  VMMStatic_EXTENDS := VBoxVMM
 endif
 VMMStatic_DEFS = \
+	IN_VMM_STATIC_UNIT_TESTS \
 	$(filter-out \
 		VBOX_WITH_DEBUGGER \
 		VBOX_WITH_IEM_RECOMPILER \
@@ -914,7 +918,12 @@ VMMStatic_DEFS = \
 		VBOX_WITH_NESTED_HWVIRT_SVM \
 		VBOX_WITH_NESTED_HWVIRT_VMX \
 		VBOX_WITH_NESTED_HWVIRT_VMX_EPT \
+		VBOX_WITH_NATIVE_NEM \
 		,$($(VMMStatic_EXTENDS)_DEFS))
+VMMStatic_DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = \
+	$(filter-out \
+		VBOX_WITH_NATIVE_NEM \
+		,$($(VMMStatic_EXTENDS)_DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)))
 VMMStatic_SOURCES = \
 	$(filter-out \
 		VMMAll/IEM% \
@@ -923,7 +932,17 @@ VMMStatic_SOURCES = \
 		, $($(VMMStatic_EXTENDS)_SOURCES)) \
 	VMMAll/IEMAllStub.cpp
 VMMStatic_SOURCES.$(KBUILD_TARGET_ARCH) = \
-	$(filter-out VMMR3/IEM% VMMAll/IEM%, $($(VMMStatic_EXTENDS)_SOURCES.$(KBUILD_TARGET_ARCH)))
+	$(filter-out \
+		VMMR3/IEM% \
+		VMMAll/IEM% \
+		, $($(VMMStatic_EXTENDS)_SOURCES.$(KBUILD_TARGET_ARCH)))
+VMMStatic_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = \
+	$(filter-out \
+		VMMR3/target-armv8/NEMR3Native-% \
+		VMMR3/target-x86/NEMR3Native-% \
+		VMMR3/target-armv8/GICR3Nem-% \
+		VMMR3/target-x86/APICR3Nem-% \
+		, $($(VMMStatic_EXTENDS)_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)))
 
 
 #
@@ -1002,9 +1021,9 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)
   	VMMR0/GIMR0Hv.cpp \
   	VMMR0/GMMR0.cpp \
   	VMMR0/EMR0.cpp \
-  	VMMR0/HMR0.cpp \
-  	VMMR0/HMVMXR0.cpp \
-  	VMMR0/HMSVMR0.cpp \
+  	VMMR0/target-x86/HMR0-x86.cpp \
+  	VMMR0/target-x86/HMR0VMX-x86.cpp \
+  	VMMR0/target-x86/HMR0SVM-x86.cpp \
   	VMMR0/IEMR0.cpp \
   	VMMR0/IOMR0.cpp \
   	VMMR0/IOMR0IoPort.cpp \
@@ -1015,11 +1034,10 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)
   	VMMR0/PDMR0Driver.cpp \
   	VMMR0/PDMR0Queue.cpp \
   	VMMR0/PGMR0.cpp \
-  	VMMR0/PGMR0Pool.cpp \
+  	VMMR0/target-x86/PGMR0Pool-x86.cpp \
   	VMMR0/PGMR0SharedPage.cpp \
   	VMMR0/TMR0.cpp \
-  	VMMRZ/CPUMRZ.cpp \
-  	VMMAll/APICAll.cpp \
+  	VMMAll/target-x86/APICAll-x86.cpp \
   	VMMAll/CPUMAllCpuId.cpp \
   	VMMAll/CPUMAllRegs.cpp \
   	VMMAll/CPUMAllMsrs.cpp \
@@ -1031,9 +1049,9 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)
   	VMMAll/GIMAll.cpp \
   	VMMAll/GIMAllHv.cpp \
   	VMMAll/GIMAllKvm.cpp \
-  	VMMAll/HMAll.cpp \
-  	VMMAll/HMSVMAll.cpp \
-  	VMMAll/HMVMXAll.cpp \
+  	VMMAll/target-x86/HMAll-x86.cpp \
+  	VMMAll/target-x86/HMAllSVM-x86.cpp \
+  	VMMAll/target-x86/HMAllVMX-x86.cpp \
   	VMMAll/IEMAll.cpp \
   	VMMAll/IEMAllMem.cpp \
   	VMMAll/IEMAllTlb.cpp \
@@ -1058,18 +1076,18 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)
   	VMMAll/MMAll.cpp \
   	VMMAll/NEMAll.cpp \
   	VMMAll/PDMAll.cpp \
-  	VMMAll/PDMAllApic.cpp \
+  	VMMAll/target-x86/PDMAllApic-x86.cpp \
   	VMMAll/PDMAllCritSect.cpp \
   	VMMAll/PDMAllCritSectRw.cpp \
   	VMMAll/PDMAllCritSectBoth.cpp \
-  	$(if-expr defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL), VMMAll/PDMAllIommu.cpp,) \
+  	$(if-expr defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL), VMMAll/target-x86/PDMAllIommu-x86.cpp,) \
   	VMMAll/PDMAllQueue.cpp \
   	VMMAll/PDMAllTask.cpp \
   	VMMAll/PGMAll.cpp \
   	VMMAll/PGMAllHandler.cpp \
   	VMMAll/PGMAllPhys.cpp \
-  	VMMAll/PGMAllPool.cpp \
-  	VMMAll/SELMAll.cpp \
+  	VMMAll/target-x86/PGMAllPool-x86.cpp \
+  	VMMAll/target-x86/SELMAll-x86.cpp \
   	VMMAll/TMAll.cpp \
   	VMMAll/TMAllCpu.cpp \
   	VMMAll/TMAllReal.cpp \
@@ -1080,8 +1098,8 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)
   VMMR0_SOURCES.amd64 += \
   	VMMR0/CPUMR0A.asm \
   	VMMRZ/CPUMRZA.asm \
-  	VMMR0/HMR0A.asm \
-  	VMMR0/HMR0UtilA.asm \
+  	VMMR0/target-x86/HMR0A-x86.asm \
+  	VMMR0/target-x86/HMR0UtilA-x86.asm \
   	$(if-expr !defined(IEM_WITHOUT_ASSEMBLY),VMMAll/target-x86/IEMAllAImpl-x86-amd64.asm,) \
   	VMMAll/VMMAllA.asm
 
@@ -1146,8 +1164,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)
   	Makefile-wrapper.gmk=>../common/Makefile-wrapper.gmk
   vbox_vmmr0-src_SOURCES = \
   	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/Makefile-vbox_vmmr0.gmk=>Makefile \
-  	$(VMMR0_0_OUTDIR)/VMMR0.r0=>VMMR0.r0 \
-  	$(VMMR0_0_OUTDIR)/VMMR0.debug=>VMMR0.debug
+  	$(VMMR0_0_OUTDIR)/VMMR0.r0=>VMMR0.r0
  endif
 
 endif # defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)
@@ -1163,7 +1180,7 @@ ifndef VBOX_ONLY_BUILD
  SSMStandalone_DEFS    = VBOX_VMM_TARGET_AGNOSTIC VBOX_IN_VMM IN_VMM_R3 IN_VMM_STATIC SSM_STANDALONE CPUM_DB_STANDALONE $(VMM_COMMON_DEFS)
  SSMStandalone_INCS    = include
  SSMStandalone_SOURCES = \
- 	VMMR3/SSM.cpp
+ 	VMMR3/SSMR3.cpp
 endif # !VBOX_ONLY_BUILD
 
 
@@ -1242,8 +1259,8 @@ VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 # Disable annoying warnings about array subscript above array bounds in aPages[]
 #
 ifneq ($(KBUILD_TARGET),win)
- VMMR3/PGMPool.cpp_CXXFLAGS    = $(VBOX_GCC_Wno-array_bounds)
- VMMAll/PGMAllPool.cpp_CXXFLAGS = $(VBOX_GCC_Wno-array_bounds)
+ VMMR3/target-x86/PGMR3Pool-x86.cpp_CXXFLAGS   = $(VBOX_GCC_Wno-array_bounds)
+ VMMAll/target-x86/PGMAllPool-x86.cpp_CXXFLAGS = $(VBOX_GCC_Wno-array_bounds)
  VMMAll/PGMAll.cpp_CXXFLAGS    = -Wno-unused-function
  VMMAll/IEMAll.cpp_CXXFLAGS    = -Wno-unused-function
  VMMR0/GMMR0.cpp_CXXFLAGS      = -Wno-unused-value
@@ -1367,11 +1384,11 @@ IEMInternal.o IEMInternal.obj: IEMAll.o
 IEMAllCImplStrInstr-x86.cpp.o IEMAllCImplStrInstr-x86.cpp.obj: IEMAllCImpl-x86.o
 
 # Alias the NEM template to the objects where it is used:
-NEMAllNativeTemplate-win.cpp.o: NEMR3Native-win.o
+NEMAllNativeTemplate-win.cpp.o: NEMR3Native-win-x86.o
 
 # Alias the VMX template onto HMVMXR0 or darwin specific NEM object:
 ifeq ($(KBUILD_TARGET),darwin)
- VMXAllTemplate.cpp.o: NEMR3Native-darwin.o
+ VMXAllTemplate.cpp.o: NEMR3Native-darwin-x86.o
 else
  VMXAllTemplate.cpp.o: HMVMXR0.o
 endif

@@ -48,8 +48,8 @@
 global __U8RS
 __U8RS:
 %endif
-global $_?U8RS
-$_?U8RS:
+global _?U8RS
+_?U8RS:
         push    si
 
         ;

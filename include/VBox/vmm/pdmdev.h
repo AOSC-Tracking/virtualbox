@@ -450,13 +450,7 @@ typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 /** @def PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT
  * The bit count for the current host.
  * @note Superfluous, but still around for hysterical raisins.  */
-#if HC_ARCH_BITS == 32
-# define PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT             UINT32_C(0x00000100)
-#elif HC_ARCH_BITS == 64
-# define PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT             UINT32_C(0x00000200)
-#else
-# error Unsupported HC_ARCH_BITS value.
-#endif
+#define PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT              UINT32_C(0x00000200)
 /** The host bit count mask. */
 #define PDM_DEVREG_FLAGS_HOST_BITS_MASK                 UINT32_C(0x00000300)
 
@@ -468,13 +462,7 @@ typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 #define PDM_DEVREG_FLAGS_GUEST_BITS_32_64               UINT32_C(0x00003000)
 /** @def PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT
  * The guest bit count for the current compilation. */
-#if GC_ARCH_BITS == 32
-# define PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT            PDM_DEVREG_FLAGS_GUEST_BITS_32
-#elif GC_ARCH_BITS == 64
-# define PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT            PDM_DEVREG_FLAGS_GUEST_BITS_32_64
-#else
-# error Unsupported GC_ARCH_BITS value.
-#endif
+#define PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT             PDM_DEVREG_FLAGS_GUEST_BITS_32_64
 /** The guest bit count mask. */
 #define PDM_DEVREG_FLAGS_GUEST_BITS_MASK                UINT32_C(0x00003000)
 
@@ -2404,7 +2392,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                PDM_VERSION_MAKE_PP(0xffe7, 68, 0)
+#define PDM_DEVHLPR3_VERSION                PDM_VERSION_MAKE_PP(0xffe7, 71, 0)
 
 /**
  * PDM Device API.
@@ -2655,6 +2643,29 @@ typedef struct PDMDEVHLPR3
                                               uint32_t fFlags, const char *pszDesc, void **ppvMapping, PPGMMMIO2HANDLE phRegion));
 
     /**
+     * Creates a MMIO2 region from an existing backing.
+     *
+     * @returns VBox status.
+     * @param   pDevIns             The device instance.
+     * @param   pPciDev             The PCI device the region is associated with, or
+     *                              NULL if no PCI device association.
+     * @param   iPciRegion          The region number. Use the PCI region number as
+     *                              this must be known to the PCI bus device too. If
+     *                              it's not associated with the PCI device, then
+     *                              any number up to UINT8_MAX is fine.
+     * @param   cbRegion            The size (in bytes) of the region.
+     * @param   fFlags              PGMPHYS_MMIO2_FLAGS_XXX (see pgm.h).
+     * @param   pszDesc             Pointer to description string. This must not be
+     *                              freed.
+     * @param   pvBacking           The ring-3 backing to use for the MMIO2 region.
+     * @param   phRegion            Where to return the MMIO2 region handle.
+     *
+     * @thread  EMT(0)
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2CreateFromExisting,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iPciRegion, RTGCPHYS cbRegion,
+                                                          uint32_t fFlags, const char *pszDesc, void *pvBacking, PPGMMMIO2HANDLE phRegion));
+
+    /**
      * Destroys a MMIO2 region, unmapping it and freeing the memory.
      *
      * Any physical access handlers registered for the region must be deregistered
@@ -2680,7 +2691,7 @@ typedef struct PDMDEVHLPR3
      *          happens to be present in the base memory that is replaced, this is
      *          technically incorrect but it's just not worth the effort to do
      *          right, at least not at this point.
-     * @sa      PDMDevHlpMmio2Unmap, PDMDevHlpMmio2Create, PDMDevHlpMmio2SetUpContext
+     * @sa      PDMDevHlpMmio2Unmap, PDMDevHlpMmio2Create, PDMDevHlpMmio2CreateFromExisting, PDMDevHlpMmio2SetUpContext
      */
     DECLR3CALLBACKMEMBER(int, pfnMmio2Map,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, RTGCPHYS GCPhys));
 
@@ -2690,7 +2701,7 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status.
      * @param   pDevIns     The device instance the region is associated with.
      * @param   hRegion     The MMIO2 region handle.
-     * @sa      PDMDevHlpMmio2Map, PDMDevHlpMmio2Create, PDMDevHlpMmio2SetUpContext
+     * @sa      PDMDevHlpMmio2Map, PDMDevHlpMmio2Create, PDMDevHlpMmio2CreateFromExisting, PDMDevHlpMmio2SetUpContext
      */
     DECLR3CALLBACKMEMBER(int, pfnMmio2Unmap,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion));
 
@@ -3130,10 +3141,25 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags));
 
     /**
+     * Gets the guest page size as a power of 2.
+     *
+     * This is used implicitly by pfnPhysGCPhys2CCPtr, pfnPhysGCPhys2CCPtrReadOnly,
+     * pfnPhysGCPtr2GCPhys, pfnPCIPhysGCPhys2CCPtr, pfnPCIPhysGCPhys2CCPtrReadOnly,
+     * pfnPCIPhysBulkGCPhys2CCPtr and pfnPCIPhysBulkGCPhys2CCPtrReadOnly.
+     *
+     * @returns guest page size as a shift count.
+     * @param   pDevIns             The device instance.
+     * @since   7.2.6
+     */
+    DECLR3CALLBACKMEMBER(unsigned, pfnPhysGetPageShift,(PPDMDEVINS pDevIns));
+
+    /**
      * Requests the mapping of a guest page into ring-3.
      *
      * When you're done with the page, call pfnPhysReleasePageMappingLock() ASAP to
      * release it.
+     *
+     * Use pfnPhysGetPageShift() to get the guest page size.
      *
      * This API will assume your intention is to write to the page, and will
      * therefore replace shared and zero pages. If you do not intend to modify the
@@ -3168,6 +3194,8 @@ typedef struct PDMDEVHLPR3
      *
      * When you're done with the page, call pfnPhysReleasePageMappingLock() ASAP to
      * release it.
+     *
+     * Use pfnPhysGetPageShift() to get the guest page size.
      *
      * @returns VBox status code.
      * @retval  VINF_SUCCESS on success.
@@ -3204,6 +3232,95 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnPhysReleasePageMappingLock,(PPDMDEVINS pDevIns, PPGMPAGEMAPLOCK pLock));
 
     /**
+     * Requests the mapping of multiple guest page into ring-3.
+     *
+     * When you're done with the pages, call pfnPhysBulkReleasePageMappingLocks()
+     * ASAP to release them.
+     *
+     * This API will assume your intention is to write to the pages, and will
+     * therefore replace shared and zero pages. If you do not intend to modify the
+     * pages, use the pfnPhysBulkGCPhys2CCPtrReadOnly() API.
+     *
+     * Use pfnPhysGetPageShift() to get the guest page size.
+     *
+     * @returns VBox status code.
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_PGM_PHYS_PAGE_RESERVED if any of the pages has no physical
+     *          backing or if any of the pages the page has any active access
+     *          handlers. The caller must fall back on using PGMR3PhysWriteExternal.
+     * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if @a paGCPhysPages contains
+     *          an invalid physical address.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   cPages              Number of pages to lock.
+     * @param   paGCPhysPages       The guest physical address of the pages that
+     *                              should be mapped (@a cPages entries).
+     * @param   fFlags              Flags reserved for future use, MBZ.
+     * @param   papvPages           Where to store the ring-3 mapping addresses
+     *                              corresponding to @a paGCPhysPages.
+     * @param   paLocks             Where to store the locking information that
+     *                              pfnPhysBulkReleasePageMappingLock needs (@a cPages
+     *                              in length).
+     *
+     * @remark  Avoid calling this API from within critical sections (other than the
+     *          PGM one) because of the deadlock risk when we have to delegating the
+     *          task to an EMT.
+     * @thread  Any.
+     * @since   6.0.6
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPhysBulkGCPhys2CCPtr,(PPDMDEVINS pDevIns, uint32_t cPages, PCRTGCPHYS paGCPhysPages,
+                                                       uint32_t fFlags, void **papvPages, PPGMPAGEMAPLOCK paLocks));
+
+    /**
+     * Requests the mapping of multiple guest page into ring-3, for reading only.
+     *
+     * When you're done with the pages, call pfnPhysBulkReleasePageMappingLocks()
+     * ASAP to release them.
+     *
+     * Use pfnPhysGetPageShift() to get the guest page size.
+     *
+     * @returns VBox status code.
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_PGM_PHYS_PAGE_RESERVED if any of the pages has no physical
+     *          backing or if any of the pages the page has an active ALL access
+     *          handler. The caller must fall back on using PGMR3PhysWriteExternal.
+     * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if @a paGCPhysPages contains
+     *          an invalid physical address.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   cPages              Number of pages to lock.
+     * @param   paGCPhysPages       The guest physical address of the pages that
+     *                              should be mapped (@a cPages entries).
+     * @param   fFlags              Flags reserved for future use, MBZ.
+     * @param   papvPages           Where to store the ring-3 mapping addresses
+     *                              corresponding to @a paGCPhysPages.
+     * @param   paLocks             Where to store the lock information that
+     *                              pfnPhysReleasePageMappingLock needs (@a cPages
+     *                              in length).
+     *
+     * @remark  Avoid calling this API from within critical sections.
+     * @thread  Any.
+     * @since   6.0.6
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPhysBulkGCPhys2CCPtrReadOnly,(PPDMDEVINS pDevIns, uint32_t cPages, PCRTGCPHYS paGCPhysPages,
+                                                               uint32_t fFlags, void const **papvPages, PPGMPAGEMAPLOCK paLocks));
+
+    /**
+     * Release the mappings of multiple guest pages.
+     *
+     * This is the counter part of pfnPhysBulkGCPhys2CCPtr and
+     * pfnPhysBulkGCPhys2CCPtrReadOnly.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   cPages              Number of pages to unlock.
+     * @param   paLocks             The lock structures initialized by the mapping
+     *                              function (@a cPages in length).
+     * @thread  Any.
+     * @since   6.0.6
+     */
+    DECLR3CALLBACKMEMBER(void, pfnPhysBulkReleasePageMappingLocks,(PPDMDEVINS pDevIns, uint32_t cPages, PPGMPAGEMAPLOCK paLocks));
+
+    /**
      * Read guest physical memory by virtual address.
      *
      * @param   pDevIns             The device instance.
@@ -3227,6 +3344,8 @@ typedef struct PDMDEVHLPR3
 
     /**
      * Convert a guest virtual address to a guest physical address.
+     *
+     * Use pfnPhysGetPageShift() to get the guest page size.
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
@@ -4511,91 +4630,6 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(VMRESUMEREASON, pfnVMGetResumeReason,(PPDMDEVINS pDevIns));
-
-    /**
-     * Requests the mapping of multiple guest page into ring-3.
-     *
-     * When you're done with the pages, call pfnPhysBulkReleasePageMappingLocks()
-     * ASAP to release them.
-     *
-     * This API will assume your intention is to write to the pages, and will
-     * therefore replace shared and zero pages. If you do not intend to modify the
-     * pages, use the pfnPhysBulkGCPhys2CCPtrReadOnly() API.
-     *
-     * @returns VBox status code.
-     * @retval  VINF_SUCCESS on success.
-     * @retval  VERR_PGM_PHYS_PAGE_RESERVED if any of the pages has no physical
-     *          backing or if any of the pages the page has any active access
-     *          handlers. The caller must fall back on using PGMR3PhysWriteExternal.
-     * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if @a paGCPhysPages contains
-     *          an invalid physical address.
-     *
-     * @param   pDevIns             The device instance.
-     * @param   cPages              Number of pages to lock.
-     * @param   paGCPhysPages       The guest physical address of the pages that
-     *                              should be mapped (@a cPages entries).
-     * @param   fFlags              Flags reserved for future use, MBZ.
-     * @param   papvPages           Where to store the ring-3 mapping addresses
-     *                              corresponding to @a paGCPhysPages.
-     * @param   paLocks             Where to store the locking information that
-     *                              pfnPhysBulkReleasePageMappingLock needs (@a cPages
-     *                              in length).
-     *
-     * @remark  Avoid calling this API from within critical sections (other than the
-     *          PGM one) because of the deadlock risk when we have to delegating the
-     *          task to an EMT.
-     * @thread  Any.
-     * @since   6.0.6
-     */
-    DECLR3CALLBACKMEMBER(int, pfnPhysBulkGCPhys2CCPtr,(PPDMDEVINS pDevIns, uint32_t cPages, PCRTGCPHYS paGCPhysPages,
-                                                       uint32_t fFlags, void **papvPages, PPGMPAGEMAPLOCK paLocks));
-
-    /**
-     * Requests the mapping of multiple guest page into ring-3, for reading only.
-     *
-     * When you're done with the pages, call pfnPhysBulkReleasePageMappingLocks()
-     * ASAP to release them.
-     *
-     * @returns VBox status code.
-     * @retval  VINF_SUCCESS on success.
-     * @retval  VERR_PGM_PHYS_PAGE_RESERVED if any of the pages has no physical
-     *          backing or if any of the pages the page has an active ALL access
-     *          handler. The caller must fall back on using PGMR3PhysWriteExternal.
-     * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if @a paGCPhysPages contains
-     *          an invalid physical address.
-     *
-     * @param   pDevIns             The device instance.
-     * @param   cPages              Number of pages to lock.
-     * @param   paGCPhysPages       The guest physical address of the pages that
-     *                              should be mapped (@a cPages entries).
-     * @param   fFlags              Flags reserved for future use, MBZ.
-     * @param   papvPages           Where to store the ring-3 mapping addresses
-     *                              corresponding to @a paGCPhysPages.
-     * @param   paLocks             Where to store the lock information that
-     *                              pfnPhysReleasePageMappingLock needs (@a cPages
-     *                              in length).
-     *
-     * @remark  Avoid calling this API from within critical sections.
-     * @thread  Any.
-     * @since   6.0.6
-     */
-    DECLR3CALLBACKMEMBER(int, pfnPhysBulkGCPhys2CCPtrReadOnly,(PPDMDEVINS pDevIns, uint32_t cPages, PCRTGCPHYS paGCPhysPages,
-                                                               uint32_t fFlags, void const **papvPages, PPGMPAGEMAPLOCK paLocks));
-
-    /**
-     * Release the mappings of multiple guest pages.
-     *
-     * This is the counter part of pfnPhysBulkGCPhys2CCPtr and
-     * pfnPhysBulkGCPhys2CCPtrReadOnly.
-     *
-     * @param   pDevIns             The device instance.
-     * @param   cPages              Number of pages to unlock.
-     * @param   paLocks             The lock structures initialized by the mapping
-     *                              function (@a cPages in length).
-     * @thread  Any.
-     * @since   6.0.6
-     */
-    DECLR3CALLBACKMEMBER(void, pfnPhysBulkReleasePageMappingLocks,(PPDMDEVINS pDevIns, uint32_t cPages, PPGMPAGEMAPLOCK paLocks));
 
     /**
      * Returns the architecture used for the guest.
@@ -6172,7 +6206,7 @@ typedef struct PDMDEVINSR3
     /** Temporarily. */
     RTRCPTR                         pvInstanceDataRC;
     /** Align the internal data more naturally. */
-    uint32_t                        au32Padding[HC_ARCH_BITS == 32 ? 13 : 11];
+    uint32_t                        au32Padding[11];
 
     /** Internal data. */
     union
@@ -6180,7 +6214,7 @@ typedef struct PDMDEVINSR3
 #ifdef PDMDEVINSINT_DECLARED
         PDMDEVINSINTR3              s;
 #endif
-        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x40 : 0x90];
+        uint8_t                     padding[0x90];
     } Internal;
 
     /** Device instance data for ring-3.  The size of this area is defined
@@ -6250,7 +6284,7 @@ typedef struct PDMDEVINSR0
     R0PTRTYPE(struct PDMPCIDEV *)   apPciDevs[8];
 
     /** Align the internal data more naturally. */
-    uint32_t                        au32Padding[HC_ARCH_BITS == 32 ? 3 : 2 + 4];
+    uint32_t                        au32Padding[2 + 4];
 
     /** Internal data. */
     union
@@ -6258,7 +6292,7 @@ typedef struct PDMDEVINSR0
 #ifdef PDMDEVINSINT_DECLARED
         PDMDEVINSINTR0              s;
 #endif
-        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x40 : 0x80];
+        uint8_t                     padding[0x80];
     } Internal;
 
     /** Device instance data for ring-0. The size of this area is defined
@@ -6821,6 +6855,15 @@ DECLINLINE(int) PDMDevHlpMmio2Create(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uin
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnMmio2CreateFromExisting
+ */
+DECLINLINE(int) PDMDevHlpMmio2CreateFromExisting(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iPciRegion, RTGCPHYS cbRegion,
+                                                 uint32_t fFlags, const char *pszDesc, void *pvBacking, PPGMMMIO2HANDLE phRegion)
+{
+    return pDevIns->pHlpR3->pfnMmio2CreateFromExisting(pDevIns, pPciDev, iPciRegion << 16, cbRegion, fFlags, pszDesc, pvBacking, phRegion);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnMmio2Map
  */
 DECLINLINE(int) PDMDevHlpMmio2Map(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, RTGCPHYS GCPhys)
@@ -7296,6 +7339,30 @@ DECLINLINE(int) PDMDevHlpPhysWriteUser(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, cons
 }
 
 #ifdef IN_RING3
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPhysGetPageShift
+ */
+DECLINLINE(unsigned) PDMDevHlpPhysGetPageShift(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysGetPageShift(pDevIns);
+}
+
+/**
+ * Gets the page size in bytes.
+ */
+DECLINLINE(uint32_t) PDMDevHlpPhysGetPageSize(PPDMDEVINS pDevIns)
+{
+    return RT_BIT_32(pDevIns->CTX_SUFF(pHlp)->pfnPhysGetPageShift(pDevIns));
+}
+
+/**
+ * Gets the page offset mask.
+ */
+DECLINLINE(RTGCPHYS) PDMDevHlpPhysGetPageOffsetMask(PPDMDEVINS pDevIns)
+{
+    return (RTGCPHYS)(RT_BIT_32(pDevIns->CTX_SUFF(pHlp)->pfnPhysGetPageShift(pDevIns)) - 1U);
+}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPhysGCPhys2CCPtr
@@ -7925,6 +7992,63 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateIo(PPDMDEVINS pDevIns, uint32_t iPciRe
 }
 
 /**
+ * Combines PDMDevHlpIoPortCreate and PDMDevHlpPCIIORegionRegisterIo, creating
+ * and registering an I/O port region for the default PCI device, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance to register the ports with.
+ * @param   pPciDev         The PCI device structure.
+ * @param   cPorts          The count of I/O ports in the region (the size).
+ * @param   iPciRegion      The PCI device region.
+ * @param   pfnOut          Pointer to function which is gonna handle OUT
+ *                          operations. Optional.
+ * @param   pfnIn           Pointer to function which is gonna handle IN operations.
+ *                          Optional.
+ * @param   pvUser          User argument to pass to the callbacks.
+ * @param   pszDesc         Pointer to description string. This must not be freed.
+ * @param   paExtDescs      Extended per-port descriptions, optional.  Partial range
+ *                          coverage is allowed.  This must not be freed.
+ * @param   phIoPorts       Where to return the I/O port range handle.
+ *
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateIoEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iPciRegion, RTIOPORT cPorts,
+                                               PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn, void *pvUser,
+                                               const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
+
+{
+    int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0 /*fFlags*/, pPciDev, iPciRegion << 16,
+                                                pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, paExtDescs, phIoPorts);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iPciRegion, cPorts, PCI_ADDRESS_SPACE_IO,
+                                                     PDMPCIDEV_IORGN_F_IOPORT_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                     *phIoPorts, NULL /*pfnMapUnmap*/);
+    return rc;
+}
+
+/**
+ * Registers a MMIO region for the default PCI device, custom map/unmap.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   iRegion         The region number.
+ * @param   cbRegion        Size of the region.
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   pfnMapUnmap     Callback for doing the mapping, optional.  The
+ *                          callback will be invoked holding only the PDM lock.
+ *                          The device lock will _not_ be taken (due to lock
+ *                          order).
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmioCustom(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+                                                       PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnMapUnmap)
+{
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType,
+                                                   PDMPCIDEV_IORGN_F_NO_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                   UINT64_MAX, pfnMapUnmap);
+}
+
+/**
  * Registers an MMIO region for the default PCI device.
  *
  * @returns VBox status code.
@@ -8062,13 +8186,80 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2(PPDMDEVINS pDevIns, uint32_t iPc
 }
 
 /**
- * Combines PDMDevHlpMmio2Create and PDMDevHlpPCIIORegionRegisterMmio2, creating
+ * Combines PDMDevHlpMmio2CreateFromExisting and PDMDevHlpPCIIORegionRegisterMmio2, creating
  * and registering an MMIO2 region for the default PCI device.
  *
  * @returns VBox status code.
  * @param   pDevIns         The device instance to register the ports with.
  * @param   cbRegion        The size of the region in bytes.
  * @param   iPciRegion      The PCI device region.
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   pszDesc         Pointer to description string. This must not be freed.
+ * @param   pvBacking       The ring-3 memory backing the MMIO2 region.
+ * @param   phRegion        Where to return the MMIO2 region handle.
+ *
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2FromExisting(PPDMDEVINS pDevIns, uint32_t iPciRegion, RTGCPHYS cbRegion,
+                                                            PCIADDRESSSPACE enmType, const char *pszDesc,
+                                                            void *pvBacking, PPGMMMIO2HANDLE phRegion)
+
+{
+    int rc = pDevIns->pHlpR3->pfnMmio2CreateFromExisting(pDevIns, pDevIns->apPciDevs[0], iPciRegion << 16, cbRegion, 0 /*fFlags*/,
+                                                         pszDesc, pvBacking, phRegion);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
+                                                     PDMPCIDEV_IORGN_F_MMIO2_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                     *phRegion, NULL /*pfnCallback*/);
+    return rc;
+}
+
+/**
+ * Combines PDMDevHlpMmio2CreateFromExisting and PDMDevHlpPCIIORegionRegisterMmio2, creating
+ * and registering an MMIO2 region for the default PCI device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance to register the ports with.
+ * @param   pPciDev         The PCI device structure.
+ * @param   cbRegion        The size of the region in bytes.
+ * @param   iPciRegion      The PCI device region.
+ * @param   pfnMapUnmap     Callback for doing the mapping, optional.  The
+ *                          callback will be invoked holding only the PDM lock.
+ *                          The device lock will _not_ be taken (due to lock
+ *                          order).
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   pszDesc         Pointer to description string. This must not be freed.
+ * @param   pvBacking       The ring-3 memory backing the MMIO2 region.
+ * @param   phRegion        Where to return the MMIO2 region handle.
+ *
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2FromExistingEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
+                                                              RTGCPHYS cbRegion, PFNPCIIOREGIONMAP pfnMapUnmap,
+                                                              PCIADDRESSSPACE enmType, const char *pszDesc,
+                                                              void *pvBacking, PPGMMMIO2HANDLE phRegion)
+
+{
+    int rc = pDevIns->pHlpR3->pfnMmio2CreateFromExisting(pDevIns, pPciDev, iPciRegion << 16, cbRegion, 0 /*fFlags*/,
+                                                         pszDesc, pvBacking, phRegion);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iPciRegion, cbRegion, enmType,
+                                                     PDMPCIDEV_IORGN_F_MMIO2_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                     *phRegion, pfnMapUnmap);
+    return rc;
+}
+
+/**
+ * Combines PDMDevHlpMmio2Create and PDMDevHlpPCIIORegionRegisterMmio2, creating
+ * and registering an MMIO2 region for the default PCI device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance to register the ports with.
+ * @param   pPciDev         The PCI device structure.
+ * @param   iPciRegion      The PCI device region.
+ * @param   cbRegion        The size of the region in bytes.
  * @param   enmType         PCI_ADDRESS_SPACE_MEM or
  *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
  *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
@@ -8083,15 +8274,15 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2(PPDMDEVINS pDevIns, uint32_t iPc
  * @param   phRegion        Where to return the MMIO2 region handle.
  *
  */
-DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2Ex(PPDMDEVINS pDevIns, uint32_t iPciRegion, RTGCPHYS cbRegion,
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2Ex(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iPciRegion, RTGCPHYS cbRegion,
                                                   PCIADDRESSSPACE enmType, uint32_t fMmio2Flags, PFNPCIIOREGIONMAP pfnMapUnmap,
                                                   const char *pszDesc, void **ppvMapping, PPGMMMIO2HANDLE phRegion)
 
 {
-    int rc = pDevIns->pHlpR3->pfnMmio2Create(pDevIns, pDevIns->apPciDevs[0], iPciRegion << 16, cbRegion, fMmio2Flags,
+    int rc = pDevIns->pHlpR3->pfnMmio2Create(pDevIns, pPciDev, iPciRegion << 16, cbRegion, fMmio2Flags,
                                              pszDesc, ppvMapping, phRegion);
     if (RT_SUCCESS(rc))
-        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iPciRegion, cbRegion, enmType,
                                                      PDMPCIDEV_IORGN_F_MMIO2_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
                                                      *phRegion, pfnMapUnmap);
     return rc;
@@ -9258,6 +9449,65 @@ DECLINLINE(int) PDMDevHlpDMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, vo
 DECLINLINE(int) PDMDevHlpDMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbWritten)
 {
     return pDevIns->pHlpR3->pfnDMAWriteMemory(pDevIns, uChannel, pvBuffer, off, cbBlock, pcbWritten);
+}
+
+/**
+ * DMA memory read, with device buffer bounds checking.
+ * Copies from system memory to device-specific buffer.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   uChannel            Channel number.
+ * @param   pvBufBase           Base of buffer memory to read.
+ * @param   offBuf              Offset into buffer.
+ * @param   cbBuf               Device buffer size.
+ * @param   offDma              DMA position.
+ * @param   cbBlock             DMA block size.
+ * @param   pcbRead             Where to store the number of bytes which was
+ *                              read, optional.
+ * @thread  EMT
+ */
+DECLINLINE(int) PDMDevHlpDMAReadMemoryEx(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBufBase, uint32_t offBuf, uint32_t cbBuf, uint32_t offDma, uint32_t cbBlock, uint32_t *pcbRead)
+{
+
+    if (RT_UNLIKELY(offBuf + cbBlock > cbBuf))
+    {
+        if (offBuf < cbBuf) /* Partial transfer. */
+            cbBlock = cbBuf - offBuf;
+        else                /* No transfer. */
+            return 0;
+    }
+    void  *pvBuffer = (uint8_t *)pvBufBase + offBuf;
+    return pDevIns->pHlpR3->pfnDMAReadMemory(pDevIns, uChannel, pvBuffer, offDma, cbBlock, pcbRead);
+}
+/**
+ * DMA memory write, with device buffer bounds checking.
+ * Copies from device-specific buffer to system memory.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   uChannel            Channel number.
+ * @param   pvBufBase           Base of buffer memory to write.
+ * @param   offBuf              Offset into buffer.
+ * @param   cbBuf               Device buffer size.
+ * @param   offDma              DMA position.
+ * @param   cbBlock             DMA block size.
+ * @param   pcbWritten          Where to store the number of bytes which was
+ *                              written, optional.
+ * @thread  EMT
+ */
+DECLINLINE(int) PDMDevHlpDMAWriteMemoryEx(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBufBase, uint32_t offBuf, uint32_t cbBuf, uint32_t offDma, uint32_t cbBlock, uint32_t *pcbWritten)
+{
+
+    if (RT_UNLIKELY(offBuf + cbBlock > cbBuf))
+    {
+        if (offBuf < cbBuf) /* Partial transfer. */
+            cbBlock = cbBuf - offBuf;
+        else                /* No transfer. */
+            return 0;
+    }
+    const void  *pvBuffer = (const uint8_t *)pvBufBase + offBuf;
+    return pDevIns->pHlpR3->pfnDMAWriteMemory(pDevIns, uChannel, pvBuffer, offDma, cbBlock, pcbWritten);
 }
 
 /**

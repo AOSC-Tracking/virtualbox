@@ -42,6 +42,7 @@
 
 /* GUI includes: */
 #include "QIFileDialog.h"
+#include "QIMessageBox.h"
 #include "UIActionPoolRuntime.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UIAdvancedSettingsDialogSpecific.h"
@@ -73,6 +74,7 @@
 #include "UIModalWindowManager.h"
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
+#include "UISession.h"
 #include "UISoftKeyboard.h"
 #include "UITranslationEventListener.h"
 #include "UITakeSnapshotDialog.h"
@@ -386,6 +388,7 @@ void UIMachineLogic::sltHandleMachineInitialized()
     sltMachineStateChanged();
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
+    checkUnattendedLeftOvers();
 }
 
 void UIMachineLogic::sltChangeVisualStateToNormal()
@@ -3076,5 +3079,47 @@ void UIMachineLogic::reset(bool fShowConfirmation)
             for (ulong uScreenId = 1; uScreenId < cMonitorCount; ++uScreenId)
                 machineWindows().at(uScreenId)->update();
         }
+    }
+}
+
+void UIMachineLogic::checkUnattendedLeftOvers()
+{
+    if (!uimachine() || !uimachine()->uisession())
+        return;
+    QString strDialogName = gpConverter->toInternalString(UIExtraDataMetaDefs::DialogType_UnattendedCleanup);
+    if (gEDataManager->suppressedMessages().contains(strDialogName))
+        return;
+    CVirtualBox comVBox = gpGlobalSession->virtualBox();
+    CMediumVector comMedia = comVBox.GetDVDImages();
+    QUuid iMachineId = uimachine()->uisession()->machine().GetId();
+    CMedium comUnattendedVISO;
+    foreach(const CMedium &comMedium, comMedia)
+    {
+        QFileInfo fInfo(comMedium.GetLocation());
+        if (fInfo.suffix() != "viso")
+            continue;
+        /* VISO files used during unattended install has the machine's UUID in their file names: */
+        if (!fInfo.fileName().contains(iMachineId.toString(QUuid::WithoutBraces), Qt::CaseInsensitive))
+            continue;
+        /* Skip this if the VISO is still inserted (attached) to any VMs: */
+        if (!comMedium.GetMachineIds().isEmpty())
+            continue;
+        comUnattendedVISO = comMedium;
+        break;
+    }
+    if (!comUnattendedVISO.isNull())
+    {
+        int iReturn = msgCenter().confirmUnattendedFilesRemoval(activeMachineWindow());
+
+        if (iReturn & AlertOption_CheckBox)
+            gEDataManager->setSuppressedMessages(gEDataManager->suppressedMessages() << strDialogName);
+
+        if (iReturn != AlertButton_Ok)
+            return;
+
+        UINotificationProgressMediumDeletingStorage *pNotification = new UINotificationProgressMediumDeletingStorage(comUnattendedVISO);
+        // connect(pNotification, &UINotificationProgressMediumDeletingStorage::sigMediumStorageDeleted,
+        //         this, &UIMediumItemHD::sltHandleMediumRemoveRequest);
+        gpNotificationCenter->append(pNotification);
     }
 }

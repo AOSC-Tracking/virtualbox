@@ -48,6 +48,8 @@
 # error "not IN_RING0!"
 #endif
 #include <VBox/dis.h>
+#include <iprt/crc.h>
+#include <iprt/log.h>
 #include <iprt/string.h>
 
 
@@ -57,6 +59,14 @@
 static const char szStr1[] = "some readonly string";
 static char szStr2[6000] = "some read/write string";
 static char achBss[8192];
+
+/** Absolute data fixups. */
+struct CLANG11WEIRDNOTHROW { PFNRT pfn; } g_ManualR0Deps[] =
+{
+    { (PFNRT)RTCrc32 },
+    { NULL }
+};
+
 
 #ifdef VBOX_SOME_IMPORT_FUNCTION
 extern "C" DECLIMPORT(int) SomeImportFunction(void);
@@ -114,5 +124,41 @@ extern "C" DECLEXPORT(uintptr_t) SomeExportFunction5(void)
 {
     return (uintptr_t)SomeExportFunction3(NULL) + (uintptr_t)SomeExportFunction2(NULL)
          + (uintptr_t)SomeExportFunction1(NULL) + (uintptr_t)&SomeExportFunction4;
+}
+
+
+/**
+ * 2nd test function.
+ */
+extern "C" DECLEXPORT(int) Test2(void)
+{
+    /*
+     * Do a similar RTLogCreateEx calls we do in VMMR0.cpp.
+     * Had trouble with this on linux.arm64.
+     */
+    PRTLOGGER                 pLogger        = NULL;
+    static const char * const s_apszGroups[] = { "all", "whatever" };
+    static char               s_achBuf[4096];
+    RTLOGBUFFERDESC           aBufDescs[4];
+    uint32_t const            cbBuf          = sizeof(s_achBuf) / RT_ELEMENTS(aBufDescs);
+    for (size_t i = 0; i < RT_ELEMENTS(aBufDescs); i++)
+    {
+        aBufDescs[i].u32Magic    = RTLOGBUFFERDESC_MAGIC;
+        aBufDescs[i].uReserved   = 0;
+        aBufDescs[i].cbBuf       = cbBuf;
+        aBufDescs[i].offBuf      = 0;
+        aBufDescs[i].pchBuf      = s_achBuf + i * cbBuf;
+        aBufDescs[i].pAux        = NULL;
+    }
+
+    int rc = RTLogCreateEx(&pLogger, "VBOX_LDR_TEST_LOG", RTLOG_F_NO_LOCKING | RTLOGFLAGS_BUFFERED,
+                           "all", RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
+                           RT_ELEMENTS(aBufDescs), aBufDescs, RTLOGDEST_DUMMY,
+                           NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
+                           NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
+                           NULL /*pErrInfo*/, NULL /*pszFilenameFmt*/);
+    if (RT_SUCCESS(rc))
+        rc = RTLogDestroy(pLogger);
+    return rc;
 }
 

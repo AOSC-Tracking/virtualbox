@@ -49,12 +49,12 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(VirtualBox *aParent, bool fIsHost = false);
+    HRESULT init(VirtualBox *aParent);
     void uninit() RT_OVERRIDE;
 
     // public internal methods
-    //HRESULT i_loadSettings(const settings::PlatformProperties &data);
-    //HRESULT i_saveSettings(settings::PlatformProperties &data);
+    HRESULT i_loadSettings(const settings::PlatformProperties &data);
+    HRESULT i_saveSettings(settings::PlatformProperties &data);
     //void i_rollback();
     //void i_commit();
     //void i_copyFrom(PlatformProperties *aThat);
@@ -125,13 +125,11 @@ private:
     HRESULT getMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,
                                                USBControllerType_T aType,
                                                ULONG *aMaxInstances) RT_OVERRIDE;
+    HRESULT getMinGuestRAM(FirmwareType_T aFirmware, ULONG *aMinMegabytes) RT_OVERRIDE;
 
     VirtualBox * const     mParent;
     /** Platform architecture the properties are for. */
     PlatformArchitecture_T mPlatformArchitecture;
-    /** Flag set to \c true if this instance handles platform properties
-     *  for the host, or set to \c false for guests. */
-    bool const             mfIsHost;
     /** Configurable data. */
     struct
     {

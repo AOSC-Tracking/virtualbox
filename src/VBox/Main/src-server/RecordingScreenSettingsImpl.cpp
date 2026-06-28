@@ -1121,7 +1121,9 @@ HRESULT RecordingScreenSettings::i_saveSettings(settings::RecordingScreen &Setti
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Settings = *m->bd.data();
+    settings::RecordingScreen const * const pSrc = m ? m->bd.data() : NULL;
+    AssertPtrReturn(pSrc, E_UNEXPECTED); /* MSC /analyze */
+    Settings = *pSrc;
 
     return S_OK;
 }

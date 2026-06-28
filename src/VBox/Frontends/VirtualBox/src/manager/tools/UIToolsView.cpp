@@ -380,6 +380,10 @@ void UIToolsView::prepareConnections()
     /* Translation signal: */
     connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
             this, &UIToolsView::sltRetranslateUI);
+
+    /* Prepare connections: */
+    connect(&uiCommon(), &UICommon::sigThemeChange,
+            this, &UIToolsView::sltUpdatePalette);
 }
 
 void UIToolsView::cleanupConnections()

@@ -34,6 +34,7 @@
 # SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 #
 
+/^ *RT_NOCRT_BEGINPROC.*no-alias/d
 s/^ *RT_NOCRT_BEGINPROC  *([a-zA-Z_][^ ;]*)([ ;].*|)$/\1=nocrt_\1 _\1=nocrt_\1 \\/p
 s/^ *RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL\(([^;)]+)\);.*$/\1=nocrt_\1 _\1=nocrt_\1 \\/p
 s/^ *RT_ALIAS_AND_EXPORT_NOCRT_SYMBOL_WITHOUT_UNDERSCORE\(([^;)]+)\);.*$/\1=nocrt_\1 \\/p

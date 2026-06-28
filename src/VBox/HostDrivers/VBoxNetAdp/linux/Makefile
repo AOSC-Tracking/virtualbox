@@ -59,6 +59,10 @@ VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
+ifeq ($(VBOX_KBUILD_TARGET_ARCH),arm64)
+VBOXMOD_OBJS += \
+	common/asm/ASMBitFirstClear-generic.o
+endif
 VBOXMOD_INCL = \
 	$(VBOXNETADP_DIR) \
 	$(VBOXNETADP_DIR)include \
@@ -70,8 +74,7 @@ VBOXMOD_DEFS = \
 	IN_SUP_R0 \
 	VBOX \
 	RT_WITH_VBOX \
-	VBOX_WITH_HARDENING \
-	VBOX_WITH_64_BITS_GUESTS # <-- must be consistent with Config.kmk!
+	VBOX_WITH_HARDENING
 VBOXMOD_CFLAGS = -include $(VBOXNETADP_DIR)include/VBox/SUPDrvMangling.h -fno-pie -Wno-declaration-after-statement
 
 include $(obj)/Makefile-footer.gmk

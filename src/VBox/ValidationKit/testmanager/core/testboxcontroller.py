@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172152 $"
 
 
 # Standard python imports.
@@ -63,6 +63,8 @@ from testmanager.core.schedulerbase     import SchedulerBase;
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
     long = int;     # pylint: disable=redefined-builtin,invalid-name
+else:
+    long = long;    # pylint: disable=redefined-builtin,invalid-name,self-assigning-variable
 
 
 class TestBoxControllerException(TMExceptionBase):
@@ -742,9 +744,7 @@ class TestBoxController(object): # pylint: disable=too-few-public-methods
         offFile  = 0;
         oSrcFile = self._oSrvGlue.getBodyIoStreamBinary();
         while offFile < cbFile:
-            cbToRead = cbFile - offFile;
-            if cbToRead > 256*1024:
-                cbToRead = 256*1024;
+            cbToRead = min(cbFile - offFile, 256*1024);
             offFile += cbToRead;
 
             abBuf = oSrcFile.read(cbToRead);

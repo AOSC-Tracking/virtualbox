@@ -671,6 +671,8 @@ static DECLCALLBACK(void) virtioNetVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE
     PVIRTIONETVIRTQ  pVirtq  = &pThis->aVirtqs[uVirtqNbr];
     PVIRTIONETWORKER pWorker = &pThis->aWorkers[uVirtqNbr];
 
+    AssertMsgReturnVoid(uVirtqNbr < pThis->cVirtqs,
+        ("[%s] queue index (%u) exceeds the number of queues (%u)\n", pThis->szInst, uVirtqNbr, pThis->cVirtqs));
 #ifdef VIRTIO_REL_INFO_DUMP
     if (ASMAtomicReadBool(&pVirtio->fRecovering))
         LogRel(("[%s] Received notification from the guest on queue %u\n", pThis->szInst, uVirtqNbr));
@@ -1035,7 +1037,13 @@ static int virtioNetR3DevCfgAccess(PVIRTIONET pThis, uint32_t uOffsetOfAccess, v
     AssertReturn(pv && cb <= sizeof(uint32_t), fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00);
 
     if (VIRTIO_DEV_CONFIG_SUBMATCH_MEMBER( uMacAddress,      VIRTIONET_CONFIG_T, uOffsetOfAccess))
-        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uMacAddress,      VIRTIONET_CONFIG_T, uOffsetOfAccess, &pThis->virtioNetConfig);
+    {
+        /* Legacy drivers use write access to 'mac', see section 5.1.4.3 "Legacy Interface: Device configuration layout" */
+        if (pThis->Virtio.fLegacyDriver)
+            VIRTIO_DEV_CONFIG_ACCESS(          uMacAddress,  VIRTIONET_CONFIG_T, uOffsetOfAccess, &pThis->virtioNetConfig);
+        else
+            VIRTIO_DEV_CONFIG_ACCESS_READONLY( uMacAddress,  VIRTIONET_CONFIG_T, uOffsetOfAccess, &pThis->virtioNetConfig);
+    }
 #if FEATURE_OFFERED(STATUS)
     else
     if (VIRTIO_DEV_CONFIG_SUBMATCH_MEMBER( uStatus,          VIRTIONET_CONFIG_T, uOffsetOfAccess))
@@ -2681,22 +2689,20 @@ static int virtioNetR3ReadVirtioTxPktHdr(PVIRTIOCORE pVirtio, PVIRTIONET pThis, 
 }
 
 /**
- * Transmits single GSO frame via PDM framework to downstream PDM device, to emit from virtual NIC.
+ * Prepare a single GSO frame for transmission.
  *
  * This does final prep of GSO parameters including checksum calculation if configured
  * (e.g. if VIRTIONET_HDR_F_NEEDS_CSUM flag is set).
  *
  * @param pThis         virtio-net instance
- * @param pThisCC       virtio-net instance
  * @param pSgBuf        PDM S/G buffer containing pkt and hdr to transmit
  * @param pGso          GSO parameters used for the packet
  * @param pPktHdr       virtio-net pkt header to adapt to PDM semantics
  */
-static int virtioNetR3TransmitFrame(PVIRTIONET pThis, PVIRTIONETCC pThisCC, PPDMSCATTERGATHER pSgBuf,
-                                    PPDMNETWORKGSO pGso, PVIRTIONETPKTHDR pPktHdr)
+static int virtioNetR3PrepareTxFrame(PVIRTIONET pThis, PPDMSCATTERGATHER pSgBuf,
+                                     PPDMNETWORKGSO pGso, PVIRTIONETPKTHDR pPktHdr)
 {
 
-    virtioNetR3PacketDump(pThis, (uint8_t *)pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, "--> Outgoing");
     if (pGso)
     {
         /* Some guests (RHEL) may report HdrLen excluding transport layer header!
@@ -2739,6 +2745,32 @@ static int virtioNetR3TransmitFrame(PVIRTIONET pThis, PVIRTIONETCC pThisCC, PPDM
          */
         virtioNetR3Calc16BitChecksum((uint8_t*)pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed,
                              pPktHdr->uChksumStart, pPktHdr->uChksumOffset);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Transmits single GSO frame via PDM framework to downstream PDM device, to emit from virtual NIC.
+ *
+ * Note: this function always consumes the buffer, even if it failed to send it.
+ *
+ * @param pThis         virtio-net instance
+ * @param pThisCC       virtio-net instance
+ * @param pSgBuf        PDM S/G buffer containing pkt and hdr to transmit
+ * @param pGso          GSO parameters used for the packet
+ * @param pPktHdr       virtio-net pkt header to adapt to PDM semantics
+ */
+static int virtioNetR3TransmitFrame(PVIRTIONET pThis, PVIRTIONETCC pThisCC, PPDMSCATTERGATHER pSgBuf,
+                                    PPDMNETWORKGSO pGso, PVIRTIONETPKTHDR pPktHdr)
+{
+    virtioNetR3PacketDump(pThis, (uint8_t *)pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, "--> Outgoing");
+    int rc = virtioNetR3PrepareTxFrame(pThis, pSgBuf, pGso, pPktHdr);
+    if (RT_FAILURE(rc))
+    {
+        /* Failed to prepare, do not proceed with sending, free the buffer. */
+        pThisCC->pDrv->pfnFreeBuf(pThisCC->pDrv, pSgBuf);
+        return rc;
     }
 
     return pThisCC->pDrv->pfnSendBuf(pThisCC->pDrv, pSgBuf, true /* fOnWorkerThread */);
@@ -2912,12 +2944,7 @@ static int virtioNetR3TransmitPkts(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO
 
                 rc = virtioNetR3TransmitFrame(pThis, pThisCC, pSgBufToPdmLeafDevice, pGso, pPktHdr);
                 if (RT_FAILURE(rc))
-                {
                     LogFunc(("[%s] Failed to transmit frame, rc = %Rrc\n", pThis->szInst, rc));
-                    STAM_PROFILE_STOP(&pThis->StatTransmitSend, a);
-                    STAM_PROFILE_ADV_STOP(&pThis->StatTransmit, a);
-                    pThisCC->pDrv->pfnFreeBuf(pThisCC->pDrv, pSgBufToPdmLeafDevice);
-                }
                 STAM_PROFILE_STOP(&pThis->StatTransmitSend, a);
                 STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, uOffset);
             }

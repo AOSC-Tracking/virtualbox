@@ -70,11 +70,11 @@
  * Note! Same checks in IEMAllThrdRecompiler.cpp.
  */
 
-#ifndef IEM_WITH_CODE_TLB
+#ifndef IEM_WITH_CODE_TLB_IN_CUR_CTX
 # error The code TLB must be enabled for the recompiler.
 #endif
 
-#ifndef IEM_WITH_DATA_TLB
+#ifndef IEM_WITH_DATA_TLB_IN_CUR_CTX
 # error The data TLB must be enabled for the recompiler.
 #endif
 
@@ -115,7 +115,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitPcDebugAdd(PIEMRECOMPILERSTATE pReNativ
             /* mov tmp0, imm64 */
             off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, IEMNATIVE_REG_FIXED_TMP0, offDisp);
 
-            /* add [pVCpu->iem.s.uPcUpdatingDebug], tmp0 */
+            /* add [IRECM(pVCpu).uPcUpdatingDebug], tmp0 */
             if (cBits == 64)
                 pCodeBuf[off++] = X86_OP_REX_W | (IEMNATIVE_REG_FIXED_TMP0 >= 8 ? X86_OP_REX_R : 0);
             else if (IEMNATIVE_REG_FIXED_TMP0 >= 8)
@@ -476,7 +476,7 @@ iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t
     if (a_rcNormal != VINF_SUCCESS)
     {
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, pCallEntry->idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, pCallEntry->idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
         RT_NOREF_PV(pCallEntry);
 #endif
@@ -510,7 +510,7 @@ iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t
 
 #else
         /* Load the index as argument #1 for the helper call at the given label. */
-        off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxTbLookupFirst);
+        off = iemNativeEmitLoadArgGprImm8(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxTbLookupFirst);
 
         /*
          * Figure out the physical address of the current instruction and see
@@ -728,7 +728,7 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint3
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -841,7 +841,7 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0WithDisp(PIEMRECOMPILERSTATE pReNativ
     /* .Lraisexcpt: */
     iemNativeFixupFixedJump(pReNative, offFixup1, off);
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr), iTmpReg);
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr), iTmpReg);
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -881,12 +881,15 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0WithOldPc(PIEMRECOMPILERSTATE pReNati
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
     Assert(pReNative->Core.bmGstRegShadowDirty == 0);
 #endif
+#ifndef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    RT_NOREF(idxOldPcReg);
+#endif
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     if (!pReNative->Core.offPc)
 # endif
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -935,7 +938,7 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0WithOldPc(PIEMRECOMPILERSTATE pReNati
 
         /* .Lraisexcpt: */
 # ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr), iTmpReg);
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr), iTmpReg);
 # endif
         /* We need to update cpum.GstCtx.rip. */
         if (idxOldPcReg == UINT8_MAX)
@@ -981,7 +984,7 @@ iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNat
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -1022,12 +1025,15 @@ iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0WithOldPc(PIEMRECOMPILERSTA
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
     Assert(pReNative->Core.bmGstRegShadowDirty == 0);
 #endif
+#ifndef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    RT_NOREF(idxOldPcReg);
+#endif
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     if (!pReNative->Core.offPc)
 # endif
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -1052,7 +1058,7 @@ iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0WithOldPc(PIEMRECOMPILERSTA
         off = iemNativeEmitAddGprImm(pReNative, off, idxOldPcReg, pReNative->Core.offPc);
         off = iemNativeEmitStoreGprToGstRegT<kIemNativeGstReg_Pc>(pReNative, off, idxOldPcReg);
 # ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 # endif
         off = iemNativeEmitTbExit<kIemNativeLabelType_RaiseGp0, false /*a_fActuallyExitingTb*/>(pReNative, off);
         iemNativeFixupFixedJump(pReNative, offFixup, off);
@@ -1168,7 +1174,11 @@ iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
                                                                  kIemNativeGstRegUse_ForUpdate);
 
         /* Perform the addition. */
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
         off = iemNativeEmitAddGprImm(pReNative, off, idxPcReg, (int64_t)offDisp + cbInstr + pReNative->Core.offPc);
+#else
+        off = iemNativeEmitAddGprImm(pReNative, off, idxPcReg, (int64_t)offDisp + cbInstr);
+#endif
 
         if (RT_LIKELY(enmEffOpSize == IEMMODE_64BIT))
         {
@@ -1313,7 +1323,7 @@ iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr + (int32_t)pReNative->Core.offPc);
 #else
-    off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr + (int32_t)pReNative->Core.offPc);
+    off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr);
 #endif
 
     /* Truncate the result to 16-bit IP if the operand size is 16-bit. */
@@ -1709,7 +1719,7 @@ iemNativeEmitStackPushRip(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t c
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -2406,7 +2416,7 @@ iemNativeEmitRetn(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, 
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -2561,7 +2571,7 @@ iemNativeEmitMaybeRaiseDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uint32_
         off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
         RT_NOREF(idxInstr);
 #endif
@@ -2616,7 +2626,7 @@ iemNativeEmitMaybeRaiseWaitDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uin
         off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
         RT_NOREF(idxInstr);
 #endif
@@ -2667,7 +2677,7 @@ iemNativeEmitMaybeRaiseFpuException(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -2716,7 +2726,7 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
         RT_NOREF(idxInstr);
 #endif
@@ -2809,7 +2819,7 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
         RT_NOREF(idxInstr);
 #endif
@@ -2911,7 +2921,7 @@ iemNativeEmitRaiseDivideErrorIfLocalIsZero(PIEMRECOMPILERSTATE pReNative, uint32
 
     /* Set the instruction number if we're counting. */
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -2951,7 +2961,7 @@ iemNativeEmitRaiseGp0IfEffAddrUnaligned(PIEMRECOMPILERSTATE pReNative, uint32_t 
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -4151,10 +4161,10 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 #if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64))
     off = iemNativeEmitLeaGprByBp(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_FP_OFF_VBOXSTRICRC); /* rcStrict */
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-    off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, cbInstr);
+    off = iemNativeEmitLoadArgGprImm8(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, cbInstr);
 #else
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-    off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, cbInstr);
+    off = iemNativeEmitLoadArgGprImm8(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, cbInstr);
 #endif
 
     /*
@@ -6011,10 +6021,10 @@ iemNativeEmitCommitEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
             pReNative->fSkippingEFlags &= ~(a_fEflOutput & X86_EFL_STATUS_BITS);
 # ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
         if RT_CONSTEXPR_IF((a_fEflOutput & X86_EFL_STATUS_BITS) == X86_EFL_STATUS_BITS)
-            off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, 0, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+            off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, 0, IRECM_OFFSETOF(fSkippingEFlags));
         else
             off = iemNativeEmitAndImmIntoVCpuU32(pReNative, off, ~(a_fEflOutput & X86_EFL_STATUS_BITS),
-                                                 RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+                                                 IRECM_OFFSETOF(fSkippingEFlags));
 # endif
         IEMNATIVE_CLEAR_POSTPONED_EFLAGS(pReNative, a_fEflOutput);
     }
@@ -6080,7 +6090,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitModifyEFlagsBit(PIEMRECOMPILERSTATE pRe
                   pReNative->fSkippingEFlags, pReNative->fSkippingEFlags & ~a_fEflBit ));
         pReNative->fSkippingEFlags &= ~a_fEflBit;
 # ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
-        off = iemNativeEmitAndImmIntoVCpuU32(pReNative, off, ~a_fEflBit, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+        off = iemNativeEmitAndImmIntoVCpuU32(pReNative, off, ~a_fEflBit, IRECM_OFFSETOF(fSkippingEFlags));
 # endif
     }
 #endif
@@ -6241,10 +6251,10 @@ iemNativeEmitRefEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     /* Updating the skipping according to the outputs is a little early, but
        we don't have any other hooks for references atm. */
     if RT_CONSTEXPR_IF((a_fEflOutput & X86_EFL_STATUS_BITS) == X86_EFL_STATUS_BITS)
-        off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, 0, RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+        off = iemNativeEmitStoreImmToVCpuU32(pReNative, off, 0, IRECM_OFFSETOF(fSkippingEFlags));
     else if RT_CONSTEXPR_IF((a_fEflOutput & X86_EFL_STATUS_BITS) != 0)
         off = iemNativeEmitAndImmIntoVCpuU32(pReNative, off, ~(a_fEflOutput & X86_EFL_STATUS_BITS),
-                                             RT_UOFFSETOF(VMCPU, iem.s.fSkippingEFlags));
+                                             IRECM_OFFSETOF(fSkippingEFlags));
 # endif
 
     /* This ASSUMES that EFLAGS references are not taken before use. */
@@ -7369,7 +7379,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     uint32_t const idxLabelTlbMiss = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, off, uTlbSeqNo);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -7456,7 +7466,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     {
         /* IEMNATIVE_CALL_ARG2_GREG = iSegReg */
         AssertStmt(iSegReg < 6, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_BAD_SEG_REG_NO));
-        off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, iSegReg);
+        off = iemNativeEmitLoadArgGprImm8(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, iSegReg);
     }
 
 #ifdef IEMNATIVE_WITH_EFLAGS_POSTPONING
@@ -8341,7 +8351,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -8717,7 +8727,7 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -9287,7 +9297,7 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     uint32_t const idxLabelTlbMiss = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, off, uTlbSeqNo);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -9310,7 +9320,7 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     if RT_CONSTEXPR_IF(!a_fFlat)
     {
         AssertStmt(iSegReg < 6, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_BAD_SEG_REG_NO));
-        off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG3_GREG, iSegReg);
+        off = iemNativeEmitLoadArgGprImm8(pReNative, off, IEMNATIVE_CALL_ARG3_GREG, iSegReg);
     }
 
 #ifdef IEMNATIVE_WITH_EFLAGS_POSTPONING
@@ -9499,7 +9509,7 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
      * Call the unmap helper function.
      */
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING /** @todo This should be unnecessary, the mapping call will already have set it! */
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif
@@ -9566,10 +9576,10 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitPrepareFpuForUse(PIEMRECOMPILERSTATE pR
             pbCodeBuf[off++] = 0x0f;
             pbCodeBuf[off++] = 0xae;
             pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, 3, IEMNATIVE_REG_FIXED_PVMCPU & 7);
-            pbCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
-            pbCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
-            pbCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
-            pbCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
+            pbCodeBuf[off++] = RT_BYTE1(IRECM_OFFSETOF(uRegFpCtrl));
+            pbCodeBuf[off++] = RT_BYTE2(IRECM_OFFSETOF(uRegFpCtrl));
+            pbCodeBuf[off++] = RT_BYTE3(IRECM_OFFSETOF(uRegFpCtrl));
+            pbCodeBuf[off++] = RT_BYTE4(IRECM_OFFSETOF(uRegFpCtrl));
             IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
             pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SAVED;
@@ -9587,7 +9597,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitPrepareFpuForUse(PIEMRECOMPILERSTATE pR
         off = iemNativeEmitLoadGprFromGpr32(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, idxRegMxCsr);
         off = iemNativeEmitOrGpr32ByImm(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, X86_MXCSR_XCPT_MASK);
         off = iemNativeEmitAndGpr32ByImm(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, ~X86_MXCSR_XCPT_FLAGS);
-        off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+        off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, IRECM_OFFSETOF(uRegMxcsrTmp));
 
         PIEMNATIVEINSTR pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
 
@@ -9597,10 +9607,10 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitPrepareFpuForUse(PIEMRECOMPILERSTATE pR
         pbCodeBuf[off++] = 0x0f;
         pbCodeBuf[off++] = 0xae;
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, 2, IEMNATIVE_REG_FIXED_PVMCPU & 7);
-        pbCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
-        pbCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
-        pbCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
-        pbCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+        pbCodeBuf[off++] = RT_BYTE1(IRECM_OFFSETOF(uRegMxcsrTmp));
+        pbCodeBuf[off++] = RT_BYTE2(IRECM_OFFSETOF(uRegMxcsrTmp));
+        pbCodeBuf[off++] = RT_BYTE3(IRECM_OFFSETOF(uRegMxcsrTmp));
+        pbCodeBuf[off++] = RT_BYTE4(IRECM_OFFSETOF(uRegMxcsrTmp));
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
         iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
@@ -9615,7 +9625,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitPrepareFpuForUse(PIEMRECOMPILERSTATE pR
             PIEMNATIVEINSTR pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
             pu32CodeBuf[off++] = Armv8A64MkInstrMsr(ARMV8_A64_REG_XZR, ARMV8_AARCH64_SYSREG_FPSR);
             pu32CodeBuf[off++] = Armv8A64MkInstrMrs(idxRegTmp, ARMV8_AARCH64_SYSREG_FPCR);
-            off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegTmp, RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
+            off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegTmp, IRECM_OFFSETOF(uRegFpCtrl));
             pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SAVED;
         }
 
@@ -10936,7 +10946,7 @@ iemNativeEmitCallSseAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, IRECM_OFFSETOF(idxTbCurInstr));
 #else
     RT_NOREF(idxInstr);
 #endif

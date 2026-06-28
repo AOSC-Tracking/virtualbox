@@ -81,6 +81,8 @@ public:
     Utf8Str const &i_getUser() const;
     Utf8Str const &i_getUserPassword() const;
     Utf8Str const &i_getAdminPassword() const;
+    /* We need the following since i_getAdminPassword returns user password when mStrAdminPassword is empty. */
+    bool           i_getIsAdminPasswordEmpty() const;
     Utf8Str const &i_getFullUserName() const;
     Utf8Str const &i_getProductKey() const;
     Utf8Str const &i_getProxy() const;
@@ -113,6 +115,7 @@ public:
     bool           i_isFirmwareEFI() const;
     Utf8Str const &i_getDetectedOSVersion();
     bool           i_getAvoidUpdatesOverNetwork() const;
+    VBOXOSTYPE     i_getGuestOsArch() const;
 
 private:
     ComPtr<VirtualBox> const mParent;       /**< Strong reference to the parent object (VirtualBox/IMachine). */

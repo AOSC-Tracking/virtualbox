@@ -541,8 +541,9 @@ static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, vm_map_t pVmMap
 
 
 DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
-                                         RTR0PROCESS R0Process, const char *pszTag)
+                                         uint32_t fFlags, RTR0PROCESS R0Process, const char *pszTag)
 {
+    RT_NOREF(fFlags);
     return rtR0MemObjNativeLockInMap(ppMem,
                                      &((struct proc *)R0Process)->p_vmspace->vm_map,
                                      (vm_offset_t)R3Ptr,

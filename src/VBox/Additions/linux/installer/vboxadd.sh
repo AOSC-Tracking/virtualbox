@@ -1,7 +1,7 @@
 #! /bin/sh
 # $Id: vboxadd.sh $
 ## @file
-# Linux Additions kernel module init script ($Revision: 170187 $)
+# Linux Additions kernel module init script ($Revision: 173603 $)
 #
 
 #
@@ -71,6 +71,14 @@ VBOXSERVICE_PIDFILE="/var/run/vboxadd-service.sh"
 QUIET=
 test -z "${TARGET_VER}" && TARGET_VER=`uname -r`
 
+# We deprecate vboxvideo for Linux kernel 7.0 and newer.
+KERN_MAJ=$(uname -r | cut -d . -f1)
+KERN_MIN=$(uname -r | cut -d . -f2)
+have_vboxvideo_build=1
+if test -n "$KERN_MAJ" -a -n "$KERN_MIN"; then
+    [ $KERN_MAJ -ge 7 -a $KERN_MIN -ge 0 ] && have_vboxvideo_build=
+fi
+
 export VBOX_KBUILD_TYPE
 export USERNAME
 
@@ -94,48 +102,32 @@ if [ "`which $0`" = "/sbin/rc" ]; then
     shift
 fi
 
-begin()
-{
-    test -n "${QUIET}" || echo "${SERVICE}: ${1}"
-}
-
+# Log to terminal.
 info()
 {
-    if test -z "${QUIET}"; then
-        echo "${SERVICE}: $1" | fold -s
-    else
-        echo "$1" | fold -s
-    fi
+    test -n "${QUIET}" || echo "${SERVICE}: ${1}" | fold -s
 }
 
-# When script is running as non-root, it does not have access to log
-# files in /var. In this case, lets print error message to stdout and
-# exit with bad status.
-early_fail()
-{
-    echo "$1" >&2
-    exit 1
-}
-
-fail()
-{
-    log "${1}"
-    echo "${SERVICE}: $1" >&2
-    echo "The log file $LOG may contain further information." >&2
-    exit 1
-}
-
-log()
+# Log to file only.
+log2file()
 {
     setup_log
-    echo "${1}" >> "${LOG}"
+    echo "$(date): ${1}" >> "${LOG}"
 }
 
-module_build_log()
+# Log to both, to file and to terminal.
+log()
 {
-    log "Error building the module.  Build output follows."
-    echo ""
-    echo "${1}" >> "${LOG}"
+    log2file "${1}"
+    info "${1}"
+}
+
+# Log to both, to file and to terminal and exit.
+fail()
+{
+    log2file "${1}"
+    info "The log file $LOG may contain further information."
+    exit 1
 }
 
 dev=/dev/vboxguest
@@ -151,7 +143,8 @@ group=1
 if test -r $config; then
   . $config
 else
-  fail "Configuration file $config not found"
+  info "Configuration file $config not found"
+  exit 1
 fi
 test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
   fail "Configuration file $config not complete"
@@ -176,7 +169,11 @@ VBOX_REVISION="r`"$VBOXCONTROL" --version | cut -d r -f2`"
 running_module()
 {
     mod="$1"
-    [ -d "/sys/module/$mod" ]
+    if [ -d "/sys/module" ]; then
+        [ -d "/sys/module/$mod" ]
+    else
+        lsmod | grep "$mod" >/dev/null 2>&1
+    fi
 }
 
 # Returns the version string of a currently running kernel module.
@@ -205,12 +202,19 @@ running_module_version()
 check_running_module_version()
 {
     mod=$1
-    expected="$VBOX_VERSION $VBOX_REVISION"
 
-    [ -n "$mod" ] || return
-    [ -n "$expected" ] || return
+    if [ -d "/sys/module" ]; then
 
-    [ "$expected" = "$(running_module_version "$mod")" ] || return
+        expected="$VBOX_VERSION $VBOX_REVISION"
+
+        [ -n "$mod" ] || return
+        [ -n "$expected" ] || return
+
+        [ "$expected" = "$(running_module_version "$mod")" ] || return
+
+    else
+        running_module "$mod"
+    fi
 }
 
 do_vboxguest_non_udev()
@@ -283,16 +287,23 @@ update_initramfs()
         test ! -f "/lib/modules/${version}/misc/vboxvideo.ko" ||
         touch "/lib/modules/${version}/initrd/vboxvideo"
 
+    log "Updating initramfs"
+
     # Systems without systemd-inhibit probably don't need their initramfs
     # rebuild here anyway.
     type systemd-inhibit >/dev/null 2>&1 || return
     if type dracut >/dev/null 2>&1; then
+        tmp_log=$(mktemp /tmp/XXXXXX)
         systemd-inhibit --why="Installing VirtualBox Guest Additions" \
-            dracut -f --kver "${version}"
+            dracut -f --logfile "$tmp_log" --kver "${version}"
+        msg=$(cat "$tmp_log")
+        rm -f "$tmp_log"
     elif type update-initramfs >/dev/null 2>&1; then
         systemd-inhibit --why="Installing VirtualBox Guest Additions" \
             update-initramfs -u -k "${version}"
     fi
+
+    log2file "$msg"
 }
 
 # Removes any existing VirtualBox guest kernel modules from the disk, but not
@@ -453,11 +464,11 @@ sign_modules()
     # Make list of mudules to sign.
     MODULE_LIST="vboxguest vboxsf"
     # vboxvideo might not present on for older kernels.
-    [ -f "/lib/modules/"$KERN_VER"/misc/vboxvideo.ko" ] && MODULE_LIST="$MODULE_LIST vboxvideo"
+    [ -n "$have_vboxvideo_build" -a -f "/lib/modules/"$KERN_VER"/misc/vboxvideo.ko" ] && MODULE_LIST="$MODULE_LIST vboxvideo"
 
     # Sign kernel modules if kernel configuration requires it.
     if test "$(kernel_requires_module_signature $KERN_VER)" = "1"; then
-        begin "Signing VirtualBox Guest Additions kernel modules"
+        log "Signing VirtualBox Guest Additions kernel modules"
 
         # Generate new signing key if needed.
         [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && SHIM_NOTRIGGER=y update-secureboot-policy --new-key
@@ -465,7 +476,7 @@ sign_modules()
         # Check if signing keys are in place.
         if test ! -f "$DEB_PUB_KEY" || ! test -f "$DEB_PRIV_KEY"; then
             # update-secureboot-policy tool present in the system, but keys were not generated.
-            [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && info "
+            [ -n "$HAVE_UPDATE_SECUREBOOT_POLICY_TOOL" ] && log "
 
 update-secureboot-policy tool does not generate signing keys
 in your distribution, see below on how to generate them manually."
@@ -476,7 +487,7 @@ System is running in Secure Boot mode, however your distribution
 does not provide tools for automatic generation of keys needed for
 modules signing. Please consider to generate and enroll them manually:
 
-    sudo mkdir -p /var/lib/shim-signed/mok
+    sudo mkdir -m 0700 -p /var/lib/shim-signed/mok
     sudo openssl req -nodes -new -x509 -newkey rsa:2048 -outform DER -addext \"extendedKeyUsage=codeSigning\" -keyout $DEB_PRIV_KEY -out $DEB_PUB_KEY
     sudo mokutil --import $DEB_PUB_KEY
     sudo reboot
@@ -534,58 +545,72 @@ setup_modules()
     #test ! -f "$1" || return 0
     test -d /lib/modules/"$KERN_VER"/build || return 0
     export KERN_VER
-    info "Building the modules for kernel $KERN_VER."
+    log "Building the Guest Additions $INSTALL_VER modules for kernel $KERN_VER."
 
     # Prepend PATH for building UEK on OL8/9 distributions.
     case "$KERN_VER" in
         5.15.0-*.el8uek*) PATH="/opt/rh/gcc-toolset-11/root/usr/bin:$PATH";;
         6.12.0-*.el9uek*) PATH="/opt/rh/gcc-toolset-14/root/usr/bin:$PATH";;
+        6.18.0-*.el9uek*) PATH="/opt/rh/gcc-toolset-14/root/usr/bin:$PATH";;
     esac
 
     # Detect if kernel was built with clang.
     unset LLVM
     vbox_cc_is_clang=$(kernel_get_config_opt "$KERN_VER" "CONFIG_CC_IS_CLANG")
     if test "${vbox_cc_is_clang}" = "y"; then
-        info "Using clang compiler."
+        log "Using clang compiler."
         export LLVM=1
     fi
 
-    log "Building the main Guest Additions $INSTALL_VER module for kernel $KERN_VER."
+    log "Building the main module."
     if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxguest \
+        --skip-depmod \
         --no-print-directory install 2>&1`; then
         # If check_module_dependencies.sh fails it prints a message itself.
-        module_build_log "$myerr"
+        log "$myerr"
         "${INSTALL_DIR}"/other/check_module_dependencies.sh 2>&1 &&
-            info "Look at $LOG to find out what went wrong"
+            log "Look at $LOG to find out what went wrong"
         return 0
     fi
     log "Building the shared folder support module."
     if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxsf \
+        --skip-depmod \
         --no-print-directory install 2>&1`; then
-        module_build_log "$myerr"
-        info  "Look at $LOG to find out what went wrong"
+        log "$myerr"
+        log  "Look at $LOG to find out what went wrong"
         return 0
     fi
-    log "Building the graphics driver module."
-    if ! myerr=`$BUILDINTMP \
-        --use-module-symvers /tmp/vboxguest-Module.symvers \
-        --module-source $MODULE_SRC/vboxvideo \
-        --no-print-directory install 2>&1`; then
-        module_build_log "$myerr"
-        info "Look at $LOG to find out what went wrong"
-    fi
+
     [ -d /etc/depmod.d ] || mkdir /etc/depmod.d
+
     echo "override vboxguest * misc" > /etc/depmod.d/vboxvideo-upstream.conf
     echo "override vboxsf * misc" >> /etc/depmod.d/vboxvideo-upstream.conf
-    echo "override vboxvideo * misc" >> /etc/depmod.d/vboxvideo-upstream.conf
 
-    sign_modules "${KERN_VER}"
+    if [ -n "$have_vboxvideo_build" ]; then
+        log "Building the graphics driver module."
+        if ! myerr=`$BUILDINTMP \
+            --use-module-symvers /tmp/vboxguest-Module.symvers \
+            --module-source $MODULE_SRC/vboxvideo \
+            --skip-depmod \
+            --no-print-directory install 2>&1`; then
+            log "$myerr"
+            log "Look at $LOG to find out what went wrong"
+        fi
 
-    update_initramfs "${KERN_VER}"
+        echo "override vboxvideo * misc" >> /etc/depmod.d/vboxvideo-upstream.conf
+    fi
+
+    if [ $? -eq 0 ]; then
+        sign_modules "${KERN_VER}"
+        update_initramfs "${KERN_VER}"
+    else
+        log "Modules setup has failed."
+        cleanup
+    fi
 
     return 0
 }
@@ -831,7 +856,7 @@ setup_complete()
 # setup_script
 setup()
 {
-    info "Setting up modules"
+    log "Setting up modules"
 
     # chcon is needed on old Fedora/Redhat systems.  No one remembers which.
     test ! -e /etc/selinux/config ||
@@ -841,19 +866,19 @@ setup()
         # Check whether modules setup is already complete for currently running kernel.
         # Prevent unnecessary rebuilding in order to speed up booting process.
         if test "$(setup_complete)" = "1"; then
-            info "VirtualBox Guest Additions kernel modules $VBOX_VERSION $VBOX_REVISION are \
+            log "VirtualBox Guest Additions kernel modules $VBOX_VERSION $VBOX_REVISION are \
 already available for kernel $TARGET_VER and do not require to be rebuilt."
         else
-            info "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
-            info "To build modules for other installed kernels, run"
-            info "  /sbin/rcvboxadd quicksetup <version>"
-            info "or"
-            info "  /sbin/rcvboxadd quicksetup all"
+            log "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
+            log "To build modules for other installed kernels, run"
+            log "  /sbin/rcvboxadd quicksetup <version>"
+            log "or"
+            log "  /sbin/rcvboxadd quicksetup all"
             if test -d /lib/modules/"$TARGET_VER"/build; then
                 setup_modules "$TARGET_VER"
                 depmod
             else
-                info "Kernel headers not found for target kernel $TARGET_VER. \
+                log "Kernel headers not found for target kernel $TARGET_VER. \
 Please install them and execute
   /sbin/rcvboxadd setup"
             fi
@@ -868,7 +893,7 @@ Please install them and execute
 
     if  running_module "vboxguest"; then
         # Only warn user if currently loaded modules version do not match Guest Additions Installation.
-        check_running_module_version "vboxguest" || info "Running kernel modules will not be replaced until the system is restarted or 'rcvboxadd reload' triggered"
+        check_running_module_version "vboxguest" || log "Running kernel modules will not be replaced until the system is restarted or 'rcvboxadd reload' triggered"
     fi
 
     # Put the X.Org driver in place.  This is harmless if it is not needed.
@@ -893,6 +918,11 @@ cleanup()
         done
     fi
 
+    # Cleanup SELinux records.
+    if command -v semanage > /dev/null; then
+        semanage fcontext -d -t mount_exec_t "${INSTALL_DIR}/other/mount.vboxsf" > /dev/null 2>&1
+    fi
+
     # Clean-up X11-related bits
     "${INSTALL_DIR}/init/vboxadd-x11" cleanup
 
@@ -909,7 +939,7 @@ cleanup()
 
 start()
 {
-    begin "Starting."
+    log "Starting."
 
     # Check if kernel modules for currently running kernel are ready
     # and rebuild them if needed.
@@ -918,9 +948,9 @@ start()
     # Warn if Secure Boot setup not yet complete.
     if test "$(kernel_requires_module_signature)" = "1" && test -z "$DEB_KEY_ENROLLED"; then
         if test -n "$HAVE_DEB_KEY"; then
-            info "You must re-start your system to finish secure boot set-up."
+            log "You must re-start your system to finish secure boot set-up."
         else
-            info "You must sign vboxguest, vboxsf and
+            log "You must sign vboxguest, vboxsf and
 vboxvideo (if present) kernel modules before using
 VirtualBox Guest Additions. See the documentation
 for your Linux distribution."
@@ -951,7 +981,7 @@ for your Linux distribution."
 
 stop()
 {
-    begin "Stopping."
+    log "Stopping."
 
     if test -r /etc/ld.so.conf.d/00vboxvideo.conf; then
         rm /etc/ld.so.conf.d/00vboxvideo.conf
@@ -963,14 +993,17 @@ stop()
         [ -n "$(findmnt -t vboxsf)" ] && fail "Cannot unmount vboxsf folders"
     fi
     test -n "${INSTALL_NO_MODULE_BUILDS}" ||
-        info "You may need to restart your guest system to finish removing guest drivers or consider running 'rcvboxadd reload'."
+        log "You may need to restart your guest system to finish removing guest drivers or consider running 'rcvboxadd reload'."
     return 0
 }
 
 check_root()
 {
     # Check if script is running with root privileges and exit if it does not.
-    [ `id -u` -eq 0 ] || early_fail "root privileges are required"
+    if [ `id -u` -ne 0 ]; then
+        info "root privileges are required"
+        exit 1
+    fi
 }
 
 # Check if process with this PID is running.
@@ -1014,10 +1047,10 @@ check_running_module()
     if [ $? -ne 0 ]; then
         # Was module loaded?
         if [ -z "$mod_is_running" ]; then
-            info "module $mod is not loaded"
+            log "module $mod is not loaded"
         else
             # If module was loaded it means that it has incorrect version.
-            info "currently loaded module $mod version ($(running_module_version "$mod")) does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION)"
+            log "currently loaded module $mod version ($(running_module_version "$mod")) does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION)"
         fi
 
         # Set "bad" rc.
@@ -1046,19 +1079,28 @@ check_status_kernel()
         false
     fi
 
-    # Module vboxvideo is optional and expected to be loaded only when VM is
-    # running VBoxVGA or VBoxSVGA graphics.
     if [ $? -eq 0 ]; then
-        gpu_vendor=$(lspci | grep 'VGA compatible controller' | cut -d ' ' -f 5 2>/dev/null)
+        if [ -n "$have_vboxvideo_build" ]; then
+            # Module vboxvideo is optional and expected to be loaded only when VM is
+            # running VBoxVGA or VBoxSVGA graphics.
+            if [ $? -eq 0 ]; then
+                gpu_vendor=$(lspci | grep 'VGA compatible controller' | cut -d ' ' -f 5 2>/dev/null)
 
-        # vboxvideo is not installed for kernels 3.10.x and older.
-        have_vboxvideo=
-        if [ "$(printf '%s\n%s\n' "3.10" "$(uname -r)" | sort -Vr | head -1)" = "$(uname -r)" ]; then
-            have_vboxvideo="1"
-        fi
+                # vboxvideo is not installed for kernels 3.10.x and older.
+                have_vboxvideo=
+                if [ "$(printf '%s\n%s\n' "3.10" "$(uname -r)" | sort -Vr | head -1)" = "$(uname -r)" ]; then
+                    have_vboxvideo="1"
+                fi
 
-        if [ -n "$have_vboxvideo" -a "$gpu_vendor" = "InnoTek" ]; then
-            check_running_module "vboxvideo"
+                if [ -n "$have_vboxvideo" -a "$gpu_vendor" = "InnoTek" ]; then
+                    check_running_module "vboxvideo"
+                else
+                    # Do not spoil $?.
+                    true
+                fi
+            else
+                false
+            fi
         else
             # Do not spoil $?.
             true
@@ -1156,14 +1198,14 @@ try_load_preserve_rc()
     $cmd >/dev/null 2>&1
 
     rc=$?
-    [ $rc -eq 0 ] || info "$msg"
+    [ $rc -eq 0 ] || log "$msg"
 
     return $rc
 }
 
 reload()
 {
-    begin "reloading kernel modules and services"
+    log "reloading kernel modules and services"
 
     # Stop VBoxService if running.
     $VBOX_SERVICE_SCRIPT status >/dev/null 2>&1
@@ -1207,7 +1249,7 @@ reload()
         # Check if we succeeded with unloading vboxguest after several attempts.
         running_module "vboxguest"
         if [ $? -eq 0 ]; then
-            info "cannot reload kernel modules: one or more module(s) is still in use"
+            log "cannot reload kernel modules: one or more module(s) is still in use"
             false
         else
             # Do not spoil $?.
@@ -1232,8 +1274,8 @@ reload()
 
         if [ $? -eq 0 ]; then
             # Take reported version of running Guest Additions from running vboxguest module (as a paranoia check).
-            info "kernel modules and services $(running_module_version "vboxguest") reloaded"
-            info "NOTE: you may still consider to re-login if some user session specific services (Shared Clipboard, Drag and Drop, Seamless or Guest Screen Resize) were not restarted automatically"
+            log "kernel modules and services $(running_module_version "vboxguest") reloaded"
+            log "NOTE: you may still consider to re-login if some user session specific services (Shared Clipboard, Drag and Drop, Seamless or Guest Screen Resize) were not restarted automatically"
         else
             # In case of failure, sent SIGTERM to abandoned control processes to remove leftovers from failed reloading.
             send_signal "-TERM" "control"
@@ -1257,6 +1299,7 @@ dmnstatus()
 for i; do
     case "$i" in quiet) QUIET=yes;; esac
 done
+
 case "$1" in
 # Does setup without clean-up first and marks all kernels currently found on the
 # system so that we can see later if any were added.
@@ -1291,7 +1334,7 @@ reload)
 # current kernel.
 setup)
     check_root
-    cleanup && start
+    setup && start
     ;;
 # Builds kernel modules for the specified kernels if they are not already built.
 quicksetup)

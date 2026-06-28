@@ -39,9 +39,13 @@
 #include <iprt/critsect.h>
 #include <iprt/path.h> /* RTPATH_MAX */
 #include <iprt/stdarg.h>
+#include <iprt/getopt.h>
 
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/HostServices/GuestControlSvc.h>
+#ifdef VBOX_WITH_GUEST_PROPS
+# include <VBox/VBoxGuestLibGuestProp.h>
+# include <VBox/HostServices/GuestControlSvc.h>
+#endif
 
 
 #if !defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
@@ -71,13 +75,17 @@
 typedef struct
 {
     /** The short service name. */
-    const char *pszName;
+    const char     *pszName;
     /** The longer service name. */
-    const char *pszDescription;
+    const char     *pszDescription;
     /** The usage options stuff for the --help screen. */
-    const char *pszUsage;
+    const char     *pszUsage;
     /** The option descriptions for the --help screen. */
-    const char *pszOptions;
+    const char     *pszOptions;
+    /** Array of option descriptors for the service. */
+    PCRTGETOPTDEF   paOptions;
+    /** Number of options in paOptions. */
+    size_t          cOptions;
 
     /**
      * Called before parsing arguments.
@@ -86,16 +94,17 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnPreInit,(void));
 
     /**
-     * Tries to parse the given command line option.
+     * Handles an sub-service option.
      *
-     * @returns 0 if we parsed, -1 if it didn't and anything else means exit.
-     * @param   ppszShort   If not NULL it points to the short option iterator. a short argument.
-     *                      If NULL examine argv[*pi].
-     * @param   argc        The argument count.
-     * @param   argv        The argument vector.
-     * @param   pi          The argument vector index. Update if any value(s) are eaten.
+     * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_SYNTAX or
+     *          RTEXITCODE_FAILURE on error.
+     *
+     * @param   iShort      The short option (from VBOXSERVICE::paOptions).
+     * @param   pValueUnion Where to find the option value (if any).
+     * @param   fCmdLine    Set if the option came from the command line,
+     *                      clear if it came from the host (guest properties).
      */
-    DECLCALLBACKMEMBER(int, pfnOption,(const char **ppszShort, int argc, char **argv, int *pi));
+    DECLCALLBACKMEMBER(RTEXITCODE, pfnOption,(int iShort, PCRTGETOPTUNION pValueUnion, bool fCmdLine));
 
     /**
      * Called before parsing arguments.
@@ -130,10 +139,50 @@ typedef VBOXSERVICE *PVBOXSERVICE;
 typedef VBOXSERVICE const *PCVBOXSERVICE;
 
 /* Default call-backs for services which do not need special behaviour. */
-DECLCALLBACK(int)  VGSvcDefaultPreInit(void);
-DECLCALLBACK(int)  VGSvcDefaultOption(const char **ppszShort, int argc, char **argv, int *pi);
-DECLCALLBACK(int)  VGSvcDefaultInit(void);
-DECLCALLBACK(void) VGSvcDefaultTerm(void);
+DECLCALLBACK(int)           VGSvcDefaultPreInit(void);
+DECLCALLBACK(RTEXITCODE)    VGSvcDefaultOption(int iShort, PCRTGETOPTUNION pValueUnion, bool fCmdLine);
+DECLCALLBACK(int)           VGSvcDefaultInit(void);
+DECLCALLBACK(void)          VGSvcDefaultTerm(void);
+
+/** Option short numbers. */
+typedef enum VBSVCOPT
+{
+    kVGSvcOptFirst = 1000,
+
+    kVGSvcOptVminfoInterval,
+    kVGSvcOptVminfoUserIdleThreshold,
+
+    kVGSvcOptGstCtrlInterval,
+#ifdef DEBUG
+    kVGSvcOptGstCtrlDumpStdOut,
+    kVGSvcOptGstCtrlDumpStdErr,
+#endif
+
+    kVGSvcOptTimeSyncInterval,
+    kVGSvcOptTimeSyncMinAdjust,
+    kVGSvcOptTimeSyncLatencyFactor,
+    kVGSvcOptTimeSyncMaxLatency,
+    kVGSvcOptTimeSyncSetThreshold,
+    kVGSvcOptTimeSyncSetStart,
+    kVGSvcOptTimeSyncNoSetStart,
+    kVGSvcOptTimeSyncSetOnRestore,
+    kVGSvcOptTimeSyncNoSetOnRestore,
+    kVGSvcOptTimeSyncVerbosity,
+
+    kVGSvcOptGlobalDaemonzied,
+    /** The options following this one, are handled in the first cmdline pass
+     *  and ignored later in vgsvcProcessCmdLineOptions(). */
+    kVGSvcOptGlobalStartFirstPassOnly,
+    kVGSvcOptGlobalHostOptsFirst  = kVGSvcOptGlobalStartFirstPassOnly,
+    kVGSvcOptGlobalHostOptsLast,
+    kVGSvcOptGlobalNoHostOpts,
+    /* These next three options each have a range of 64 and must come last. */
+    kVGSvcOptGlobalOnlyService,
+    kVGSvcOptGlobalDisableService = kVGSvcOptGlobalOnlyService    + 64,
+    kVGSvcOptGlobalEnableService  = kVGSvcOptGlobalDisableService + 64,
+    kVGSvcOptEnd                  = kVGSvcOptGlobalEnableService  + 64
+} VBSVCOPT;
+
 
 /** The service name.
  * @note Used on windows to name the service as well as the global mutex. */
@@ -154,12 +203,12 @@ DECLCALLBACK(void) VGSvcDefaultTerm(void);
  */
 typedef struct VBOXSERVICEVEPROPCACHE
 {
-    /** The client ID for HGCM communication. */
-    uint32_t        uClientID;
+    /** The guest property client session info. */
+    PVBGLGSTPROPCLIENT  pClient;
     /** Head in a list of VBOXSERVICEVEPROPCACHEENTRY nodes. */
-    RTLISTANCHOR    NodeHead;
+    RTLISTANCHOR        NodeHead;
     /** Critical section for thread-safe use. */
-    RTCRITSECT      CritSect;
+    RTCRITSECT          CritSect;
 } VBOXSERVICEVEPROPCACHE;
 /** Pointer to a guest property cache. */
 typedef VBOXSERVICEVEPROPCACHE *PVBOXSERVICEVEPROPCACHE;
@@ -183,18 +232,70 @@ typedef struct VBOXSERVICEVEPROPCACHEENTRY
     char       *pszValueReset;
     /** Flags. */
     uint32_t    fFlags;
+    /** Used to delete stale entries under /VirtualBox/GuestInfo/User/.
+     * This is set by calling VGSvcPropCacheMarkNotUpdatedByPath() and cleared
+     * automatically when any of the update functions are called. */
+    bool        fNotUpdated;
 } VBOXSERVICEVEPROPCACHEENTRY;
 /** Pointer to a cached guest property. */
 typedef VBOXSERVICEVEPROPCACHEENTRY *PVBOXSERVICEVEPROPCACHEENTRY;
+/* forward decl. */
+struct VBOXSERVICEVMINFOUSERLIST;
 
+/** @name VGSVCPROPCACHE_FLAG_XXX - Guest Property Cache Flags.
+ * @{ */
+/** Indicates wheter a guest property is temporary and either should
+ *  - a) get a "reset" value assigned (via VBoxServicePropCacheUpdateEntry)
+ *       as soon as the property cache gets destroyed, or
+ *  - b) get deleted when no reset value is specified.
+ */
+# define VGSVCPROPCACHE_FLAGS_TEMPORARY             RT_BIT_32(0)
+/** Indicates whether a property every time needs to be updated, regardless
+ *  if its real value changed or not. */
+# define VGSVCPROPCACHE_FLAGS_ALWAYS_UPDATE         RT_BIT_32(1)
+/** The guest property gets deleted when the VM gets shutdown, rebooted, reset,
+ *  or powered off.  Maps directly to the guest property TRANSRESET flag. */
+# define VGSVCPROPCACHE_FLAGS_TRANSIENT             RT_BIT_32(2)
+
+/** Same as VGSVCPROPCACHE_FLAGS_TEMPORARY|VGSVCPROPCACHE_FLAGS_TEMPORARY to
+ *  convey intention at reset. */
+# define VGSVCPROPCACHE_FLAGS_TMP_DEL_TRANSRESET    (VGSVCPROPCACHE_FLAGS_TEMPORARY | VGSVCPROPCACHE_FLAGS_TRANSIENT)
+/** @}  */
 #endif /* VBOX_WITH_GUEST_PROPS */
+
+
+/** ID cache entry. */
+typedef struct VGSVCUIDENTRY
+{
+    /** The identifier name. */
+    uint32_t    id;
+    /** Set if UID, clear if GID. */
+    bool        fIsUid;
+    /** The name. */
+    char        szName[128 - 4 - 1];
+} VGSVCUIDENTRY;
+typedef VGSVCUIDENTRY *PVGSVCUIDENTRY;
+
+
+/** ID cache. */
+typedef struct VGSVCIDCACHE
+{
+    /** Number of valid cache entries. */
+    uint32_t                cEntries;
+    /** The next entry to replace. */
+    uint32_t                iNextReplace;
+    /** The cache entries. */
+    VGSVCUIDENTRY           aEntries[16];
+} VGSVCIDCACHE;
+typedef VGSVCIDCACHE *PVGSVCIDCACHE;
+
 
 RT_C_DECLS_BEGIN
 
 extern char        *g_pszProgName;
 extern unsigned     g_cVerbosity;
 extern char         g_szLogFile[RTPATH_MAX + 128];
-extern uint32_t     g_DefaultInterval;
+extern uint32_t     g_cSecDefaultInterval;
 extern VBOXSERVICE  g_TimeSync;
 #ifdef VBOX_WITH_VBOXSERVICE_CLIPBOARD
 extern VBOXSERVICE  g_Clipboard;
@@ -221,14 +322,14 @@ extern VBOXSERVICE g_DisplayConfig;
 extern RTCRITSECT   g_csLog; /* For guest process stdout dumping. */
 #endif
 
-extern RTEXITCODE               VGSvcSyntax(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+extern RTEXITCODE               VGSvcSyntax(bool fCmdLine, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 extern RTEXITCODE               VGSvcError(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 extern void                     VGSvcVerbose(unsigned iLevel, const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(2, 3);
 extern int                      VGSvcLogCreate(const char *pszLogFile);
 extern void                     VGSvcLogV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 extern void                     VGSvcLogDestroy(void);
-extern int                      VGSvcArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32,
-                                               uint32_t u32Min, uint32_t u32Max);
+extern RTEXITCODE               VGSvcOptUInt32(uint32_t *puValue, PCRTGETOPTUNION pValueUnion, uint32_t uMin, uint32_t uMax,
+                                               const char *pszUnit, const char *pszDesc, const char *pszService, bool fCmdLine);
 
 /* Exposing the following bits because of windows: */
 extern int                      VGSvcStartServices(void);
@@ -264,24 +365,80 @@ extern decltype(closesocket)                   *g_pfnclosesocket;
 extern decltype(inet_ntoa)                     *g_pfninet_ntoa;
 # endif /* WINSOCK_VERSION */
 
-#ifdef SE_INTERACTIVE_LOGON_NAME
+# ifdef SE_INTERACTIVE_LOGON_NAME
 extern decltype(LsaNtStatusToWinError)         *g_pfnLsaNtStatusToWinError;
-#endif
-
-# ifdef VBOX_WITH_GUEST_PROPS
-extern int                      VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList, uint32_t *pcUsersInList);
-extern int                      VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID);
-# endif /* VBOX_WITH_GUEST_PROPS */
-
+# endif
 #endif /* RT_OS_WINDOWS */
 
+/* VBoxServiceVMInfo.cpp & VBoxServiceVMInfo-win.cpp */
+extern int                      VGSvcVMInfoSignal(void);
+#ifdef VBOX_WITH_GUEST_PROPS
+extern void                     VGSvcVMInfoAddUserToList(struct VBOXSERVICEVMINFOUSERLIST *pUserGatherer,
+                                                         const char *pszName, const char *pszSource, bool fCheckUnique);
+# ifdef RT_OS_WINDOWS
+extern int                      VGSvcVMInfoUpdateUser(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                                      const char *pszKey, const char *pszValue);
+extern int                      VGSvcVMInfoUpdateUserF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                                       const char *pszKey, const char *pszValueFormat, ...);
+extern int                      VGSvcVMInfoUpdateUserV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                                       const char *pszKey, const char *pszValueFormat, va_list va);
+extern int                      VGSvcVMInfoWinQueryUserListAndUpdateInfo(struct VBOXSERVICEVMINFOUSERLIST *pUserGatherer,
+                                                                         PVBOXSERVICEVEPROPCACHE pCache);
+extern int                      VGSvcVMInfoWinWriteComponentVersions(PVBGLGSTPROPCLIENT pClient);
+extern void                     VGSvcVMInfoWinInit(void);
+extern void                     VGSvcVMInfoWinWorkerStarting(bool volatile *pfShutdown);
+extern void                     VGSvcVMInfoWinWorkerStopping(void);
+extern void                     VGSvcVMInfoWinStop(void);
+extern void                     VGSvcVMInfoWinTerm(void);
+extern uint32_t                                 g_cMsVMInfoUserIdleThreshold;
+# endif
+
+/* VBoxServicePropCache.cpp */
+extern int                      VGSvcPropCacheInit(PVBOXSERVICEVEPROPCACHE pCache, PVBGLGSTPROPCLIENT pClient);
+extern void                     VGSvcPropCacheTerm(PVBOXSERVICEVEPROPCACHE pCache);
+extern int                      VGSvcPropCacheDeclareEntry(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags,
+                                                           const char *pszValueReset = NULL);
+extern int                      VGSvcPropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValue);
+extern int                      VGSvcPropCacheUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName,
+                                                      const char *pszValueFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+extern int                      VGSvcPropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValue,
+                                                       uint32_t fFlags, const char *pszValueReset);
+extern int                      VGSvcPropCacheUpdateExF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags,
+                                                        const char *pszValueReset, const char *pszValueFormat, ...) RT_IPRT_FORMAT_ATTR(5, 6);
+extern int                      VGSvcPropCacheUpdateTdtr(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValue);
+extern int                      VGSvcPropCacheUpdateTdtrF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName,
+                                                          const char *pszValueFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+extern int                      VGSvcPropCacheMarkNotUpdatedByPath(PVBOXSERVICEVEPROPCACHE pCache, const char *pszPath);
+extern int                      VGSvcPropCachedDeleteNotUpdated(PVBOXSERVICEVEPROPCACHE pCache);
+extern int                      VGSvcPropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache);
+#endif /* VBOX_WITH_GUEST_PROPS */
+
+/* VBoxServiceBalloon.cpp */
 #ifdef VBOX_WITH_MEMBALLOON
 extern uint32_t                 VGSvcBalloonQueryPages(uint32_t cbPage);
 #endif
+
+/* VBoxServicePageSharing.cpp */
 #if defined(VBOX_WITH_VBOXSERVICE_PAGE_SHARING)
 extern RTEXITCODE               VGSvcPageSharingWorkerChild(void);
 #endif
-extern int                      VGSvcVMInfoSignal(void);
+
+/* VBoxServiceUtils.cpp */
+#ifdef VBOX_WITH_GUEST_PROPS
+extern int                      VGSvcReadProp(PVBGLGSTPROPCLIENT pGuestPropClient, const char *pszPropName,
+                                              char **ppszValue, char **ppszFlags, uint64_t *puTimestamp);
+extern int                      VGSvcReadPropUInt32(PVBGLGSTPROPCLIENT pGuestPropClient, const char *pszPropName,
+                                                    uint32_t *pu32, uint32_t u32Min, uint32_t u32Max);
+extern int                      VGSvcReadHostProp(PVBGLGSTPROPCLIENT pGuestPropClient, const char *pszPropName, bool fReadOnly,
+                                                  char **ppszValue, char **ppszFlags, uint64_t *puTimestamp);
+extern int                      VGSvcWriteProp(PVBGLGSTPROPCLIENT pGuestPropClient, const char *pszName, const char *pszValue);
+extern int                      VGSvcWritePropF(PVBGLGSTPROPCLIENT pGuestPropClient, const char *pszName,
+                                                const char *pszValueFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+#endif
+extern const char              *VGSvcIdCacheGetUidName(PVGSVCIDCACHE pIdCache, RTUID uid, const char *pszEntry,
+                                                       const char *pszRelativeTo);
+extern const char              *VGSvcIdCacheGetGidName(PVGSVCIDCACHE pIdCache, RTGID gid, const char *pszEntry,
+                                                       const char *pszRelativeTo);
 
 RT_C_DECLS_END
 

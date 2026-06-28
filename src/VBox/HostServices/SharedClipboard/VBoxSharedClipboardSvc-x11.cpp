@@ -131,7 +131,10 @@ void ShClBackendSetCallbacks(PSHCLBACKEND pBackend, PSHCLCALLBACKS pCallbacks)
         pBackend->Callbacks.pfn##a_Fn = pCallbacks->pfn##a_Fn;
 
     SET_FN_IF_NOT_NULL(ReportFormats);
+    SET_FN_IF_NOT_NULL(OnClipboardRead);
+    SET_FN_IF_NOT_NULL(OnClipboardWrite);
     SET_FN_IF_NOT_NULL(OnRequestDataFromSource);
+    SET_FN_IF_NOT_NULL(OnSendDataToDest);
 
 #undef SET_FN_IF_NOT_NULL
 }

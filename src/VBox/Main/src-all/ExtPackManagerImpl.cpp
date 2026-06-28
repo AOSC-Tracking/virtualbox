@@ -1173,7 +1173,7 @@ HRESULT ExtPack::i_checkVrde(void)
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not include a VRDE module"), m->Desc.strName.c_str());
     }
     else
-        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
+        hrc = setError(E_FAIL, "%s", m ? m->strWhyUnusable.c_str() : "m-is-null");
     return hrc;
 }
 
@@ -1197,7 +1197,7 @@ HRESULT ExtPack::i_checkCrypto(void)
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not include a cryptographic module"), m->Desc.strName.c_str());
     }
     else
-        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
+        hrc = setError(E_FAIL, "%s", m ? m->strWhyUnusable.c_str() : "m-is-null");
     return hrc;
 }
 
@@ -2792,7 +2792,7 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
                     }
 
                     /* append if we've got room. */
-                    if (cbBufReq <= cbStdErrBuf)
+                    if (cbBufReq <= cbStdErrBuf && pszStdErrBuf) /* latter for shutting up MSC /analyze */
                     {
                         memcpy(&pszStdErrBuf[offStdErrBuf], achBuf, cbRead);
                         offStdErrBuf = offStdErrBuf + cbRead;

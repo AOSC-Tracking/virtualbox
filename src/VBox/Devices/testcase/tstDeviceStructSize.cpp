@@ -83,7 +83,7 @@
 #undef LOG_GROUP
 #include "../PC/DevRTC.cpp"
 # undef LOG_GROUP
-# include "../../VMM/VMMR3/APIC.cpp"
+# include "../../VMM/VMMR3/target-x86/APICR3-x86.cpp"
 #undef LOG_GROUP
 #include "../PC/DevIoApic.cpp"
 #undef LOG_GROUP
@@ -370,7 +370,6 @@ int main()
 #  endif
 # endif
 #endif
-    CHECK_MEMBER_ALIGNMENT(E1KSTATE, StatReceiveBytes, 8);
     CHECK_MEMBER_ALIGNMENT(IOAPIC, au64RedirTable, 8);
 # ifdef VBOX_WITH_STATISTICS
     CHECK_MEMBER_ALIGNMENT(IOAPIC, StatMmioReadRZ, 8);

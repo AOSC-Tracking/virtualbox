@@ -366,7 +366,8 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
     VBoxDD_SDKS.win     += $(if $(VBOX_WITH_DXVK),VBoxDxVk,)
     VBoxDD_DEFS         += VMSVGA3D_DX_BACKEND
     VBoxDD_SOURCES      += \
-    	Graphics/DevVGA-SVGA3d-dx-dx11.cpp
+    	Graphics/DevVGA-SVGA3d-dx-dx11.cpp \
+    	Graphics/DevVGA-SVGA3d-dx-dx11-output.cpp
     ifdef VBOX_WITH_DXVK
      # @todo This is probably not the nicest way to do this...
      VBoxDD_POST_CMDS.darwin  += \
@@ -375,6 +376,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
 
     # mac2 clang is too old to know the -Wclass-conversion switch in the ignore pragma it seems.
     Graphics/DevVGA-SVGA3d-dx-dx11.cpp_CXXFLAGS.darwin += -Wno-error
+    Graphics/DevVGA-SVGA3d-dx-dx11-output.cpp_CXXFLAGS.darwin += -Wno-error
    endif
   endif
   VBoxDD_SOURCES       += \
@@ -538,6 +540,35 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
    	-framework Foundation
   endif
 
+  if defined(VBOX_WITH_USB_CARDREADER)
+   VBoxDD_DEFS    += VBOX_WITH_USB_CARDREADER
+   VBoxDD_SOURCES += \
+   	Security/UsbCardReader.cpp \
+   	Security/CardReaderDebug.cpp
+
+   # @todo Use the lazy loader to dynamically load the PCSC library
+   #       and define the necessary interface bits ourselves to avoid
+   #       relying on the PCSC SDK.
+   if defined(VBOX_WITH_USB_CARDREADER_TEST)
+
+    VBoxDD_DEFS    += VBOX_WITH_USB_CARDREADER_TEST
+    VBoxDD_SOURCES += Security/DrvDirectCardReader2.cpp
+
+    if1of ($(KBUILD_TARGET), linux)
+     # PCSC framework on darwin isn't available, so I've used custom build at least for Unix compilation test
+     PCSC_sdk ?= /usr
+     VBoxDD_INCS.linux += $(PCSC_sdk)/include/PCSC
+    endif
+
+    VBoxDD_LDFLAGS.darwin += -L/usr/local/lib
+    VBoxDD_LDFLAGS.linux += -L$(PCSC_sdk)/lib
+    VBoxDD_LIBS.win += Winscard.lib
+    ifn1of ($(KBUILD_TARGET), win)
+     VBoxDD_LIBS += pcsclite
+    endif
+   endif
+  endif
+
  endif # VBOX_WITH_USB
 
  ifdef VBOX_WITH_VUSB
@@ -610,7 +641,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  VBoxDD_LIBS    += $(PATH_STAGE_LIB)/VBox-libslirp$(VBOX_SUFF_LIB)
  VBoxDD_LIBS.darwin += resolv
  Network/DrvNAT.cpp_INCS = \
- 	$(PATH_ROOT)/src/libs/libslirp-4.9.1/include
+ 	$(PATH_ROOT)/src/libs/libslirp-4.9.3/include
 
  ifdef VBOX_WITH_VMNET
   VBoxDD_DEFS.darwin    += VBOX_WITH_VMNET
@@ -714,6 +745,12 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   VBoxDD_SOURCES        += \
   	Bus/DevPciRaw.cpp \
   	Bus/DrvPciRaw.cpp
+ endif
+
+ if defined(VBOX_WITH_VFIO_PCI_PASSTHROUGH)
+  VBoxDD_DEFS           += VBOX_WITH_VFIO_PCI_PASSTHROUGH
+  VBoxDD_SOURCES        += \
+  	Bus/DevPciVfio.cpp
  endif
 
  ifdef VBOX_WITH_MSI_DEVICES
@@ -1304,8 +1341,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   	Makefile-wrapper.gmk=>../common/Makefile-wrapper.gmk
   vbox_vboxddr0-src_SOURCES = \
   	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/Makefile-vbox_vboxddr0.gmk=>Makefile \
-  	$(VBoxDDR0_0_OUTDIR)/VBoxDDR0.r0=>VBoxDDR0.r0 \
-  	$(VBoxDDR0_0_OUTDIR)/VBoxDDR0.debug=>VBoxDDR0.debug
+  	$(VBoxDDR0_0_OUTDIR)/VBoxDDR0.r0=>VBoxDDR0.r0
  endif
 
  #

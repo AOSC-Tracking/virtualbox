@@ -261,6 +261,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @retval  VERR_NOT_SUPPORTED if all the formats are unsupported, host
  *          clipboard will be empty.
+ * @retval  VERR_ACCESS_DENIED if the clipboard mode is not bi-directional or
+ *          guest-to-host.
  * @since   1.3.2
  */
 #define VBOX_SHCL_GUEST_FN_REPORT_FORMATS           2
@@ -283,6 +285,8 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED if the clipboard mode is not bi-directional or
+ *          host-to-guest.
  * @since   1.3.2
  */
 #define VBOX_SHCL_GUEST_FN_DATA_READ                3
@@ -304,6 +308,8 @@
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @retval  VERR_INVALID_CONTEXT if the context ID didn't match up.
+ * @retval  VERR_ACCESS_DENIED if the clipboard mode is not bi-directional or
+ *          guest-to-host.
  * @since   1.3.2
  */
 #define VBOX_SHCL_GUEST_FN_DATA_WRITE               4
@@ -359,7 +365,7 @@
  * @retval  VINF_SUCCESS if a message was pending and is being returned.
  * @retval  VERR_TRY_AGAIN if no message pending.
  * @retval  VERR_VM_RESTORED if first parameter is a non-zero 64-bit value that
- *          does not match VbglR3GetSessionId() any more.  The new value is
+ *          does not match VbglR3QuerySessionId() any more.  The new value is
  *          returned.
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
@@ -376,7 +382,7 @@
  * uint64_t is ~8U).
  *
  * To facilitate VM restore checking, the first parameter can be a 64-bit
- * integer holding the VbglR3GetSessionId() value the guest knowns.  The
+ * integer holding the VbglR3QuerySessionId() value the guest knowns.  The
  * function will then check this before going to sleep and return
  * VERR_VM_RESTORED if it doesn't match, same thing happens when the VM is
  * restored.
@@ -386,7 +392,7 @@
  *          cancelled by VBOX_SHCL_GUEST_FN_MSG_CANCEL.
  * @retval  VERR_RESOURCE_BUSY if another thread already made a waiting call.
  * @retval  VERR_VM_RESTORED if first parameter is a non-zero 64-bit value that
- *          does not match VbglR3GetSessionId() any more.  The new value is
+ *          does not match VbglR3QuerySessionId() any more.  The new value is
  *          returned.
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
@@ -437,6 +443,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_REPLY                 11
@@ -446,6 +453,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ    12
@@ -455,6 +463,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE   13
@@ -464,6 +473,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ  14
@@ -473,6 +483,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE 15
@@ -482,6 +493,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_OPEN             16
@@ -491,6 +503,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_CLOSE            17
@@ -500,6 +513,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_HDR_READ         18
@@ -509,6 +523,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE        19
@@ -518,6 +533,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ       20
@@ -527,6 +543,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE      21
@@ -536,6 +553,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_OPEN              22
@@ -545,6 +563,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_CLOSE             23
@@ -554,6 +573,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_READ              24
@@ -563,6 +583,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_ACCESS_DENIED it file transfers not enabled.
  * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_WRITE             25

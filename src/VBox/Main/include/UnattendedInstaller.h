@@ -429,20 +429,17 @@ public:
                               "win_nt6_unattended.xml", "win_postinstall.cmd",
                               "autounattend.xml",       "VBOXPOST.CMD")
     {
-        Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded() || isAuxiliaryIsoNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso());
-        if (isAuxiliaryFloppyNeeded())
-            mStrAuxiliaryInstallDir = "A:\\";
-        else if (bootFromAuxiliaryIso())
-            mStrAuxiliaryInstallDir = "D:\\";
-        else
-            mStrAuxiliaryInstallDir = "E:\\";
+        Assert(!isOriginalIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(bootFromAuxiliaryIso());
+        mStrAuxiliaryInstallDir = "D:\\";
     }
-    ~UnattendedWindowsXmlInstaller()      {}
+    ~UnattendedWindowsXmlInstaller()        {}
 
-    bool isAuxiliaryFloppyNeeded() const    { return !mpParent->i_isFirmwareEFI(); }
-    bool isAuxiliaryIsoNeeded() const       { return UnattendedInstaller::isAuxiliaryIsoNeeded() || mpParent->i_isFirmwareEFI(); }
-    bool isAuxiliaryIsoIsVISO() const       { return true; }
-    bool bootFromAuxiliaryIso() const       { return false; }
+    bool isAuxiliaryIsoNeeded() const RT_OVERRIDE   { return true; }
+    bool isOriginalIsoNeeded() const RT_OVERRIDE    { return false; }
+
+protected:
+    HRESULT addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                     RTVFS hVfsOrgIso, bool fOverwrite) RT_OVERRIDE;
 };
 
 
@@ -651,7 +648,7 @@ public:
     DECLARE_TRANSLATE_METHODS(UnattendedUbuntuPreseedInstaller)
 
     UnattendedUbuntuPreseedInstaller(Unattended *pParent)
-        : UnattendedDebianInstaller(pParent, "ubuntu_preseed.cfg")
+        : UnattendedDebianInstaller(pParent, "ubuntu_preseed.cfg", "ubuntu_postinstall.sh")
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
     ~UnattendedUbuntuPreseedInstaller() {}
 };
@@ -671,7 +668,7 @@ public:
     UnattendedUbuntuAutoInstallInstaller(Unattended *pParent)
         : UnattendedDebianInstaller(pParent,
                                     /* pszMainScriptTemplateName = */ "ubuntu_autoinstall_user_data",
-                                    /* pszPostScriptTemplateName = */ "debian_postinstall.sh",
+                                    /* pszPostScriptTemplateName = */ "ubuntu_postinstall.sh",
                                     /* pszMainScriptFilename     = */ "user-data")
     {
         Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded());
@@ -679,19 +676,6 @@ public:
         mStrDefaultExtraInstallKernelParameters.setNull();
         mStrDefaultExtraInstallKernelParameters += " autoinstall";
         mStrDefaultExtraInstallKernelParameters += " ds=nocloud\\;s=/cdrom/";
-        mStrDefaultExtraInstallKernelParameters += " ---";
-        mStrDefaultExtraInstallKernelParameters += " quiet";
-        mStrDefaultExtraInstallKernelParameters += " splash";
-        mStrDefaultExtraInstallKernelParameters += " noprompt";  /* no questions about things like CD/DVD ejections */
-        mStrDefaultExtraInstallKernelParameters += " noshell";   /* No shells on VT1-3 (debian, not ubuntu). */
-        mStrDefaultExtraInstallKernelParameters += " automatic-ubiquity";   // ubiquity
-        // the following can probably go into the preseed.cfg:
-        mStrDefaultExtraInstallKernelParameters.append(" debian-installer/locale=").append(pParent->i_getLocale());
-        mStrDefaultExtraInstallKernelParameters += " keyboard-configuration/layoutcode=us";
-        mStrDefaultExtraInstallKernelParameters += " languagechooser/language-name=English"; /** @todo fixme */
-        mStrDefaultExtraInstallKernelParameters.append(" localechooser/supported-locales=").append(pParent->i_getLocale()).append(".UTF-8");
-        mStrDefaultExtraInstallKernelParameters.append(" countrychooser/shortlist=").append(pParent->i_getCountry()); // ubiquity?
-        mStrDefaultExtraInstallKernelParameters += " --";
     }
     ~UnattendedUbuntuAutoInstallInstaller() {}
 

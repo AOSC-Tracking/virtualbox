@@ -40,6 +40,8 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP_DRV
 #define SUPDRV_AGNOSTIC
+#define RtlUnwind RtlUnwind_Imported /* HACK: Avoid runtime initializers and take the RtlUnwind stub function address in table. */
+#define IoWithinStackLimits IoWithinStackLimits_Imported /* HACK: Ditto */
 #include "SUPDrvInternal.h"
 #ifndef PAGE_SHIFT
 # include <iprt/param.h>
@@ -69,6 +71,7 @@
 #include <iprt/net.h>
 #include <iprt/crc.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <iprt/timer.h>
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <iprt/rand.h>
@@ -112,6 +115,15 @@
 #   include <type_traits>
 #  endif
 # endif
+#endif
+
+#ifdef RT_OS_WINDOWS
+/* HACK: Avoid runtime initializers and take the RtlUnwind stub function address in table. */
+# undef RtlUnwind
+extern "C" void __stdcall RtlUnwind(void *, void*, void *, void *) RT_NOEXCEPT;
+/* HACK: Ditto IoWithinStackLimits (added windows 7) */
+# undef IoWithinStackLimits
+extern "C" uint8_t __stdcall IoWithinStackLimits(uintptr_t, size_t) RT_NOEXCEPT;
 #endif
 
 
@@ -191,8 +203,60 @@ static int                  supdrvIOCtl_X86MsrProber(PSUPDRVDEVEXT pDevExt, PSUP
 #endif
 #if defined(RT_ARCH_ARM64)
 static int                  supdrvIOCtl_ArmGetSysRegs(PSUPARMGETSYSREGS pReq, uint32_t cMaxRegs, RTCPUID idCpu, uint32_t fFlags);
+static int                  supdrvIOCtl_ArmGetCacheInfo(PSUPARMGETCACHEINFO pReq, uint32_t cMaxEntries,
+                                                        RTCPUID idCpu, uint32_t fFlags);
 #endif
 static int                  supdrvIOCtl_ResumeSuspendedKbds(void);
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * Hack to force the compiler to align to 16-bytes the stack on linux.
+ *
+ * On AMD64 hosts, our .r0 modules expects the stack to be 16-byte aligned.  Linux is usually
+ * compiled with mpreferred-stack-boundrary=3 instead of the default 4.
+ */
+typedef union
+#if RT_CPLUSPLUS_PREREQ(201100)
+alignas(16)
+#endif
+SUPR0STACKALIGNMENT
+{
+    uint64_t   au64[2];
+    RTUINT128U u128;
+} SUPR0STACKALIGNMENT
+#if defined(__GNUC__)
+  __attribute__((__aligned__(16)))
+#endif
+;
+
+/** @def SUPR0STACKALIGNMENT_VAR
+ * Hack to make sure a SUPR0STACKALIGNMENT variable actually works and isn't
+ * optimized away. */
+#if 1
+# define SUPR0STACKALIGNMENT_VAR(a_VarNm)   volatile SUPR0STACKALIGNMENT a_VarNm
+#else
+# define SUPR0STACKALIGNMENT_VAR(a_VarNm)   uint8_t a_VarNm
+#endif
+
+/** @def SUPR0STACKALIGNMENT_CHECK
+ * Hack to make sure a SUPR0STACKALIGNMENT variable actually works and isn't
+ * optimized away. */
+#if 1
+# define SUPR0STACKALIGNMENT_CHECK(a_VarNm) do { \
+        if (!((uintptr_t)&(a_VarNm) & 15)) { /* likely */ } \
+        else \
+        { \
+            static volatile uint32_t s_cMsgs = 0; \
+            if (ASMAtomicIncU32(&s_cMsgs) < 5) \
+                SUPR0Printf("%s: misaligned stack: %p\n", __FUNCTION__, &(a_VarNm)); \
+        } \
+    } while (0)
+#else
+# define SUPR0STACKALIGNMENT_CHECK(a_VarNm)     RT_NOREF(a_VarNm)
+#endif
 
 
 /*********************************************************************************************************************************
@@ -290,9 +354,13 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    0,  SUPR0GetPagingMode),
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     SUPEXP_STK_OKAY(    1,  SUPR0FpuBegin),             /* not-arch-arm64 */
+    SUPEXP_STK_OKAY(    1,  SUPR0FpuEnsureCurrent),     /* not-arch-arm64 */
+    SUPEXP_STK_OKAY(    1,  SUPR0FpuLock),              /* not-arch-arm64 */
+    SUPEXP_STK_OKAY(    1,  SUPR0FpuUnlock),            /* not-arch-arm64 */
     SUPEXP_STK_OKAY(    1,  SUPR0FpuEnd),               /* not-arch-arm64 */
     SUPEXP_STK_BACK(    2,  SUPR0ChangeCR4),            /* not-arch-arm64 */
     SUPEXP_STK_BACK(    1,  SUPR0EnableHwvirt),         /* not-arch-arm64 */
+    SUPEXP_STK_BACK(    2,  SUPR0EnableHwvirtForVm),    /* not-arch-arm64 */
     SUPEXP_STK_OKAY(    1,  SUPR0GetCurrentGdtRw),      /* not-arch-arm64 */
     SUPEXP_STK_BACK(    3,  SUPR0GetHwvirtMsrs),        /* not-arch-arm64 */
     SUPEXP_STK_BACK(    1,  SUPR0GetSvmUsability),      /* not-arch-arm64 */
@@ -543,6 +611,9 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    4,  RTStrPrintfV),
     SUPEXP_STK_BACKF(   6,  RTStrPrintf2ExV),
     SUPEXP_STK_BACK(    4,  RTStrPrintf2V),
+    SUPEXP_STK_BACK(    0,  RTSystemGetPageSize),
+    SUPEXP_STK_BACK(    0,  RTSystemGetPageShift),
+    SUPEXP_STK_BACK(    0,  RTSystemGetPageOffsetMask),
     SUPEXP_STK_BACKF(   7,  RTThreadCreate),
     SUPEXP_STK_BACK(    1,  RTThreadCtxHookIsEnabled),
     SUPEXP_STK_BACKF(   4,  RTThreadCtxHookCreate),
@@ -587,6 +658,10 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_OKAY(    2,  RTUuidCompare),
     SUPEXP_STK_OKAY(    2,  RTUuidCompareStr),
     SUPEXP_STK_OKAY(    2,  RTUuidFromStr),
+#ifdef RT_OS_WINDOWS
+    SUPEXP_STK_OKAY(    4,  RtlUnwind),             /* only-windows (hack for longjmp use in VMMR0) */
+    SUPEXP_STK_OKAY(    2,  IoWithinStackLimits),   /* only-windows (hack for longjmp use in VMMR0) */
+#endif
 /* SED: END */
 };
 
@@ -1584,6 +1659,8 @@ static DECLCALLBACK(void) supdrvSessionObjHandleDelete(RTHANDLETABLE hHandleTabl
  */
 int VBOXCALL supdrvIOCtlFast(uintptr_t uOperation, VMCPUID idCpu, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
+    SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
+
     /*
      * Validate input and check that the VM has a session.
      */
@@ -1600,18 +1677,18 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uOperation, VMCPUID idCpu, PSUPDRVDEVEXT 
                 /*
                  * Make the call.
                  */
-                pDevExt->pfnVMMR0EntryFast(pGVM, pVM, idCpu, uOperation);
+                pDevExt->pfnVMMR0EntryFast(pGVM, pVM, idCpu, (uint32_t)uOperation);
                 return VINF_SUCCESS;
             }
 
-            SUPR0Printf("supdrvIOCtlFast: pfnVMMR0EntryFast is NULL\n");
+            SUPR0Printf("supdrvIOCtlFast: pfnVMMR0EntryFast is NULL (dummy=%p)\n", &AlignmentDummy);
         }
         else
-            SUPR0Printf("supdrvIOCtlFast: Misconfig session: pGVM=%p pVM=%p pFastIoCtrlVM=%p\n",
-                        pGVM, pVM, pSession->pFastIoCtrlVM);
+            SUPR0Printf("supdrvIOCtlFast: Misconfig session: pGVM=%p pVM=%p pFastIoCtrlVM=%p (dummy=%p)\n",
+                        pGVM, pVM, pSession->pFastIoCtrlVM, &AlignmentDummy);
     }
     else
-        SUPR0Printf("supdrvIOCtlFast: Bad session pointer %p\n", pSession);
+        SUPR0Printf("supdrvIOCtlFast: Bad session pointer %p (dummy=%p)\n", pSession, &AlignmentDummy);
     return VERR_INTERNAL_ERROR;
 }
 
@@ -1976,6 +2053,8 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
         {
             /* validate */
             PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)pReqHdr;
+            SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
+
             Log4(("SUP_IOCTL_CALL_VMMR0: op=%u in=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
                   pReq->u.In.uOperation, pReq->Hdr.cbIn, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
 
@@ -1994,6 +2073,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
                                                                 pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
                     else
                         pReq->Hdr.rc = VERR_INVALID_VM_HANDLE;
+                    SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
                 }
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;
@@ -2017,6 +2097,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
                                                                 pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
                     else
                         pReq->Hdr.rc = VERR_INVALID_VM_HANDLE;
+                    SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
                 }
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;
@@ -2050,6 +2131,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             /* execute */
             if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
             {
+                SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
                 if (pReq->u.In.pVMR0 == NULL)
                     pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(NULL, NULL, pReq->u.In.idCpu, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
                 else if (pReq->u.In.pVMR0 == pSession->pSessionVM)
@@ -2057,6 +2139,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
                                                             pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
                 else
                     pReq->Hdr.rc = VERR_INVALID_VM_HANDLE;
+                SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
             }
             else
                 pReq->Hdr.rc = VERR_WRONG_ORDER;
@@ -2611,6 +2694,27 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
         }
 
 #endif /* defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) */
+
+#if defined(RT_ARCH_ARM64)
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_ARM_GET_CACHE_INFO):
+        {
+            /* validate */
+            PSUPARMGETCACHEINFO pReq = (PSUPARMGETCACHEINFO)pReqHdr;
+            uint32_t const cMaxEntries = pReq->Hdr.cbOut <= RT_UOFFSETOF(SUPARMGETCACHEINFO, u.Out.aEntries) ? 0
+                                       :   (pReq->Hdr.cbOut - RT_UOFFSETOF(SUPARMGETCACHEINFO, u.Out.aEntries))
+                                         / sizeof(SUPARMCACHELEVEL);
+            REQ_CHECK_SIZE_IN(SUP_IOCTL_ARM_GET_CACHE_INFO, SUP_IOCTL_ARM_GET_CACHE_INFO_SIZE_IN);
+
+            REQ_CHECK_SIZE_OUT(SUP_IOCTL_ARM_GET_CACHE_INFO, SUP_IOCTL_ARM_GET_CACHE_INFO_SIZE_OUT(cMaxEntries));
+            REQ_CHECK_EXPR_FMT(pReq->u.In.fFlags == 0, ("SUP_IOCTL_ARM_GET_CACHE_INFO: fFlags=%#x!\n", pReq->u.In.fFlags));
+
+            pReqHdr->rc = supdrvIOCtl_ArmGetCacheInfo(pReq, cMaxEntries, pReq->u.In.idCpu, pReq->u.In.fFlags);
+            if (RT_FAILURE(pReqHdr->rc))
+                pReqHdr->cbOut = sizeof(*pReqHdr);
+
+            return 0;
+        }
+#endif
 
         default:
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
@@ -3180,6 +3284,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     int                 rc          = VERR_INVALID_PARAMETER;
     PSUPDRVUSAGE        pUsage;
     PSUPDRVUSAGE        pUsagePrev;
+    SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
 
     /*
      * Validate the input.
@@ -3261,6 +3366,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
         if (pObj->pfnDestructor)
             pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
         RTMemFree(pObj);
+        SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
     }
 
     AssertMsg(pUsage, ("pvObj=%p\n", pvObj));
@@ -3470,7 +3576,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
      * Let IPRT do the job.
      */
     Mem.eType = MEMREF_TYPE_LOCKED;
-    rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+    rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE, 0 /*fFlags*/, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
         uint32_t iPage = cPages;
@@ -4324,6 +4430,27 @@ SUPR0DECL(int) SUPR0EnableHwvirt(bool fEnable)
 SUPR0_EXPORT_SYMBOL(SUPR0EnableHwvirt);
 
 
+/**
+ * Per-VM followup to SUPR0EnableHwvirt.
+ *
+ * This is required by linux.
+ *
+ * @returns VBox status code.
+ * @param   fEnable         Whether to enable or disable.
+ * @param   ppvState        Pointer to a state variable (NULL initialized).
+ */
+SUPR0DECL(int) SUPR0EnableHwvirtForVm(bool fEnable, void **ppvState)
+{
+# if defined(RT_OS_LINUX) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+    return supdrvOSEnableHwvirtForVm(fEnable, ppvState);
+# else
+    RT_NOREF2(fEnable, ppvState);
+    return VINF_SUCCESS;
+# endif
+}
+SUPR0_EXPORT_SYMBOL(SUPR0EnableHwvirtForVm);
+
+
 SUPR0DECL(int) SUPR0GetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
 {
 # if defined(RT_OS_LINUX) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
@@ -5066,6 +5193,7 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
     const char *pszEnd;
     size_t cchName;
     int rc;
+    SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
 
     /*
      * Validate parameters.
@@ -5102,6 +5230,7 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
                 {
                     *ppvFactoryIf = pvFactory;
                     rc = VINF_SUCCESS;
+                    SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
                     break;
                 }
                 rc = VERR_SUPDRV_INTERFACE_NOT_SUPPORTED;
@@ -5709,6 +5838,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     LogFlow(("supdrvIOCtl_LdrLoad: pfnModuleInit=%p\n", pImage->pfnModuleInit));
     if (RT_SUCCESS(rc) && pImage->pfnModuleInit)
     {
+        SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
         Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
         pDevExt->pLdrInitImage  = pImage;
         pDevExt->hLdrInitThread = RTThreadNativeSelf();
@@ -5719,6 +5849,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
         if (RT_FAILURE(rc))
             supdrvLdrLoadError(rc, pReq, "ModuleInit failed: %Rrc", rc);
+        SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
     }
     if (RT_SUCCESS(rc))
     {
@@ -5800,8 +5931,9 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
     size_t                  cchName;
     PSUPDRVLDRIMAGE         pImage;
     PCSUPLDRWRAPMODSYMBOL   paSymbols;
-    uint16_t                idx;
+    uint32_t                idx;
     const char             *pszPrevSymbol;
+    uintptr_t               uImageMinPtr, uImageMaxPtr;
     int                     rc;
     SUPDRV_CHECK_SMAP_SETUP();
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
@@ -5833,9 +5965,25 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
     cchName = strlen(pWrappedModInfo->szName);
 
     /* Image range: */
-    AssertPtrReturn(pWrappedModInfo->pvImageStart, VERR_INVALID_POINTER);
-    AssertPtrReturn(pWrappedModInfo->pvImageEnd, VERR_INVALID_POINTER);
-    AssertReturn((uintptr_t)pWrappedModInfo->pvImageEnd > (uintptr_t)pWrappedModInfo->pvImageStart, VERR_INVALID_PARAMETER);
+    uImageMinPtr = ~(uintptr_t)0;
+    uImageMaxPtr = 0;
+    for (idx = 0; idx < RT_ELEMENTS(pWrappedModInfo->aImageSegs); idx++)
+    {
+        SUPR0Printf("seg[%u]: %p..%p\n", idx, pWrappedModInfo->aImageSegs[idx].pvStart, pWrappedModInfo->aImageSegs[idx].pvEnd);
+        if (pWrappedModInfo->aImageSegs[idx].pvStart)
+        {
+            AssertPtrReturn(pWrappedModInfo->aImageSegs[idx].pvStart, VERR_INVALID_POINTER);
+            AssertPtrReturn(pWrappedModInfo->aImageSegs[idx].pvEnd, VERR_INVALID_POINTER);
+            AssertReturn(   (uintptr_t)pWrappedModInfo->aImageSegs[idx].pvStart
+                         <= (uintptr_t)pWrappedModInfo->aImageSegs[idx].pvEnd, VERR_INVALID_PARAMETER);
+            uImageMinPtr = RT_MIN((uintptr_t)pWrappedModInfo->aImageSegs[idx].pvStart, uImageMinPtr);
+            uImageMaxPtr = RT_MAX((uintptr_t)pWrappedModInfo->aImageSegs[idx].pvEnd, uImageMaxPtr);
+        }
+        else
+            AssertReturn(pWrappedModInfo->aImageSegs[idx].pvEnd == NULL, VERR_INVALID_PARAMETER);
+    }
+    AssertReturn(uImageMinPtr < uImageMaxPtr, VERR_INVALID_PARAMETER);
+    AssertReturn(uImageMaxPtr - uImageMinPtr < _1G, VERR_OUT_OF_RANGE);
 
     /* Symbol table: */
     AssertMsgReturn(pWrappedModInfo->cSymbols <= _8K, ("Too many symbols: %u, max 8192\n", pWrappedModInfo->cSymbols),
@@ -5925,10 +6073,10 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
     /*
      * Setup and link in the LDR stuff.
      */
-    pImage->pvImage         = (void *)pWrappedModInfo->pvImageStart;
+    pImage->pvImage         = (void *)uImageMinPtr;
+    pImage->cbImageWithEverything = (uint32_t)(uImageMaxPtr - uImageMinPtr);
+    pImage->cbImageBits     = pImage->cbImageWithEverything;
     pImage->hMemObjImage    = NIL_RTR0MEMOBJ;
-    pImage->cbImageWithEverything
-        = pImage->cbImageBits = (uintptr_t)pWrappedModInfo->pvImageEnd - (uintptr_t)pWrappedModInfo->pvImageStart;
     pImage->cSymbols        = 0;
     pImage->paSymbols       = NULL;
     pImage->pachStrTab      = NULL;
@@ -5960,6 +6108,7 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
     rc = VINF_SUCCESS;
     if (pImage->pfnModuleInit)
     {
+        SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
         Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
         pDevExt->pLdrInitImage  = pImage;
         pDevExt->hLdrInitThread = RTThreadNativeSelf();
@@ -5968,6 +6117,7 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
         pDevExt->pLdrInitImage  = NULL;
         pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
+        SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
     }
     if (RT_SUCCESS(rc))
     {
@@ -6006,7 +6156,7 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
 
     supdrvLdrUnlock(pDevExt);
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -6153,6 +6303,8 @@ int VBOXCALL supdrvLdrDeregisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRA
 {
     PSUPDRVLDRIMAGE pImage;
     uint32_t        cSleeps;
+    uint32_t        idx;
+    uintptr_t       uImageMinPtr;
 
     /*
      * Validate input.
@@ -6172,9 +6324,13 @@ int VBOXCALL supdrvLdrDeregisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRA
     AssertPtrReturn(pImage, VERR_INVALID_POINTER);
     AssertMsgReturn(pImage->uMagic == SUPDRVLDRIMAGE_MAGIC, ("pImage=%p uMagic=%#x\n", pImage, pImage->uMagic),
                     VERR_INVALID_MAGIC);
-    AssertMsgReturn(pImage->pvImage == pWrappedModInfo->pvImageStart,
-                    ("pWrappedModInfo(%p)->pvImageStart=%p vs. pImage(=%p)->pvImage=%p\n",
-                     pWrappedModInfo, pWrappedModInfo->pvImageStart, pImage, pImage->pvImage),
+    uImageMinPtr = ~(uintptr_t)0;
+    for (idx = 0; idx < RT_ELEMENTS(pWrappedModInfo->aImageSegs); idx++)
+        if (pWrappedModInfo->aImageSegs[idx].pvStart && (uintptr_t)pWrappedModInfo->aImageSegs[idx].pvStart < uImageMinPtr)
+            uImageMinPtr = (uintptr_t)pWrappedModInfo->aImageSegs[idx].pvStart;
+    AssertMsgReturn(pImage->pvImage == (void *)uImageMinPtr,
+                    ("pWrappedModInfo(%p)->MIN(aImageSegs.pvStart)=%p vs. pImage(=%p)->pvImage=%p\n",
+                     pWrappedModInfo, uImageMinPtr, pImage, pImage->pvImage),
                     VERR_MISMATCH);
 
     AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
@@ -6593,10 +6749,12 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         if (    pImage->pfnModuleTerm
             &&  pImage->uState == SUP_IOCTL_LDR_LOAD)
         {
-            LogFlow(("supdrvIOCtl_LdrLoad: calling pfnModuleTerm=%p\n", pImage->pfnModuleTerm));
+            SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
+            LogFlow(("supdrvLdrFree: calling pfnModuleTerm=%p\n", pImage->pfnModuleTerm));
             pDevExt->hLdrTermThread = RTThreadNativeSelf();
             pImage->pfnModuleTerm(pImage);
             pDevExt->hLdrTermThread = NIL_RTNATIVETHREAD;
+            SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
         }
 
         /* Inform the tracing component. */
@@ -6985,6 +7143,7 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
     {
         PFNSUPR0SERVICEREQHANDLER   pfnServiceReqHandler = NULL;
         PSUPDRVLDRUSAGE             pUsage;
+        SUPR0STACKALIGNMENT_VAR(AlignmentDummy);
 
         for (pUsage = pSession->pLdrUsage; pUsage; pUsage = pUsage->pNext)
             if (    pUsage->pImage->pfnServiceReqHandler
@@ -7006,7 +7165,10 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
                 rc = pfnServiceReqHandler(pSession, pReq->u.In.uOperation, pReq->u.In.u64Arg, (PSUPR0SERVICEREQHDR)&pReq->abReqPkt[0]);
         }
         else
+        {
+            SUPR0STACKALIGNMENT_CHECK(AlignmentDummy);
             rc = VERR_SUPDRV_SERVICE_NOT_FOUND;
+        }
     }
 
     /* log it */
@@ -7234,9 +7396,10 @@ static void supdrvIOCtl_ArmGetSysRegsOnCpu(PSUPARMGETSYSREGS pReq, uint32_t cons
     /*
      * Reader macro.
      */
-    uint32_t const fSavedFlags = fFlags;
-    uint32_t       idxReg      = 0;
-    uint64_t       uRegVal;
+    uint32_t const         fSavedFlags = fFlags;
+    PSUPARMSYSREGVAL const paRegs      = &pReq->u.Out.aRegs[0]; /* to shut up UBSAN array warnings */
+    uint32_t               idxReg      = 0;
+    uint64_t               uRegVal;
 #  ifdef _MSC_VER
 #   define COMPILER_READ_SYS_REG(a_u64Dst, a_Op0, a_Op1, a_CRn, a_CRm, a_Op2) \
         (a_u64Dst) = (uint64_t)_ReadStatusReg(ARMV8_AARCH64_SYSREG_ID_CREATE(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2) & 0x7fff)
@@ -7255,9 +7418,9 @@ static void supdrvIOCtl_ArmGetSysRegsOnCpu(PSUPARMGETSYSREGS pReq, uint32_t cons
             { \
                 if (idxReg < cMaxRegs) \
                 { \
-                    pReq->u.Out.aRegs[idxReg].uValue = uRegVal; \
-                    pReq->u.Out.aRegs[idxReg].idReg  = ARMV8_AARCH64_SYSREG_ID_CREATE(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2); \
-                    pReq->u.Out.aRegs[idxReg].fFlags = 0; \
+                    paRegs[idxReg].uValue = uRegVal; \
+                    paRegs[idxReg].idReg  = ARMV8_AARCH64_SYSREG_ID_CREATE(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2); \
+                    paRegs[idxReg].fFlags = 0; \
                 } \
                 idxReg += 1; \
             } \
@@ -7436,9 +7599,11 @@ static void supdrvIOCtl_ArmGetSysRegsOnCpu(PSUPARMGETSYSREGS pReq, uint32_t cons
     /** @todo FEAT_ETE: READ_SYS_REG_NAMED(2, 1, 0,  4, 6, TRCIDR12);  */
     /** @todo FEAT_ETE: READ_SYS_REG_NAMED(2, 1, 0,  5, 6, TRCIDR13);  */
 
+# if 0 /** @todo this crashes on DGX  */
     bool const fFeatEte = ((fDfr0 >> 4) & 0xfU) >= 1U; /* FEAT_ETE <-> ID_AA64DFR0_EL1.TraceVer >= 1 */
     if (fFeatEte)
         READ_SYS_REG_NAMED(2, 1, 7, 15, 6, TRCDEVARCH);
+# endif
 
     /*
      * Collections of other read-only registers.
@@ -7457,7 +7622,6 @@ static void supdrvIOCtl_ArmGetSysRegsOnCpu(PSUPARMGETSYSREGS pReq, uint32_t cons
     //    READ_SYS_REG_NAMED(3, 1, 0, 0, 2, CCSIDR2_EL1); /** @todo CCSIDR2_EL1 - current cache size \#2? */
 
 # undef READ_SYS_REG
-# undef COMPILER_READ_SYS_REG
 
     /*
      * Complete the request output.
@@ -7517,6 +7681,187 @@ static int supdrvIOCtl_ArmGetSysRegs(PSUPARMGETSYSREGS pReq, uint32_t const cMax
     }
     return rc;
 }
+
+
+/**
+ * Gathers ARM cache information.
+ *
+ * This is either called directly or via RTMpOnSpecific.  The latter means that
+ * we must not trigger any paging activity or block.
+ */
+static void supdrvIOCtl_ArmGetCacheInfoOnCpu(PSUPARMGETCACHEINFO pReq, uint32_t const cMaxEntries, uint32_t fFlags)
+{
+    PSUPARMCACHELEVEL const paEntries = &pReq->u.Out.aEntries[0]; /* to shut up UBSAN array warnings */
+    uint32_t                idxEntry  = 0;
+    RT_NOREF(fFlags);
+
+    /*
+     * Note! We share system registe reader macros with supdrvIOCtl_ArmGetSysRegsOnCpu()!
+     */
+#  ifdef _MSC_VER
+#   define COMPILER_WRITE_SYS_REG(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2, a_u64Value) do { \
+            _WriteStatusReg(ARMV8_AARCH64_SYSREG_ID_CREATE(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2) & 0x7fff, (a_u64Value)); \
+            __isb(0xf /*_ARM_BARRIER_SY*/); \
+        } while (0)
+#   define COMPILER_WRITE_SYS_REG_NAMED(a_SysRegName, a_u64Value) do { \
+            _WriteStatusReg(RT_CONCAT(ARMV8_AARCH64_SYSREG_,a_SysRegName) & 0x7fff, (a_u64Value)); \
+            __isb(0xf /*_ARM_BARRIER_SY*/); \
+        } while (0)
+#  else
+#   define COMPILER_WRITE_SYS_REG(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2, a_u64Value) \
+        __asm__ __volatile__ ("msr s" #a_Op0 "_" #a_Op1 "_c" #a_CRn "_c" #a_CRm "_" #a_Op2 ", %0\n\tisb" : : "r" (a_u64Value))
+#   define COMPILER_WRITE_SYS_REG_NAMED(a_SysRegName, a_u64Value) \
+        __asm__ __volatile__ ("msr " #a_SysRegName ", %0\n\tisb"  : : "r" (a_u64Value))
+#  endif
+
+    /* Read CTR_EL0 & DCZID_EL0 for the return request data.  */
+    COMPILER_READ_SYS_REG_NAMED(pReq->u.Out.uCacheTypeReg, CTR_EL0);
+    COMPILER_READ_SYS_REG_NAMED(pReq->u.Out.uDataCacheZeroId, DCZID_EL0);
+
+    /* Check if FEAT_MTE2 is available on this CPU. */
+    uint64_t                uReg = 0;
+    COMPILER_READ_SYS_REG_NAMED(uReg, ID_AA64PFR1_EL1);
+    bool const              fFeatMte2 = ((uReg >> 8) & UINT32_C(0xf) /*MTE*/) >= 2;
+
+#ifndef RT_OS_LINUX /** @todo CCSIDR2_EL1 accesses crash on the Nvidia DGX. Buggy docs? Buggy firmware? Linux specific? */
+    /* Check if CCSIDR2_EL1 is available on this CPU. */
+    uReg = 0;
+    COMPILER_READ_SYS_REG_NAMED(uReg, ID_AA64MMFR2_EL1);
+    bool const              fFeatCcIdx = ((uReg >> 20) & UINT32_C(0xf) /*CCIDX*/) >= 1;
+#else
+    bool const              fFeatCcIdx = false;
+#endif
+
+    /* Read the cache level ID register CLIDR_EL1 register so we can enumerate the levels correctly. */
+    uint64_t                uCacheLevelIdReg;
+    COMPILER_READ_SYS_REG_NAMED(uCacheLevelIdReg, CLIDR_EL1);
+    pReq->u.Out.uCacheLevelIdReg = uCacheLevelIdReg;
+
+    /* Read the original selector register value. */
+    uint64_t               uOrgSelValue;
+    COMPILER_READ_SYS_REG_NAMED(uOrgSelValue, CSSELR_EL1);
+
+    /*
+     * Loop thru the up to 7 cache levels and read the CCSIDR_EL1 & CCS2IDR_EL1
+     * values for each one present in CLIDR_EL1.
+     */
+    for (uint32_t uLevel = 0; uLevel < 7; uLevel++)
+    {
+        uint32_t const uCacheType = (uCacheLevelIdReg >> (uLevel * 3)) & 0x7;
+        if (uCacheType != 0)
+        {
+            uint32_t const uTagType   = fFeatMte2 ? (uCacheLevelIdReg >> (33 + uLevel * 2)) & 0x3 : 0;
+
+            /* Figure out the relevant selector register values for this level. */
+            unsigned       cSelValues = 0;
+            uint64_t       auSelValues[4];
+            if (uCacheType != 1 /* only instruction cache */)
+            {
+                auSelValues[cSelValues++]     = (uLevel << 1);
+                if (uTagType == 1)
+                    auSelValues[cSelValues++] = (uLevel << 1) | 0x10 /* tag */;
+            }
+            if (uCacheType == 1 /* only instruction cache */ || uCacheType == 3 /* separate data & instruction caches */)
+            {
+                auSelValues[cSelValues++]     = (uLevel << 1) | 1 /* instr */;
+                if (uTagType == 1)
+                    auSelValues[cSelValues++] = (uLevel << 1) | 1 /* instr */ | 0x10 /* tag */;
+            }
+
+            /* Do the reading. */
+            for (unsigned i = 0; i < cSelValues; i++)
+            {
+                /* Set CSSEL_EL1, read the size registers and restore CSSEL_EL1. */
+                uint64_t uCcsIdR  = 0;
+                uint64_t uCcs2IdR = UINT64_MAX;
+
+                COMPILER_WRITE_SYS_REG_NAMED(CSSELR_EL1, auSelValues[i]);
+                COMPILER_READ_SYS_REG_NAMED(uCcsIdR, CCSIDR_EL1);
+                if (fFeatCcIdx)
+                {
+#ifdef RT_OS_WINDOWS
+                    COMPILER_READ_SYS_REG_NAMED(uCcs2IdR, CCSIDR2_EL1);
+#else
+                    COMPILER_READ_SYS_REG(uCcs2IdR, 3, 1, 0, 0, 2);
+#endif
+                }
+                COMPILER_WRITE_SYS_REG_NAMED(CSSELR_EL1, uOrgSelValue);
+
+                /* Add the value to the return array. */
+                if (idxEntry < cMaxEntries)
+                {
+                    paEntries[idxEntry].bCsSel          = (uint8_t)auSelValues[i];
+                    paEntries[idxEntry].abReserved[0]   = 0;
+                    paEntries[idxEntry].abReserved[1]   = 0;
+                    paEntries[idxEntry].abReserved[2]   = 0;
+                    paEntries[idxEntry].fFlags          = SUP_ARM_SYS_REG_VAL_F_FROM_CPU;
+                    paEntries[idxEntry].uCcsIdR         = uCcsIdR;
+                    paEntries[idxEntry].uCcs2IdR        = uCcs2IdR;
+                }
+                idxEntry++;
+            }
+        }
+    }
+
+    /*
+     * Complete the request output.
+     */
+    pReq->u.Out.cEntriesAvailable = idxEntry;
+    if (idxEntry > cMaxEntries)
+        idxEntry = cMaxEntries;
+    pReq->u.Out.cEntries          = idxEntry;
+    pReq->Hdr.cbOut = SUP_IOCTL_ARM_GET_CACHE_INFO_SIZE_OUT(idxEntry);
+}
+
+
+/** Argument package for updrvIOCtl_ArmGetCacheInfoOnCpuWorker. */
+typedef struct SUPARMGETCACHEINFOONCPUARGS
+{
+    uint32_t            cMaxEntries;
+    uint32_t            fFlags;
+} SUPARMGETCACHEINFOONCPUARGS;
+
+
+/** @callback_method_impl{FNRTMPWORKER}   */
+static DECLCALLBACK(void) supdrvIOCtl_ArmGetCacheInfoOnCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    const SUPARMGETCACHEINFOONCPUARGS *pArgs = (const SUPARMGETCACHEINFOONCPUARGS *)pvUser2;
+    supdrvIOCtl_ArmGetCacheInfoOnCpu((PSUPARMGETCACHEINFO)pvUser1, pArgs->cMaxEntries, pArgs->fFlags);
+    RT_NOREF(idCpu);
+}
+
+
+/**
+ * Implementes the ARM cache information gatherer.
+ *
+ * @returns VBox status code.
+ * @param   pReq        The request.
+ * @param   cMaxEntries The maximum number of entries we can return.
+ * @param   idCpu       The CPU to get cache info for.
+ * @param   fFlags      The request flags.
+ */
+static int supdrvIOCtl_ArmGetCacheInfo(PSUPARMGETCACHEINFO pReq, uint32_t const cMaxEntries, RTCPUID idCpu, uint32_t fFlags)
+{
+    int rc;
+
+    /* Zero the request array just in case someone hands us a pagable buffer. */
+    RT_BZERO(&pReq->u.Out.aEntries[0], cMaxEntries * sizeof(pReq->u.Out.aEntries[0]));
+
+    if (idCpu == NIL_RTCPUID)
+    {
+        supdrvIOCtl_ArmGetCacheInfoOnCpu(pReq, cMaxEntries, fFlags);
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        SUPARMGETCACHEINFOONCPUARGS Args;
+        Args.cMaxEntries = cMaxEntries;
+        Args.fFlags      = fFlags;
+        rc = RTMpOnSpecific(idCpu, supdrvIOCtl_ArmGetCacheInfoOnCpuCallback, pReq, &Args);
+    }
+    return rc;
+}
+
 
 #endif /* RT_ARCH_ARM64 */
 

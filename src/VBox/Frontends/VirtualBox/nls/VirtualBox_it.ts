@@ -406,10 +406,6 @@
         <translation>&amp;Aggiungi...</translation>
     </message>
     <message>
-        <source>Cl&amp;one...</source>
-        <translation>Cl&amp;ona...</translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation>&amp;Rimuovi</translation>
     </message>
@@ -1806,8 +1802,8 @@
         <translation>Sposta nel gr&amp;uppo</translation>
     </message>
     <message>
-        <source>C&amp;onsole</source>
-        <translation>C&amp;onsole</translation>
+        <source>Conso&amp;le</source>
+        <translation>Conso&amp;le</translation>
     </message>
     <message>
         <source>&amp;Create Connection</source>
@@ -2304,6 +2300,26 @@
     <message>
         <source>Send the ACPI shutdown signal to the virtual machine</source>
         <translation>Invia il segnale di arresto ACPI alla macchina virtuale</translation>
+    </message>
+    <message>
+        <source>&amp;New</source>
+        <translation>&amp;Nuovo</translation>
+    </message>
+    <message>
+        <source>&amp;New Cloud Machine...</source>
+        <translation>&amp;Nuova macchina in cloud...</translation>
+    </message>
+    <message>
+        <source>Create new cloud virtual machine</source>
+        <translation>Crea nuova macchina viruale in cloud</translation>
+    </message>
+    <message>
+        <source>&amp;Open Cloud Machine...</source>
+        <translation>Apri macchina in cl&amp;oud...</translation>
+    </message>
+    <message>
+        <source>Open existing cloud virtual machine</source>
+        <translation>Apri macchina virtuale in cloud esistente</translation>
     </message>
 </context>
 <context>
@@ -2895,7 +2911,7 @@
     <name>UIChooserNodeGroup</name>
     <message>
         <source>Machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Gruppo di macchine</translation>
     </message>
 </context>
 <context>
@@ -3150,6 +3166,14 @@
     <message>
         <source>Show Help (%1)</source>
         <translation>Mostra la guida (%1)</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nome</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation>Valore</translation>
     </message>
 </context>
 <context>
@@ -4519,7 +4543,7 @@
     <message>
         <source>Intel 82583V Gigabit Network Connection [EXPERIMENTAL]</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Connessione di rete Gigabit Intel 82583V [SPERIMENTALE]</translation>
     </message>
 </context>
 <context>
@@ -6374,16 +6398,8 @@
 <context>
     <name>UIHostnameDomainNameEditor</name>
     <message>
-        <source>Domain name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation>Il nome di dominio deve essere lungo almeno 2 caratteri. I caratteri consentiti sono alfanumerici, &quot;-&quot; e &quot;.&quot;</translation>
-    </message>
-    <message>
         <source>Domain name is valid</source>
         <translation>Il nome di dominio è valido</translation>
-    </message>
-    <message>
-        <source>Host name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation>Il nome host deve essere lungo almeno 2 caratteri. I caratteri consentiti sono alfanumerici, &quot;-&quot; e &quot;.&quot;</translation>
     </message>
     <message>
         <source>Host name is valid</source>
@@ -6412,6 +6428,14 @@
     <message>
         <source>Domain name to be assigned to the virtual machine</source>
         <translation>Nome di dominio da assegnare alla macchina virtuale</translation>
+    </message>
+    <message>
+        <source>Host name must be at least two alphanumeric characters. Hyphens are allowed between characters.</source>
+        <translation>Il nome host deve essere composto da almeno due caratteri alfanumerici. Sono consentiti i trattini tra i caratteri.</translation>
+    </message>
+    <message>
+        <source>Domain labels (1–63 chars) may use letters, digits, or hyphens, but not start or end with one. Labels are dot-separated, and the total length must be under 254 characters.</source>
+        <translation>Le etichette di dominio (da 1 a 63 caratteri) possono contenere lettere, cifre o trattini, ma non possono iniziare o terminare con uno di essi. Le etichette sono separate da punti e la lunghezza totale deve essere inferiore a 254 caratteri.</translation>
     </message>
 </context>
 <context>
@@ -6783,22 +6807,6 @@
 </context>
 <context>
     <name>UILanguageSettingsEditor</name>
-    <message>
-        <source>Author</source>
-        <translation>Autore</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>Lingua</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>Id</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nome</translation>
-    </message>
     <message>
         <source>Language:</source>
         <translation>Lingua:</translation>
@@ -9734,6 +9742,14 @@
         <source>Can&apos;t drop data to guest ...</source>
         <translation>Impossibile trasferire dati al guest...</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;The VM folder contains files that were used for unattended guest OS installation and are no longer needed.&lt;/p&gt;&lt;p&gt;Delete them now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;La cartella della MV contiene file che sono stati utilizzati per l&apos;installazione non presidiata dell&apos;installazione del sistema operativo del guest e non sono più necessari.&lt;/p&gt;&lt;p&gt;Vuoi eliminarli ora?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again</source>
+        <translation>Non chiedere più</translation>
+    </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
@@ -12393,7 +12409,7 @@
     <name>UIToolsItem</name>
     <message>
         <source>Tool item</source>
-        <translation type="unfinished"></translation>
+        <translation>Strumento</translation>
     </message>
     <message>
         <source>Media</source>

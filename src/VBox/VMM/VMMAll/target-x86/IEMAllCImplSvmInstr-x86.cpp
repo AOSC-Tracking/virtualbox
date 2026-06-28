@@ -168,6 +168,9 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu, uint8_t cbInstr)
  */
 VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2) RT_NOEXCEPT
 {
+    /* Just count this as an exit and be done with that. */
+    ICORE(pVCpu).cPotentialExits++;
+
     VBOXSTRICTRC rcStrict;
     if (   CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu))
         || uExitCode == SVM_EXIT_INVALID)
@@ -410,7 +413,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, 
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
     VBOXSTRICTRC rcStrict = iemSvmVmexit(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-    if (pVCpu->iem.s.cActiveMappings)
+    if (ICORE(pVCpu).cActiveMappings)
         iemMemRollback(pVCpu);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
@@ -1005,18 +1008,18 @@ VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t
             && !(uErr & X86_TRAP_PF_ID))
         {
             PSVMVMCBCTRL  pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl;
-# ifdef IEM_WITH_CODE_TLB
-            uint8_t const *pbInstrBuf = pVCpu->iem.s.pbInstrBuf;
-            uint8_t const  cbInstrBuf = pVCpu->iem.s.cbInstrBuf;
+# ifdef IEM_WITH_CODE_TLB_IN_CUR_CTX
+            uint8_t const *pbInstrBuf = ICORE(pVCpu).pbInstrBuf;
+            uint8_t const  cbInstrBuf = ICORE(pVCpu).cbInstrBuf;
             pVmcbCtrl->cbInstrFetched = RT_MIN(cbInstrBuf, SVM_CTRL_GUEST_INSTR_BYTES_MAX);
             if (   pbInstrBuf
                 && cbInstrBuf > 0)
                 memcpy(&pVmcbCtrl->abInstr[0], pbInstrBuf, pVmcbCtrl->cbInstrFetched);
 # else
-            uint8_t const cbOpcode    = pVCpu->iem.s.cbOpcode;
+            uint8_t const cbOpcode    = ICORE(pVCpu).cbOpcode;
             pVmcbCtrl->cbInstrFetched = RT_MIN(cbOpcode, SVM_CTRL_GUEST_INSTR_BYTES_MAX);
             if (cbOpcode > 0)
-                memcpy(&pVmcbCtrl->abInstr[0], &pVCpu->iem.s.abOpcode[0], pVmcbCtrl->cbInstrFetched);
+                memcpy(&pVmcbCtrl->abInstr[0], &ICORE(pVCpu).abOpcode[0], pVmcbCtrl->cbInstrFetched);
 # endif
         }
         if (u8Vector == X86_XCPT_BR)
@@ -1209,7 +1212,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmrun(PVMCPUCC pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmrun);
-    Assert(!pVCpu->iem.s.cActiveMappings);
+    Assert(!ICORE(pVCpu).cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -1246,7 +1249,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
                                                     sizeof(SVMVMCBSTATESAVE));
     if (rcStrict == VINF_SUCCESS)
     {
-        LogFlow(("vmload: Loading VMCB at %#RGp enmEffAddrMode=%d\n", GCPhysVmcb, pVCpu->iem.s.enmEffAddrMode));
+        LogFlow(("vmload: Loading VMCB at %#RGp enmEffAddrMode=%d\n", GCPhysVmcb, ICORE(pVCpu).enmEffAddrMode));
         HMSVM_SEG_REG_COPY_FROM_VMCB(IEM_GET_CTX(pVCpu), &VmcbNstGst, FS, fs);
         HMSVM_SEG_REG_COPY_FROM_VMCB(IEM_GET_CTX(pVCpu), &VmcbNstGst, GS, gs);
         HMSVM_SEG_REG_COPY_FROM_VMCB(IEM_GET_CTX(pVCpu), &VmcbNstGst, TR, tr);
@@ -1283,7 +1286,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmload(PVMCPUCC pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmload);
-    Assert(!pVCpu->iem.s.cActiveMappings);
+    Assert(!ICORE(pVCpu).cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -1320,7 +1323,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
                                                     sizeof(SVMVMCBSTATESAVE));
     if (rcStrict == VINF_SUCCESS)
     {
-        LogFlow(("vmsave: Saving VMCB at %#RGp enmEffAddrMode=%d\n", GCPhysVmcb, pVCpu->iem.s.enmEffAddrMode));
+        LogFlow(("vmsave: Saving VMCB at %#RGp enmEffAddrMode=%d\n", GCPhysVmcb, ICORE(pVCpu).enmEffAddrMode));
         IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_FS | CPUMCTX_EXTRN_GS | CPUMCTX_EXTRN_TR | CPUMCTX_EXTRN_LDTR
                                 | CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS);
 
@@ -1363,7 +1366,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmsave(PVMCPUCC pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmsave);
-    Assert(!pVCpu->iem.s.cActiveMappings);
+    Assert(!ICORE(pVCpu).cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -1411,7 +1414,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClgi(PVMCPUCC pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_clgi);
-    Assert(!pVCpu->iem.s.cActiveMappings);
+    Assert(!ICORE(pVCpu).cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -1459,7 +1462,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedStgi(PVMCPUCC pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_stgi);
-    Assert(!pVCpu->iem.s.cActiveMappings);
+    Assert(!ICORE(pVCpu).cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -1504,7 +1507,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpga(PVMCPUCC pVCpu, uint8_t cbInstr
 
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_invlpga);
-    Assert(!pVCpu->iem.s.cActiveMappings);
+    Assert(!ICORE(pVCpu).cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -1594,7 +1597,8 @@ IEM_CIMPL_DEF_1(iemCImpl_Hypercall, uint16_t, uDisOpcode)
                         || rcStrict == VERR_GIM_HYPERCALLS_NOT_AVAILABLE
                         || rcStrict == VERR_GIM_NOT_ENABLED
                         || rcStrict == VERR_GIM_HYPERCALL_MEMORY_READ_FAILED
-                        || rcStrict == VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED,
+                        || rcStrict == VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED
+                        || rcStrict == VERR_GIM_INVALID_HYPERCALL_INSTR,
                         ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IEM_IPE_4);
 
         /* Raise #UD on all failures. */

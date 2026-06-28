@@ -462,6 +462,7 @@
 #include <iprt/initterm.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/stackcheck.h>
 
 #include "SUPLibInternal.h"
 
@@ -706,6 +707,7 @@ DECLHIDDEN(DECL_NO_RETURN(void)) suplibHardenedExit(RTEXITCODE rcExit)
 static void suplibHardenedPrintStrN(const char *pch, size_t cch)
 {
 #ifdef RT_OS_WINDOWS
+    RT_STACK_CHECK_RET_ADDR();
     HANDLE hStdOut = NtCurrentPeb()->ProcessParameters->StandardOutput;
     if (hStdOut != NULL)
     {
@@ -849,6 +851,7 @@ struct SUPLIBHARDENEDOUTPUTBUF
 /** Callback for RTStrFormatV, see FNRTSTROUTPUT. */
 static DECLCALLBACK(size_t) suplibHardenedOutput(void *pvArg, const char *pachChars, size_t cbChars)
 {
+    RT_STACK_CHECK_RET_ADDR();
     SUPLIBHARDENEDOUTPUTBUF *pBuf = (SUPLIBHARDENEDOUTPUTBUF *)pvArg;
     size_t cbTodo = cbChars;
     for (;;)
@@ -900,6 +903,8 @@ static DECLCALLBACK(size_t) suplibHardenedOutput(void *pvArg, const char *pachCh
 DECLHIDDEN(void) suplibHardenedPrintFV(const char *pszFormat, va_list va)
 {
 #ifdef IPRT_NO_CRT
+    RT_STACK_CHECK_RET_ADDR();
+
     /*
      * Use buffered output here to avoid character mixing on the windows
      * console and to enable us to use OutputDebugString.
@@ -1468,6 +1473,7 @@ extern "C" uint32_t g_uNtVerCombined;
 DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
 {
     static const char s_szLogOption[] = "--sup-hardening-log=";
+    RT_STACK_CHECK_RET_ADDR();
 
     /*
      * Scan the argument vector.
@@ -1483,9 +1489,9 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
             /*
              * Drop the argument from the vector (has trailing NULL entry).
              */
-//            memmove(&papszArgs[iArg], &papszArgs[iArg + 1], (cArgs - iArg) * sizeof(papszArgs[0]));
-            *pcArgs -= 1;
-            cArgs   -= 1;
+            memmove(&papszArgs[iArg], &papszArgs[iArg + 1], (cArgs - iArg) * sizeof(papszArgs[0]));
+            cArgs  -= 1;
+            *pcArgs = cArgs;
 
             /*
              * Open the log file, unless we've already opened one.
@@ -1505,8 +1511,8 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                                       NULL);
                 if (RT_SUCCESS(rc))
                 {
-//                    SUP_DPRINTF(("Log file opened: " VBOX_VERSION_STRING "r%u g_hStartupLog=%p g_uNtVerCombined=%#x\n",
-//                                 VBOX_SVN_REV, g_hStartupLog, g_uNtVerCombined));
+                    SUP_DPRINTF(("Log file opened: " VBOX_VERSION_STRING "r%u g_hStartupLog=%p g_uNtVerCombined=%#x\n",
+                                 VBOX_SVN_REV, g_hStartupLog, g_uNtVerCombined));
 
                     /*
                      * If the path contains a drive volume, save it so we can
@@ -1514,7 +1520,7 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                      */
                     if (RT_C_IS_ALPHA(pszLogFile[0]) && pszLogFile[1] == ':')
                     {
-//                        RTUtf16CopyAscii(g_wszStartupLogVol, RT_ELEMENTS(g_wszStartupLogVol), "\\??\\");
+                        RTUtf16CopyAscii(g_wszStartupLogVol, RT_ELEMENTS(g_wszStartupLogVol), "\\??\\");
                         g_wszStartupLogVol[sizeof("\\??\\") - 1] = RT_C_TO_UPPER(pszLogFile[0]);
                         g_wszStartupLogVol[sizeof("\\??\\") + 0] = ':';
                         g_wszStartupLogVol[sizeof("\\??\\") + 1] = '\0';
@@ -1869,6 +1875,7 @@ DECLHIDDEN(int) supR3HardenedError(int rc, bool fFatal, const char *pszFormat, .
  */
 DECLHIDDEN(void) supR3HardenedMainOpenDevice(void)
 {
+    RT_STACK_CHECK_RET_ADDR();
     RTERRINFOSTATIC ErrInfo;
     SUPINITOP       enmWhat = kSupInitOp_Driver;
     uint32_t        fFlags  = SUPR3INIT_F_UNRESTRICTED;

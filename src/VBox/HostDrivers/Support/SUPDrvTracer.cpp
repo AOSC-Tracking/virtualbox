@@ -1506,28 +1506,34 @@ __asm__("\
 SUPR0TracerFireProbe:                                                   \n\
 ");
 # if   defined(RT_ARCH_AMD64)
-__asm__("\
-            movq    g_pfnSupdrvProbeFireKernel(%rip), %rax              \n\
-            "
+__asm__(
+#  ifdef CONFIG_X86_KERNEL_IBT
+"        endbr64 \n"
+#  endif
+"        movq    g_pfnSupdrvProbeFireKernel(%rip), %rax \n\
+        "
 #  if defined(RT_OS_LINUX)
 #   if RTLNX_VER_MIN(4,15,10)
-            ANNOTATE_RETPOLINE_SAFE
+        ANNOTATE_RETPOLINE_SAFE
 #   endif
 #  endif
-            " \n\
-            jmp     *%rax \n\
+        " \n\
+        jmp     *%rax \n\
 ");
 # elif defined(RT_ARCH_X86)
-__asm__("\
-            movl    g_pfnSupdrvProbeFireKernel, %eax                    \n\
-            "
+__asm__(
+#  ifdef CONFIG_X86_KERNEL_IBT
+"        endbr32 \n"
+#  endif
+"        movl    g_pfnSupdrvProbeFireKernel, %eax \n\
+        "
 #  if defined(RT_OS_LINUX)
 #   if RTLNX_VER_MIN(4,15,10)
-            ANNOTATE_RETPOLINE_SAFE
+        ANNOTATE_RETPOLINE_SAFE
 #   endif
 #  endif
-            " \n\
-            jmp     *%eax \n\
+        " \n\
+        jmp     *%eax \n\
 ");
 # elif defined(RT_ARCH_ARM64)
 __asm__("\
@@ -2106,7 +2112,7 @@ int  VBOXCALL   supdrvIOCtl_TracerUmodRegister(PSUPDRVDEVEXT pDevExt, PSUPDRVSES
     /*
      * Lock down and map the user-mode structures.
      */
-    rc = RTR0MemObjLockUser(&pUmod->hMemObjLock, R3PtrLock, cbLock, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+    rc = RTR0MemObjLockUser(&pUmod->hMemObjLock, R3PtrLock, cbLock, RTMEM_PROT_READ | RTMEM_PROT_WRITE, 0 /*fFlags*/, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
         rc = RTR0MemObjMapKernel(&pUmod->hMemObjMap, pUmod->hMemObjLock, (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE);

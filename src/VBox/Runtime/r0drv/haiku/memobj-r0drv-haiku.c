@@ -356,10 +356,11 @@ static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvStart, 
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process,
-                             const char *pszTag)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, uint32_t fFlags,
+                             RTR0PROCESS R0Process, const char *pszTag)
 {
-    return rtR0MemObjNativeLockInMap(ppMem, (void *)R3Ptr, cb, fAccess, R0Process, B_READ_DEVICE, pszTag);
+    RT_NOREF(fFlags);
+    return rtR0MemObjNativeLockInMap(ppMem, (void *)R3Ptr, cb, fAccess, fFlags, R0Process, B_READ_DEVICE, pszTag);
 }
 
 

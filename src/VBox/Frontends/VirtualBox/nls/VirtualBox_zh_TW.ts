@@ -659,10 +659,6 @@
         <translation>顯示「虛擬機器設定」視窗</translation>
     </message>
     <message>
-        <source>Cl&amp;one...</source>
-        <translation>再製(&amp;O)...</translation>
-    </message>
-    <message>
         <source>Clone selected virtual machine</source>
         <translation>再製選取的虛擬機器</translation>
     </message>
@@ -1780,7 +1776,7 @@
         <translation>移至群組(&amp;U)</translation>
     </message>
     <message>
-        <source>C&amp;onsole</source>
+        <source>Conso&amp;le</source>
         <translation>主控台(&amp;O)</translation>
     </message>
     <message>
@@ -2302,6 +2298,26 @@
     <message>
         <source>Send the ACPI shutdown signal to the virtual machine</source>
         <translation>向虛擬機器傳送 ACPI 關機訊號</translation>
+    </message>
+    <message>
+        <source>&amp;New</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Cloud Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new cloud virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Open Cloud Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open existing cloud virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3143,6 +3159,14 @@
     <message>
         <source>Registered cloud providers and profiles</source>
         <translation>註冊的雲端提供商和設定檔</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">名稱</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation type="unfinished">數值</translation>
     </message>
 </context>
 <context>
@@ -6367,16 +6391,8 @@
 <context>
     <name>UIHostnameDomainNameEditor</name>
     <message>
-        <source>Domain name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation>域名應至少 2 個字元長。 允許的字元是字母數字，&quot;-&quot; 和 &quot;.&quot;</translation>
-    </message>
-    <message>
         <source>Domain name is valid</source>
         <translation>域名有效</translation>
-    </message>
-    <message>
-        <source>Host name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation>主機名稱長度至少為 2 個字元。 允許的字元包括字母數字，&quot;-&quot; 和 &quot;.&quot;</translation>
     </message>
     <message>
         <source>Host name is valid</source>
@@ -6405,6 +6421,14 @@
     <message>
         <source>Domain name to be assigned to the virtual machine</source>
         <translation>要指派給虛擬機器的域名</translation>
+    </message>
+    <message>
+        <source>Host name must be at least two alphanumeric characters. Hyphens are allowed between characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Domain labels (1–63 chars) may use letters, digits, or hyphens, but not start or end with one. Labels are dot-separated, and the total length must be under 254 characters.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6776,22 +6800,6 @@
 </context>
 <context>
     <name>UILanguageSettingsEditor</name>
-    <message>
-        <source>Author</source>
-        <translation>作者</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>語言</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>ID</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名稱</translation>
-    </message>
     <message>
         <source>Language:</source>
         <translation>語言:</translation>
@@ -9725,6 +9733,14 @@
     <message>
         <source>Can&apos;t drop data to guest ...</source>
         <translation>無法將資料拖放到客體 ...</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VM folder contains files that were used for unattended guest OS installation and are no longer needed.&lt;/p&gt;&lt;p&gt;Delete them now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -53,6 +53,9 @@ extern const unsigned g_cbUefiMicrosoftWinCa;
 extern const unsigned char g_abUefiMicrosoftWinCa2023[];
 extern const unsigned g_cbUefiMicrosoftWinCa2023;
 
+extern const unsigned char g_abUefiMicrosoftOpRomUefiCa2023[];
+extern const unsigned g_cbUefiMicrosoftOpRomUefiCa2023;
+
 extern const unsigned char g_abUefiOracleDefPk[];
 extern const unsigned g_cbUefiOracleDefPk;
 

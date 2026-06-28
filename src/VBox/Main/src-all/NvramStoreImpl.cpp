@@ -1520,7 +1520,11 @@ HRESULT NvramStore::i_applyDefaults(GuestOSType *aOSType)
             {
                 hrc = pVarStore->EnrollOraclePlatformKey();
                 if (SUCCEEDED(hrc))
+                {
                     hrc = pVarStore->EnrollDefaultMsSignatures();
+                    if (SUCCEEDED(hrc))
+                        hrc = pVarStore->COMSETTER(SecureBootEnabled)(TRUE);
+                }
             }
         }
     }

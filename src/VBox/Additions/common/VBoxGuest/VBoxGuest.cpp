@@ -703,7 +703,7 @@ static int vgdrvSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
     if (fInflate)
     {
         rc = RTR0MemObjLockUser(pMemObj, pvChunk, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE,
-                                RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+                                RTMEM_PROT_READ | RTMEM_PROT_WRITE, 0 /*fFlags*/, NIL_RTR0PROCESS);
         if (RT_SUCCESS(rc))
         {
             rc = vgdrvBalloonInflate(pMemObj, pReq);
@@ -2343,7 +2343,7 @@ static int vgdrvCheckIfVmmReqIsAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
 #ifdef VBOX_WITH_HGCM
         case VMMDevReq_HGCMConnect:
         case VMMDevReq_HGCMDisconnect:
-# ifdef VBOX_WITH_64_BITS_GUESTS
+# if ARCH_BITS == 64
         case VMMDevReq_HGCMCall64:
 # endif
         case VMMDevReq_HGCMCall32:
@@ -2413,6 +2413,7 @@ static int vgdrvCheckIfVmmReqIsAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
         case VMMDevReq_VideoUpdateMonitorPositions:
         case VMMDevReq_GetDisplayChangeRequestEx:
         case VMMDevReq_GetDisplayChangeRequestMulti:
+        case VMMDevReq_GetDisplayChangeRequestMulti2:
         case VMMDevReq_GetSeamlessChangeRequest:
         case VMMDevReq_GetVRDPChangeRequest:
         case VMMDevReq_LogString:

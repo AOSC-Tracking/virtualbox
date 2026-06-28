@@ -236,7 +236,7 @@ void UIMotherboardFeaturesEditor::sltResetSecureBoot()
 {
     if (!m_pPushButtonResetSecureBoot->property("clicked_once").toBool())
     {
-        if (msgCenter().confirmRestoringDefaultKeys())
+        if (msgCenter().confirmRestoringDefaultKeys(window()))
         {
             m_pPushButtonResetSecureBoot->setProperty("clicked_once", true);
             sltHandleEnableSecureBootToggling();

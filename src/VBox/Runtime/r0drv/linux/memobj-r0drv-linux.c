@@ -47,6 +47,14 @@
 #include <iprt/mem.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64))
+# include <iprt/mp.h>
+# include <iprt/asm-amd64-x86.h>
+# ifndef X86_CPUID_FEATURE_EDX_PGE /* can't include iprt/x86.h here */
+#  define X86_CPUID_FEATURE_EDX_PGE RT_BIT_32(13)
+# endif
+#endif
+
 #include "internal/memobj.h"
 #include "internal/iprt.h"
 
@@ -87,6 +95,7 @@
  * It would be possible to remove IPRT_USE_ALLOC_VM_AREA_FOR_EXEC and use
  * this path execlusively for 3.2+ but no time to test it really works on every
  * supported kernel, so better play safe for now.
+ * @note Adjust init_mm resolving in rtR0InitNative() if changing version here.
  */
 #if RTLNX_VER_MIN(5,10,0) || defined(DOXYGEN_RUNNING)
 # define IPRT_USE_APPLY_TO_PAGE_RANGE_FOR_EXEC
@@ -109,21 +118,6 @@
 /* gfp_t was introduced in 2.6.14, define it for earlier. */
 #if RTLNX_VER_MAX(2,6,14)
 # define gfp_t  unsigned
-#endif
-
-/*
- * Wrappers around mmap_lock/mmap_sem difference.
- */
-#if RTLNX_VER_MIN(5,8,0)
-# define LNX_MM_DOWN_READ(a_pMm)    down_read(&(a_pMm)->mmap_lock)
-# define LNX_MM_UP_READ(a_pMm)        up_read(&(a_pMm)->mmap_lock)
-# define LNX_MM_DOWN_WRITE(a_pMm)   down_write(&(a_pMm)->mmap_lock)
-# define LNX_MM_UP_WRITE(a_pMm)       up_write(&(a_pMm)->mmap_lock)
-#else
-# define LNX_MM_DOWN_READ(a_pMm)    down_read(&(a_pMm)->mmap_sem)
-# define LNX_MM_UP_READ(a_pMm)        up_read(&(a_pMm)->mmap_sem)
-# define LNX_MM_DOWN_WRITE(a_pMm)   down_write(&(a_pMm)->mmap_sem)
-# define LNX_MM_UP_WRITE(a_pMm)       up_write(&(a_pMm)->mmap_sem)
 #endif
 
 
@@ -192,7 +186,11 @@ static const struct
 };
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static void rtR0MemObjLinuxFreePages(PRTR0MEMOBJLNX pMemLnx);
+
 
 
 /**
@@ -274,6 +272,10 @@ static pgprot_t rtR0MemObjLinuxConvertProt(unsigned fProt, bool fKernel)
 # endif
             }
             return PAGE_READONLY_EXEC;
+#elif defined(PAGE_KERNEL_ROX)
+            return fKernel ? PAGE_KERNEL_ROX        : PAGE_READONLY_EXEC;
+#elif defined(PAGE_READONLY_EXEC)
+            return fKernel ? PAGE_READONLY_EXEC     : PAGE_READONLY_EXEC;
 #else
             return fKernel ? MY_PAGE_KERNEL_EXEC    : PAGE_READONLY_EXEC;
 #endif
@@ -1384,8 +1386,128 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
 # define GET_USER_PAGES_API     LINUX_VERSION_CODE
 #endif
 
+#if RTLNX_VER_MIN(6,12,0)
+/**
+ * Internal worker trying to create a RTR0MemObjEnterPhys() compatible object when locking
+ * fails and RTMEMOBJ_LOCK_USER_F_TREAT_MMIO_AS_PHYS is set.
+ *
+ * @returns IPRT status code.
+ * @param   ppMem           Where to store the ring-0 memory object handle on success.
+ * @param   R3Ptr           User virtual address. This is rounded down to a page
+ *                          boundary.
+ * @param   cb              Number of bytes to lock. This is rounded up to
+ *                          nearest page boundary.
+ * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
+ *                          and RTMEM_PROT_WRITE.
+ * @param   pTask           The process to lock pages in.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ *
+ * @remarks We impose severe restrictions on the given virtual address region. It must be contained within a
+ *          single VMA and must have a contiguous physical address range.
+ */
+static int rtR0MemObjNativeLockUserAsPhys(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
+                                          struct vm_area_struct *pVma, struct task_struct *pTask, const char *pszTag)
+{
+    /*
+     * Because fixup_user_fault() can cause unlocking of the mm lock for each checked page,
+     * causing racing threads to be able to change the address space layout the checks need to be redone
+     * completely as soon as the case is hit.
+     * To avoid denial of service kind of attacks the number of retries is bound to the number of pages
+     * covering the range so that each page can at most cause a retry once.
+     */
+    uint8_t  cTries = cb >> PAGE_SHIFT;
+    for (;;)
+    {
+        PRTR0MEMOBJLNX  pMemLnx;
+        size_t const    cPages    = cb >> PAGE_SHIFT;
+        size_t          idxPage   = 0;
+        uint64_t        uPfnStart = UINT64_MAX;
+        bool            fRetry    = false;
+
+        /* The region is not entirely contained within the given VMA or has changed behind our backs -> fail without retrying. */
+        if (   !pVma
+            || R3Ptr < pVma->vm_start
+            || R3Ptr >= pVma->vm_end
+            || pVma->vm_end - (R3Ptr - pVma->vm_start) < cb
+            || (pVma->vm_flags & (VM_IO | VM_PFNMAP)) != (VM_IO | VM_PFNMAP))
+            return VERR_INVALID_PARAMETER;
+
+        while (idxPage < cPages)
+        {
+            int rc;
+            uint64_t uPfn;
+            struct follow_pfnmap_args PfnMapArgs;
+
+            PfnMapArgs.vma     = pVma;
+            PfnMapArgs.address = R3Ptr + (idxPage << PAGE_SHIFT);
+            rc = follow_pfnmap_start(&PfnMapArgs);
+            if (rc)
+            {
+                /* Need to call the fault handler. */
+                bool fUnlocked = false;
+                rc = fixup_user_fault(pTask->mm, R3Ptr + (idxPage << PAGE_SHIFT),
+                                      (fAccess & RTMEM_PROT_WRITE) ? FAULT_FLAG_WRITE : 0,
+                                      &fUnlocked);
+                if (fUnlocked)
+                {
+                    if (!cTries)
+                        return VERR_TRY_AGAIN;
+                    cTries--;
+                    fRetry = true;
+                    /*
+                     * Start from the beginning, need to lookup the VMA again, as it might've
+                     * changed behind our backs.
+                     */
+                    pVma = vma_lookup(pTask->mm, R3Ptr);
+                    break;
+                }
+
+                if (rc) /* Any error during the fault handling is an immediate error. */
+                    return VERR_LOCK_FAILED;
+
+                rc = follow_pfnmap_start(&PfnMapArgs);
+                if (rc) /* follow_pfnmap_start() shouldn't fail anymore for this particular address. */
+                    return VERR_LOCK_FAILED;
+            }
+
+            /* ASSUMES a contiguous physical backing. */
+            uPfn = PfnMapArgs.pfn;
+            follow_pfnmap_end(&PfnMapArgs);
+            if (uPfnStart == UINT64_MAX)
+                uPfnStart = uPfn;
+            else if (   uPfn != uPfnStart + idxPage
+                     || (   (fAccess & RTMEM_PROT_WRITE)
+                         && !PfnMapArgs.writable))
+                return VERR_NOT_SUPPORTED;
+
+            /** @todo Instead of going page by page we can probably make use of PfnMapArgs.addr_mask
+             *        to jump ahead. */
+            idxPage++;
+        }
+
+        if (fRetry)
+            continue;
+
+        /* Getting here means we succeeded before running out of tries or encountering something fishy. */
+        pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(sizeof(*pMemLnx), RTR0MEMOBJTYPE_PHYS, NULL, cb, pszTag);
+        if (!pMemLnx)
+            return VERR_NO_MEMORY;
+
+        pMemLnx->Core.u.Phys.PhysBase     = __pfn_to_phys(uPfnStart);
+        pMemLnx->Core.u.Phys.fAllocated   = false;
+        pMemLnx->Core.u.Phys.uCachePolicy = RTMEM_CACHE_POLICY_MMIO; /** @todo Make this configurable? */
+        Assert(!pMemLnx->cPages);
+        *ppMem = &pMemLnx->Core;
+        return VINF_SUCCESS;
+    }
+
+    return VINF_SUCCESS;
+}
+#endif /*RTLNX_VER_MIN(6,12,0)*/
+
+
 DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
-                                         RTR0PROCESS R0Process, const char *pszTag)
+                                         uint32_t fFlags, RTR0PROCESS R0Process, const char *pszTag)
 {
     IPRT_LINUX_SAVE_EFL_AC();
     const int cPages = cb >> PAGE_SHIFT;
@@ -1404,6 +1526,23 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
         return VERR_NOT_SUPPORTED;
     if (((size_t)cPages << PAGE_SHIFT) != cb)
         return VERR_OUT_OF_RANGE;
+
+#if RTLNX_VER_MIN(6,12,0)
+    LNX_MM_DOWN_READ(pTask->mm);
+    struct vm_area_struct *pVma = vma_lookup(pTask->mm, R3Ptr);
+    if (   pVma
+        && (pVma->vm_flags & (VM_IO | VM_PFNMAP)) == (VM_IO | VM_PFNMAP))
+    {
+        if (fFlags & RTMEMOBJ_LOCK_USER_F_TREAT_MMIO_AS_PHYS)
+            rc = rtR0MemObjNativeLockUserAsPhys(ppMem, R3Ptr, cb, fAccess, pVma, pTask, pszTag);
+        else /* Don't bother trying, VM_IO or VM_PFNMAP areas are not backed by struct page's, so get_user_pages will fail later on anyway. */
+            rc = VERR_LOCK_FAILED;
+        LNX_MM_UP_READ(pTask->mm);
+        IPRT_LINUX_RESTORE_EFL_AC();
+        return rc;
+    }
+    LNX_MM_UP_READ(pTask->mm);
+#endif
 
     /*
      * Allocate the memory object and a temporary buffer for the VMAs.
@@ -2115,6 +2254,72 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     return rc;
 }
 
+#if (defined(IPRT_USE_ALLOC_VM_AREA_FOR_EXEC) || defined(IPRT_USE_APPLY_TO_PAGE_RANGE_FOR_EXEC)) \
+  && (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64))
+
+/*
+ * Wrapper around __flush_tlb_all and fallback code for 4.19+.
+ */
+# if RTLNX_VER_MIN(6,19,0)
+
+static DECLCALLBACK(void) rtR0MemObjLinuxFlushTlbAllOnEach(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    RTCCUINTREG const fIntFlags = ASMIntDisableFlags();
+    ASMReloadCR3();
+    ASMSetFlags(fIntFlags);
+    RT_NOREF(idCpu, pvUser1, pvUser2);
+}
+
+static DECLCALLBACK(void) rtR0MemObjLinuxFlushTlbAllOnEachPge(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    RTCCUINTREG const fIntFlags = ASMIntDisableFlags();
+    RTCCUINTREG fCr4 = ASMGetCR4();
+    ASMSetCR4(fCr4 ^ X86_CR4_PGE);
+    ASMSetCR4(fCr4);
+    ASMSetFlags(fIntFlags);
+    RT_NOREF(idCpu, pvUser1, pvUser2);
+}
+
+static DECLCALLBACK(void) rtR0MemObjLinuxFlushTlbAllOnEachInvPcid(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    RT_NOREF(idCpu, pvUser1, pvUser2);
+    invpcid_flush_all();
+}
+
+# endif
+
+static void rtR0MemObjLinuxFlushTlbAll(void)
+{
+# if RTLNX_VER_MIN(6,19,0)
+    if (RT_LIKELY(RT_VALID_PTR(g_pfnLinuxFlushTlbAll)))
+        RTLNX_CET_UNSAFE_CALL(g_pfnLinuxFlushTlbAll, g_pfnLinuxFlushTlbAll());
+    else
+    {
+        uint32_t uMax;
+        if (   ASMHasCpuId()
+             && RTX86IsValidStdRange(uMax = ASMCpuId_EAX(0))
+             && (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_PGE))
+        {
+            uint32_t uEax = 0;
+            uint32_t uEbx = 0;
+            uint32_t uEcx = 0;
+            uint32_t uEdx = 0;
+            if (uMax >= 7)
+                ASMCpuId_Idx_ECX(7, 0, &uEax, &uEbx, &uEcx, &uEdx);
+            if (uEbx & RT_BIT_32(10) /*X86_CPUID_STEXT_FEATURE_EBX_INVPCID*/)
+                RTMpOnAll(rtR0MemObjLinuxFlushTlbAllOnEachInvPcid, NULL, NULL);
+            else
+                RTMpOnAll(rtR0MemObjLinuxFlushTlbAllOnEachPge, NULL, NULL);
+        }
+        else
+            RTMpOnAll(rtR0MemObjLinuxFlushTlbAllOnEach, NULL, NULL);
+    }
+# else
+    __flush_tlb_all();
+# endif
+}
+
+#endif
 
 DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
 {
@@ -2135,23 +2340,57 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
             set_pte(papPtes[i], mk_pte(pMemLnx->apPages[i], fPg));
         }
         preempt_disable();
-        __flush_tlb_all();
+        rtR0MemObjLinuxFlushTlbAll();
         preempt_enable();
         return VINF_SUCCESS;
     }
+
 # elif defined(IPRT_USE_APPLY_TO_PAGE_RANGE_FOR_EXEC)
     PRTR0MEMOBJLNX pMemLnx = (PRTR0MEMOBJLNX)pMem;
     if (   pMemLnx->fExecutable
         && pMemLnx->fMappedToRing0)
     {
-        LNXAPPLYPGRANGE Args;
+        /*
+         * The apply_to_page_range call should take init_mm as parameter.
+         *
+         * For arm64 this is essential, as arm has separate page table roots
+         * for kernel and userland, and messing around with the user land
+         * one (active_mm) isn't helpful and will end up with us crashing
+         * later.
+         *
+         * On amd64 & x86, we've usually been able to get away with using
+         * active_mm here, but we really should use init_mm. So, since the
+         * code for getting init_mm doesn't currently support too old kernels
+         * and using active_mm works, we just quietly fall back on the latter
+         * if the former is unavailable.
+         */
+        int               rcLnx;
+        LNXAPPLYPGRANGE   Args;
+        struct mm_struct *pInitMm = g_pLnxInitMm;
+        if (!pInitMm)
+#  if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+            pInitMm = current->active_mm;
+#  else
+            return VERR_SYMBOL_NOT_FOUND;
+#  endif
         Args.pMemLnx = pMemLnx;
         Args.fPg = rtR0MemObjLinuxConvertProt(fProt, true /*fKernel*/);
-        int rcLnx = apply_to_page_range(current->active_mm, (unsigned long)pMemLnx->Core.pv + offSub, cbSub,
-                                        rtR0MemObjLinuxApplyPageRange, (void *)&Args);
+        rcLnx = apply_to_page_range(pInitMm,
+                                    (unsigned long)pMemLnx->Core.pv + offSub, cbSub,
+                                    rtR0MemObjLinuxApplyPageRange, (void *)&Args);
         if (rcLnx)
             return VERR_NOT_SUPPORTED;
 
+        /* Invalidate the mapping and instruction cache, just to be on the safe side... */
+        if (fProt & RTMEM_PROT_EXEC)
+            flush_icache_range((uintptr_t)pMemLnx->Core.pv + offSub, cbSub);
+#  if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) /* flush_tlb_kernel_range is not exported, but __flush_tlb_all is. */
+        preempt_disable();
+        rtR0MemObjLinuxFlushTlbAll();
+        preempt_enable();
+#  else
+        flush_tlb_kernel_range((uintptr_t)pMemLnx->Core.pv + offSub, cbSub);
+#  endif
         return VINF_SUCCESS;
     }
 # endif

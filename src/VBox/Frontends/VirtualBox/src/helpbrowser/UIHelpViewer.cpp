@@ -245,8 +245,6 @@ void UIContextMenuNavigationAction::prepare()
             this, &UIContextMenuNavigationAction::sltReloadPage);
     connect(m_pAddBookmarkButton, &QIToolButton::pressed,
             this, &UIContextMenuNavigationAction::sltAddBookmark);
-    connect(m_pReloadPageButton, &QIToolButton::pressed,
-            this, &UIContextMenuNavigationAction::sltAddBookmark);
 }
 
 
@@ -687,7 +685,7 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
             return;
         }
     }
-    QTextBrowser::mousePressEvent(pEvent);
+    QTextBrowser::mouseReleaseEvent(pEvent);
 }
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
@@ -829,6 +827,8 @@ void UIHelpViewer::highlightFinds(int iSearchTermLength)
 
 void UIHelpViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
 {
+    if (iMatchIndex >= m_matchedCursorPosition.size())
+        return;
     QTextCursor cursor = textCursor();
     /* Move the cursor to the beginning of the matched string: */
     cursor.setPosition(m_matchedCursorPosition.at(iMatchIndex), QTextCursor::MoveAnchor);

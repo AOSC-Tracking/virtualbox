@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170561 $"
+__version__ = "$Revision: 172152 $"
 
 # Standard Python imports.
 import array
@@ -56,7 +56,9 @@ from testdriver.base    import TdTaskBase;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    long = int;     # pylint: disable=redefined-builtin,invalid-name
+    long = int;         # pylint: disable=redefined-builtin,invalid-name
+else:
+    long = long;        # pylint: disable=redefined-builtin,invalid-name,self-assigning-variable
 
 
 ## @name USB gadget impersonation string constants.
@@ -629,6 +631,7 @@ class Session(TdTaskBase):
                 oTaskRc = None;
         else:
             reporter.log('utsTaskThread: cancelled already');
+            oTaskRc = None;
 
         self.lockTask();
 

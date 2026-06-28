@@ -46,6 +46,7 @@
 #include "revision-generated.h"
 
 #include <iprt/assert.h>
+#include <iprt/dbg.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
 #include <iprt/initterm.h>
@@ -79,11 +80,38 @@
 # include <iprt/asm-amd64-x86.h>
 #endif
 
-#if (RTLNX_VER_RANGE(6,16,0, 6,18,0)) && defined(CONFIG_KVM_GENERIC_HARDWARE_ENABLING) && defined(VBOX_WITH_HOST_VMX)
-# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-#  include <linux/kvm_host.h>
-#  define SUPDRV_LINUX_HAS_KVM_HWVIRT_API
-# endif
+#if RTLNX_VER_MIN(5,13,0)
+# include <linux/vtime.h>
+#else
+# define vtime_account_guest_enter() do { } while(0)
+# define vtime_account_guest_exit()  do { } while(0)
+#endif
+
+#ifndef IS_ENABLED
+# define IS_ENABLED(a) 0
+#endif
+#if RTLNX_VER_MIN(6,16,0) && IS_ENABLED(CONFIG_KVM_X86) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && defined(VBOX_WITH_HOST_VMX)
+/*
+ * Open /dev/kvm and create a dummy VM for each VBox VM process, to ensure that
+ * KVM initializes VT-x for us and can be used in parallel.  We have to do this
+ * on a per-process basis, as KVM will reference task_struct::mm of the creator
+ * and we don't want the first VM process's mm to be kept around for ever as it
+ * could have unwanted side-effects ("leaks").
+ *
+ * The SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE option is for bypassing
+ * the root file system, /dev populating, and associated risks by opening the
+ * kvm device via our own pseudo file system.  This is obviously a bit more
+ * complicated.
+ *
+ * Note! Unlike the original SUPDRV_LINUX_HAS_KVM_HWVIRT_API approach, this is
+ *       not restricted to 6.16+. It should work a lot further back.
+ */
+# define SUPDRV_LINUX_WITH_DUMMY_KVM_VM
+# define SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+# include <linux/file.h>
+# include <linux/fdtable.h>
+# include <linux/kvm_host.h>
+# include <linux/pseudo_fs.h>
 #endif
 
 
@@ -172,17 +200,54 @@ static void VBoxDevRelease(struct device *pDev);
 static int  supdrvLinuxLdrModuleNotifyCallback(struct notifier_block *pBlock,
                                                unsigned long uModuleState, void *pvModule);
 #endif
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+static int  supdrvLnxFsInitCtx(struct fs_context *pFsCtx);
+static void supdrvLnxFsRelease(void);
+#endif
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
- * Device extention & session data association structure.
+ * Device extension & session data association structure.
  */
 static SUPDRVDEVEXT         g_DevExt;
-#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
-static bool                 g_fUsingKvmHwvirtApi;
+
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM
+/** Spinlock protecting g_cDevKvmFileRefs & g_pDevKvmFile. */
+static spinlock_t                               g_DevKvmSpinlock;
+/** File for /dev/kvm. */
+static struct file                             *g_pDevKvmFile = NULL;
+/** Reference counter for g_pDevKvmFile. */
+static uint32_t volatile                        g_cDevKvmFileRefs = 0;
+# ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+/** Internal file system so we can open KVM_MINOR w/o going thru the file system. */
+static struct vfsmount                         *g_pSupDrvLnxFsMnt = NULL;
+/** References counter for the internal file system. */
+static int                                      g_cSupDrvLnxFsRefs = 0;
+/** Internal file system so we can open KVM_MINOR w/o going thru the file system. */
+static struct file_system_type                  g_SupDrvLnxFsType =
+{
+    .name               = "supdrv",
+    .owner              = THIS_MODULE,
+    .init_fs_context    = supdrvLnxFsInitCtx,
+    .kill_sb            = kill_anon_super
+};
+# endif /* SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE */
+#endif /* SUPDRV_LINUX_WITH_DUMMY_KVM_VM */
+
+#if RTLNX_VER_MIN(6,15,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+/** Pointer to the switch_fpu_return function. */
+static __typeof__(switch_fpu_return)           *g_pfnSwitchFpuReturn;
+#endif
+
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+# define SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+/** Function pointer to cr4_update_irqsoff(). */
+static __typeof__(cr4_update_irqsoff)           *g_pfnCr4UpdateIrqsoff;
+/** Function pointer to cr4_read_shadow(). */
+static __typeof__(cr4_read_shadow)              *g_pfnCr4ReadShadow;
 #endif
 
 /** Module parameter.
@@ -343,30 +408,35 @@ DECLINLINE(RTUID) vboxdrvLinuxEuid(void)
 #endif
 
 
-#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
+#if RTLNX_VER_MIN(6,15,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 /**
- * This is a hack/workaround that attempts to detect whether the kvm_intel/kvm_amd
- * module is likely to be loaded. See @bugref{10963#c14} for details.
+ * Dynamically resolves a function we need.
+ *
+ * @returns true if gotten using __symbol_get, false if via
+ *          RTR0DbgKrnlInfoGetFunction or register_kprobe or if we failed.
  */
-static bool is_kvm_hwvirt_mod_likely_loaded(void)
+static bool __init
+supdrvLinuxFunction(const char *pszModule, const char *pszFunctionNm, PFNRT *ppfnFunction, PRTDBGKRNLINFO phKrnlInfo)
 {
-    /*
-     * We don't disable preemption/interrupts here because we assume all CPUs will have
-     * the relevant bits identical in CR4 and EFER.
-     */
-    bool const     fIsIntel  = ASMIsIntelOrCompatibleCpu();
-    uint64_t const fVmxeMask = RT_BIT_64(13);
-    if (   fIsIntel
-        && (ASMGetCR4() & fVmxeMask))
+    int rc2;
+
+    /* 1. Try __symbol_get. These symbols must be put back, so return true. */
+    *ppfnFunction = (PFNRT)__symbol_get(pszFunctionNm);
+    if (*ppfnFunction)
         return true;
 
-    bool const     fIsAmd    = ASMIsAmdOrCompatibleCpu();
-    uint32_t const idEfer    = 0xc0000080;
-    uint64_t const fSvmeMask = RT_BIT_64(12);
-    if (   fIsAmd
-        && (ASMRdMsr(idEfer) & fSvmeMask))
-           return true;
-
+    /* 2. Try /proc/kallsyms, kprobes and other magic that RTR0DbgKrnlInfoOpen wields. */
+    if (*phKrnlInfo != NIL_RTDBGKRNLINFO)
+        rc2 = RTR0DbgKrnlInfoQuerySymbol(*phKrnlInfo, pszModule, pszFunctionNm, (void **)ppfnFunction);
+    else
+    {
+        rc2 = RTR0DbgKrnlInfoOpen(phKrnlInfo, 0 /*fFlags*/);
+        if (RT_SUCCESS(rc2))
+            rc2 = RTR0DbgKrnlInfoQuerySymbol(*phKrnlInfo, pszModule, pszFunctionNm, (void **)ppfnFunction);
+    }
+    if (RT_FAILURE(rc2))
+        printk(KERN_WARNING "vboxdrv: warning: failed to resolve %s%s%s (rc2=%d)\n",
+               pszModule ? pszModule : "", pszModule ? "!" : "", pszFunctionNm, rc2);
     return false;
 }
 #endif
@@ -385,6 +455,9 @@ static int __init VBoxDrvLinuxInit(void)
     if (!vbox_mod_should_load())
         return -EINVAL;
 
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM
+    spin_lock_init(&g_DevKvmSpinlock);
+#endif
 #if RTLNX_VER_MIN(5,0,0)
     spin_lock_init(&g_supdrvLinuxWrapperModuleSpinlock);
     RTListInit(&g_supdrvLinuxWrapperModuleList);
@@ -432,13 +505,29 @@ static int __init VBoxDrvLinuxInit(void)
                     if (rc == 0)
 #endif
                     {
+                        /*
+                         * Resolve symbols that was made difficult to access with 6.19.
+                         */
+#if RTLNX_VER_MIN(6,15,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+                        RTDBGKRNLINFO hKrnlInfo = NIL_RTDBGKRNLINFO;
+                        /* Needed for FPU management. */
+                        supdrvLinuxFunction(NULL, "switch_fpu_return",  (PFNRT *)&g_pfnSwitchFpuReturn,  &hKrnlInfo);
+# ifdef SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+                        /* Shadow CR4 */
+                        supdrvLinuxFunction(NULL, "cr4_update_irqsoff", (PFNRT *)&g_pfnCr4UpdateIrqsoff, &hKrnlInfo);
+                        supdrvLinuxFunction(NULL, "cr4_read_shadow",    (PFNRT *)&g_pfnCr4ReadShadow,    &hKrnlInfo);
+# endif
+                        if (hKrnlInfo != NIL_RTDBGKRNLINFO)
+                            RTR0DbgKrnlInfoRelease(hKrnlInfo);
+#endif
+
 #if RTLNX_VER_MIN(5,0,0)
                         /*
                          * Register the module notifier.
                          */
-                        int rc2 = register_module_notifier(&g_supdrvLinuxModuleNotifierBlock);
-                        if (rc2)
-                            printk(KERN_WARNING "vboxdrv: failed to register module notifier! rc2=%d\n", rc2);
+                        int rc3 = register_module_notifier(&g_supdrvLinuxModuleNotifierBlock);
+                        if (rc3)
+                            printk(KERN_WARNING "vboxdrv: failed to register module notifier! rc3=%d\n", rc3);
 #endif
                         printk(KERN_INFO "vboxdrv: TSC mode is %s, tentative frequency %llu Hz\n",
                                SUPGetGIPModeName(g_DevExt.pGip), g_DevExt.pGip->u64CpuHz);
@@ -449,9 +538,9 @@ static int __init VBoxDrvLinuxInit(void)
                                 " (interface " RT_XSTR(SUPDRV_IOC_VERSION) ")\n");
                         return rc;
                     }
+
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
-                    else
-                        platform_driver_unregister(&gPlatformDriver);
+                    platform_driver_unregister(&gPlatformDriver);
                 }
 #endif
             }
@@ -480,10 +569,33 @@ static void __exit VBoxDrvLinuxUnload(void)
 {
     Log(("VBoxDrvLinuxUnload\n"));
 
+    /*
+     * I don't think it's possible to unload a driver which processes have
+     * opened, at least we'll blindly assume that here. Best do this first.
+     */
+    misc_deregister(&gMiscDeviceUsr);
+    misc_deregister(&gMiscDeviceSys);
+
+    /*
+     * Drop notifications.
+     */
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
     platform_device_unregister(&gPlatformDevice);
     platform_driver_unregister(&gPlatformDriver);
 #endif
+
+    /*
+     * Release symbol references.
+     */
+#ifdef SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+    /* We don't need to put these, they should be in core_kernel_text(). */
+    g_pfnCr4UpdateIrqsoff = NULL;
+    g_pfnCr4ReadShadow    = NULL;
+#endif
+# if RTLNX_VER_MIN(6,15,0)
+    /* Same for this. */
+    g_pfnSwitchFpuReturn  = NULL;
+# endif
 
 #if RTLNX_VER_MIN(5,0,0)
     /*
@@ -506,16 +618,34 @@ static void __exit VBoxDrvLinuxUnload(void)
 #endif
 
     /*
-     * I Don't think it's possible to unload a driver which processes have
-     * opened, at least we'll blindly assume that here.
-     */
-    misc_deregister(&gMiscDeviceUsr);
-    misc_deregister(&gMiscDeviceSys);
-
-    /*
-     * Destroy GIP, delete the device extension and terminate IPRT.
+     * Destroy GIP and delete the device extension.
      */
     supdrvDeleteDevExt(&g_DevExt);
+
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM
+    /*
+     * Make sure we release the /dev/kvm file. (Shouldn't be open here!)
+     */
+    spin_lock(&g_DevKvmSpinlock);
+    struct file *pFile = g_pDevKvmFile;
+    g_pDevKvmFile     = NULL;
+    g_cDevKvmFileRefs = 0;
+    spin_unlock(&g_DevKvmSpinlock);
+    if (pFile)
+    {
+        printk(KERN_WARNING "vboxdrv: g_pDevKvmFile not zero at unload!\n");
+        fput(pFile);
+# ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+        supdrvLnxFsRelease();
+        AssertMsg(g_cSupDrvLnxFsRefs == 0 && g_pSupDrvLnxFsMnt == NULL,
+                  ("g_cSupDrvLnxFsRefs=%d g_pSupDrvLnxFsMnt=%p\n", g_cSupDrvLnxFsRefs, g_pSupDrvLnxFsMnt));
+# endif
+    }
+#endif
+
+    /*
+     * Finally terminate IPRT.
+     */
     RTR0TermForced();
 }
 
@@ -693,14 +823,22 @@ static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned 
 #ifdef HAVE_UNLOCKED_IOCTL
     if (RT_LIKELY(   (unsigned int)(uCmd - SUP_IOCTL_FAST_DO_FIRST) < (unsigned int)32
                   && pSession->fUnrestricted))
+    {
+        vtime_account_guest_enter();
         rc = supdrvIOCtlFast(uCmd - SUP_IOCTL_FAST_DO_FIRST, ulArg, &g_DevExt, pSession);
+        vtime_account_guest_exit();
+    }
     else
         rc = VBoxDrvLinuxIOCtlSlow(pFilp, uCmd, ulArg, pSession);
 #else   /* !HAVE_UNLOCKED_IOCTL */
     unlock_kernel();
     if (RT_LIKELY(   (unsigned int)(uCmd - SUP_IOCTL_FAST_DO_FIRST) < (unsigned int)32
                   && pSession->fUnrestricted))
+    {
+        vtime_account_guest_enter();
         rc = supdrvIOCtlFast(uCmd - SUP_IOCTL_FAST_DO_FIRST, ulArg, &g_DevExt, pSession);
+        vtime_account_guest_exit();
+    }
     else
         rc = VBoxDrvLinuxIOCtlSlow(pFilp, uCmd, ulArg, pSession);
     lock_kernel();
@@ -1032,18 +1170,48 @@ SUPR0DECL(int) SUPDrvLinuxLdrDeregisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrap
 }
 EXPORT_SYMBOL(SUPDrvLinuxLdrDeregisterWrappedModule);
 
-
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+
+# if RTLNX_VER_MIN(5,8,0)
+/**
+ * Wrapper for cr4_read_shadow() which is an kvm-only export starting v6.19.
+ */
+DECLINLINE(unsigned long) supdrvLinux_cr4_read_shadow(void)
+{
+#  ifdef SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+    unsigned long fRet;
+    if (RT_LIKELY(g_pfnCr4ReadShadow))
+        RTLNX_CET_UNSAFE_CALL(g_pfnCr4ReadShadow, fRet = g_pfnCr4ReadShadow());
+    else
+        fRet = ASMGetCR4(); /* This better not happen! */
+    return fRet;
+#  else
+    return cr4_read_shadow();
+#  endif
+}
+# endif /* 5.8.0 */
+
 RTCCUINTREG VBOXCALL supdrvOSChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask)
 {
 # if RTLNX_VER_MIN(5,8,0)
     unsigned long fSavedFlags;
     local_irq_save(fSavedFlags);
-    RTCCUINTREG const uOld = cr4_read_shadow();
+    RTCCUINTREG const uOld = supdrvLinux_cr4_read_shadow();
+
+#  ifdef SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+    if (RT_LIKELY(g_pfnCr4UpdateIrqsoff))
+        RTLNX_CET_UNSAFE_CALL(g_pfnCr4UpdateIrqsoff, g_pfnCr4UpdateIrqsoff(fOrMask, ~fAndMask));
+    else
+        ASMSetCR4((uOld & fAndMask) | fOrMask); /* This better not happen! */
+#  else
     cr4_update_irqsoff(fOrMask, ~fAndMask); /* Same as this function, only it is not returning the old value. */
-    AssertMsg(cr4_read_shadow() == ((uOld & fAndMask) | fOrMask),
-              ("fOrMask=%#RTreg fAndMask=%#RTreg uOld=%#RTreg; new cr4=%#llx\n", fOrMask, fAndMask, uOld, cr4_read_shadow()));
+#  endif
+
+    AssertMsg(supdrvLinux_cr4_read_shadow() == ((uOld & fAndMask) | fOrMask),
+              ("fOrMask=%#RTreg fAndMask=%#RTreg uOld=%#RTreg; new cr4=%#llx\n",
+               fOrMask, fAndMask, uOld, supdrvLinux_cr4_read_shadow()));
     local_irq_restore(fSavedFlags);
+
 # else
 #  if RTLNX_VER_MIN(3,20,0)
     RTCCUINTREG const uOld = this_cpu_read(cpu_tlbstate.cr4);
@@ -1063,8 +1231,8 @@ RTCCUINTREG VBOXCALL supdrvOSChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask
 # endif
     return uOld;
 }
-#endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
 
+#endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
 
 void VBOXCALL supdrvOSCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
@@ -1447,7 +1615,7 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
             list_add_rcu(&pMyMod->list, &pSelfMod->list);
             pImage->pLnxModHack = pMyMod;
 # ifdef CONFIG_MODULES_TREE_LOOKUP
-            g_pfnModTreeInsert(&pMyMod->mtn_core); /* __mod_tree_insert */
+            RTLNX_CET_UNSAFE_CALL(g_pfnModTreeInsert, g_pfnModTreeInsert(&pMyMod->mtn_core)); /* __mod_tree_insert */
 # endif
             mutex_unlock(&module_mutex);
 
@@ -1494,7 +1662,7 @@ void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
         mutex_lock(&module_mutex);
         list_del_rcu(&pMyMod->list);
 # ifdef CONFIG_MODULES_TREE_LOOKUP
-        g_pfnModTreeRemove(&pMyMod->mtn_core);
+        RTLNX_CET_UNSAFE_CALL(g_pfnModTreeRemove, g_pfnModTreeRemove(&pMyMod->mtn_core));
 # endif
         synchronize_sched();
         mutex_unlock(&module_mutex);
@@ -1676,39 +1844,314 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
 }
 
 #endif /* SUPDRV_WITH_MSR_PROBER */
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
 
+/** Callback referenced in g_SupDrvLnxFsType. */
+static int supdrvLnxFsInitCtx(struct fs_context *pFsCtx)
+{
+    return init_pseudo(pFsCtx, 0x0c0ffee0) ? 0 : -ENOMEM;
+}
+
+
+/** Releases an inode allocated by supdrvLnxFsPathToDevNoWithInode. */
+static void supdrvLnxFsRelease(void)
+{
+    Assert(g_cSupDrvLnxFsRefs > 0);
+    simple_release_fs(&g_pSupDrvLnxFsMnt, &g_cSupDrvLnxFsRefs);
+}
+
+
+/** Initializes a path for @a uDevNo. */
+static int supdrvLnxFsPathForDevNo(struct path *pPath, dev_t uDevNo)
+{
+    /*
+     * Reference/create the dummy file system.
+     */
+    int rc = simple_pin_fs(&g_SupDrvLnxFsType, &g_pSupDrvLnxFsMnt, &g_cSupDrvLnxFsRefs);
+    if (rc >= 0)
+    {
+        /*
+         * Allocate an initialize the inode for uDevNo.
+         */
+        struct inode *pInode = alloc_anon_inode(g_pSupDrvLnxFsMnt->mnt_sb);
+        if (!IS_ERR(pInode))
+        {
+            init_special_inode(pInode, 0666 | S_IFCHR, uDevNo);
+
+            /*
+             * Now, do the path. We need a dentry first of all.
+             * Note! The d_obtain_alias call consumes the pInode reference
+             *       both in the success and failure paths.
+             */
+            pPath->dentry = d_obtain_alias(pInode);
+            if (!IS_ERR(pPath->dentry))
+            {
+                pPath->mnt = mntget(g_pSupDrvLnxFsMnt);
+                return 0;
+            }
+            rc = PTR_ERR(pPath->dentry);
+            printk(KERN_ERR"vboxdrv: d_obtain_alias failed: %d\n", rc);
+        }
+        else
+        {
+            rc = PTR_ERR(pInode);
+            printk(KERN_ERR"vboxdrv: alloc_anon_inode failed: %d\n", rc);
+        }
+        simple_release_fs(&g_pSupDrvLnxFsMnt, &g_cSupDrvLnxFsRefs);
+    }
+    else
+        printk(KERN_ERR"vboxdrv: simple_pin_fs failed: %d\n", rc);
+    pPath->dentry = NULL;
+    pPath->mnt    = NULL;
+    return rc;
+}
+
+#endif /* SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE */
+
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM
+static bool supdrvLnxIsVtxHost(void)
+{
+    uint32_t fVtCaps = 0;
+    int rc = SUPR0GetVTSupport(&fVtCaps);
+    return RT_SUCCESS(rc) && (fVtCaps & SUPVTCAPS_VT_X);
+
+}
+#endif
 
 /**
  * @copydoc SUPR0EnableHwvirt
  */
 int VBOXCALL supdrvOSEnableHwvirt(bool fEnable)
 {
-#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM
+    struct file *pFile;
+    int rc;
+
+    spin_lock(&g_DevKvmSpinlock);
+    pFile = g_pDevKvmFile;
     if (fEnable)
     {
-        if (is_kvm_hwvirt_mod_likely_loaded())
+        /*
+         * Retain reference to the file if already open (paranoia).
+         */
+        if (pFile)
         {
-            /* kvm_enable_virtualization() is guarded by kvm_usage_count reference counter inside a mutex. */
-            int const rc = kvm_enable_virtualization();
+            uint32_t const cRefs = ASMAtomicIncU32(&g_cDevKvmFileRefs);
+            Assert(cRefs > 1); RT_NOREF(cRefs);
+            spin_unlock(&g_DevKvmSpinlock);
+            rc = VINF_SUCCESS;
+        }
+        /*
+         * Otherwise, try open it.
+         */
+        else
+        {
+            struct path Path;
+            spin_unlock(&g_DevKvmSpinlock);
+
+# ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+            rc = supdrvLnxFsPathForDevNo(&Path, MKDEV(MISC_MAJOR, KVM_MINOR));
+# else
+            rc = kern_path("/dev/kvm", 0, &Path);
+# endif
             if (!rc)
             {
-                g_fUsingKvmHwvirtApi = true;
-                printk(KERN_INFO "vboxdrv: Using KVM hardware-virtualization API\n");
-                return VINF_SUCCESS;
+                int fOpenMode = O_RDWR;
+# if RTLNX_VER_MIN(6,10,0)
+                pFile = kernel_file_open(&Path, fOpenMode, current_cred());
+# elif RTLNX_VER_MIN(6,5,0)
+                pFile = kernel_file_open(&Path, fOpenMode, d_inode(Path.dentry), current_cred());
+# else
+#  error "not supported"
+# endif
+                path_put(&Path);
+                if (!IS_ERR(pFile))
+                {
+                    spin_lock(&g_DevKvmSpinlock);
+                    if (g_pDevKvmFile == NULL)
+                    {
+                        Assert(g_cDevKvmFileRefs == 0);
+                        g_pDevKvmFile = pFile;
+                        ASMAtomicWriteU32(&g_cDevKvmFileRefs, 1);
+                        spin_unlock(&g_DevKvmSpinlock);
+# ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+                        printk(KERN_DEBUG"vboxdrv: opened /dev/kvm (file refs=%lu); i_node refs %ld\n",
+                               (unsigned long)file_count(pFile), (unsigned long)atomic_read(&pFile->f_inode->i_count));
+# else
+                        printk(KERN_DEBUG"vboxdrv: opened /dev/kvm (file refs=%lu)\n", (unsigned long)file_count(pFile));
+# endif
+                    }
+                    else
+                    {
+                        struct file * const pExtraFile = pFile;
+                        uint32_t cRefs;
+                        pFile = g_pDevKvmFile;
+                        cRefs = ASMAtomicIncU32(&g_cDevKvmFileRefs);
+                        Assert(cRefs > 1); RT_NOREF(cRefs);
+                        spin_unlock(&g_DevKvmSpinlock);
+
+                        printk(KERN_DEBUG"vboxdrv: race opening /dev/kvm\n");
+                        fput(pExtraFile);
+# ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+                        supdrvLnxFsRelease();
+# endif
+                    }
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    rc = PTR_ERR(pFile);
+                    if (rc == -ENODEV /* via inode */)
+                    {
+                        printk(KERN_DEBUG"vboxdrv: /dev/kvm not found (ENODEV)\n");
+                        rc = VERR_NOT_SUPPORTED;
+                    }
+                    else
+                    {
+                        printk(KERN_WARNING"vboxdrv: kernel_file_open failed on /dev/kvm: %d\n", rc);
+                        rc = supdrvLnxIsVtxHost() ? VERR_VMX_IN_VMX_ROOT_MODE : VERR_NOT_AVAILABLE;
+                    }
+# ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+                    supdrvLnxFsRelease();
+# endif
+                }
             }
-            printk(KERN_ERR "vboxdrv: Failed to enable the KVM kernel API for acquiring VMX/SVM. rc=%d\n", rc);
+            else if (rc == -ENOENT)
+            {
+                printk(KERN_DEBUG"vboxdrv: /dev/kvm not found (ENOENT)\n");
+                rc = VERR_NOT_SUPPORTED;
+            }
+            else
+            {
+                printk(KERN_WARNING"vboxdrv: kern_path failed on /dev/kvm: %d\n", rc);
+                rc = supdrvLnxIsVtxHost() ? VERR_VMX_IN_VMX_ROOT_MODE : VERR_NOT_AVAILABLE;
+            }
         }
-        return VERR_NOT_AVAILABLE;
+    }
+    else
+    {
+        /*
+         * Release the file /dev/kvm file.
+         */
+        if (pFile)
+        {
+            uint32_t const cRefs = ASMAtomicDecU32(&g_cDevKvmFileRefs);
+            if (cRefs != 0)
+            {
+                spin_unlock(&g_DevKvmSpinlock);
+                printk(KERN_DEBUG"vboxdrv: releasing /dev/kvm: cRefs=%u\n", cRefs);
+            }
+            else
+            {
+                g_pDevKvmFile = NULL;
+                spin_unlock(&g_DevKvmSpinlock);
+                printk(KERN_DEBUG"vboxdrv: releasing /dev/kvm: cRefs=0 file-refs=%lu (before)\n",
+                       (unsigned long)file_count(pFile));
+                fput(pFile);
+# ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM_OPENED_VIA_INODE
+                supdrvLnxFsRelease();
+                printk(KERN_DEBUG"vboxdrv: g_cSupDrvLnxFsRefs=%d g_pSupDrvLnxFsMnt=%p\n",
+                       g_cSupDrvLnxFsRefs, g_pSupDrvLnxFsMnt);
+# endif
+            }
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            Assert(g_cDevKvmFileRefs == 0);
+            spin_unlock(&g_DevKvmSpinlock);
+            printk(KERN_WARNING"vboxdrv: supdrvOSEnableHwvirt called when g_pDevKvmFile is NULL!\n");
+            rc = VERR_WRONG_ORDER;
+        }
+    }
+    return rc;
+
+#else  /* !SUPDRV_LINUX_WITH_DUMMY_KVM_VM */
+    RT_NOREF(fEnable);
+    return VERR_NOT_SUPPORTED;
+#endif /* !SUPDRV_LINUX_WITH_DUMMY_KVM_VM */
+}
+
+
+/**
+ * @copydoc SUPR0EnableHwvirtForVm
+ */
+int VBOXCALL supdrvOSEnableHwvirtForVm(bool fEnable, void **ppvState)
+{
+    int rc = VINF_SUCCESS;
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM
+    struct file *pVmFile = (struct file *)*ppvState;
+    if (fEnable)
+    {
+        Assert(!pVmFile);
+        if (!pVmFile)
+        {
+            /* Grab a reference to the /dev/kvm file. */
+            struct file *pKvmFile;
+            spin_lock(&g_DevKvmSpinlock);
+            pKvmFile = g_pDevKvmFile;
+            if (pKvmFile)
+                pKvmFile = get_file(pKvmFile);
+            spin_unlock(&g_DevKvmSpinlock);
+            if (pKvmFile)
+            {
+                if (pKvmFile->f_op && pKvmFile->f_op->unlocked_ioctl)
+                {
+                    /* Create the dummy VM. Returns file descriptor. */
+                    int fdVm = pKvmFile->f_op->unlocked_ioctl(pKvmFile, KVM_CREATE_VM, 0UL /* type must be zero on x86 */);
+                    if (fdVm >= 0)
+                    {
+                        /* Get a reference to the file and close the descriptor,
+                           as ring-3 shouldn't have access to this. */
+                        pVmFile = fget(fdVm);
+                        rc = close_fd(fdVm);
+                        AssertMsg(rc >= 0, ("rc=%d\n", rc));
+                        if (pVmFile)
+                        {
+                            *ppvState = pVmFile;
+                            printk(KERN_DEBUG"vboxdrv: for vm: VINF_SUCCESS! (rc=%d) vm-file-refs=%lu\n",
+                                   rc, (unsigned long)file_count(pVmFile));
+                            rc = VINF_SUCCESS;
+                        }
+                        else
+                        {
+                            printk(KERN_ERR"vboxdrv: for vm: VERR_INTERNAL_ERROR_4 rc=%d\n", rc);
+                            rc = VERR_INTERNAL_ERROR_4;
+                        }
+                    }
+                    else
+                    {
+                        printk(KERN_ERR"vboxdrv: for vm: KVM_CREATE_VM -> %d\n", fdVm);
+                        rc = RTErrConvertFromErrno(fdVm);
+                    }
+                }
+                else
+                {
+                    printk(KERN_WARNING"vboxdrv: for vm: VERR_INTERNAL_ERROR_5\n");
+                    rc = VERR_INTERNAL_ERROR_5;
+                }
+                fput(pKvmFile);
+            }
+            else
+            {
+                rc = VERR_WRONG_ORDER;
+                printk(KERN_WARNING"vboxdrv: for vm: VERR_WRONG_ORDER\n");
+            }
+        }
+        else
+            printk(KERN_WARNING"vboxdrv: no /dev/kvm file!\n");
+    }
+    else if (pVmFile)
+    {
+        printk(KERN_DEBUG"vboxdrv: releasing kvm-vm vm-file-refs=%lu\n", (unsigned long)file_count(pVmFile));
+        fput(pVmFile);
+        *ppvState = NULL;
     }
 
-    if (g_fUsingKvmHwvirtApi)
-    {
-        kvm_disable_virtualization();
-        g_fUsingKvmHwvirtApi = false;
-    }
-    return VINF_SUCCESS;
+#else
+    RT_NOREF(fEnable, ppvState);
 #endif
-    return VERR_NOT_SUPPORTED;
+    return rc;
 }
 
 
@@ -1795,6 +2238,11 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
     if (ASMGetCR4() & X86_CR4_SMAP)
         fFlags |= SUPKERNELFEATURES_SMAP;
 #endif
+
+#if RTLNX_VER_MIN(6,15,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+    if (!g_pfnSwitchFpuReturn)
+        fFlags |= SUPKERNELFEATURES_FPU_NO_PREEMPT;
+#endif
     return fFlags;
 }
 SUPR0_EXPORT_SYMBOL(SUPR0GetKernelFeatures);
@@ -1802,7 +2250,10 @@ SUPR0_EXPORT_SYMBOL(SUPR0GetKernelFeatures);
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) /* not available on arm64 */
 
-SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
+# define SUPR0FPU_BEGIN_F_LNX_MAGIC_MASK    UINT32_C(0xffff0000)
+# define SUPR0FPU_BEGIN_F_LNX_MAGIC         UINT32_C(0xc0de0000)
+
+SUPR0DECL(uint32_t) SUPR0FpuBegin(bool fCtxHook)
 {
     RT_NOREF(fCtxHook);
 # if RTLNX_VER_MIN(4,19,0) /* Going back to 4.19.0 for better coverage, we
@@ -1810,8 +2261,8 @@ SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
     /*
      * HACK ALERT!
      *
-     * We'd like to use the old __kernel_fpu_begin() API which was removed in
-     * early 2019, because we typically run with preemption enabled and have an
+     * We'd like to use the old __kernel_fpu_begin() API which was removed in 5.3
+     * (early 2019), because we typically run with preemption enabled and have an
      * preemption hook installed which will call kernel_fpu_end() in case we're
      * scheduled out after getting in here.  The preemption hook is almost
      * useless if we run with preemption disabled.
@@ -1826,48 +2277,143 @@ SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
      *
      * See @bugref{10209#c12} and onwards for more details.
      */
+    uint32_t fBegin = SUPR0FPU_BEGIN_F_LNX_MAGIC;
     Assert(fCtxHook || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    kernel_fpu_begin();
+    Assert(!ASMIntAreEnabled());
 #  if RTLNX_VER_MIN(6,15,0) /* fpregs_unlock may do more than just preempt_enable, so only when necessary now. */
-    if (fCtxHook)
-#  endif
+    /* Always disable IRQs the linux way and explicitly lock the FPU state. */
+    unsigned long fSavedIrqs;
+    local_irq_save(fSavedIrqs);
+    if (fCtxHook && g_pfnSwitchFpuReturn)
     {
-#  if RTLNX_VER_MIN(6,15,0)
-        if (!irqs_disabled())
-            fpregs_unlock();
-#  else
-        preempt_enable();
-#  endif
+        if (test_thread_flag(TIF_NEED_FPU_LOAD))
+            RTLNX_CET_UNSAFE_CALL(g_pfnSwitchFpuReturn, g_pfnSwitchFpuReturn());
+        fBegin |= SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE;
     }
-    return false; /** @todo Not sure if we have license to use any extended state, or
-                   *        if we're limited to the SSE & x87 FPU. If it's the former,
-                   *        we should return @a true and the caller can skip
-                   *        saving+restoring the host state and save some time. */
+    else
+    {
+        Assert(!fCtxHook /* No calls with fCtxHook=true when g_pfnSwitchFpuReturn is NULL. */);
+        fpregs_lock();
+        kernel_fpu_begin();
+        /** @todo consider setting SUPR0FPU_BEGIN_F_FULLY_SAVED in fBegin */
+        /** @todo not entirely logical not to set SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED here... */
+    }
+    local_irq_restore(fSavedIrqs);
+    Assert(fCtxHook || !irq_fpu_usable());
+#  else
+    kernel_fpu_begin();
+    preempt_enable();
+#  endif
+    return fBegin;
 # else
-    return false;
+    return SUPR0FPU_BEGIN_F_LNX_MAGIC;
 # endif
 }
 SUPR0_EXPORT_SYMBOL(SUPR0FpuBegin);
 
 
-SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook)
+SUPR0DECL(bool) SUPR0FpuEnsureCurrent(uint32_t fBegin)
 {
-    RT_NOREF(fCtxHook);
+    Assert(!ASMIntAreEnabled());
+    AssertReturn(   (fBegin & (SUPR0FPU_BEGIN_F_LNX_MAGIC_MASK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE))
+                 ==           (SUPR0FPU_BEGIN_F_LNX_MAGIC      | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE),
+                 false);
+
+#  if RTLNX_VER_MIN(6,15,0)
+    if (test_thread_flag(TIF_NEED_FPU_LOAD))
+    {
+        Assert(!(fBegin & SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED));
+        AssertReturn(g_pfnSwitchFpuReturn, false);
+        RTLNX_CET_UNSAFE_CALL(g_pfnSwitchFpuReturn, g_pfnSwitchFpuReturn());
+        return true;
+    }
+#  endif
+    return false;
+}
+SUPR0_EXPORT_SYMBOL(SUPR0FpuEnsureCurrent);
+
+
+SUPR0DECL(uint32_t) SUPR0FpuLock(uint32_t fBegin)
+{
+    Assert(   (fBegin & (SUPR0FPU_BEGIN_F_LNX_MAGIC_MASK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE))
+           ==           (SUPR0FPU_BEGIN_F_LNX_MAGIC      | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE));
+    Assert(!ASMIntAreEnabled());
+
+#  if RTLNX_VER_MIN(6,15,0)
+    if (   (fBegin & (SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE))
+        ==           (SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE) )
+    {
+        /* Only lock once. */
+        if (!(fBegin & SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED))
+        {
+            fpregs_lock();
+            fBegin |= SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED;
+        }
+
+        /* Ensure that the state is now active when we return. (Caller can call
+           SUPR0FpuEnsureCurrent before this function if interested in whether
+           it was swapped.)  */
+        if (test_thread_flag(TIF_NEED_FPU_LOAD))
+        {
+            AssertReturn(g_pfnSwitchFpuReturn, fBegin);
+            RTLNX_CET_UNSAFE_CALL(g_pfnSwitchFpuReturn, g_pfnSwitchFpuReturn());
+        }
+    }
+#  endif
+    return fBegin;
+}
+SUPR0_EXPORT_SYMBOL(SUPR0FpuLock);
+
+
+SUPR0DECL(uint32_t) SUPR0FpuUnlock(uint32_t fBegin)
+{
+    Assert((fBegin & SUPR0FPU_BEGIN_F_LNX_MAGIC_MASK) == SUPR0FPU_BEGIN_F_LNX_MAGIC);
+    Assert(!ASMIntAreEnabled());
+
+#  if RTLNX_VER_MIN(6,15,0)
+    if (   (fBegin & (SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE | SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED))
+        ==           (SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE | SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED) )
+    {
+        fpregs_unlock();
+        fBegin &= ~SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED;
+    }
+    else
+        Assert(!(fBegin & SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED));
+#  endif
+    return fBegin;
+}
+SUPR0_EXPORT_SYMBOL(SUPR0FpuUnlock);
+
+
+SUPR0DECL(void) SUPR0FpuEnd(uint32_t fBegin)
+{
+    Assert((fBegin & SUPR0FPU_BEGIN_F_LNX_MAGIC_MASK) == SUPR0FPU_BEGIN_F_LNX_MAGIC);
+    RT_NOREF(fBegin);
+
 # if RTLNX_VER_MIN(4,19,0)
     /* HACK ALERT! See SUPR0FpuBegin for an explanation of this. */
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 #  if RTLNX_VER_MIN(6,15,0) /* fpregs_unlock may do more than just preempt_enable, so only when necessary now. */
-    if (fCtxHook)
-#  endif
+    /* When using a preemption hook, we only need to undo SUPR0FpuLock(). */
+    if (   (fBegin & (SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE | SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED))
+        ==           (SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE | SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED) )
+        fpregs_unlock();
+    else if (   (fBegin & (SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE))
+             !=           (SUPR0FPU_BEGIN_F_CTX_HOOK | SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE) )
     {
-#  if RTLNX_VER_MIN(6,15,0)
-        if (!irqs_disabled())
-            fpregs_lock();
-#  else
-        preempt_disable();
-#  endif
+        Assert(fBegin == SUPR0FPU_BEGIN_F_LNX_MAGIC);
+        /* Always disable IRQs and explicitly unlock the FPU state. */
+        unsigned long fSavedIrqs;
+        local_irq_save(fSavedIrqs);
+        kernel_fpu_end();
+        fpregs_unlock();
+        local_irq_restore(fSavedIrqs);
     }
+
+#  else
+    preempt_disable();
     kernel_fpu_end();
+#  endif
 # endif
 }
 SUPR0_EXPORT_SYMBOL(SUPR0FpuEnd);
@@ -1896,6 +2442,9 @@ MODULE_DESCRIPTION(VBOX_PRODUCT " Support Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV) " (" RT_XSTR(SUPDRV_IOC_VERSION) ")");
+#endif
+#ifdef SUPDRV_LINUX_WITH_DUMMY_KVM_VM
+MODULE_SOFTDEP("pre: kvm_intel kvm_amd");
 #endif
 
 module_param(force_async_tsc, int, 0444);

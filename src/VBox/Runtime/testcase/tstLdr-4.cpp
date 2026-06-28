@@ -40,6 +40,7 @@
 *********************************************************************************************************************************/
 #include <iprt/ldr.h>
 #include <iprt/alloc.h>
+#include <iprt/crc.h>
 #include <iprt/log.h>
 #include <iprt/stream.h>
 #include <iprt/assert.h>
@@ -155,8 +156,12 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
         *pValue = (uintptr_t)RTAssertMsg2V;
     else if (!strcmp(pszSymbol, "RTAssertMayPanic")     || !strcmp(pszSymbol, "_RTAssertMayPanic"))
         *pValue = (uintptr_t)RTAssertMayPanic;
-    else if (!strcmp(pszSymbol, "RTLogDefaultInstanceEx") || !strcmp(pszSymbol, "RTLogDefaultInstanceEx"))
+    else if (!strcmp(pszSymbol, "RTLogCreateExV")       || !strcmp(pszSymbol, "_RTLogCreateExV"))
+        *pValue = (uintptr_t)RTLogCreateExV;
+    else if (!strcmp(pszSymbol, "RTLogDefaultInstanceEx") || !strcmp(pszSymbol, "_RTLogDefaultInstanceEx"))
         *pValue = (uintptr_t)RTLogDefaultInstanceEx;
+    else if (!strcmp(pszSymbol, "RTLogDestroy")         || !strcmp(pszSymbol, "_RTLogDestroy"))
+        *pValue = (uintptr_t)RTLogDestroy;
     else if (!strcmp(pszSymbol, "RTLogLoggerExV")       || !strcmp(pszSymbol, "_RTLogLoggerExV"))
         *pValue = (uintptr_t)RTLogLoggerExV;
     else if (!strcmp(pszSymbol, "RTLogPrintfV")         || !strcmp(pszSymbol, "_RTLogPrintfV"))
@@ -175,6 +180,8 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
         *pValue = (uintptr_t)&g_pMyGip;
     else if (!strcmp(pszSymbol, "g_SUPGlobalInfoPage")  || !strcmp(pszSymbol, "_g_SUPGlobalInfoPage"))
         *pValue = (uintptr_t)&g_MyGip;
+    else if (!strcmp(pszSymbol, "RTCrc32")              || !strcmp(pszSymbol, "_RTCrc32"))
+        *pValue = (uintptr_t)RTCrc32;
     else
     {
         RTPrintf("tstLdr-4: Unexpected import '%s'!\n", pszSymbol);
@@ -269,6 +276,7 @@ static void testLdrOne(const char *pszFilename)
             /* VERR_ELF_EXE_NOT_SUPPORTED in the previous loop? */
             if (!aLoads[i].hLdrMod)
                 continue;
+
             /* get the pointer. */
             RTUINTPTR Value;
             rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits,
@@ -291,6 +299,21 @@ static void testLdrOne(const char *pszFilename)
             rc = pfnDisasmTest1();
             if (rc)
                 RTTestIFailed("load #%d Test1 -> %#x", i, rc);
+
+            /* Optional test function using the same signature. */
+            rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits,
+                                  UINT32_MAX, "Test2", &Value);
+            if (rc == VERR_SYMBOL_NOT_FOUND)
+                rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits,
+                                      UINT32_MAX, "_Test2", &Value);
+            if (RT_SUCCESS(rc))
+            {
+                PFNDISASMTEST1 pfnTest2 = (PFNDISASMTEST1)(uintptr_t)Value;
+                RTPrintf("tstLdr-4: pfnTest2=%p / add-symbol-file %s %#p\n", pfnTest2, pszFilename, aLoads[i].pvBits);
+                rc = pfnTest2();
+                if (rc)
+                    RTTestIFailed("load #%d Test2 -> %#x", i, rc);
+            }
 
             /* While we're here, check a couple of RTLdrQueryProp calls too */
             void *pvBits = aLoads[i].pvBits;

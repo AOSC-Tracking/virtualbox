@@ -407,7 +407,7 @@ void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 
 void UIVMLogViewerTextEdit::sltRetranslateUI()
 {
-    m_strBackgroungText = QString(UIVMLogViewerWidget::tr("Filtered"));
+    m_strBackgroundText = QString(UIVMLogViewerWidget::tr("Filtered"));
 }
 
 bool UIVMLogViewerTextEdit::eventFilter(QObject *pObject, QEvent *pEvent)

@@ -48,7 +48,7 @@
  * @remarks The dllexport is for forcing the linker to generate an import
  *          library, so the build system doesn't get confused.
  */
-extern "C" __declspec(dllexport)
+extern "C"
 BOOL __stdcall DllMainEntrypoint(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
 {
     RT_NOREF1(pvReserved);

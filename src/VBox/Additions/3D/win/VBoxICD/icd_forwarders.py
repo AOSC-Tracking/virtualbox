@@ -28,7 +28,7 @@ along with this program; if not, see <https://www.gnu.org/licenses>.
 
 SPDX-License-Identifier: GPL-3.0-only
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 174043 $"
 
 # Standard python imports"""
 import sys
@@ -74,7 +74,7 @@ def GenerateForwarders(asArgs):
             '',
             'BEGINPROC VBoxLoadICDWrapper',
             '    ; Check if loaded',
-            '    mov     xAX, [NAME(g_hmodICD) xWrtRIP]',
+            '    mov     xAX, [RT_WRT_RIP(NAME(g_hmodICD))]',
             '    test    xAX, xAX',
             '    jz      .needs_loading',
             '    ret',
@@ -124,7 +124,7 @@ def GenerateForwarders(asArgs):
                 '%ifdef ICD_LAZY_LOAD',
                 '    call    VBoxLoadICDWrapper',
                 '%endif',
-                '    mov     xAX, [NAME(g_pfn_%s) xWrtRIP]' % sFnNm,
+                '    mov     xAX, [RT_WRT_RIP(NAME(g_pfn_%s))]' % sFnNm,
                 '    test    xAX, xAX',
                 '    jz      .return',
                 '    jmp     xAX',

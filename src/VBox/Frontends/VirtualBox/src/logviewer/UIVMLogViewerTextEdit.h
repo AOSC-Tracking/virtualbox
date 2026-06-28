@@ -127,7 +127,7 @@ private:
     bool         m_bShownTextIsFiltered;
     bool         m_bShowLineNumbers;
     bool         m_bWrapLines;
-    QString      m_strBackgroungText;
+    QString      m_strBackgroundText;
     friend class UILineNumberArea;
     bool         m_bHasContextMenu;
     int          m_iVerticalScrollBarValue;

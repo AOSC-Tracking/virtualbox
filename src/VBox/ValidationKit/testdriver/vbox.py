@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170701 $"
+__version__ = "$Revision: 172152 $"
 
 # pylint: disable=unnecessary-semicolon
 
@@ -68,8 +68,12 @@ from testdriver import vboxtestvms;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    xrange = range; # pylint: disable=redefined-builtin,invalid-name
-    long = int;     # pylint: disable=redefined-builtin,invalid-name
+    xrange = range;     # pylint: disable=redefined-builtin,invalid-name
+    long = int;         # pylint: disable=redefined-builtin,invalid-name
+else:
+    xrange = xrange;    # pylint: disable=redefined-builtin,invalid-name,self-assigning-variable
+    long = long;        # pylint: disable=redefined-builtin,invalid-name,self-assigning-variable
+
 
 #
 # Exception and Error Unification Hacks.
@@ -603,8 +607,8 @@ class EventHandlerBase(object):
         return None;
 
     @staticmethod
-    def registerDerivedEventHandler(oVBoxMgr, fpApiVer, oSubClass, dArgsCopy, # pylint: disable=too-many-arguments
-                                    oSrcParent, sSrcParentNm, sICallbackNm,
+    def registerDerivedEventHandler(oVBoxMgr, fpApiVer, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                                    oSubClass, dArgsCopy, oSrcParent, sSrcParentNm, sICallbackNm,
                                     fMustSucceed = True, sLogSuffix = '', aenmEvents = None):
         """
         Registers the callback / event listener.
@@ -2321,6 +2325,7 @@ class TestDriver(base.TestDriver):                                              
                     reporter.log("  HPET:               %s" % (oVM.HPETEnabled,));
                 else:
                     reporter.log("  HPET:               %s" % (oVM.hpetEnabled,));
+        fAccelerate2DVideoEnabled = False;
         if self.fpApiVer >= 6.1 and hasattr(oVM, 'graphicsAdapter'):
             if self.fpApiVer >= 7.1 and hasattr(oVM.graphicsAdapter, 'isFeatureEnabled'):
                 fAccelerate3DEnabled = \
@@ -2612,7 +2617,7 @@ class TestDriver(base.TestDriver):                                              
             reporter.errorXcpt('failed to create vm "%s"' % (sName));
         return None;
 
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-statements,too-many-branches
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-statements,too-many-branches
     def createTestVM(self,
                      sName,
                      iGroup,
@@ -3198,7 +3203,7 @@ class TestDriver(base.TestDriver):                                              
 
     def uploadStartupLogFile(self, oVM, sVmName):
         """
-        Uploads the VBoxStartup.log when present.
+        Uploads the VBoxHardening.log when present.
         """
         fRc = True;
         try:
@@ -3895,9 +3900,9 @@ class TestDriver(base.TestDriver):                                              
                     #                  each having an individual raw-mode status. Not relevant right now because
                     #                  there is no raw-mode at all currently.
                     oPlatformProperties = self.oVBox.getPlatformProperties(self.oVBox.host.architecture);
-                    fVBox = oPlatformProperties.rawModeSupported;
+                    fVBox = bool(oPlatformProperties.rawModeSupported);
                 else:
-                    fVBox = self.oVBox.systemProperties.rawModeSupported;
+                    fVBox = bool(self.oVBox.systemProperties.rawModeSupported);
             except:
                 if not fQuiet:
                     reporter.logXcpt();
@@ -4544,11 +4549,11 @@ class TestDriver(base.TestDriver):                                              
                                           oStdErr = reporter.FileWrapper('stderr'), oStdOut = reporter.FileWrapper('stdout'),
                                           fIgnoreErrors = fIgnoreErrors);
 
-    def txsRunTest2(self, oTxsSession1, oTxsSession2, sTestName, cMsTimeout,
-            sExecName1, asArgs1,
-            sExecName2, asArgs2,
-            asAddEnv1 = (), sAsUser1 = '', fWithTestPipe1 = True,
-            asAddEnv2 = (), sAsUser2 = '', fWithTestPipe2 = True):
+    def txsRunTest2(self, oTxsSession1, oTxsSession2, sTestName, cMsTimeout, # pylint: disable=,too-many-positional-arguments
+                    sExecName1, asArgs1,
+                    sExecName2, asArgs2,
+                    asAddEnv1 = (), sAsUser1 = '', fWithTestPipe1 = True,
+                    asAddEnv2 = (), sAsUser2 = '', fWithTestPipe2 = True):
         """
         Executes the specified test tasks, waiting till they complete or
         times out.  The 1st task is started after the 2nd one.

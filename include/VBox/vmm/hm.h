@@ -73,21 +73,6 @@ RT_C_DECLS_BEGIN
 #endif
 
 /**
- * Checks whether raw-mode context is required for HM purposes
- *
- * @retval  true if required by HM for doing switching the cpu to 64-bit mode.
- * @retval  false if not required by HM.
- *
- * @param   a_pVM       The cross context VM structure.
- * @internal
- */
-#if HC_ARCH_BITS == 64
-# define HMIsRawModeCtxNeeded(a_pVM)        (false)
-#else
-# define HMIsRawModeCtxNeeded(a_pVM)        ((a_pVM)->fHMNeedRawModeCtx)
-#endif
-
-/**
  * Checks whether we're in the special hardware virtualization context.
  * @returns true / false.
  * @param   a_pVCpu     The caller's cross context virtual CPU structure.
@@ -118,6 +103,16 @@ RT_C_DECLS_BEGIN
 
 /** @name All-context HM API.
  * @{ */
+/**
+ * Checks whether HM (VT-x/AMD-V) is being used by this VM.
+ *
+ * @retval  true if used.
+ * @retval  false if NEM or IEM is used.
+ * @param   pVM        The cross context VM structure.
+ * @sa      HMIsEnabled, HMR3IsEnabled
+ * @internal
+ * @note    Pointless on non-x86 atm, as it always returns false.
+ */
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
 VMMDECL(bool)                   HMCanExecuteGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);

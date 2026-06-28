@@ -627,7 +627,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     }
 
     ComPtr<IPlatformProperties> platformProperties;
-    virtualBox->GetPlatformProperties(PlatformArchitecture_x86, platformProperties.asOutParam());
+    systemProperties->COMGETTER(Platform)(platformProperties.asOutParam());
 
     /*
      * Get root node first.

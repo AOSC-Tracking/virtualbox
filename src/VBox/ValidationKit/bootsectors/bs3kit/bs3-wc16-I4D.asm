@@ -46,8 +46,8 @@
 ;
 ; @uses     Nothing.
 ;
-global $_?I4D
-$_?I4D:
+global _?I4D
+_?I4D:
 ;; @todo no idea if we're getting the negative division stuff right here according to what watcom expectes...
 extern TODO_NEGATIVE_SIGNED_DIVISION
         ; Move dividend into EDX:EAX

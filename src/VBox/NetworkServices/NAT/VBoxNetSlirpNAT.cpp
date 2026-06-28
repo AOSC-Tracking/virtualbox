@@ -193,10 +193,11 @@ class VBoxNetSlirpNAT
     unsigned int nsock;
 
     Slirp *m_pSlirp;
-    struct pollfd *polls;
 
-    /** Num Polls (not bytes) */
-    unsigned int uPollCap = 0;
+    /** Array of poll descriptors. */
+    struct pollfd *m_paPollFd;
+    /** Number of poll descriptors in m_paPollFd. */
+    unsigned int m_cPollFd = 0;
 
     /** List of timers (in reverse creation order).
      * @note There is currently only one libslirp timer (v4.8 / 2025-01-16).  */
@@ -305,8 +306,14 @@ VBoxNetSlirpNAT::VBoxNetSlirpNAT()
     m_hThrRecv(NIL_RTTHREAD),
     m_hThrdPoll(NIL_RTTHREAD),
     m_hSlirpReqQueue(NIL_RTREQQUEUE),
+#ifndef RT_OS_WINDOWS
+    m_hPipeWrite(NIL_RTPIPE),
+    m_hPipeRead(NIL_RTPIPE),
+#endif
     m_cWakeupNotifs(0),
-    m_u16Mtu(1500)
+    m_u16Mtu(1500),
+    m_pSlirp(NULL),
+    fPassDomain(false)
 {
     LogFlowFuncEnter();
 
@@ -333,8 +340,10 @@ VBoxNetSlirpNAT::VBoxNetSlirpNAT()
     pTimerHead = NULL;
     nsock      = 0;
 
-    polls      = (struct pollfd *)RTMemAllocZ(64 * sizeof(struct pollfd));
-    uPollCap   = 64;
+    m_cPollFd   = 64;
+    m_paPollFd  = (struct pollfd *)RTMemAllocZ(m_cPollFd * sizeof(struct pollfd));
+    if (!m_paPollFd)
+        throw VERR_NO_MEMORY;
 
     m_MacAddress.au8[0] = 0x52;
     m_MacAddress.au8[1] = 0x54;
@@ -357,6 +366,10 @@ VBoxNetSlirpNAT::~VBoxNetSlirpNAT()
         RTMemFree(m_ProxyOptions.outbound_addr);
         m_ProxyOptions.outbound_addr = NULL;
     }
+
+    RTMemFree(m_paPollFd);
+    m_paPollFd = NULL;
+    m_cPollFd  = 0;
 }
 
 
@@ -1905,14 +1918,14 @@ void VBoxNetSlirpNAT::slirpNotifyPollThread(const char *pszWho)
 {
     VBoxNetSlirpNAT *pThis = static_cast<VBoxNetSlirpNAT *>(opaque);
 
-    if (pThis->nsock + 1 >= pThis->uPollCap)
+    if (pThis->nsock + 1 >= pThis->m_cPollFd)
     {
-        size_t cbNew = pThis->uPollCap * 2 * sizeof(struct pollfd);
-        struct pollfd *pvNew = (struct pollfd *)RTMemRealloc(pThis->polls, cbNew);
+        size_t cbNew = pThis->m_cPollFd * 2 * sizeof(struct pollfd);
+        struct pollfd *pvNew = (struct pollfd *)RTMemRealloc(pThis->m_paPollFd, cbNew);
         if (pvNew)
         {
-            pThis->polls = pvNew;
-            pThis->uPollCap *= 2;
+            pThis->m_paPollFd = pvNew;
+            pThis->m_cPollFd *= 2;
         }
         else
             return -1;
@@ -1920,9 +1933,9 @@ void VBoxNetSlirpNAT::slirpNotifyPollThread(const char *pszWho)
 
     unsigned int uIdx = pThis->nsock;
     Assert(uIdx < INT_MAX);
-    pThis->polls[uIdx].fd = hFd;
-    pThis->polls[uIdx].events = pollEventSlirpToHost(iEvents);
-    pThis->polls[uIdx].revents = 0;
+    pThis->m_paPollFd[uIdx].fd = hFd;
+    pThis->m_paPollFd[uIdx].events = pollEventSlirpToHost(iEvents);
+    pThis->m_paPollFd[uIdx].revents = 0;
     pThis->nsock += 1;
     return uIdx;
 }
@@ -1940,7 +1953,7 @@ void VBoxNetSlirpNAT::slirpNotifyPollThread(const char *pszWho)
 /*static*/ int VBoxNetSlirpNAT::slirpGetREventsCb(int idx, void *opaque) RT_NOTHROW_DEF
 {
     VBoxNetSlirpNAT *pThis = static_cast<VBoxNetSlirpNAT *>(opaque);
-    struct pollfd* polls = pThis->polls;
+    struct pollfd* polls = pThis->m_paPollFd;
     return pollEventHostToSlirp(polls[idx].revents);
 }
 
@@ -2029,9 +2042,9 @@ VBoxNetSlirpNAT::pollThread(RTTHREAD hThreadSelf, void *pvUser)
     RTHCINTPTR const i64NativeReadPipe = RTPipeToNative(pThis->m_hPipeRead);
     int const        fdNativeReadPipe  = (int)i64NativeReadPipe;
     Assert(fdNativeReadPipe == i64NativeReadPipe); Assert(fdNativeReadPipe >= 0);
-    pThis->polls[0].fd = fdNativeReadPipe;
-    pThis->polls[0].events = POLLRDNORM | POLLPRI | POLLRDBAND;
-    pThis->polls[0].revents = 0;
+    pThis->m_paPollFd[0].fd = fdNativeReadPipe;
+    pThis->m_paPollFd[0].events = POLLRDNORM | POLLPRI | POLLRDBAND;
+    pThis->m_paPollFd[0].revents = 0;
 #endif /* !RT_OS_WINDOWS */
 
     /*
@@ -2049,9 +2062,9 @@ VBoxNetSlirpNAT::pollThread(RTTHREAD hThreadSelf, void *pvUser)
         cMsTimeout = pThis->slirpTimersAdjustTimeoutDown(cMsTimeout);
 
 #ifdef RT_OS_WINDOWS
-        int cChangedFDs = WSAPoll(pThis->polls, pThis->nsock, cMsTimeout);
+        int cChangedFDs = WSAPoll(pThis->m_paPollFd, pThis->nsock, cMsTimeout);
 #else
-        int cChangedFDs = poll(pThis->polls, pThis->nsock, cMsTimeout);
+        int cChangedFDs = poll(pThis->m_paPollFd, pThis->nsock, cMsTimeout);
 #endif
         if (cChangedFDs < 0)
         {
@@ -2080,7 +2093,7 @@ VBoxNetSlirpNAT::pollThread(RTTHREAD hThreadSelf, void *pvUser)
         /*
          * Drain the control pipe if necessary.
          */
-        if (pThis->polls[0].revents & (POLLRDNORM|POLLPRI|POLLRDBAND))   /* POLLPRI won't be seen with WSAPoll. */
+        if (pThis->m_paPollFd[0].revents & (POLLRDNORM|POLLPRI|POLLRDBAND))   /* POLLPRI won't be seen with WSAPoll. */
         {
             char achBuf[1024];
             size_t cbRead;

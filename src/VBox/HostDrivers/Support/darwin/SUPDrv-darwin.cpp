@@ -253,7 +253,7 @@ static struct cdevsw    g_DevCW =
     /*.d_select= */eno_select,
     /*.d_mmap  = */eno_mmap,
     /*.d_strategy = */eno_strat,
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1200 /* changed from 'void *' to 'rsvd_fcn_t' */
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 120000 /* changed from 'void *' to 'rsvd_fcn_t' */
     /*.d_getc/d_reserved_1 = */eno_getc,
     /*.d_putc/d_reserved_2 = */eno_putc,
 #else
@@ -2036,17 +2036,41 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 }
 
 
-SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook)
+SUPR0DECL(uint32_t) SUPR0FpuBegin(bool fCtxHook)
 {
     RT_NOREF(fCtxHook);
+    return 0;
+}
+
+
+SUPR0DECL(bool) SUPR0FpuEnsureCurrent(uint32_t fBegin)
+{
+    Assert(fBegin == 0);
+    RT_NOREF(fBegin);
     return false;
 }
 
 
-SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook)
+SUPR0DECL(uint32_t) SUPR0FpuLock(uint32_t fBegin)
 {
-    RT_NOREF(fCtxHook);
+    Assert(fBegin == 0);
+    return fBegin;
 }
+
+
+SUPR0DECL(uint32_t) SUPR0FpuUnlock(uint32_t fBegin)
+{
+    Assert(fBegin == 0);
+    return fBegin;
+}
+
+
+SUPR0DECL(void) SUPR0FpuEnd(uint32_t fBegin)
+{
+    RT_NOREF(fBegin);
+    Assert(fBegin == 0);
+}
+
 
 /*
  *

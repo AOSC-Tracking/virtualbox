@@ -42,7 +42,11 @@
 #include "internal/iprt.h"
 #include <iprt/errcore.h>
 #include <iprt/assert.h>
+#include <iprt/dbg.h>
 #include "internal/initterm.h"
+
+
+#define X86_CPUID_STEXT_FEATURE_EDX_CET_IBT RT_BIT_32(20)
 
 
 /*********************************************************************************************************************************
@@ -53,6 +57,21 @@
 static struct workqueue_struct *g_prtR0LnxWorkQueue;
 #else
 static DECLARE_TASK_QUEUE(g_rtR0LnxWorkQueue);
+#endif
+
+/** Pointer to init_mm, if we have it.
+ * This is a special mm structure used to manage the kernel address space. */
+struct mm_struct *g_pLnxInitMm = NULL;
+
+
+/** Whether CET is supported on this CPU. */
+bool g_fLnxIsCetSupported = false;
+/** Whether CET is enabled. */
+bool g_fLnxIsCetEnabled  = false;
+
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+/** Pointer to __flush_tlb_all kernel symbol. */
+__typeof__(__flush_tlb_all) *g_pfnLinuxFlushTlbAll;
 #endif
 
 
@@ -109,13 +128,71 @@ DECLHIDDEN(int) rtR0InitNative(void)
     IPRT_LINUX_SAVE_EFL_AC();
 
 #if RTLNX_VER_MIN(2,5,41)
- #if RTLNX_VER_MIN(2,6,13)
+# if RTLNX_VER_MIN(2,6,13)
     g_prtR0LnxWorkQueue = create_workqueue("iprt-VBoxWQueue");
- #else
+# else
     g_prtR0LnxWorkQueue = create_workqueue("iprt-VBoxQ");
- #endif
+# endif
     if (!g_prtR0LnxWorkQueue)
         rc = VERR_NO_MEMORY;
+#endif
+
+    /*
+     * Support for calling dynamic functions on CET-enabled (control flow
+     * enforcement technology) kernels.
+     */
+    g_fLnxIsCetSupported = false;
+    g_fLnxIsCetEnabled   = false;
+    {
+        uint32_t uLeaves = ASMCpuId_EAX(0);
+        if (   uLeaves >= 7
+            && RTX86IsValidStdRange(uLeaves)
+            && (ASMCpuIdEx_EDX(7, 0) & X86_CPUID_STEXT_FEATURE_EDX_CET_IBT))
+        {
+            uint64_t const fSupCet = ASMRdMsr(MSR_IA32_S_CET);
+            g_fLnxIsCetSupported = true;
+            g_fLnxIsCetEnabled   = RT_BOOL(fSupCet & MSR_IA32_CET_ENDBR_EN);
+        }
+    }
+
+    /*
+     * There are some unexported symbols we want, try get them:
+     *
+     *      - 'init_mm' so we can protect kernel memory (esp on arm64) in
+     *         memobj-r0drv-linux.c (IPRT_USE_APPLY_TO_PAGE_RANGE_FOR_EXEC).
+     *         Which means it's needed for 5.10.  The symbol was exported
+     *         before 2.6.25.
+     *
+     *      - __flush_tlb_all is restricted since 6.19 (x86 & amd64).
+     */
+#if RTLNX_VER_MIN(5,10,0) /* (this works back to 2.30 in theory) */
+    {
+        RTDBGKRNLINFO hKrnlInfo;
+        int rc2 = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0);
+        if (RT_SUCCESS(rc2))
+        {
+            g_pLnxInitMm = (struct mm_struct *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL,  "init_mm");
+            //printk("rtR0InitNative: g_pLnxInitMm=%#lx\n", (unsigned long)g_pLnxInitMm);
+            printk(KERN_INFO "rtR0InitNative: g_pLnxInitMm=%p\n", g_pLnxInitMm);
+# if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+            g_pfnLinuxFlushTlbAll = (__typeof__(g_pfnLinuxFlushTlbAll))RTR0DbgKrnlInfoGetFunction(hKrnlInfo, NULL,
+                                                                                                   "__flush_tlb_all");
+# endif
+            RTR0DbgKrnlInfoRelease(hKrnlInfo);
+        }
+        else
+            printk(KERN_WARNING "rtR0InitNative: RTR0DbgKrnlInfoOpen failed: %d\n", rc2);
+
+# if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+        if (!RT_VALID_PTR(g_pfnLinuxFlushTlbAll))
+            g_pfnLinuxFlushTlbAll = (__typeof__(g_pfnLinuxFlushTlbAll))__symbol_get("__flush_tlb_all");
+        if (!RT_VALID_PTR(g_pfnLinuxFlushTlbAll))
+        {
+            printk(KERN_ERR "rtR0InitNative: Unable to resolve '__flush_tlb_all'!\n");
+            g_pfnLinuxFlushTlbAll = NULL;
+        }
+# endif
+    }
 #endif
 
     IPRT_LINUX_RESTORE_EFL_AC();
@@ -131,6 +208,12 @@ DECLHIDDEN(void) rtR0TermNative(void)
 #if RTLNX_VER_MIN(2,5,41)
     destroy_workqueue(g_prtR0LnxWorkQueue);
     g_prtR0LnxWorkQueue = NULL;
+#endif
+
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+    /* Don't bother putting __flush_tlb_all, it's in kernel text and we
+       probably got it via kallsyms anyway. */
+    g_pfnLinuxFlushTlbAll = NULL;
 #endif
 
     IPRT_LINUX_RESTORE_EFL_AC();

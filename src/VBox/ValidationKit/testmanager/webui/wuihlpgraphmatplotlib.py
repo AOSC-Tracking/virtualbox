@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172152 $"
 
 # Standard Python Import and extensions installed on the system.
 import re;
@@ -141,10 +141,8 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
             for j, oValue in enumerate(aoTable[i].aoValues):
                 fpValue = float(oValue);
                 aoSeries[j].append(fpValue);
-                if fpValue < fpMin:
-                    fpMin = fpValue;
-                if fpValue > fpMax:
-                    fpMax = fpValue;
+                fpMin = min(fpMin, fpValue);
+                fpMax = min(fpMax, fpValue);
 
         fpMid = fpMin + (fpMax - fpMin) / 2.0;
 

@@ -86,6 +86,7 @@ ifdef VBOX_WITH_UNATTENDED
  	win_nt6_unattended.xml \
  	\
  	debian_postinstall.sh \
+ 	ubuntu_postinstall.sh \
  	redhat_postinstall.sh \
  	ol_postinstall.sh \
  	os2_cid_install.cmd \

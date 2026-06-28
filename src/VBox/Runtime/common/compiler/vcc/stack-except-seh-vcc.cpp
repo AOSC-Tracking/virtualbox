@@ -80,36 +80,14 @@ EXCEPTION_DISPOSITION __GSHandlerCheck_SEH(PEXCEPTION_RECORD pXcptRec, PEXCEPTIO
     PCGS_HANDLER_DATA  pHandlerData = (PCGS_HANDLER_DATA)&pScopeTable->ScopeRecord[pScopeTable->Count];
 
     /*
-     * Locate the stack cookie and call the regular stack cookie checker routine.
-     * (Same code as in __GSHandlerCheck, fixes applies both places.)
+     * Do the cookie checking.
      */
-    /* Calculate the cookie address and read it. */
-    uintptr_t uPtrFrame = (uintptr_t)pXcptRegRec;
-    uint32_t  offCookie = pHandlerData->u.offCookie;
-    if (offCookie & GS_HANDLER_OFF_COOKIE_HAS_ALIGNMENT)
-    {
-        uPtrFrame += pHandlerData->offAlignedBase;
-        uPtrFrame &= ~(uintptr_t)pHandlerData->uAlignmentMask;
-    }
-    uintptr_t uCookie = *(uintptr_t const *)(uPtrFrame + (int32_t)(offCookie & GS_HANDLER_OFF_COOKIE_MASK));
-
-    /* The stored cookie is xor'ed with the frame / registration record address
-       or with the frame pointer register if one is being used.  In the latter
-       case, we have to add the frame offset to get the correct address. */
-    uintptr_t uXorAddr = (uintptr_t)pXcptRegRec;
-    PCIMAGE_UNWIND_INFO pUnwindInfo = (PCIMAGE_UNWIND_INFO)(pDispCtx->ImageBase + pDispCtx->FunctionEntry->UnwindInfoAddress);
-    if (pUnwindInfo->FrameRegister != 0)
-        uXorAddr += pUnwindInfo->FrameOffset << 4;
-
-    /* This call will not return on failure. */
-    __security_check_cookie(uCookie ^ uXorAddr);
-
+    IPRT_GS_HANDLER_CHECK_BODY(pHandlerData, pXcptRegRec);
 
     /*
      * Now call the handler if the GS handler data indicates that we ought to.
      */
-    if (  (IS_UNWINDING(pXcptRec->ExceptionFlags) ? GS_HANDLER_OFF_COOKIE_IS_UHANDLER : GS_HANDLER_OFF_COOKIE_IS_EHANDLER)
-        & pHandlerData->u.offCookie)
+    if (IPRT_GS_HANDLER_HAS_HANDLER(pHandlerData, pXcptRec))
         return __C_specific_handler(pXcptRec, pXcptRegRec, pCpuCtx, pDispCtx);
 
     return ExceptionContinueSearch;

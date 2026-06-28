@@ -78,7 +78,7 @@ private slots:
       * Selection changed is forwarded to the keyboard widget. */
     void sltLayoutSelectionChanged(const QUuid &layoutUid);
     /** Handles the signal we get from the keyboard widget. */
-    void sltCurentLayoutChanged();
+    void sltCurrentLayoutChanged();
     void sltShowLayoutSelector();
     void sltShowLayoutEditor();
     void sltKeyToEditChanged(UISoftKeyboardKey* pKey);

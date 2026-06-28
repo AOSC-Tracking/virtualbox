@@ -448,10 +448,6 @@
         <translation>&amp;Ekle...</translation>
     </message>
     <message>
-        <source>Cl&amp;one...</source>
-        <translation>Ç&amp;oğalt...</translation>
-    </message>
-    <message>
         <source>&amp;Remove...</source>
         <translation>&amp;Kaldır...</translation>
     </message>
@@ -1780,7 +1776,7 @@
         <translation>Gr&amp;uba Taşı</translation>
     </message>
     <message>
-        <source>C&amp;onsole</source>
+        <source>Conso&amp;le</source>
         <translation>K&amp;onsol</translation>
     </message>
     <message>
@@ -2302,6 +2298,26 @@
     <message>
         <source>Send the ACPI shutdown signal to the virtual machine</source>
         <translation>Sanal makineye ACPI kapatma sinyali gönder</translation>
+    </message>
+    <message>
+        <source>&amp;New</source>
+        <translation>&amp;Yeni</translation>
+    </message>
+    <message>
+        <source>&amp;New Cloud Machine...</source>
+        <translation>&amp;Yeni Bulut Makinesi...</translation>
+    </message>
+    <message>
+        <source>Create new cloud virtual machine</source>
+        <translation>Yeni bulut sanal makinesi oluştur</translation>
+    </message>
+    <message>
+        <source>&amp;Open Cloud Machine...</source>
+        <translation>Bulut Makinesini &amp;Aç...</translation>
+    </message>
+    <message>
+        <source>Open existing cloud virtual machine</source>
+        <translation>Varolan bulut sanal makinesini aç</translation>
     </message>
 </context>
 <context>
@@ -2888,7 +2904,7 @@
     <name>UIChooserNodeGroup</name>
     <message>
         <source>Machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Makine grubu</translation>
     </message>
 </context>
 <context>
@@ -3143,6 +3159,14 @@
     <message>
         <source>Registered cloud providers and profiles</source>
         <translation>Kayıtlı bulut sağlayıcıları ve profilleri</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Ad</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation>Değer</translation>
     </message>
 </context>
 <context>
@@ -4512,7 +4536,7 @@
     <message>
         <source>Intel 82583V Gigabit Network Connection [EXPERIMENTAL]</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel 82583V Gigabit Ağ Bağlantısı [DENEYSEL]</translation>
     </message>
 </context>
 <context>
@@ -6367,16 +6391,8 @@
 <context>
     <name>UIHostnameDomainNameEditor</name>
     <message>
-        <source>Domain name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation>Etki alanı adı en az 2 karakter uzunluğunda olmalıdır. İzin verilen karakterler alfasayısallar, &quot;-&quot; ve &quot;.&quot;dır</translation>
-    </message>
-    <message>
         <source>Domain name is valid</source>
         <translation>Etki alanı adı geçerli</translation>
-    </message>
-    <message>
-        <source>Host name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation>Anamakine adı en az 2 karakter uzunluğunda olmalıdır. İzin verilen karakterler alfasayısallar, &quot;-&quot; ve &quot;.&quot;dır</translation>
     </message>
     <message>
         <source>Host name is valid</source>
@@ -6405,6 +6421,14 @@
     <message>
         <source>Domain name to be assigned to the virtual machine</source>
         <translation>Sanal makineye atanacak etki alanı adı</translation>
+    </message>
+    <message>
+        <source>Host name must be at least two alphanumeric characters. Hyphens are allowed between characters.</source>
+        <translation>Anamakine adı en az iki alfasayısal karakterden oluşmak zorundadır. Karakterler arasında kısa çizgilere izin verilir.</translation>
+    </message>
+    <message>
+        <source>Domain labels (1–63 chars) may use letters, digits, or hyphens, but not start or end with one. Labels are dot-separated, and the total length must be under 254 characters.</source>
+        <translation>Etki alanı etiketlerinde (1-63 karakter) harf, rakam veya kısa çizgi kullanılabilir, ancak bunlardan biriyle başlayıp bitemez. Etiketler noktalarla ayrılmıştır ve toplam uzunluğu 254 karakterin altında olmak zorundadır.</translation>
     </message>
 </context>
 <context>
@@ -6776,22 +6800,6 @@
 </context>
 <context>
     <name>UILanguageSettingsEditor</name>
-    <message>
-        <source>Author</source>
-        <translation>Hazırlayan</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>Dil</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>Kimlik</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Ad</translation>
-    </message>
     <message>
         <source>Language:</source>
         <translation>Dil:</translation>
@@ -9728,6 +9736,14 @@
         <source>Can&apos;t drop data to guest ...</source>
         <translation>Veriler misafire bırakılamıyor ...</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;The VM folder contains files that were used for unattended guest OS installation and are no longer needed.&lt;/p&gt;&lt;p&gt;Delete them now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VM klasörü, katılımsız misafir işletim sistemi kurulumu için kullanılan ve artık ihtiyaç duyulmayan dosyaları içeriyor.&lt;/p&gt;&lt;p&gt;Şimdi silinsin mi?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again</source>
+        <translation>Bir daha sorma</translation>
+    </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
@@ -12386,7 +12402,7 @@
     <name>UIToolsItem</name>
     <message>
         <source>Tool item</source>
-        <translation type="unfinished"></translation>
+        <translation>Araç öğesi</translation>
     </message>
     <message>
         <source>Media</source>

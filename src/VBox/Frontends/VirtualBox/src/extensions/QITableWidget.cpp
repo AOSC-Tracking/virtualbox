@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QAccessibleWidget>
+#include <QHeaderView>
 #include <QPainter>
 #include <QResizeEvent>
 
@@ -38,7 +39,8 @@
 
 
 /** QAccessibleObject extension used as an accessibility interface for QITableWidgetItem. */
-class QIAccessibilityInterfaceForQITableWidgetItem : public QAccessibleObject
+class QIAccessibilityInterfaceForQITableWidgetItem
+    : public QAccessibleObject
 {
 public:
 
@@ -58,25 +60,142 @@ public:
         : QAccessibleObject(pObject)
     {}
 
-    /** Returns the parent. */
-    virtual QAccessibleInterface *parent() const RT_OVERRIDE;
+    /** Returns the role. */
+    virtual QAccessible::Role role() const RT_OVERRIDE
+    {
+#ifdef VBOX_WS_MAC
+            // WORKAROUND: macOS doesn't respect QAccessible::Table/Cell roles.
+            return QAccessible::ListItem;
+#else
+            return QAccessible::Cell;
+#endif
+    }
 
-    /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE { return 0; }
-    /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE { Q_UNUSED(iIndex); return 0; }
-    /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE { Q_UNUSED(pChild); return -1; }
+    /** Returns the parent. */
+    virtual QAccessibleInterface *parent() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        QITableWidgetItem *pItem = item();
+        AssertPtrReturn(pItem, 0);
+
+        /* Return parent-table interface if any: */
+        if (QITableWidget *pTable = pItem->parentTable())
+            return QAccessible::queryAccessibleInterface(pTable);
+
+        /* Null by default: */
+        return 0;
+    }
 
     /** Returns the rect. */
-    virtual QRect rect() const RT_OVERRIDE;
-    /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
+    virtual QRect rect() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        QITableWidgetItem *pItem = item();
+        AssertPtrReturn(pItem, QRect());
+        QITableWidget *pTable = pItem->parentTable();
+        AssertPtrReturn(pTable, QRect());
+        QWidget *pViewport = pTable->viewport();
+        AssertPtrReturn(pViewport, QRect());
 
-    /** Returns the role. */
-    virtual QAccessible::Role role() const RT_OVERRIDE;
+        /* Compose common region: */
+        QRegion region;
+
+        /* Append item rectangle: */
+        const QRect  itemRectInViewport = pTable->visualItemRect(pItem);
+        const QSize  itemSize           = itemRectInViewport.size();
+        const QPoint itemPosInViewport  = itemRectInViewport.topLeft();
+        const QPoint itemPosInScreen    = pViewport->mapToGlobal(itemPosInViewport);
+        const QRect  itemRectInScreen   = QRect(itemPosInScreen, itemSize);
+        region += itemRectInScreen;
+
+        /* Return common region bounding rectangle: */
+        return region.boundingRect();
+    }
+
+    /** Returns the number of children. */
+    virtual int childCount() const RT_OVERRIDE
+    {
+        /* Zero in any case: */
+        return 0;
+    }
+
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int /*iIndex*/) const RT_OVERRIDE
+    {
+        /* Null in any case: */
+        return 0;
+    }
+
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface * /*pChild*/) const RT_OVERRIDE
+    {
+        /* -1 in any case: */
+        return -1;
+    }
+
     /** Returns the state. */
-    virtual QAccessible::State state() const RT_OVERRIDE;
+    virtual QAccessible::State state() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        QITableWidgetItem *pItem = item();
+        AssertPtrReturn(pItem, QAccessible::State());
+        QITableWidget *pTable = pItem->parentTable();
+        AssertPtrReturn(pTable, QAccessible::State());
+
+        /* Compose the state: */
+        QAccessible::State myState;
+        myState.focusable = true;
+        myState.selectable = true;
+        if (   pTable->hasFocus()
+            && QITableWidgetItem::toItem(pTable->currentItem()) == pItem)
+        {
+            myState.focused = true;
+            myState.selected = true;
+        }
+        if (   pItem
+            && pItem->checkState() != Qt::Unchecked)
+        {
+            myState.checked = true;
+            if (pItem->checkState() == Qt::PartiallyChecked)
+                myState.checkStateMixed = true;
+        }
+
+        /* Return the state: */
+        return myState;
+    }
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
+    {
+        /* Return a text for the passed enmTextRole: */
+        switch (enmTextRole)
+        {
+            case QAccessible::Name:
+            {
+                /* Sanity check: */
+                QITableWidgetItem *pItem = item();
+                AssertPtrReturn(pItem, QString());
+                QITableWidget *pTable = pItem->parentTable();
+                AssertPtrReturn(pTable, QString());
+                QHeaderView *pHeader = pTable->horizontalHeader();
+                AssertPtrReturn(pHeader, QString());
+                QAbstractItemModel *pModel = pHeader->model();
+                AssertPtrReturn(pModel, QString());
+                const QString strHeaderName = pModel->headerData(pItem->column(), Qt::Horizontal).toString();
+                const QString strItemText = pItem->defaultText();
+
+                /* Include header name if available: */
+                return   strHeaderName.isEmpty()
+                       ? strItemText
+                       : QString("%1: %2").arg(strHeaderName, strItemText);
+            }
+            default:
+                break;
+        }
+
+        /* Null-string by default: */
+        return QString();
+    }
 
 private:
 
@@ -86,7 +205,11 @@ private:
 
 
 /** QAccessibleWidget extension used as an accessibility interface for QITableWidget. */
-class QIAccessibilityInterfaceForQITableWidget : public QAccessibleWidget
+class QIAccessibilityInterfaceForQITableWidget
+    : public QAccessibleWidget
+#ifndef VBOX_WS_MAC
+    , public QAccessibleSelectionInterface
+#endif
 {
 public:
 
@@ -103,167 +226,200 @@ public:
 
     /** Constructs an accessibility interface passing @a pWidget to the base-class. */
     QIAccessibilityInterfaceForQITableWidget(QWidget *pWidget)
+#ifdef VBOX_WS_MAC
+        // WORKAROUND: macOS doesn't respect QAccessible::Table/Cell roles.
         : QAccessibleWidget(pWidget, QAccessible::List)
+#else
+        : QAccessibleWidget(pWidget, QAccessible::Table)
+#endif
     {}
 
+    /** Returns a specialized accessibility interface @a enmType. */
+    virtual void *interface_cast(QAccessible::InterfaceType enmType) RT_OVERRIDE
+    {
+        const int iCase = static_cast<int>(enmType);
+        switch (iCase)
+        {
+#ifdef VBOX_WS_MAC
+            /// @todo Fix selection interface for macOS first of all!
+#else
+            case QAccessible::SelectionInterface:
+                return static_cast<QAccessibleSelectionInterface*>(this);
+#endif
+            default:
+                break;
+        }
+
+        return 0;
+    }
+
     /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE;
+    virtual int childCount() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        QITableWidget *pTable = table();
+        AssertPtrReturn(pTable, 0);
+
+        // Qt's qtablewidget class has no accessibility code, only parent-class has it.
+        // Parent qtableview class has a piece of accessibility code we do not like.
+        // It's located in currentChanged() method and sends us iIndex calculated on
+        // the basis of current model-index, instead of current qtablewidgetitem index.
+        // So qtableview enumerates all table-widget rows/columns as children,
+        // besides that, both horizontal and vertical table headers are treated as items
+        // as well, so we have to take them into account while addressing table items.
+        return (pTable->rowCount() + 1) * (pTable->columnCount() + 1);
+    }
+
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE;
+    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+        QITableWidget *pTable = table();
+        AssertPtrReturn(pTable, 0);
+        //printf("iIndex = %d\n", iIndex);
+
+        // Qt's qtablewidget class has no accessibility code, only parent-class has it.
+        // Parent qtableview class has a piece of accessibility code we do not like.
+        // It's located in currentChanged() method and sends us iIndex calculated on
+        // the basis of current model-index, instead of current qtablewidgetitem index.
+        // So qtableview enumerates all table-widget rows/columns as children,
+        // besides that, both horizontal and vertical table headers are treated as items
+        // as well, so we have to take them into account while addressing table items.
+        const int iRow = iIndex / (pTable->columnCount() + 1) - 1;
+        const int iColumn = iIndex % (pTable->columnCount() + 1) - 1;
+        return QAccessible::queryAccessibleInterface(pTable->childItem(iRow, iColumn));
+    }
+
+    /** Returns the child located at the global @a x, @a y coordinate. */
+    virtual QAccessibleInterface *childAt(int x, int y) const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        QITableWidget *pTable = table();
+        AssertPtrReturn(pTable, 0);
+
+        /* Map to table coordinates: */
+        const QPoint gpt(x, y);
+        const QPoint lpt = pTable->mapFromGlobal(gpt);
+
+        /* Return the child at the passed coordinates: */
+        return QAccessible::queryAccessibleInterface(QITableWidgetItem::toItem(pTable->itemAt(lpt)));
+    }
+
     /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE;
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertReturn(pChild, -1);
+
+        /* Search for corresponding child: */
+        for (int i = 0; i < childCount(); ++i)
+            if (child(i) == pChild)
+                return i;
+
+        /* -1 by default: */
+        return -1;
+    }
+
+    /** Returns the state. */
+    virtual QAccessible::State state() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        QITableWidget *pTable = table();
+        AssertPtrReturn(pTable, QAccessible::State());
+
+        /* Compose the state: */
+        QAccessible::State myState;
+        myState.focusable = true;
+        if (pTable->hasFocus())
+            myState.focused = true;
+
+        /* Return the state: */
+        return myState;
+    }
 
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE;
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
+    {
+        /* Text for known roles: */
+        switch (enmTextRole)
+        {
+            case QAccessible::Name:
+            {
+                /* Sanity check: */
+                QITableWidget *pTable = table();
+                AssertPtrReturn(pTable, QString());
+
+                /* Gather suitable text: */
+                QString strText = pTable->toolTip();
+                if (strText.isEmpty())
+                    strText = pTable->whatsThis();
+                return strText;
+            }
+            default:
+                break;
+        }
+
+        /* Null string by default: */
+        return QString();
+    }
+
+#ifndef VBOX_WS_MAC
+    /** Returns the total number of selected accessible items. */
+    virtual int selectedItemCount() const RT_OVERRIDE
+    {
+        /* For now we are interested in just first one selected item: */
+        return 1;
+    }
+
+    /** Returns the list of selected accessible items. */
+    virtual QList<QAccessibleInterface*> selectedItems() const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        QITableWidget *pTable = table();
+        AssertPtrReturn(pTable, QList<QAccessibleInterface*>());
+
+        /* Get current item: */
+        QITableWidgetItem *pCurrentItem = QITableWidgetItem::toItem(pTable->currentItem());
+
+        /* For now we are interested in just first one selected item: */
+        return QList<QAccessibleInterface*>() << QAccessible::queryAccessibleInterface(pCurrentItem);
+    }
+
+    /** Adds childItem to the selection. */
+    virtual bool select(QAccessibleInterface *) RT_OVERRIDE
+    {
+        /// @todo implement
+        return false;
+    }
+
+    /** Removes childItem from the selection. */
+    virtual bool unselect(QAccessibleInterface *) RT_OVERRIDE
+    {
+        /// @todo implement
+        return false;
+    }
+
+    /** Selects all accessible child items. */
+    virtual bool selectAll() RT_OVERRIDE
+    {
+        /// @todo implement
+        return false;
+    }
+
+    /** Unselects all accessible child items. */
+    virtual bool clear() RT_OVERRIDE
+    {
+        /// @todo implement
+        return false;
+    }
+#endif /* VBOX_WS_MAC */
 
 private:
 
     /** Returns corresponding QITableWidget. */
     QITableWidget *table() const { return qobject_cast<QITableWidget*>(widget()); }
 };
-
-
-/*********************************************************************************************************************************
-*   Class QIAccessibilityInterfaceForQITableWidgetItem implementation.                                                           *
-*********************************************************************************************************************************/
-
-QAccessibleInterface *QIAccessibilityInterfaceForQITableWidgetItem::parent() const
-{
-    /* Make sure item still alive: */
-    AssertPtrReturn(item(), 0);
-
-    /* Return the parent: */
-    return QAccessible::queryAccessibleInterface(item()->parentTable());
-}
-
-QRect QIAccessibilityInterfaceForQITableWidgetItem::rect() const
-{
-    /* Make sure item still alive: */
-    AssertPtrReturn(item(), QRect());
-
-    /* Compose common region: */
-    QRegion region;
-
-    /* Append item rectangle: */
-    const QRect  itemRectInViewport = item()->parentTable()->visualItemRect(item());
-    const QSize  itemSize           = itemRectInViewport.size();
-    const QPoint itemPosInViewport  = itemRectInViewport.topLeft();
-    const QPoint itemPosInScreen    = item()->parentTable()->viewport()->mapToGlobal(itemPosInViewport);
-    const QRect  itemRectInScreen   = QRect(itemPosInScreen, itemSize);
-    region += itemRectInScreen;
-
-    /* Return common region bounding rectangle: */
-    return region.boundingRect();
-}
-
-QString QIAccessibilityInterfaceForQITableWidgetItem::text(QAccessible::Text enmTextRole) const
-{
-    /* Make sure item still alive: */
-    AssertPtrReturn(item(), QString());
-
-    /* Return a text for the passed enmTextRole: */
-    switch (enmTextRole)
-    {
-        case QAccessible::Name: return item()->text();
-        default: break;
-    }
-
-    /* Null-string by default: */
-    return QString();
-}
-
-QAccessible::Role QIAccessibilityInterfaceForQITableWidgetItem::role() const
-{
-    return QAccessible::ListItem;
-}
-
-QAccessible::State QIAccessibilityInterfaceForQITableWidgetItem::state() const
-{
-    /* Make sure item still alive: */
-    AssertPtrReturn(item(), QAccessible::State());
-
-    /* Compose the state: */
-    QAccessible::State state;
-    state.focusable = true;
-    state.selectable = true;
-
-    /* Compose the state of current item: */
-    if (   item()
-        && item() == QITableWidgetItem::toItem(item()->tableWidget()->currentItem()))
-    {
-        state.active = true;
-        state.focused = true;
-        state.selected = true;
-    }
-
-    /* Compose the state of checked item: */
-    if (   item()
-        && item()->checkState() != Qt::Unchecked)
-    {
-        state.checked = true;
-        if (item()->checkState() == Qt::PartiallyChecked)
-            state.checkStateMixed = true;
-    }
-
-    /* Return the state: */
-    return state;
-}
-
-
-/*********************************************************************************************************************************
-*   Class QIAccessibilityInterfaceForQITableWidget implementation.                                                               *
-*********************************************************************************************************************************/
-
-int QIAccessibilityInterfaceForQITableWidget::childCount() const
-{
-    /* Make sure table still alive: */
-    AssertPtrReturn(table(), 0);
-
-    /* Return the number of children: */
-    // Since Qt6 both horizontal and vertical table headers
-    // are treated as items as well, so we have to take them
-    // into account while calculating overall child count.
-    return (table()->rowCount() + 1) * (table()->columnCount() + 1);
-}
-
-QAccessibleInterface *QIAccessibilityInterfaceForQITableWidget::child(int iIndex) const
-{
-    /* Make sure table still alive: */
-    AssertPtrReturn(table(), 0);
-    /* Make sure index is valid: */
-    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
-
-    /* Return the child with the passed iIndex: */
-    // Since Qt6 both horizontal and vertical table headers
-    // are treated as items as well, so we have to take them
-    // into account while addressing actual table children.
-    const int iRow = iIndex / (table()->columnCount() + 1) - 1;
-    const int iColumn = iIndex % (table()->columnCount() + 1) - 1;
-    return QAccessible::queryAccessibleInterface(table()->childItem(iRow, iColumn));
-}
-
-int QIAccessibilityInterfaceForQITableWidget::indexOfChild(const QAccessibleInterface *pChild) const
-{
-    /* Search for corresponding child: */
-    for (int iIndex = 0; iIndex < childCount(); ++iIndex)
-        if (child(iIndex) == pChild)
-            return iIndex;
-
-    /* -1 by default: */
-    return -1;
-}
-
-QString QIAccessibilityInterfaceForQITableWidget::text(QAccessible::Text /* enmTextRole */) const
-{
-    /* Make sure table still alive: */
-    AssertPtrReturn(table(), QString());
-
-    /* Gather suitable text: */
-    QString strText = table()->toolTip();
-    if (strText.isEmpty())
-        strText = table()->whatsThis();
-    return strText;
-}
 
 
 /*********************************************************************************************************************************
@@ -300,6 +456,12 @@ QITableWidgetItem::QITableWidgetItem(const QString &strText /* = QString() */)
 QITableWidget *QITableWidgetItem::parentTable() const
 {
     return tableWidget() ? qobject_cast<QITableWidget*>(tableWidget()) : 0;
+}
+
+QString QITableWidgetItem::defaultText() const
+{
+    /* Return item text as default: */
+    return text();
 }
 
 

@@ -64,6 +64,8 @@ VBOXMOD_OBJS += \
 	r0drv/powernotification-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/assert-r0drv-linux.o \
+	r0drv/linux/fileio-r0drv-linux.o \
+	r0drv/linux/dbgkrnlinfo-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
 	r0drv/linux/memobj-r0drv-linux.o \
 	r0drv/linux/memuserkernel-r0drv-linux.o \
@@ -81,6 +83,8 @@ VBOXMOD_OBJS += \
 	r0drv/linux/timer-r0drv-linux.o \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
 	r0drv/generic/semspinmutex-r0drv-generic.o \
+	r0drv/RTR0DbgKrnlInfoGetFunction.o \
+	r0drv/RTR0DbgKrnlInfoGetSymbol.o \
 	common/alloc/alloc.o \
 	common/checksum/crc32.o \
 	common/err/RTErrConvertFromErrno.o \
@@ -166,11 +170,6 @@ VBOXMOD_DEFS = \
 	RT_WITH_VBOX \
 	VBGL_VBOXGUEST \
 	VBOX_WITH_HGCM
-ifeq ($(VBOX_KBUILD_TARGET_ARCH),amd64)
-VBOXMOD_DEFS += VBOX_WITH_64_BITS_GUESTS
-else ifeq ($(VBOX_KBUILD_TARGET_ARCH),arm64)
-VBOXMOD_DEFS += VBOX_WITH_64_BITS_GUESTS
-endif
 ifeq ($(KERN_VERSION),24)
 VBOXMOD_DEFS += EXPORT_SYMTAB
 endif

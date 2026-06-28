@@ -82,6 +82,8 @@
 /VBox/VBoxGuest.h:                      --license-mit
 /VBox/VBoxGuestCoreTypes.h:             --license-mit
 /VBox/VBoxGuestLib.h:                   --license-mit
+/VBox/VBoxGuestLibHGCMInline.h:         --license-mit
+/VBox/VBoxGuestLibGuestProp.h:          --license-mit
 /VBox/VBoxGuestLibSharedFolders.h:      --license-mit
 /VBox/VBoxGuestLibSharedFoldersInline.h: --license-mit
 /VBox/VBoxLnxModInline.h:               --license-mit

@@ -83,7 +83,7 @@ typedef struct GVMCPU
 
     /** Padding so the noisy stuff on a 64 byte boundrary.
      * @note Keeping this working for 32-bit header syntax checking.  */
-    uint8_t             abPadding1[HC_ARCH_BITS == 32 ? 40 : 24];
+    uint8_t             abPadding1[24];
 
     /** Which host CPU ID is this EMT running on.
      * Only valid when in RC or HMR0 with scheduling disabled. */
@@ -124,6 +124,15 @@ typedef struct GVMCPU
         uint8_t             padding[1024];
     } hmr0;
 
+    /** The CPUM per vcpu data. */
+    union
+    {
+# if defined(VMM_INCLUDED_SRC_include_CPUMInternal_h) && defined(IN_RING0)
+        struct CPUMR0PERVCPU s;
+# endif
+        uint8_t             padding[64];
+    } cpumr0;
+
 # ifdef VBOX_WITH_NEM_R0
     /** The NEM per vcpu data. */
     union
@@ -143,15 +152,23 @@ typedef struct GVMCPU
         uint8_t             padding[576];
     } pgmr0;
 
+    union
+    {
+# if defined(VMM_INCLUDED_SRC_include_IEMInternal_h) && defined(IN_RING0)
+        struct IEMR0PERVCPU s;
+# endif
+        uint8_t             padding[1856];
+    } iemr0;
+
 #endif /* !VBOX_WITH_MINIMAL_R0 */
 
     /** Padding the structure size to page boundrary. */
 #ifdef VBOX_WITH_MINIMAL_R0
     uint8_t                 abPadding3[16384 - 64*2 - 256 - 896];
 #elif defined(VBOX_WITH_NEM_R0)
-    uint8_t                 abPadding3[16384 - 64*2 - 256 - 896 - 1024 - 64 - 576];
+    uint8_t                 abPadding3[16384 - 64*2 - 256 - 896 - 1024 - 64 - 64 - 576 - 1856];
 #else
-    uint8_t                 abPadding3[16384 - 64*2 - 256 - 896 - 1024      - 576];
+    uint8_t                 abPadding3[16384 - 64*2 - 256 - 896 - 1024 - 64      - 576 - 1856];
 #endif
 } GVMCPU;
 #ifndef IN_TSTVMSTRUCT
@@ -223,7 +240,7 @@ typedef struct GVM
      * Same as VM::enmTarget. */
     VMTARGET        enmTarget;
     /** Padding so gvmm starts on a 64 byte boundrary.   */
-    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 12 + 24 : 24];
+    uint8_t         abPadding[24];
 
     /** The GVMM per vm data. */
     union

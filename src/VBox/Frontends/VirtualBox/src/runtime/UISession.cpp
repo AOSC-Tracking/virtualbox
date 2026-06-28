@@ -167,8 +167,10 @@ bool UISession::initialize()
     /* Apply debug settings from the command line. */
     if (!debugger().isNull() && debugger().isOk())
     {
-        if (uiCommon().areWeToExecuteAllInIem())
+        if (uiCommon().areWeToExecuteAllInIem() || uiCommon().areWeToExecuteAllInRecompiler())
             debugger().SetExecuteAllInIEM(true);
+        if (uiCommon().areWeToExecuteAllInRecompiler())
+            debugger().SetRecompiledIEMExecution(true);
         if (!uiCommon().isDefaultWarpPct())
             debugger().SetVirtualTimeRate(uiCommon().getWarpPct());
     }
@@ -246,16 +248,20 @@ bool UISession::powerUp()
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
     {
+#ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
         msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_state_restore_90px.png", 0, 0);
+#else
+        msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_state_restore_90px.png", 0, 10000);
+#endif
         /* After restoring from 'saved' state, machine-window(s) geometry should be adjusted: */
         machineLogic()->adjustMachineWindowsGeometry();
     }
     else
     {
-#ifdef VBOX_IS_QT6_OR_LATER /** @todo why is this any problem on qt6? */
+#ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
         msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_start_90px.png", 0, 0);
 #else
-        msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_start_90px.png");
+        msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_start_90px.png", 0, 10000);
 #endif
         /* After VM start, machine-window(s) size-hint(s) should be sent: */
         machineLogic()->sendMachineWindowsSizeHints();

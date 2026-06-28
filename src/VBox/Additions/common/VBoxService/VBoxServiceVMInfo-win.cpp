@@ -29,15 +29,21 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0600
-# undef  _WIN32_WINNT
-# define _WIN32_WINNT 0x0600 /* QueryFullProcessImageNameW in recent SDKs. */
-#endif
-#include <iprt/win/windows.h>
+#define WIN32_LEAN_AND_MEAN  /* Must avoid dragging in old winsock.h. */
+#include <iprt/nt/nt-and-windows.h>
 #include <wtsapi32.h>        /* For WTS* calls. */
-#include <psapi.h>           /* EnumProcesses. */
 #include <sddl.h>            /* For ConvertSidToStringSidW. */
+#define UNICODE_STRING  NTSEC_UNICODE_STRING
+#define PUNICODE_STRING PNTSEC_UNICODE_STRING
+#define STRING          NTSEC_STRING
+#define PSTRING         PNTSEC_STRING
 #include <Ntsecapi.h>        /* Needed for process security information. */
+#undef  UNICODE_STRING
+#undef  PUNICODE_STRING
+#undef  STRING
+#undef  PSTRING
+#include <iprt/win/winsock2.h>
+#include <iprt/win/iphlpapi.h>
 
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
@@ -53,10 +59,9 @@
 #include <iprt/utf16.h>
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/HostServices/GuestPropertySvc.h> /* GUEST_PROP_MAX_NAME_LEN */
 #include "VBoxServiceInternal.h"
-#include "VBoxServiceUtils.h"
-#include "VBoxServiceVMInfo.h"
-#include "../../WINNT/VBoxTray/VBoxTrayMsg.h" /* For IPC. */
+#include "../../win/VBoxTray/VBoxTrayMsg.h" /* For IPC. */
 
 
 /*********************************************************************************************************************************
@@ -74,41 +79,37 @@ typedef struct VBOXSERVICEVMINFOUSER
     WCHAR wszUser[MAX_PATH];
     WCHAR wszAuthenticationPackage[MAX_PATH];
     WCHAR wszLogonDomain[MAX_PATH];
-    /** Number of assigned user processes. */
-    ULONG ulNumProcs;
-    /** Last (highest) session ID. This
-     *  is needed for distinguishing old session
-     *  process counts from new (current) session
-     *  ones. */
+    /** Number of assigned user processes.
+     * @note This is only accurate for logging level 3 and higher.  */
+    ULONG cInteractiveProcesses;
+    /** Last (highest) session ID. This is needed for distinguishing old
+     * session process counts from new (current) session ones. */
     ULONG ulLastSession;
 } VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
-
-/** Structure for the file information lookup. */
-typedef struct VBOXSERVICEVMINFOFILE
-{
-    const char *pszFilePath;
-    const char *pszFileName;
-} VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
 
 /** Structure for process information lookup. */
 typedef struct VBOXSERVICEVMINFOPROC
 {
     /** The PID. */
     DWORD id;
+    /** The session ID (if available). */
+    ULONG idSession;
+    /** Pointer to the process name (can be NULL). */
+    PUNICODE_STRING pUniStrName;
     /** The SID. */
     PSID pSid;
+#if 0 /* unused */
     /** The LUID. */
     LUID luid;
-    /** Interactive process. */
-    bool fInteractive;
+#endif
 } VBOXSERVICEVMINFOPROC, *PVBOXSERVICEVMINFOPROC;
 
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static uint32_t vgsvcVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs);
-static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
+static uint32_t vgsvcVMInfoWinCountSessionProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs);
+static bool vgsvcVMInfoWinIsLoggedInWithUserInfoReturned(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
 static int  vgsvcVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
 static void vgsvcVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs);
 static int  vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain);
@@ -117,11 +118,11 @@ static int  vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const c
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static uint32_t s_uDebugGuestPropClientID = 0;
-static uint32_t s_uDebugIter = 0;
+/** @todo r=bird: Is this temporary? (bad orig code quality) If not, docs++, plase. */
+static uint32_t g_uDebugIter = 0;
 /** Whether to skip the logged-in user detection over RDP or not.
  *  See notes in this section why we might want to skip this. */
-static bool s_fSkipRDPDetection = false;
+static bool     g_fSkipRdpDetection = false;
 
 static RTONCE                                   g_vgsvcWinVmInitOnce = RTONCE_INITIALIZER;
 
@@ -138,17 +139,20 @@ static decltype(WTSFreeMemory)                 *g_pfnWTSFreeMemory = NULL;
 static decltype(WTSQuerySessionInformationA)   *g_pfnWTSQuerySessionInformationA = NULL;
 /** @} */
 
-/** @name PsApi.dll imports are dynamically resolved because of NT4.
+/** @name Iphlpapi.dll imports are dynamically resolved to be on the safe side.
  * @{ */
-static decltype(EnumProcesses)                 *g_pfnEnumProcesses = NULL;
-static decltype(GetModuleFileNameExW)          *g_pfnGetModuleFileNameExW = NULL;
+static decltype(CancelIPChangeNotify)          *g_pfnCancelIPChangeNotify = NULL;
+static decltype(NotifyAddrChange)              *g_pfnNotifyAddrChange = NULL;
 /** @} */
 
-/** @name New Kernel32.dll APIs we may use when present.
- * @{  */
-static decltype(QueryFullProcessImageNameW)    *g_pfnQueryFullProcessImageNameW = NULL;
 
-/** @} */
+/** S-1-5-4 (leaked). */
+static PSID                                     g_pSidInteractive = NULL;
+/** S-1-2-0 (leaked). */
+static PSID                                     g_pSidLocal = NULL;
+
+/** Indicates whether RTNT_SYSTEM_PROCESS_INFORMATION::SessionId is valid. */
+static bool                                     g_fHasProcInfoSessionId;
 
 
 /**
@@ -157,6 +161,7 @@ static decltype(QueryFullProcessImageNameW)    *g_pfnQueryFullProcessImageNameW 
 static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
 {
     RT_NOREF1(pvIgnored);
+    g_fHasProcInfoSessionId = RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(5, 0, 0); /* Windows 2000 */
 
     /* SECUR32 */
     RTLDRMOD hLdrMod;
@@ -198,39 +203,38 @@ static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
         Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0));
     }
 
-    /* PSAPI */
-    rc = RTLdrLoadSystem("psapi.dll", true /*fNoUnload*/, &hLdrMod);
+    /* advapi32: */
+    rc = RTLdrLoadSystem("advapi32.dll", true /*fNoUnload*/, &hLdrMod);
+    if (RT_SUCCESS(rc))
+        RTLdrGetSymbol(hLdrMod, "ConvertSidToStringSidW", (void **)&g_pfnConvertSidToStringSidW);
+
+
+    /* IPHLPAPI: */
+    rc = RTLdrLoadSystem("iphlpapi.dll", true /*fNoUnload*/, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
-        rc = RTLdrGetSymbol(hLdrMod, "EnumProcesses", (void **)&g_pfnEnumProcesses);
+        rc = RTLdrGetSymbol(hLdrMod, "CancelIPChangeNotify", (void **)&g_pfnCancelIPChangeNotify);
         if (RT_SUCCESS(rc))
-            rc = RTLdrGetSymbol(hLdrMod, "GetModuleFileNameExW", (void **)&g_pfnGetModuleFileNameExW);
+            rc = RTLdrGetSymbol(hLdrMod, "NotifyAddrChange", (void **)&g_pfnNotifyAddrChange);
         AssertRC(rc);
         RTLdrClose(hLdrMod);
     }
     if (RT_FAILURE(rc))
     {
-        VGSvcVerbose(1, "psapi.dll APIs are not available (%Rrc)\n", rc);
-        g_pfnEnumProcesses = NULL;
-        g_pfnGetModuleFileNameExW = NULL;
-        Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0));
+        VGSvcVerbose(1, "iphlpapi.dll notification APIs are not available (%Rrc)\n", rc);
+        g_pfnCancelIPChangeNotify = NULL;
+        g_pfnNotifyAddrChange = NULL;
+        Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 1, 0)); /* XP */
     }
 
-    /* Kernel32: */
-    rc = RTLdrLoadSystem("kernel32.dll", true /*fNoUnload*/, &hLdrMod);
-    AssertRCReturn(rc, rc);
-    rc = RTLdrGetSymbol(hLdrMod, "QueryFullProcessImageNameW", (void **)&g_pfnQueryFullProcessImageNameW);
-    if (RT_FAILURE(rc))
-    {
-        Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(6, 0, 0));
-        g_pfnQueryFullProcessImageNameW = NULL;
-    }
-    RTLdrClose(hLdrMod);
+    /*
+     * Initialize the SIDs we need.
+     */
+    SID_IDENTIFIER_AUTHORITY SidAuthNT = SECURITY_NT_AUTHORITY;
+    AssertStmt(AllocateAndInitializeSid(&SidAuthNT, 1, 4, 0, 0, 0, 0, 0, 0, 0, &g_pSidInteractive), g_pSidInteractive = NULL);
 
-    /* advapi32: */
-    rc = RTLdrLoadSystem("advapi32.dll", true /*fNoUnload*/, &hLdrMod);
-    if (RT_SUCCESS(rc))
-        RTLdrGetSymbol(hLdrMod, "ConvertSidToStringSidW", (void **)&g_pfnConvertSidToStringSidW);
+    SID_IDENTIFIER_AUTHORITY SidAuthLocal = SECURITY_LOCAL_SID_AUTHORITY;
+    AssertStmt(AllocateAndInitializeSid(&SidAuthLocal, 1, 0, 0, 0, 0, 0, 0, 0, 0, &g_pSidLocal), g_pSidLocal = NULL);
 
     return VINF_SUCCESS;
 }
@@ -243,271 +247,157 @@ static bool vgsvcVMInfoSession0Separation(void)
 
 
 /**
- * Retrieves the module name of a given process.
+ * Fills in more data for a process.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
+ * @param   hToken      The token to query information from.
+ * @param   enmClass    The kind of token information to get and add to pProc.
+ * @param   pProc       The process structure to fill data into.
  */
-static int vgsvcVMInfoWinProcessesGetModuleNameW(PVBOXSERVICEVMINFOPROC const pProc, PRTUTF16 *ppszName)
+static int vgsvcVMInfoWinProcessesGetTokenInfo(HANDLE hToken, TOKEN_INFORMATION_CLASS enmClass, PVBOXSERVICEVMINFOPROC pProc)
 {
-    *ppszName = NULL;
-    AssertPtrReturn(ppszName, VERR_INVALID_POINTER);
-    AssertPtrReturn(pProc, VERR_INVALID_POINTER);
-    AssertReturn(g_pfnGetModuleFileNameExW || g_pfnQueryFullProcessImageNameW, VERR_NOT_SUPPORTED);
+    AssertPtr(pProc);
 
     /*
-     * Open the process.
+     * Query the data.
      */
-    DWORD dwFlags = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
-    if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0)) /* Vista and later */
-        dwFlags = PROCESS_QUERY_LIMITED_INFORMATION; /* possible to do on more processes */
-
-    HANDLE hProcess = OpenProcess(dwFlags, FALSE, pProc->id);
-    if (hProcess == NULL)
+    DWORD cbTokenInfo;
+    switch (enmClass)
     {
-        DWORD dwErr = GetLastError();
-        if (g_cVerbosity)
-            VGSvcError("Unable to open process with PID=%u, error=%u\n", pProc->id, dwErr);
-        return RTErrConvertFromWin32(dwErr);
+#if 0 /* unused */
+        case TokenStatistics:
+            cbTokenInfo = sizeof(TOKEN_STATISTICS);
+            break;
+#endif
+        case TokenUser:
+            cbTokenInfo = 0;
+            AssertReturn(!GetTokenInformation(hToken, enmClass, NULL, 0, &cbTokenInfo), VERR_INTERNAL_ERROR_2);
+            if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+                break;
+            return GetLastError() ? RTErrConvertFromWin32(GetLastError()) : VERR_INTERNAL_ERROR_3;
+
+        default:
+            AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+    }
+
+    void *pvTokenInfo = RTMemAllocZ(cbTokenInfo);
+    AssertReturn(pvTokenInfo, VERR_NO_MEMORY);
+
+    DWORD dwRetLength = 0;
+    if (!GetTokenInformation(hToken, enmClass, pvTokenInfo, cbTokenInfo, &dwRetLength))
+        return GetLastError() ? RTErrConvertFromWin32(GetLastError()) : VERR_INTERNAL_ERROR_4;
+
+    /*
+     * Process the data.
+     */
+    int rc = VINF_SUCCESS;
+    switch (enmClass)
+    {
+#if 0 /* unused */
+        case TokenStatistics:
+        {
+            PTOKEN_STATISTICS const pStats = (PTOKEN_STATISTICS)pvTokenInfo;
+            memcpy(&pProc->luid, &pStats->AuthenticationId, sizeof(LUID));
+            /** @todo Add more information of TOKEN_STATISTICS as needed. */
+            break;
+        }
+#endif
+        case TokenUser:
+        {
+            PTOKEN_USER const pUser     = (PTOKEN_USER)pvTokenInfo;
+            DWORD const       cbUserSid = GetLengthSid(pUser->User.Sid);
+            AssertBreakStmt(cbUserSid, rc = VERR_NO_DATA);
+            pProc->pSid = (PSID)RTMemAllocZ(cbUserSid);
+            AssertBreakStmt(pProc->pSid, rc = VERR_NO_MEMORY);
+
+            if (CopySid(cbUserSid, pProc->pSid, pUser->User.Sid))
+            {
+                if (IsValidSid(pProc->pSid))
+                    break;
+                AssertMsgFailed(("cbUserSid=%u\n%.*Rhxd\n", cbUserSid, cbUserSid, pProc->pSid));
+                rc = VERR_INVALID_NAME;
+            }
+            else
+                rc = GetLastError() ? RTErrConvertFromWin32(GetLastError()) : VERR_INTERNAL_ERROR_5;
+            RTMemFree(pProc->pSid);
+            pProc->pSid = NULL;
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Unhandled token information class\n"));
+            break;
     }
 
     /*
-     * Since GetModuleFileNameEx has trouble with cross-bitness stuff (32-bit apps
-     * cannot query 64-bit apps and vice verse) we have to use a different code
-     * path for Vista and up.
-     *
-     * So use QueryFullProcessImageNameW when available (Vista+), fall back on
-     * GetModuleFileNameExW on older windows version (
+     * Clean up.
      */
-    WCHAR wszName[_1K];
-    DWORD dwLen = _1K;
-    BOOL  fRc;
-    if (g_pfnQueryFullProcessImageNameW)
-        fRc = g_pfnQueryFullProcessImageNameW(hProcess, 0 /*PROCESS_NAME_NATIVE*/, wszName, &dwLen);
-    else
-        fRc = g_pfnGetModuleFileNameExW(hProcess, NULL /* Get main executable */, wszName, dwLen);
-
-    int rc;
-    if (fRc)
-        rc = RTUtf16DupEx(ppszName, wszName, 0);
-    else
-    {
-        DWORD dwErr = GetLastError();
-        if (g_cVerbosity > 3)
-            VGSvcError("Unable to retrieve process name for PID=%u, LastError=%Rwc\n", pProc->id, dwErr);
-        rc = RTErrConvertFromWin32(dwErr);
-    }
-
-    CloseHandle(hProcess);
+    RTMemFree(pvTokenInfo);
     return rc;
 }
 
 
 /**
- * Fills in more data for a process.
+ * Worker for vgsvcVMInfoWinTokenQueryInteractive.
+ */
+static bool vgsvcVMInfoWinTokenQueryInteractiveWorker(TOKEN_GROUPS const *pGroups)
+{
+    for (DWORD i = 0; i < pGroups->GroupCount; i++)
+        if (   (pGroups->Groups[i].Attributes & SE_GROUP_LOGON_ID)
+            || (g_pSidInteractive && EqualSid(pGroups->Groups[i].Sid, g_pSidInteractive))
+            || (g_pSidLocal       && EqualSid(pGroups->Groups[i].Sid, g_pSidLocal)) )
+            return true;
+    return false;
+}
+
+
+/**
+ * Determins if the token is for an interactive process.
+ *
+ * Specialized code for this as it's the filtering criteria and best be as
+ * efficient as we can get it.
  *
  * @returns VBox status code.
- * @param   pProc           The process structure to fill data into.
- * @param   tkClass         The kind of token information to get.
+ * @param   hToken          The token to query information from.
+ * @param   pid             The PID we're querying it for (error reporting).
+ * @param   pfInteractive   Where to return the indicator.
  */
-static int vgsvcVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pProc, TOKEN_INFORMATION_CLASS tkClass)
+static int vgsvcVMInfoWinTokenQueryInteractive(HANDLE hToken, DWORD pid, bool *pfInteractive)
 {
-    AssertPtrReturn(pProc, VERR_INVALID_POINTER);
-
-    DWORD  dwErr = ERROR_SUCCESS;
-    HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pProc->id);
-    if (h == NULL)
+    /* Try with a stack buffer first. */
+    uint8_t         abBuffer[_1K];
+    PTOKEN_GROUPS   pGroups     = (PTOKEN_GROUPS)&abBuffer[0];
+    DWORD           cbTokenInfo = sizeof(abBuffer);
+    if (GetTokenInformation(hToken, TokenGroups, pGroups, cbTokenInfo, &cbTokenInfo))
     {
-        dwErr = GetLastError();
-        if (g_cVerbosity > 4)
-            VGSvcError("Unable to open process with PID=%u, error=%u\n", pProc->id, dwErr);
-        return RTErrConvertFromWin32(dwErr);
+        *pfInteractive = vgsvcVMInfoWinTokenQueryInteractiveWorker(pGroups);
+        return VINF_SUCCESS;
     }
 
-    int    rc = VINF_SUCCESS;
-    HANDLE hToken;
-    if (OpenProcessToken(h, TOKEN_QUERY, &hToken))
+    DWORD dwErr = GetLastError();
+    if (dwErr == ERROR_INSUFFICIENT_BUFFER)
     {
-        void *pvTokenInfo = NULL;
-        DWORD dwTokenInfoSize;
-        switch (tkClass)
+        /* Okay, need a larger buffer off the heap. */
+        pGroups = (PTOKEN_GROUPS)RTMemTmpAlloc(cbTokenInfo);
+        if (pGroups)
         {
-            case TokenStatistics:
-                /** @todo r=bird: Someone has been reading too many MSDN examples. You shall
-                 *        use RTMemAlloc here!  There is absolutely not reason for
-                 *        complicating things uncessarily by using HeapAlloc! */
-                dwTokenInfoSize = sizeof(TOKEN_STATISTICS);
-                pvTokenInfo = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwTokenInfoSize);
-                AssertPtr(pvTokenInfo);
-                break;
-
-            case TokenGroups:
-                dwTokenInfoSize = 0;
-                /* Allocation will follow in a second step. */
-                break;
-
-            case TokenUser:
-                dwTokenInfoSize = 0;
-                /* Allocation will follow in a second step. */
-                break;
-
-            default:
-                VGSvcError("Token class not implemented: %d\n", tkClass);
-                rc = VERR_NOT_IMPLEMENTED;
-                dwTokenInfoSize = 0; /* Shut up MSC. */
-                break;
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            DWORD dwRetLength;
-            if (!GetTokenInformation(hToken, tkClass, pvTokenInfo, dwTokenInfoSize, &dwRetLength))
+            AssertReturn(pGroups, VERR_NO_TMP_MEMORY);
+            if (GetTokenInformation(hToken, TokenGroups, pGroups, cbTokenInfo, &cbTokenInfo))
             {
-                dwErr = GetLastError();
-                if (dwErr == ERROR_INSUFFICIENT_BUFFER)
-                {
-                    dwErr = ERROR_SUCCESS;
-
-                    switch (tkClass)
-                    {
-                        case TokenGroups:
-                            pvTokenInfo = (PTOKEN_GROUPS)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwRetLength);
-                            if (!pvTokenInfo)
-                                dwErr = GetLastError();
-                            dwTokenInfoSize = dwRetLength;
-                            break;
-
-                        case TokenUser:
-                            pvTokenInfo = (PTOKEN_USER)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwRetLength);
-                            if (!pvTokenInfo)
-                                dwErr = GetLastError();
-                            dwTokenInfoSize = dwRetLength;
-                            break;
-
-                        default:
-                            AssertMsgFailed(("Re-allocating of token information for token class not implemented\n"));
-                            break;
-                    }
-
-                    if (dwErr == ERROR_SUCCESS)
-                    {
-                        if (!GetTokenInformation(hToken, tkClass, pvTokenInfo, dwTokenInfoSize, &dwRetLength))
-                            dwErr = GetLastError();
-                    }
-                }
+                *pfInteractive = vgsvcVMInfoWinTokenQueryInteractiveWorker(pGroups);
+                RTMemFree(pGroups);
+                return VINF_SUCCESS;
             }
-
-            if (dwErr == ERROR_SUCCESS)
-            {
-                rc = VINF_SUCCESS;
-
-                switch (tkClass)
-                {
-                    case TokenStatistics:
-                    {
-                        PTOKEN_STATISTICS pStats = (PTOKEN_STATISTICS)pvTokenInfo;
-                        AssertPtr(pStats);
-                        memcpy(&pProc->luid, &pStats->AuthenticationId, sizeof(LUID));
-                        /** @todo Add more information of TOKEN_STATISTICS as needed. */
-                        break;
-                    }
-
-                    case TokenGroups:
-                    {
-                        pProc->fInteractive = false;
-
-                        SID_IDENTIFIER_AUTHORITY sidAuthNT = SECURITY_NT_AUTHORITY;
-                        PSID pSidInteractive = NULL; /*  S-1-5-4 */
-                        if (!AllocateAndInitializeSid(&sidAuthNT, 1, 4, 0, 0, 0, 0, 0, 0, 0, &pSidInteractive))
-                            dwErr = GetLastError();
-
-                        PSID pSidLocal = NULL; /*  S-1-2-0 */
-                        if (dwErr == ERROR_SUCCESS)
-                        {
-                            SID_IDENTIFIER_AUTHORITY sidAuthLocal = SECURITY_LOCAL_SID_AUTHORITY;
-                            if (!AllocateAndInitializeSid(&sidAuthLocal, 1, 0, 0, 0, 0, 0, 0, 0, 0, &pSidLocal))
-                                dwErr = GetLastError();
-                        }
-
-                        if (dwErr == ERROR_SUCCESS)
-                        {
-                            PTOKEN_GROUPS pGroups = (PTOKEN_GROUPS)pvTokenInfo;
-                            AssertPtr(pGroups);
-                            for (DWORD i = 0; i < pGroups->GroupCount; i++)
-                            {
-                                if (   EqualSid(pGroups->Groups[i].Sid, pSidInteractive)
-                                    || EqualSid(pGroups->Groups[i].Sid, pSidLocal)
-                                    || pGroups->Groups[i].Attributes & SE_GROUP_LOGON_ID)
-                                {
-                                    pProc->fInteractive = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (pSidInteractive)
-                            FreeSid(pSidInteractive);
-                        if (pSidLocal)
-                            FreeSid(pSidLocal);
-                        break;
-                    }
-
-                    case TokenUser:
-                    {
-                        PTOKEN_USER pUser = (PTOKEN_USER)pvTokenInfo;
-                        AssertPtr(pUser);
-
-                        DWORD dwLength = GetLengthSid(pUser->User.Sid);
-                        Assert(dwLength);
-                        if (dwLength)
-                        {
-                            pProc->pSid = (PSID)HeapAlloc(GetProcessHeap(),
-                                                          HEAP_ZERO_MEMORY, dwLength);
-                            AssertPtr(pProc->pSid);
-                            if (CopySid(dwLength, pProc->pSid, pUser->User.Sid))
-                            {
-                                if (!IsValidSid(pProc->pSid))
-                                    dwErr = ERROR_INVALID_NAME;
-                            }
-                            else
-                                dwErr = GetLastError();
-                        }
-                        else
-                            dwErr = ERROR_NO_DATA;
-
-                        if (dwErr != ERROR_SUCCESS)
-                        {
-                            VGSvcError("Error retrieving SID of process PID=%u: %u\n", pProc->id, dwErr);
-                            if (pProc->pSid)
-                            {
-                                HeapFree(GetProcessHeap(), 0 /* Flags */, pProc->pSid);
-                                pProc->pSid = NULL;
-                            }
-                        }
-                        break;
-                    }
-
-                    default:
-                        AssertMsgFailed(("Unhandled token information class\n"));
-                        break;
-                }
-            }
-
-            if (pvTokenInfo)
-                HeapFree(GetProcessHeap(), 0 /* Flags */, pvTokenInfo);
+            dwErr = GetLastError();
+            RTMemTmpFree(pGroups);
         }
-        CloseHandle(hToken);
+        else
+            dwErr = ERROR_OUTOFMEMORY;
     }
-    else
-        dwErr = GetLastError();
-
-    if (dwErr != ERROR_SUCCESS)
-    {
-        if (g_cVerbosity)
-            VGSvcError("Unable to query token information for PID=%u, error=%u\n", pProc->id, dwErr);
-        rc = RTErrConvertFromWin32(dwErr);
-    }
-
-    CloseHandle(h);
+    int const rc = dwErr ? RTErrConvertFromWin32(dwErr) : VERR_INTERNAL_ERROR_3;
+    if (g_cVerbosity)
+        VGSvcError("Get token class 'groups' for process %u failed: dwErr=%u (rc=%Rrc)\n", pid, dwErr, rc);
+    *pfInteractive = false;
     return rc;
 }
 
@@ -521,192 +411,203 @@ static int vgsvcVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pProc, TOK
  *                      freed by calling vgsvcVMInfoWinProcessesFree.
  *
  * @param   pcProcs     Where to store the returned process count.
+ * @param   ppvExtra    Where to return extra memory that needs freeing.
  */
-static int vgsvcVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDWORD pcProcs)
+static int vgsvcVMInfoWinEnumerateInteractiveProcesses(PVBOXSERVICEVMINFOPROC *ppaProcs, PDWORD pcProcs, void **ppvExtra)
 {
     AssertPtr(ppaProcs);
     AssertPtr(pcProcs);
-
-    if (!g_pfnEnumProcesses)
-        return VERR_NOT_SUPPORTED;
+    AssertPtr(ppvExtra);
 
     /*
-     * Call EnumProcesses with an increasingly larger buffer until it all fits
-     * or we think something is screwed up.
+     * Query the information via the NT API.
      */
-    DWORD   cProcesses  = 64;
-    PDWORD  paPID       = NULL;
-    int     rc          = VINF_SUCCESS;
-    do
+    static ULONG    s_cbPrev = _16K;
+    ULONG           cbBuf    = s_cbPrev;
+    ULONG           cbNeeded = 0;
+    uint8_t        *pbBuf    = (uint8_t *)RTMemTmpAlloc(cbBuf);
+    AssertReturn(pbBuf, VERR_NO_TMP_MEMORY);
+    NTSTATUS rcNt = NtQuerySystemInformation(SystemProcessInformation, pbBuf, cbBuf, &cbNeeded);
+    if (NT_SUCCESS(rcNt))
+        s_cbPrev = RT_ALIGN_32(cbNeeded + _8K, _16K);
+    else
     {
-        /* Allocate / grow the buffer first. */
-        cProcesses *= 2;
-        void *pvNew = RTMemRealloc(paPID, cProcesses * sizeof(DWORD));
-        if (!pvNew)
+        while (rcNt == STATUS_INFO_LENGTH_MISMATCH)
         {
-            rc = VERR_NO_MEMORY;
-            break;
+            RTMemTmpFree(pbBuf);
+            cbBuf = RT_ALIGN_32(cbNeeded + _8K, _16K);
+            pbBuf = (uint8_t *)RTMemTmpAlloc(cbBuf);
+            AssertReturn(pbBuf, VERR_NO_TMP_MEMORY);
+
+            rcNt = NtQuerySystemInformation(SystemProcessInformation, pbBuf, cbBuf, &cbNeeded);
         }
-        paPID = (PDWORD)pvNew;
-
-        /* Query the processes. Not the cbRet == buffer size means there could be more work to be done. */
-        DWORD cbRet;
-        if (!g_pfnEnumProcesses(paPID, cProcesses * sizeof(DWORD), &cbRet))
-        {
-            rc = RTErrConvertFromWin32(GetLastError());
-            break;
-        }
-        if (cbRet < cProcesses * sizeof(DWORD))
-        {
-            cProcesses = cbRet / sizeof(DWORD);
-            break;
-        }
-    } while (cProcesses <= _32K); /* Should be enough; see: http://blogs.technet.com/markrussinovich/archive/2009/07/08/3261309.aspx */
-
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Allocate out process structures and fill data into them.
-         * We currently only try lookup their LUID's.
-         */
-        PVBOXSERVICEVMINFOPROC paProcs;
-        paProcs = (PVBOXSERVICEVMINFOPROC)RTMemAllocZ(cProcesses * sizeof(VBOXSERVICEVMINFOPROC));
-        if (paProcs)
-        {
-            for (DWORD i = 0; i < cProcesses; i++)
-            {
-                paProcs[i].id = paPID[i];
-                paProcs[i].pSid = NULL;
-
-                int rc2 = vgsvcVMInfoWinProcessesGetTokenInfo(&paProcs[i], TokenUser);
-                if (RT_FAILURE(rc2) && g_cVerbosity)
-                    VGSvcError("Get token class 'user' for process %u failed, rc=%Rrc\n", paProcs[i].id, rc2);
-
-                rc2 = vgsvcVMInfoWinProcessesGetTokenInfo(&paProcs[i], TokenGroups);
-                if (RT_FAILURE(rc2) && g_cVerbosity)
-                    VGSvcError("Get token class 'groups' for process %u failed, rc=%Rrc\n", paProcs[i].id, rc2);
-
-                rc2 = vgsvcVMInfoWinProcessesGetTokenInfo(&paProcs[i], TokenStatistics);
-                if (RT_FAILURE(rc2) && g_cVerbosity)
-                    VGSvcError("Get token class 'statistics' for process %u failed, rc=%Rrc\n", paProcs[i].id, rc2);
-            }
-
-            /* Save number of processes */
-            if (RT_SUCCESS(rc))
-            {
-                *pcProcs  = cProcesses;
-                *ppaProcs = paProcs;
-            }
-            else
-                vgsvcVMInfoWinProcessesFree(cProcesses, paProcs);
-        }
+        s_cbPrev = cbBuf;
+        if (NT_SUCCESS(rcNt))
+        { /* likely */ }
         else
-            rc = VERR_NO_MEMORY;
+        {
+            RTMemTmpFree(pbBuf);
+            return RTErrConvertFromNtStatus(rcNt);
+        }
     }
 
-    RTMemFree(paPID);
-    return rc;
+    /*
+     * Destill the data into paProcs.
+     */
+    static const uint32_t   s_cbMinProcInfoEntry = RT_UOFFSETOF(RTNT_SYSTEM_PROCESS_INFORMATION, IoCounters);
+    static uint32_t         s_cPrevProcesses     = 64;
+    uint32_t                cAllocated           = s_cPrevProcesses;
+    uint32_t                cProcesses           = 0;
+    PVBOXSERVICEVMINFOPROC  paProcesses          = (PVBOXSERVICEVMINFOPROC)RTMemAlloc(sizeof(paProcesses[0]) * cAllocated);
+    AssertReturnStmt(paProcesses, RTMemTmpFree(pbBuf), VERR_NO_MEMORY);
+    if (RT_LIKELY(cbNeeded > s_cbMinProcInfoEntry)) /* paranoia */
+        for (size_t offBuf = 0; offBuf <= cbNeeded - s_cbMinProcInfoEntry;)
+        {
+            PRTNT_SYSTEM_PROCESS_INFORMATION const pProcInfo = (PRTNT_SYSTEM_PROCESS_INFORMATION)&pbBuf[offBuf];
+            DWORD const pid = (DWORD)(uintptr_t)pProcInfo->UniqueProcessId;
+
+            /** @todo Filter on session ID if we can. */
+
+            HANDLE const hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE /*bInheritHandle*/, pid);
+            if (hProcess)
+            {
+                HANDLE hToken = NULL;
+                if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken))
+                {
+                    /* Check if it is an interactive process that we ought to return. */
+                    bool fInteractive = false;
+                    int rc2 = vgsvcVMInfoWinTokenQueryInteractive(hToken, pid, &fInteractive);
+                    if (RT_SUCCESS(rc2) && fInteractive)
+                    {
+                        if (cProcesses >= cAllocated)
+                        {
+                            cAllocated += RT_MIN(cAllocated, 1024);
+                            void * const pvNew = RTMemRealloc(paProcesses, sizeof(paProcesses[0]) * cAllocated);
+                            if (pvNew)
+                                paProcesses = (PVBOXSERVICEVMINFOPROC)pvNew;
+                            else
+                            {
+                                RTMemFree(paProcesses);
+                                RTMemFree(pbBuf);
+                                CloseHandle(hToken);
+                                CloseHandle(hProcess);
+                                return VERR_NO_MEMORY;
+                            }
+                        }
+
+                        paProcesses[cProcesses].id          = pid;
+                        paProcesses[cProcesses].idSession   = g_fHasProcInfoSessionId ? pProcInfo->SessionId : 0;
+                        paProcesses[cProcesses].pUniStrName =    pProcInfo->ProcessName.Length
+                                                              && pProcInfo->ProcessName.Buffer
+                                                            ? &pProcInfo->ProcessName : NULL;
+                        paProcesses[cProcesses].pSid        = NULL;
+
+
+                        /** @todo Ignore processes we can't get the user for? */
+                        rc2 = vgsvcVMInfoWinProcessesGetTokenInfo(hToken, TokenUser, &paProcesses[cProcesses]);
+                        /** @todo On NT 6.2+, the user SID is often available in an
+                         *        SYSTEM_PROCESS_INFORMATION_EXTENSION item after the thread
+                         *        information. (See Geoff Chappell's site) */
+                        if (RT_FAILURE(rc2) && g_cVerbosity)
+                            VGSvcError("Get token class 'groups' for process %u failed: %Rrc\n", pid, rc2);
+
+#if 0 /* unused */
+                        rc2 = vgsvcVMInfoWinProcessesGetTokenInfo(hToken, TokenStatistics, &paProcesses[cProcesses]);
+                        if (RT_FAILURE(rc2) && g_cVerbosity)
+                            VGSvcError("Get token class 'statistics' for process %u failed: %Rrc\n", pid, rc2);
+#endif
+
+                        cProcesses++;
+                    }
+                    CloseHandle(hToken);
+                }
+                else if (g_cVerbosity)
+                    VGSvcError("Unable to open token for PID %u: GetLastError=%u\n", pid, GetLastError());
+                CloseHandle(hProcess);
+            }
+            else if (g_cVerbosity)
+                VGSvcError("Unable to open PID %u: GetLastError=%u\n", pid, GetLastError());
+
+            /* Advance. */
+            uint32_t offNext = pProcInfo->NextEntryOffset;
+            if (offNext >= s_cbMinProcInfoEntry)
+                offBuf += offNext;
+            else
+                break;
+        }
+
+    /* Return */
+    *ppaProcs = paProcesses;
+    *pcProcs  = cProcesses;
+    *ppvExtra = pbBuf;
+    return VINF_SUCCESS;
 }
+
 
 /**
  * Frees the process structures returned by
- * vgsvcVMInfoWinProcessesEnumerate() before.
+ * vgsvcVMInfoWinEnumerateInteractiveProcesses() before.
  *
  * @param   cProcs      Number of processes in paProcs.
  * @param   paProcs     The process array.
+ * @param   pvExtra     The extra memory returned with paProcs (where process
+ *                      name strings live).
  */
-static void vgsvcVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs)
+static void vgsvcVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs, void *pvExtra)
 {
     for (DWORD i = 0; i < cProcs; i++)
         if (paProcs[i].pSid)
         {
-            HeapFree(GetProcessHeap(), 0 /* Flags */, paProcs[i].pSid);
+            RTMemFree(paProcs[i].pSid);
             paProcs[i].pSid = NULL;
         }
     RTMemFree(paProcs);
+    RTMemTmpFree(pvExtra);
 }
 
+
 /**
- * Determines whether the specified session has processes on the system.
+ * Determines whether the specified session has interactive processes on the
+ * system.
  *
  * @returns Number of processes found for a specified session.
- * @param   pSession            The current user's SID.
- * @param   paProcs             The process snapshot.
+ * @param   paProcs             The snapshot of the interactive processes.
  * @param   cProcs              The number of processes in the snaphot.
- * @param   puTerminalSession   Where to return terminal session number.
- *                              Optional.
+ * @param   pSessionData        The data for the session we're looking for. We
+ *                              use the SID and Session members.
  */
-/** @todo r=bird: The 'Has' indicates a predicate function, which this is
- *        not.  Predicate functions always returns bool. */
-static uint32_t vgsvcVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs,
-                                                  PULONG puTerminalSession)
+static uint32_t vgsvcVMInfoWinCountSessionProcesses(PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs,
+                                                    PSECURITY_LOGON_SESSION_DATA pSessionData)
 {
-    if (!pSession)
-    {
-        VGSvcVerbose(1, "Session became invalid while enumerating!\n");
-        return 0;
-    }
-    if (!g_pfnLsaGetLogonSessionData)
-        return 0;
-
-    PSECURITY_LOGON_SESSION_DATA pSessionData = NULL;
-    NTSTATUS rcNt = g_pfnLsaGetLogonSessionData(pSession, &pSessionData);
-    if (rcNt != STATUS_SUCCESS)
-    {
-        VGSvcError("Could not get logon session data! rcNt=%#x\n", rcNt);
-        return 0;
-    }
-
-    if (!IsValidSid(pSessionData->Sid))
-    {
-       VGSvcError("User SID=%p is not valid\n", pSessionData->Sid);
-       if (pSessionData)
-           g_pfnLsaFreeReturnBuffer(pSessionData);
-       return 0;
-    }
-
+    AssertPtrReturn(pSessionData, 0);
+    Assert(IsValidSid(pSessionData->Sid));
 
     /*
      * Even if a user seems to be logged in, it could be a stale/orphaned logon
      * session. So check if we have some processes bound to it by comparing the
      * session <-> process LUIDs.
+     *
+     * 2025-11-09 bird: We don't actually compare LUID, we compare user SID, the
+     *                  purposes is the same though.
      */
-    int rc = VINF_SUCCESS;
     uint32_t cProcessesFound = 0;
     for (DWORD i = 0; i < cProcs; i++)
     {
         PSID pProcSID = paProcs[i].pSid;
-        if (   RT_SUCCESS(rc)
-            && pProcSID
+        if (   pProcSID
             && IsValidSid(pProcSID))
-        {
             if (EqualSid(pSessionData->Sid, paProcs[i].pSid))
             {
-                if (g_cVerbosity)
-                {
-                    PRTUTF16 pszName;
-                    int rc2 = vgsvcVMInfoWinProcessesGetModuleNameW(&paProcs[i], &pszName);
-                    VGSvcVerbose(4, "Session %RU32: PID=%u (fInt=%RTbool): %ls\n",
-                                 pSessionData->Session, paProcs[i].id, paProcs[i].fInteractive,
-                                 RT_SUCCESS(rc2) ? pszName : L"<Unknown>");
-                    if (RT_SUCCESS(rc2))
-                        RTUtf16Free(pszName);
-                }
-
-                if (paProcs[i].fInteractive)
-                {
-                    cProcessesFound++;
-                    if (!g_cVerbosity) /* We want a bit more info on higher verbosity. */
-                        break;
-                }
+                cProcessesFound++;
+                if (g_cVerbosity < 3) /* This must match the logging statements using cInteractiveProcesses. */
+                    break;
+                if (g_cVerbosity >= 4)
+                    VGSvcVerbose(4, "Session %RU32: PID=%u SessionID=%u: %.*ls\n",
+                                 pSessionData->Session, paProcs[i].id, paProcs[i].idSession,
+                                 paProcs[i].pUniStrName ? paProcs[i].pUniStrName->Length / sizeof(RTUTF16) : 0,
+                                 paProcs[i].pUniStrName ? paProcs[i].pUniStrName->Buffer : NULL);
             }
-        }
     }
-
-    if (puTerminalSession)
-        *puTerminalSession = pSessionData->Session;
-
-    g_pfnLsaFreeReturnBuffer(pSessionData);
 
     return cProcessesFound;
 }
@@ -737,15 +638,17 @@ static void vgsvcVMInfoWinSafeCopy(PWCHAR pwszDst, size_t cbDst, LSA_UNICODE_STR
 
 
 /**
- * Detects whether a user is logged on.
+ * Detects whether a user is logged on and gets user info.
  *
  * @returns true if logged in, false if not (or error).
- * @param   pUserInfo           Where to return the user information.
  * @param   pSession            The session to check.
+ * @param   pUserInfo           Where to return the user information.
+ * @param   ppSessionData       Where to return pointer to the session data.
  */
-static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSession)
+static bool vgsvcVMInfoWinIsLoggedInWithUserInfoReturned(PLUID pSession, PVBOXSERVICEVMINFOUSER pUserInfo,
+                                                         PSECURITY_LOGON_SESSION_DATA *ppSessionData)
 {
-    AssertPtrReturn(pUserInfo, false);
+    *ppSessionData = NULL;
     if (!pSession)
         return false;
     if (   !g_pfnLsaGetLogonSessionData
@@ -771,7 +674,7 @@ static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSe
                 break;
 
             default:
-                VGSvcError("LsaGetLogonSessionData failed with error %u\n", ulError);
+                VGSvcError("LsaGetLogonSessionData failed with error %u (rcNt=%#x)\n", ulError, rcNt);
                 break;
         }
         if (pSessionData)
@@ -837,13 +740,13 @@ static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSe
                               &dwDomainNameSize,
                               &enmOwnerType))
         {
-            DWORD dwErr = GetLastError();
             /*
              * If a network time-out prevents the function from finding the name or
              * if a SID that does not have a corresponding account name (such as a
              * logon SID that identifies a logon session), we get ERROR_NONE_MAPPED
              * here that we just skip.
              */
+            DWORD dwErr = GetLastError();
             if (dwErr != ERROR_NONE_MAPPED)
                 VGSvcError("Failed looking up account info for user=%ls, error=$ld!\n", pUserInfo->wszUser, dwErr);
         }
@@ -867,23 +770,23 @@ static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSe
                  * query WTSConnectState, which is a rather simple affair.  So, I've
                  * re-enabled the code for all systems that includes the API.
                  */
-                if (!s_fSkipRDPDetection)
+                if (!g_fSkipRdpDetection)
                 {
                     /* Skip if we don't have the WTS API. */
                     if (!g_pfnWTSQuerySessionInformationA)
-                        s_fSkipRDPDetection = true;
+                        g_fSkipRdpDetection = true;
 #if 0 /* bird: see above */
                     /* Skip RDP detection on Windows 2000 and older.
                        For Windows 2000 however we don't have any hotfixes, so just skip the
                        RDP detection in any case. */
                     else if (RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 1, 0)) /* older than XP */
-                        s_fSkipRDPDetection = true;
+                        g_fSkipRdpDetection = true;
 #endif
-                    if (s_fSkipRDPDetection)
+                    if (g_fSkipRdpDetection)
                         VGSvcVerbose(0, "Detection of logged-in users via RDP is disabled\n");
                 }
 
-                if (!s_fSkipRDPDetection)
+                if (!g_fSkipRdpDetection)
                 {
                     Assert(g_pfnWTSQuerySessionInformationA);
                     Assert(g_pfnWTSFreeMemory);
@@ -945,9 +848,13 @@ static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSe
     }
 
     if (fFoundUser)
+    {
         pUserInfo->ulLastSession = pSessionData->Session;
+        *ppSessionData = pSessionData;
+    }
+    else
+        g_pfnLsaFreeReturnBuffer(pSessionData);
 
-    g_pfnLsaFreeReturnBuffer(pSessionData);
     return fFoundUser;
 }
 
@@ -1045,13 +952,13 @@ static int vgsvcVMInfoWinUserSidLookup(const char *pszUser, PSID *ppSid)
 static int vgsvcVMInfoWinUserUpdateFallbackV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
                                              WCHAR *pwszSid, const char *pszKey, const char *pszValueFormat, va_list va)
 {
-    int rc = VGSvcUserUpdateF(pCache, pszUser, NULL /* pszDomain */, "Domain", pszDomain);
+    int rc = VGSvcVMInfoUpdateUser(pCache, pszUser, NULL /* pszDomain */, "Domain", pszDomain);
     if (pwszSid && RT_SUCCESS(rc))
-        rc = VGSvcUserUpdateF(pCache, pszUser, NULL /* pszDomain */, "SID", "%ls", pwszSid);
+        rc = VGSvcVMInfoUpdateUserF(pCache, pszUser, NULL /* pszDomain */, "SID", "%ls", pwszSid);
 
     /* Last but no least, write the actual guest property value we initially were called for.
      * We always do this, no matter of what the outcome from above was. */
-    int rc2 = VGSvcUserUpdateV(pCache, pszUser, NULL /* pszDomain */, pszKey, pszValueFormat, va);
+    int rc2 = VGSvcVMInfoUpdateUserV(pCache, pszUser, NULL /* pszDomain */, pszKey, pszValueFormat, va);
     if (RT_SUCCESS(rc))
         rc2 = rc;
 
@@ -1060,7 +967,7 @@ static int vgsvcVMInfoWinUserUpdateFallbackV(PVBOXSERVICEVEPROPCACHE pCache, con
 
 
 /**
- * Wrapper function for VGSvcUserUpdateF() that deals with too long guest property names.
+ * Wrapper function for VGSvcVMInfoUpdateUserF() that deals with too long guest property names.
  *
  * @return  VBox status code.
  * @retval  VERR_BUFFER_OVERFLOW if the final property name length exceeds the maximum supported length.
@@ -1079,10 +986,10 @@ static int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char 
     va_start(va, pszValueFormat);
 
     /* First, try to write stuff as we always did, to not break older VBox versions. */
-    int rc = VGSvcUserUpdateV(pCache, pszUser, pszDomain, pszKey, pszValueFormat, va);
+    int rc = VGSvcVMInfoUpdateUserV(pCache, pszUser, pszDomain, pszKey, pszValueFormat, va);
     if (rc == VERR_BUFFER_OVERFLOW)
     {
-        /**
+        /*
          * If the constructed property name was too long, we have to be a little more creative here:
          *
          *   - only use the user name as part of the property name from now on
@@ -1100,7 +1007,7 @@ static int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char 
             rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, pszUser, pszDomain, pwszSid, pszKey, pszValueFormat, va);
             if (RT_FAILURE(rc))
             {
-                /**
+                /*
                  * If using the sole user name as a property name still is too long or something else failed,
                  * at least try to look up the user's RID (relative identifier). Note that the RID always is bound to the
                  * to the authority that issued the SID.
@@ -1110,14 +1017,13 @@ static int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char 
                 {
                     DWORD const dwUserRid = *GetSidSubAuthority(pSid, cSubAuth - 1);
                     char  szUserRid[16 + 1];
-                    if (RTStrPrintf2(szUserRid, sizeof(szUserRid), "%ld", dwUserRid) > 0)
+                    if (RTStrPrintf2(szUserRid, sizeof(szUserRid), "%u", dwUserRid) > 0)
                     {
-                        rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, szUserRid, pszDomain, pwszSid, pszKey,
-                                                               pszValueFormat, va);
+                        rc = vgsvcVMInfoWinUserUpdateFallbackV(pCache, szUserRid, pszDomain, pwszSid, pszKey, pszValueFormat, va);
                         /* Also write the resolved user name into a dedicated key,
                          * so that it's easier to look it up for the host. */
                         if (RT_SUCCESS(rc))
-                            rc = VGSvcUserUpdateF(pCache, szUserRid, NULL /* pszDomain */, "User", pszUser);
+                            rc = VGSvcVMInfoUpdateUser(pCache, szUserRid, NULL /* pszDomain */, "User", pszUser);
                     }
                     else
                         rc = VERR_BUFFER_OVERFLOW;
@@ -1177,7 +1083,7 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
                      * user's last input time. This might happen when running on Windows NT4 or older. */
                     && ipcReply.cSecSinceLastInput != UINT32_MAX)
                 {
-                    userState = ipcReply.cSecSinceLastInput * 1000 < g_uVMInfoUserIdleThresholdMS
+                    userState = ipcReply.cSecSinceLastInput * 1000 < g_cMsVMInfoUserIdleThreshold
                               ? VBoxGuestUserState_InUse
                               : VBoxGuestUserState_Idle;
 
@@ -1213,7 +1119,7 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
 #endif
             int rc2 = RTLocalIpcSessionClose(hSession);
             if (RT_SUCCESS(rc) && RT_FAILURE(rc2))
-                rc = rc2;
+                rc = rc2; \
         }
         else
         {
@@ -1260,305 +1166,690 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
  * user count.
  *
  * @returns VBox status code.
+ * @param   pUserGatherer   Pointer to the user gatherer state that we pass to
+ *                          VGSvcVMInfoAddUserToList().
  * @param   pCache          Property cache to use for storing some of the lookup
  *                          data in between calls.
- * @param   ppszUserList    Where to store the user list (separated by commas).
- *                          Must be freed with RTStrFree().
- * @param   pcUsersInList   Where to store the number of users in the list.
  */
-int VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList, uint32_t *pcUsersInList)
+int VGSvcVMInfoWinQueryUserListAndUpdateInfo(struct VBOXSERVICEVMINFOUSERLIST *pUserGatherer, PVBOXSERVICEVEPROPCACHE pCache)
 {
     AssertPtrReturn(pCache, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppszUserList, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcUsersInList, VERR_INVALID_POINTER);
+#if 1
+# define VGSVC_VMINFO_WIN_QUERY_USER_LIST_DEBUG
+    char szDebugPath[GUEST_PROP_MAX_NAME_LEN];
+#endif
 
+    /** @todo why don't we do this during sub-service init?   */
     int rc = RTOnce(&g_vgsvcWinVmInitOnce, vgsvcWinVmInfoInitOnce, NULL);
     if (RT_FAILURE(rc))
         return rc;
-    if (!g_pfnLsaEnumerateLogonSessions || !g_pfnEnumProcesses || !g_pfnLsaNtStatusToWinError)
+    if (!g_pfnLsaEnumerateLogonSessions || !g_pfnLsaNtStatusToWinError)
         return VERR_NOT_SUPPORTED;
 
-    rc = VbglR3GuestPropConnect(&s_uDebugGuestPropClientID);
-    AssertRC(rc);
-
-    char *pszUserList = NULL;
-    uint32_t cUsersInList = 0;
-
-    /* This function can report stale or orphaned interactive logon sessions
-       of already logged off users (especially in Windows 2000). */
+    /*
+     * Snapshot the logon sessions.
+     *
+     * This function can report stale or orphaned interactive logon sessions
+     * of already logged off users (especially in Windows 2000).
+     */
     PLUID    paSessions = NULL;
-    ULONG    cSessions = 0;
+    ULONG    cSessions  = 0;
     NTSTATUS rcNt = g_pfnLsaEnumerateLogonSessions(&cSessions, &paSessions);
     if (rcNt != STATUS_SUCCESS)
     {
-        ULONG uError = g_pfnLsaNtStatusToWinError(rcNt);
+        ULONG const uError = g_pfnLsaNtStatusToWinError(rcNt);
         switch (uError)
         {
             case ERROR_NOT_ENOUGH_MEMORY:
                 VGSvcError("Not enough memory to enumerate logon sessions!\n");
+                rc = VERR_NO_MEMORY;
                 break;
 
             case ERROR_SHUTDOWN_IN_PROGRESS:
                 /* If we're about to shutdown when we were in the middle of enumerating the logon
                  * sessions, skip the error to not confuse the user with an unnecessary log message. */
                 VGSvcVerbose(3, "Shutdown in progress ...\n");
-                uError = ERROR_SUCCESS;
+                rc = VINF_SUCCESS;
                 break;
 
             default:
-                VGSvcError("LsaEnumerate failed with error %RU32\n", uError);
+                VGSvcError("LsaEnumerate failed with error %RU32 (rcNt=%#x)\n", uError, rcNt);
+                rc = RTErrConvertFromWin32(uError);
                 break;
         }
-
         if (paSessions)
             g_pfnLsaFreeReturnBuffer(paSessions);
-
-        return RTErrConvertFromWin32(uError);
+        return rc;
     }
     VGSvcVerbose(3, "Found %u sessions\n", cSessions);
 
-    PVBOXSERVICEVMINFOPROC  paProcs;
-    DWORD                   cProcs;
-    rc = vgsvcVMInfoWinProcessesEnumerate(&paProcs, &cProcs);
-    if (RT_FAILURE(rc))
+    /*
+     * Snapshot the interactive processes in the system (that we can get info from).
+     */
+    PVBOXSERVICEVMINFOPROC  paProcs = NULL;
+    DWORD                   cProcs  = 0;
+    void                   *pvExtra = NULL;
+    rc = vgsvcVMInfoWinEnumerateInteractiveProcesses(&paProcs, &cProcs, &pvExtra);
+    if (RT_SUCCESS(rc))
     {
-        if (rc == VERR_NO_MEMORY)
-            VGSvcError("Not enough memory to enumerate processes\n");
-        else
-            VGSvcError("Failed to enumerate processes, rc=%Rrc\n", rc);
-    }
-    else
-    {
-        PVBOXSERVICEVMINFOUSER pUserInfo;
-        pUserInfo = (PVBOXSERVICEVMINFOUSER)RTMemAllocZ(cSessions * sizeof(VBOXSERVICEVMINFOUSER) + 1);
-        if (!pUserInfo)
-            VGSvcError("Not enough memory to store enumerated users!\n");
-        else
+        /*
+         * Allocate an array for gather unique user info that we'll be destilling
+         * from the logon sessions and process snapshot.
+         */
+        PVBOXSERVICEVMINFOUSER paUserInfo = (PVBOXSERVICEVMINFOUSER)RTMemTmpAllocZ(cSessions * sizeof(VBOXSERVICEVMINFOUSER));
+        if (paUserInfo)
         {
             ULONG cUniqueUsers = 0;
 
             /*
+             * Iterate thru the login sessions, popuplating paUserInfo with unique entries.
+             *
              * Note: The cSessions loop variable does *not* correlate with
              *       the Windows session ID!
              */
-            for (ULONG i = 0; i < cSessions; i++)
+            for (ULONG iSession = 0; iSession < cSessions; iSession++)
             {
-                VGSvcVerbose(3, "Handling session %RU32 (of %RU32)\n", i + 1, cSessions);
+                VGSvcVerbose(3, "iSession=%RU32 (of %RU32)\n", iSession, cSessions);
 
-                VBOXSERVICEVMINFOUSER userSession;
-                if (vgsvcVMInfoWinIsLoggedIn(&userSession, &paSessions[i]))
+                /* Get user information. */
+                PVBOXSERVICEVMINFOUSER const pUserSession = &paUserInfo[cUniqueUsers];
+                PSECURITY_LOGON_SESSION_DATA pSessionData = NULL;
+                if (vgsvcVMInfoWinIsLoggedInWithUserInfoReturned(&paSessions[iSession], pUserSession, &pSessionData))
                 {
-                    VGSvcVerbose(4, "Handling user=%ls, domain=%ls, package=%ls, session=%RU32\n",
-                                 userSession.wszUser, userSession.wszLogonDomain, userSession.wszAuthenticationPackage,
-                                 userSession.ulLastSession);
+                    VGSvcVerbose(4, "Handling user=%ls, domain=%ls, package=%ls, session=%RU32\n", pUserSession->wszUser,
+                                 pUserSession->wszLogonDomain, pUserSession->wszAuthenticationPackage, pUserSession->ulLastSession);
 
-                    /* Retrieve assigned processes of current session. */
-                    uint32_t cCurSessionProcs = vgsvcVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs,
-                                                                                  NULL /* Terminal session ID */);
-                    /* Don't return here when current session does not have assigned processes
-                     * anymore -- in that case we have to search through the unique users list below
-                     * and see if got a stale user/session entry. */
-
+                    /* Count the interactive processes in the session. */
+                    pUserSession->cInteractiveProcesses = vgsvcVMInfoWinCountSessionProcesses(paProcs, cProcs, pSessionData);
+#ifdef VGSVC_VMINFO_WIN_QUERY_USER_LIST_DEBUG
                     if (g_cVerbosity > 3)
                     {
-                        char szDebugSessionPath[255];
-                        RTStrPrintf(szDebugSessionPath,  sizeof(szDebugSessionPath),
-                                    "/VirtualBox/GuestInfo/Debug/LSA/Session/%RU32", userSession.ulLastSession);
-                        VGSvcWritePropF(s_uDebugGuestPropClientID, szDebugSessionPath,
-                                        "#%RU32: cSessionProcs=%RU32 (of %RU32 procs total)",
-                                        s_uDebugIter, cCurSessionProcs, cProcs);
+                        RTStrPrintf(szDebugPath, sizeof(szDebugPath),
+                                    "/VirtualBox/GuestInfo/Debug/LSA/Session/%RU32", pUserSession->ulLastSession);
+                        VGSvcWritePropF(pCache->pClient, szDebugPath, "#%RU32: cSessionProcs=%RU32 (of %RU32 procs total)",
+                                        g_uDebugIter, pUserSession->cInteractiveProcesses, cProcs);
                     }
+#endif
+                    g_pfnLsaFreeReturnBuffer(pSessionData);
 
-                    bool fFoundUser = false;
-                    for (ULONG a = 0; a < cUniqueUsers; a++)
+                    /*
+                     * Check if the user of this session is already in the paUserInfo array.
+                     */
+                    ULONG iUserInfo;
+                    for (iUserInfo = 0; iUserInfo < cUniqueUsers; iUserInfo++)
                     {
-                        PVBOXSERVICEVMINFOUSER pCurUser = &pUserInfo[a];
-                        AssertPtr(pCurUser);
-
-                        if (   !RTUtf16Cmp(userSession.wszUser, pCurUser->wszUser)
-                            && !RTUtf16Cmp(userSession.wszLogonDomain, pCurUser->wszLogonDomain)
-                            && !RTUtf16Cmp(userSession.wszAuthenticationPackage, pCurUser->wszAuthenticationPackage))
+                        PVBOXSERVICEVMINFOUSER const pCurUser = &paUserInfo[iUserInfo];
+                        if (   !RTUtf16Cmp(pUserSession->wszUser, pCurUser->wszUser)
+                            && !RTUtf16Cmp(pUserSession->wszLogonDomain, pCurUser->wszLogonDomain)
+                            && !RTUtf16Cmp(pUserSession->wszAuthenticationPackage, pCurUser->wszAuthenticationPackage))
                         {
-                            /*
-                             * Only respect the highest session for the current user.
-                             */
-                            if (userSession.ulLastSession > pCurUser->ulLastSession)
+                            /** @todo r=bird: What if a user has two session, and it's the latter one
+                             *        that is stale?  We'll hide the first one that still active with the
+                             *        current approach... */
+
+                            /*  Only respect the highest session for the current user. */
+                            if (pUserSession->ulLastSession > pCurUser->ulLastSession)
                             {
                                 VGSvcVerbose(4, "Updating user=%ls to %u processes (last used session: %RU32)\n",
-                                                   pCurUser->wszUser, cCurSessionProcs, userSession.ulLastSession);
+                                             pCurUser->wszUser, pUserSession->cInteractiveProcesses, pUserSession->ulLastSession);
 
-                                if (!cCurSessionProcs)
-                                    VGSvcVerbose(3, "Stale session for user=%ls detected! Processes: %RU32 -> %RU32, Session: %RU32 -> %RU32\n",
-                                                 pCurUser->wszUser, pCurUser->ulNumProcs, cCurSessionProcs,
-                                                 pCurUser->ulLastSession, userSession.ulLastSession);
+                                if (!pUserSession->cInteractiveProcesses)
+                                    VGSvcVerbose(3, "Stale session for user=%ls detected! Processes: %RU32 -> 0, Session: %RU32 -> %RU32\n",
+                                                 pCurUser->wszUser, pCurUser->cInteractiveProcesses, pCurUser->ulLastSession,
+                                                 pUserSession->ulLastSession);
 
-                                pCurUser->ulNumProcs = cCurSessionProcs;
-                                pCurUser->ulLastSession  = userSession.ulLastSession;
+                                pCurUser->cInteractiveProcesses = pUserSession->cInteractiveProcesses;
+                                pCurUser->ulLastSession         = pUserSession->ulLastSession;
                             }
                             /* There can be multiple session objects using the same session ID for the
-                             * current user -- so when we got the same session again just add the found
-                             * processes to it. */
-                            else if (pCurUser->ulLastSession == userSession.ulLastSession)
+                               current user -- so when we got the same session again just add the found
+                               processes to it. */
+                            else if (pCurUser->ulLastSession == pUserSession->ulLastSession)
                             {
                                 VGSvcVerbose(4, "Updating processes for user=%ls (old procs=%RU32, new procs=%RU32, session=%RU32)\n",
-                                             pCurUser->wszUser, pCurUser->ulNumProcs, cCurSessionProcs, pCurUser->ulLastSession);
-
-                                pCurUser->ulNumProcs = cCurSessionProcs;
+                                             pCurUser->wszUser, pCurUser->cInteractiveProcesses,
+                                             pUserSession->cInteractiveProcesses, pCurUser->ulLastSession);
+                                pCurUser->cInteractiveProcesses = pUserSession->cInteractiveProcesses;
                             }
-
-                            fFoundUser = true;
                             break;
                         }
                     }
 
-                    if (!fFoundUser)
+                    /*
+                     * If we got thru the array, it's a new unique user which we should add.
+                     *
+                     * Since pUserSession already points to the next array entry, there
+                     * isn't much to do here other than updating the interactive process count.
+                     */
+                    if (iUserInfo >= cUniqueUsers)
                     {
                         VGSvcVerbose(4, "Adding new user=%ls (session=%RU32) with %RU32 processes\n",
-                                     userSession.wszUser, userSession.ulLastSession, cCurSessionProcs);
-
-                        memcpy(&pUserInfo[cUniqueUsers], &userSession, sizeof(VBOXSERVICEVMINFOUSER));
-                        pUserInfo[cUniqueUsers].ulNumProcs = cCurSessionProcs;
+                                     pUserSession->wszUser, pUserSession->ulLastSession, pUserSession->cInteractiveProcesses);
                         cUniqueUsers++;
                         Assert(cUniqueUsers <= cSessions);
                     }
                 }
             }
 
+            vgsvcVMInfoWinProcessesFree(cProcs, paProcs, pvExtra); /* (free it early so we got more heap for string conversion) */
+
+#ifdef VGSVC_VMINFO_WIN_QUERY_USER_LIST_DEBUG
             if (g_cVerbosity > 3)
-                VGSvcWritePropF(s_uDebugGuestPropClientID, "/VirtualBox/GuestInfo/Debug/LSA",
+                VGSvcWritePropF(pCache->pClient, "/VirtualBox/GuestInfo/Debug/LSA",
                                 "#%RU32: cSessions=%RU32, cProcs=%RU32, cUniqueUsers=%RU32",
-                                s_uDebugIter, cSessions, cProcs, cUniqueUsers);
+                                g_uDebugIter, cSessions, cProcs, cUniqueUsers);
+#endif
+            VGSvcVerbose(3, "Found %u unique logged-in user%s\n", cUniqueUsers, cUniqueUsers == 1 ? "" : "s");
 
-            VGSvcVerbose(3, "Found %u unique logged-in user(s)\n", cUniqueUsers);
-
+            /*
+             * Publish the unique user information that we've destilled above.
+             */
             for (ULONG i = 0; i < cUniqueUsers; i++)
             {
+#ifdef VGSVC_VMINFO_WIN_QUERY_USER_LIST_DEBUG
                 if (g_cVerbosity > 3)
                 {
-                    char szDebugUserPath[255]; RTStrPrintf(szDebugUserPath,  sizeof(szDebugUserPath), "/VirtualBox/GuestInfo/Debug/LSA/User/%RU32", i);
-                    VGSvcWritePropF(s_uDebugGuestPropClientID, szDebugUserPath,
-                                    "#%RU32: szName=%ls, sessionID=%RU32, cProcs=%RU32",
-                                    s_uDebugIter, pUserInfo[i].wszUser, pUserInfo[i].ulLastSession, pUserInfo[i].ulNumProcs);
+                    RTStrPrintf(szDebugPath, sizeof(szDebugPath), "/VirtualBox/GuestInfo/Debug/LSA/User/%RU32", i);
+                    VGSvcWritePropF(pCache->pClient, szDebugPath, "#%RU32: szName=%ls, sessionID=%RU32, cProcs=%RU32",
+                                    g_uDebugIter, paUserInfo[i].wszUser, paUserInfo[i].ulLastSession, paUserInfo[i].cInteractiveProcesses);
                 }
-
-                bool fAddUser = false;
-                if (pUserInfo[i].ulNumProcs)
-                    fAddUser = true;
-
-                if (fAddUser)
+#endif
+                if (paUserInfo[i].cInteractiveProcesses > 0) /* (non-stale sessions only) */
                 {
                     VGSvcVerbose(3, "User '%ls' has %RU32 interactive processes (session=%RU32)\n",
-                                 pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, pUserInfo[i].ulLastSession);
-
-                    if (cUsersInList > 0)
-                    {
-                        rc = RTStrAAppend(&pszUserList, ",");
-                        AssertRCBreakStmt(rc, RTStrFree(pszUserList));
-                    }
-
-                    cUsersInList += 1;
+                                 paUserInfo[i].wszUser, paUserInfo[i].cInteractiveProcesses, paUserInfo[i].ulLastSession);
 
                     char *pszUser = NULL;
-                    char *pszDomain = NULL;
-                    rc = RTUtf16ToUtf8(pUserInfo[i].wszUser, &pszUser);
-                    if (   RT_SUCCESS(rc)
-                        && pUserInfo[i].wszLogonDomain)
-                        rc = RTUtf16ToUtf8(pUserInfo[i].wszLogonDomain, &pszDomain);
+                    rc = RTUtf16ToUtf8(paUserInfo[i].wszUser, &pszUser);
                     if (RT_SUCCESS(rc))
                     {
-                        /* Append user to users list. */
-                        rc = RTStrAAppend(&pszUserList, pszUser);
+                        VGSvcVMInfoAddUserToList(pUserGatherer, pszUser, "win", false /*fCheckUnique*/);
 
-                        /* Do idle detection. */
+                        char *pszDomain = NULL;
+                        if (paUserInfo[i].wszLogonDomain)
+                            rc = RTUtf16ToUtf8(paUserInfo[i].wszLogonDomain, &pszDomain);
                         if (RT_SUCCESS(rc))
+                        {
                             rc = vgsvcVMInfoWinWriteLastInput(pCache, pszUser, pszDomain);
+                            RTStrFree(pszDomain);
+                        }
+                        RTStrFree(pszUser);
                     }
                     else
-                        rc = RTStrAAppend(&pszUserList, "<string-conversion-error>");
-
-                    RTStrFree(pszUser);
-                    RTStrFree(pszDomain);
-
-                    AssertRCBreakStmt(rc, RTStrFree(pszUserList));
+                        VGSvcVMInfoAddUserToList(pUserGatherer, "<conv-error>", "win", false /*fCheckUnique*/);
+                    AssertRCBreak(rc); /** @todo is this sensible behaviour? */
                 }
             }
 
-            RTMemFree(pUserInfo);
+            RTMemTmpFree(paUserInfo);
         }
-        vgsvcVMInfoWinProcessesFree(cProcs, paProcs);
+        else
+        {
+            vgsvcVMInfoWinProcessesFree(cProcs, paProcs, pvExtra);
+            VGSvcError("Not enough memory to store unique users!\n");
+            rc = VERR_NO_MEMORY;
+        }
     }
+    else if (rc == VERR_NO_MEMORY)
+        VGSvcError("Not enough memory to enumerate processes\n");
+    else
+        VGSvcError("Failed to enumerate processes: rc=%Rrc\n", rc);
     if (paSessions)
         g_pfnLsaFreeReturnBuffer(paSessions);
 
-    if (RT_SUCCESS(rc))
-    {
-        *ppszUserList = pszUserList;
-        *pcUsersInList = cUsersInList;
-    }
-
-    s_uDebugIter++;
-    VbglR3GuestPropDisconnect(s_uDebugGuestPropClientID);
-
+#ifdef VGSVC_VMINFO_WIN_QUERY_USER_LIST_DEBUG
+    g_uDebugIter++;
+#endif
     return rc;
 }
 
 
-int VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID)
+
+/*********************************************************************************************************************************
+*   Populate /VirtualBox/GuestAdd/Components/                                                                                    *
+*********************************************************************************************************************************/
+
+/**
+ * Helper for vgsvcVMInfoWinGetFileVersion and attempts to read and parse
+ * FileVersion.
+ *
+ * @returns Success indicator.
+ */
+static bool vgsvcVMInfoWinGetFileVersionOwn(LPSTR pVerData, uint32_t *puMajor, uint32_t *puMinor,
+                                            uint32_t *puBuildNumber, uint32_t *puRevisionNumber)
+{
+    UINT    cchStrValue = 0;
+    LPTSTR  pStrValue   = NULL;
+    if (!VerQueryValueA(pVerData, "\\StringFileInfo\\040904b0\\FileVersion", (LPVOID *)&pStrValue, &cchStrValue))
+        return false;
+
+    char *pszNext = pStrValue;
+    int rc = RTStrToUInt32Ex(pszNext, &pszNext, 0, puMajor);
+    AssertReturn(rc == VWRN_TRAILING_CHARS, false);
+    AssertReturn(*pszNext == '.', false);
+
+    rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 0, puMinor);
+    AssertReturn(rc == VWRN_TRAILING_CHARS, false);
+    AssertReturn(*pszNext == '.', false);
+
+    rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 0, puBuildNumber);
+    AssertReturn(rc == VWRN_TRAILING_CHARS, false);
+    AssertReturn(*pszNext == '.', false);
+
+    rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 0, puRevisionNumber);
+    AssertReturn(rc == VINF_SUCCESS || rc == VWRN_TRAILING_CHARS /*??*/, false);
+
+    return true;
+}
+
+
+/**
+ * Gets version number and revision from the VS_FIXEDFILEINFO table of the given
+ * file, if found and present.
+ *
+ * @returns VBox status code.  Will always set the return variables to a value,
+ *           regardless of status code.
+ * @param   pszFilename         ASCII & ANSI & UTF-8 compliant name.
+ * @param   puMajor             Where to return the major version number.
+ * @param   puMinor             Where to return the minor version number.
+ * @param   puBuildNumber       Where to return the build number.
+ * @param   puRevisionNumber    Where to return the revision number.
+ */
+static int vgsvcVMInfoWinGetFileVersion(const char *pszFilename, uint32_t *puMajor, uint32_t *puMinor,
+                                        uint32_t *puBuildNumber, uint32_t *puRevisionNumber)
 {
     int rc;
-    char szSysDir[MAX_PATH] = {0};
-    char szWinDir[MAX_PATH] = {0};
-    char szDriversDir[MAX_PATH + 32] = {0};
 
-    /* ASSUME: szSysDir and szWinDir and derivatives are always ASCII compatible. */
-    GetSystemDirectory(szSysDir, MAX_PATH);
-    GetWindowsDirectory(szWinDir, MAX_PATH);
-    RTStrPrintf(szDriversDir, sizeof(szDriversDir), "%s\\drivers", szSysDir);
+    *puMajor = *puMinor = *puBuildNumber = *puRevisionNumber = 0;
+
+    /*
+     * Get the file version info.
+     */
+    DWORD dwHandleIgnored;
+    DWORD cbVerData = GetFileVersionInfoSizeA(pszFilename, &dwHandleIgnored);
+    if (cbVerData)
+    {
+        LPTSTR pVerData = (LPTSTR)RTMemTmpAllocZ(cbVerData);
+        if (pVerData)
+        {
+            if (GetFileVersionInfoA(pszFilename, dwHandleIgnored, cbVerData, pVerData))
+            {
+                /*
+                 * Try query and parse the FileVersion string our selves first
+                 * since this will give us the correct revision number when
+                 * it goes beyond the range of an uint16_t / WORD.
+                 */
+                if (vgsvcVMInfoWinGetFileVersionOwn(pVerData, puMajor, puMinor, puBuildNumber, puRevisionNumber))
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    /* Fall back on VS_FIXEDFILEINFO */
+                    UINT                 cbFileInfoIgnored = 0;
+                    VS_FIXEDFILEINFO    *pFileInfo = NULL;
+                    if (VerQueryValue(pVerData, "\\", (LPVOID *)&pFileInfo, &cbFileInfoIgnored))
+                    {
+                        *puMajor          = HIWORD(pFileInfo->dwFileVersionMS);
+                        *puMinor          = LOWORD(pFileInfo->dwFileVersionMS);
+                        *puBuildNumber    = HIWORD(pFileInfo->dwFileVersionLS);
+                        *puRevisionNumber = LOWORD(pFileInfo->dwFileVersionLS);
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        rc = RTErrConvertFromWin32(GetLastError());
+                        VGSvcVerbose(3, "No file version value for file '%s' available! (%d / rc=%Rrc)\n",
+                                     pszFilename,  GetLastError(), rc);
+                    }
+                }
+            }
+            else
+            {
+                rc = RTErrConvertFromWin32(GetLastError());
+                VGSvcVerbose(0, "GetFileVersionInfo(%s) -> %u / %Rrc\n", pszFilename, GetLastError(), rc);
+            }
+
+            RTMemTmpFree(pVerData);
+        }
+        else
+        {
+            VGSvcVerbose(0, "Failed to allocate %u byte for file version info for '%s'\n", cbVerData, pszFilename);
+            rc = VERR_NO_TMP_MEMORY;
+        }
+    }
+    else
+    {
+        rc = RTErrConvertFromWin32(GetLastError());
+        VGSvcVerbose(3, "GetFileVersionInfoSize(%s) -> %u / %Rrc\n", pszFilename, GetLastError(), rc);
+    }
+    return rc;
+}
+
+
+/**
+ * Called by vgsvcVMInfoWriteFixedProperties() to popuplate the
+ * "/VirtualBox/GuestAdd/Components/" area with file versions.
+ */
+int VGSvcVMInfoWinWriteComponentVersions(PVBGLGSTPROPCLIENT pClient)
+{
+    /*
+     * Gather the directories we need.
+     *
+     * The buffers are sized so that there will always be sufficent space
+     * to append the filename, so all we have to do it to append the filename
+     * before querying the information.
+     *
+     * ASSUME: szSysDir and szWinDir and derivatives are always ASCII compatible.
+     */
+#define IDX_DIR_SYSTEM32    0
+#define IDX_DIR_DRIVERS     1
 #ifdef RT_ARCH_AMD64
-    char szSysWowDir[MAX_PATH + 32] = {0};
-    RTStrPrintf(szSysWowDir, sizeof(szSysWowDir), "%s\\SysWow64", szWinDir);
+# define IDX_DIR_WOW64      2
+#endif
+    struct { char *pszDir; size_t cchDir; } aDirs[3] = { { NULL, 0 }, { NULL, 0 }, { NULL, 0 } };
+
+    char szSysDir[MAX_PATH + GUEST_PROP_MAX_NAME_LEN] = {0};
+    UINT const cchSysDir = GetSystemDirectory(szSysDir, MAX_PATH);
+    aDirs[IDX_DIR_SYSTEM32].pszDir = szSysDir;
+    aDirs[IDX_DIR_SYSTEM32].cchDir = cchSysDir;
+    Assert(strlen(aDirs[IDX_DIR_SYSTEM32].pszDir) == cchSysDir);
+
+    char szDriversDir[MAX_PATH + GUEST_PROP_MAX_NAME_LEN + 8] = {0};
+    memcpy(szDriversDir, szSysDir, cchSysDir);
+    memcpy(&szDriversDir[cchSysDir], "\\drivers", sizeof("\\drivers"));
+    aDirs[IDX_DIR_DRIVERS].pszDir  = szDriversDir;
+    aDirs[IDX_DIR_DRIVERS].cchDir  = cchSysDir + sizeof("\\drivers") - 1;
+    Assert(strlen(aDirs[IDX_DIR_DRIVERS].pszDir) == aDirs[IDX_DIR_DRIVERS].cchDir);
+
+#ifdef RT_ARCH_AMD64
+    char szWow64Dir[MAX_PATH + GUEST_PROP_MAX_NAME_LEN + 12] = {0};
+    UINT const cchWinDir = GetWindowsDirectory(szWow64Dir, MAX_PATH);
+    memcpy(&szWow64Dir[cchWinDir], "\\SysWow64", sizeof("\\SysWow64"));
+    aDirs[IDX_DIR_WOW64].pszDir    = szWow64Dir;
+    aDirs[IDX_DIR_WOW64].cchDir    = cchWinDir + sizeof("\\SysWow64") - 1;
+    Assert(strlen(aDirs[IDX_DIR_WOW64].pszDir) == aDirs[IDX_DIR_WOW64].cchDir);
 #endif
 
-    /* The file information table. */
-    const VBOXSERVICEVMINFOFILE aVBoxFiles[] =
+    /*
+     * The file information table.
+     * Note! The filename must be less than 30 chars long!
+     */
+    static struct { const char *pszFilename; uint32_t cchFilename; uint32_t idxDir; } const s_aVBoxFiles[] =
     {
-        { szSysDir,     "VBoxControl.exe" },
-        { szSysDir,     "VBoxHook.dll" },
-        { szSysDir,     "VBoxDisp.dll" },
-        { szSysDir,     "VBoxTray.exe" },
-        { szSysDir,     "VBoxService.exe" },
-        { szSysDir,     "VBoxMRXNP.dll" },
-        { szSysDir,     "VBoxGINA.dll" },
-        { szSysDir,     "VBoxCredProv.dll" },
-
- /* On 64-bit we don't yet have the OpenGL DLLs in native format.
-    So just enumerate the 32-bit files in the SYSWOW directory. */
+        /* \windows\system32: */
+        { RT_STR_TUPLE("VBoxControl.exe"),      IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxService.exe"),      IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxTray.exe"),         IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxHook.dll"),         IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxMRXNP.dll"),        IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxGINA.dll"),         IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxCredProv.dll"),     IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxDisp.dll"),         IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxDispD3D.dll"),      IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxDX.dll"),           IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxGL.dll"),           IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxNine.dll"),         IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxSVGA.dll"),         IDX_DIR_SYSTEM32 },
+        { RT_STR_TUPLE("VBoxOGL.dll"),          IDX_DIR_SYSTEM32 }, /* obsolete */
+        /* \windows\system32\drivers: */
+        { RT_STR_TUPLE("VBoxGuest.sys"),        IDX_DIR_DRIVERS },
+        { RT_STR_TUPLE("VBoxSF.sys"),           IDX_DIR_DRIVERS },
+        { RT_STR_TUPLE("VBoxMouse.sys"),        IDX_DIR_DRIVERS },
+        { RT_STR_TUPLE("VBoxVideo.sys"),        IDX_DIR_DRIVERS },
+        { RT_STR_TUPLE("VBoxWddm.sys"),         IDX_DIR_DRIVERS },
+        { RT_STR_TUPLE("VBoxMouseNT.sys"),      IDX_DIR_DRIVERS },  /* obsolete */
 #ifdef RT_ARCH_AMD64
-        { szSysWowDir,  "VBoxOGL-x86.dll" },
-#else  /* !RT_ARCH_AMD64 */
-        { szSysDir,     "VBoxOGL.dll" },
-#endif /* !RT_ARCH_AMD64 */
-
-        { szDriversDir, "VBoxGuest.sys" },
-        { szDriversDir, "VBoxMouseNT.sys" },
-        { szDriversDir, "VBoxMouse.sys" },
-        { szDriversDir, "VBoxSF.sys"    },
-        { szDriversDir, "VBoxVideo.sys" },
+        /* \windows\wow64: */
+        { RT_STR_TUPLE("VBoxMRXNP-x86.dll"),    IDX_DIR_WOW64 },
+        { RT_STR_TUPLE("VBoxDispD3D-x86.dll"),  IDX_DIR_WOW64 },
+        { RT_STR_TUPLE("VBoxDX-x86.dll"),       IDX_DIR_WOW64 },
+        { RT_STR_TUPLE("VBoxGL-x86.dll"),       IDX_DIR_WOW64 },
+        { RT_STR_TUPLE("VBoxNine-x86.dll"),     IDX_DIR_WOW64 },
+        { RT_STR_TUPLE("VBoxSVGA-x86.dll"),     IDX_DIR_WOW64 },
+        { RT_STR_TUPLE("VBoxOGL-x86.dll"),      IDX_DIR_WOW64 },    /* obsolete*/
+#endif
     };
 
-    for (unsigned i = 0; i < RT_ELEMENTS(aVBoxFiles); i++)
+    /* Preparet the base property name. */
+    static char const s_szPropPrefix[] = "/VirtualBox/GuestAdd/Components/";
+    char              szPropPath[GUEST_PROP_MAX_NAME_LEN];
+    AssertCompile(sizeof("VBoxDispD3D-x86.dll") + sizeof(s_szPropPrefix) + 8 < sizeof(szPropPath));
+    memcpy(szPropPath, s_szPropPrefix, sizeof(s_szPropPrefix));
+    char * const      pszPropName      = &szPropPath[sizeof(s_szPropPrefix) - 1];
+    size_t const      cbMaxPropName    = sizeof(szPropPath) - sizeof(s_szPropPrefix) + 1;
+
+    /* Loop thru the file table and publish the info we find. */
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aVBoxFiles); i++)
     {
-        char szVer[128];
-        rc = VGSvcUtilWinGetFileVersionString(aVBoxFiles[i].pszFilePath, aVBoxFiles[i].pszFileName, szVer, sizeof(szVer));
-        char szPropPath[256];
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestAdd/Components/%s", aVBoxFiles[i].pszFileName);
-        if (   rc != VERR_FILE_NOT_FOUND
-            && rc != VERR_PATH_NOT_FOUND)
-            VGSvcWritePropF(uClientID, szPropPath, "%s", szVer);
+        AssertRelease(s_aVBoxFiles[i].cchFilename < cbMaxPropName);
+        memcpy(pszPropName, s_aVBoxFiles[i].pszFilename, s_aVBoxFiles[i].cchFilename + 1);
+
+        char * const pszPath = aDirs[s_aVBoxFiles[i].idxDir].pszDir;
+        size_t const cchDir  = aDirs[s_aVBoxFiles[i].idxDir].cchDir;
+        pszPath[cchDir] = '\\';
+        memcpy(&pszPath[cchDir + 1], s_aVBoxFiles[i].pszFilename, s_aVBoxFiles[i].cchFilename + 1);
+        Assert(strlen(pszPath) == cchDir + 1 + s_aVBoxFiles[i].cchFilename);
+
+        uint32_t uMajor, uMinor, uBuild, uRev;
+        int rc = vgsvcVMInfoWinGetFileVersion(pszPath, &uMajor, &uMinor, &uBuild, &uRev);
+        if (RT_SUCCESS(rc))
+        {
+            char szVer[128];
+            RTStrPrintf(szVer, sizeof(szVer), "%u.%u.%ur%u", uMajor, uMinor, uBuild, uRev);
+            VGSvcWriteProp(pClient, szPropPath, szVer);
+        }
         else
-            VGSvcWritePropF(uClientID, szPropPath, NULL);
+            VGSvcWriteProp(pClient, szPropPath, NULL);
     }
 
     return VINF_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   Interface IP change monitoring.                                                                                              *
+*********************************************************************************************************************************/
+static bool volatile    g_fVGSvcVMInfoWinIpChangeShutdown = false;
+static RTTHREAD         g_hVGSvcVMInfoWinIpChangeThread   = NIL_RTTHREAD;
+static HANDLE           g_hVGSvcVMInfoWinIpChangeEvent    = NULL;
+static OVERLAPPED       g_VGSvcVMInfoWinIpChangeOverlapped;
+
+/**
+ * Initialize the windows specific stuff.
+ *
+ * Called by vgsvcVMInfoInit().
+ */
+void VGSvcVMInfoWinInit(void)
+{
+    RTOnce(&g_vgsvcWinVmInitOnce, vgsvcWinVmInfoInitOnce, NULL);
+
+    if (g_pfnCancelIPChangeNotify && g_pfnNotifyAddrChange)
+        g_hVGSvcVMInfoWinIpChangeEvent = CreateEventW(NULL /*pSecAttribs*/,  FALSE /*fManualReset*/,
+                                                      FALSE /*fInitialState*/, NULL /*pwszName*/);
+    else
+        g_hVGSvcVMInfoWinIpChangeEvent = NULL;
+}
+
+
+/**
+ * @callback_method_impl{FNRTTHREAD,
+ *      Thread waiting for network interface change notifications.}
+ *
+ * This thread will signal the main vminfo service thread to update the
+ * properties after a change notification comes in.  For paranoid reasons,
+ * it adds a slight (0.5s) delay before doing so, which is one of the reasons
+ * why we're using a separate thread for this. (Another reason is to keep the
+ * main service code as similar as possible across guest OSes and not do ugly
+ * windows specific waiting logic.)
+ */
+static DECLCALLBACK(int) vgsvcVMInfoWinIfIpChangeThread(RTTHREAD ThreadSelf, void *pvUser)
+{
+    VGSvcVerbose(3, "Starting...\n");
+    bool volatile *pfShutdown = (bool volatile *)pvUser;
+    RT_NOREF(ThreadSelf);
+
+    /* Required for network information (must be called per thread). */
+    if (g_pfnWSAStartup)
+    {
+        WSADATA wsaData;
+        RT_ZERO(wsaData);
+        if (g_pfnWSAStartup(MAKEWORD(2, 2), &wsaData))
+            VGSvcError("VMInfo/Win/IfIpChange: WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(g_pfnWSAGetLastError()));
+    }
+
+    /*
+     * Loop till we're told to shut down.
+     */
+    bool fIsPending = false;
+    while (!*pfShutdown && !g_fVGSvcVMInfoWinIpChangeShutdown)
+    {
+        /*
+         * Queue the notification request (it's just an async I/O control call).
+         */
+        if (!fIsPending)
+        {
+            RT_ZERO(g_VGSvcVMInfoWinIpChangeOverlapped);
+            g_VGSvcVMInfoWinIpChangeOverlapped.hEvent = g_hVGSvcVMInfoWinIpChangeEvent;
+            HANDLE      hIgnored = NULL;
+            DWORD const rc       = g_pfnNotifyAddrChange(&hIgnored, &g_VGSvcVMInfoWinIpChangeOverlapped);
+            if (rc == ERROR_IO_PENDING)
+            {
+                VGSvcVerbose(4, "Giving g_pfnNotifyAddrChange returns ERROR_IO_PENDING as expected.\n");
+                fIsPending = true;
+            }
+            else if (rc == NO_ERROR)
+            {
+                VGSvcVerbose(4, "Giving g_pfnNotifyAddrChange returns NO_ERROR\n");
+                SetEvent(g_hVGSvcVMInfoWinIpChangeEvent); /* paranoia */
+            }
+            else if (rc != NO_ERROR || rc != ERROR_CANCELLED)
+            {
+                VGSvcVerbose(1, "Giving up because g_pfnNotifyAddrChange failed: %u (%#x)\n", rc, rc);
+                break;
+            }
+
+            if (*pfShutdown || g_fVGSvcVMInfoWinIpChangeShutdown)
+                break;
+        }
+
+        /*
+         * Wait for it to complete.
+         */
+        DWORD const rcWait = WaitForSingleObjectEx(g_hVGSvcVMInfoWinIpChangeEvent, INFINITE, TRUE /*bAlertable*/);
+        VGSvcVerbose(5, "WaitForSingleObjectEx returns: %#x\n", rcWait);
+        if (*pfShutdown || g_fVGSvcVMInfoWinIpChangeShutdown)
+            break;
+        if (rcWait == WAIT_OBJECT_0)
+        {
+            /*
+             * The async NotifyAddrChange call completed, so notify the main service
+             * thread so it can refresh the interfaces.
+             *
+             * Because we're a little paranoid, we delay half a second before doing it.
+             * This has two reasons, first avoiding spinning at 100% CPU should this
+             * code go nuts, and second to let the change settle a little.
+             */
+            fIsPending = false;
+            if (   WaitForSingleObjectEx(g_hVGSvcVMInfoWinIpChangeEvent, 500, TRUE /*bAlertable*/) != WAIT_TIMEOUT
+                && !g_fVGSvcVMInfoWinIpChangeShutdown
+                && !*pfShutdown)
+                RTThreadSleep(500);
+            if (*pfShutdown || g_fVGSvcVMInfoWinIpChangeShutdown)
+                break;
+            VGSvcVerbose(3, "Signalling vminfo thread...\n");
+            VGSvcVMInfoSignal();
+        }
+        else if (   rcWait != WAIT_IO_COMPLETION
+                 && rcWait != WAIT_TIMEOUT /* impossible */)
+        {
+            VGSvcError("WaitForSingleObjectEx failed: %u (%#x), last error %u\n", rcWait, rcWait, GetLastError());
+            break;
+        }
+    }
+
+    /*
+     * Cleanup.
+     */
+    if (fIsPending)
+    {
+        if (!g_pfnCancelIPChangeNotify(&g_VGSvcVMInfoWinIpChangeOverlapped))
+            VGSvcError("CancelIPChangeNotify failed!\n");
+    }
+
+    VGSvcVerbose(3, "Terminating.\n");
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The worker thread is starting.
+ *
+ * Called by vgsvcVMInfoWorker().
+ */
+void VGSvcVMInfoWinWorkerStarting(bool volatile *pfShutdown)
+{
+    /*
+     * If all the preconditions are present, start the waiter thread.
+     */
+    g_fVGSvcVMInfoWinIpChangeShutdown = false;
+    if (   g_pfnCancelIPChangeNotify
+        && g_pfnNotifyAddrChange
+        && g_hVGSvcVMInfoWinIpChangeEvent)
+    {
+        int rc = RTThreadCreate(&g_hVGSvcVMInfoWinIpChangeThread, vgsvcVMInfoWinIfIpChangeThread, (void *)pfShutdown,
+                                0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "if-wait");
+        if (RT_FAILURE(rc))
+        {
+            g_hVGSvcVMInfoWinIpChangeThread = NIL_RTTHREAD;
+            VGSvcError("RTThreadCreate failed: %Rrc\n", rc);
+        }
+    }
+}
+
+
+/**
+ * The worker thread is stopping.
+ *
+ * Called by vgsvcVMInfoWorker().
+ */
+void VGSvcVMInfoWinWorkerStopping()
+{
+    if (g_hVGSvcVMInfoWinIpChangeThread != NIL_RTTHREAD)
+    {
+        /* Make the thread quit. */
+        ASMAtomicWriteBool(&g_fVGSvcVMInfoWinIpChangeShutdown, true);
+        SetEvent(g_hVGSvcVMInfoWinIpChangeEvent);
+
+        /* Wait for it to do so. */
+        int rc = RTThreadWait(g_hVGSvcVMInfoWinIpChangeThread, RT_MS_10SEC, NULL);
+        if (RT_SUCCESS(rc))
+            g_hVGSvcVMInfoWinIpChangeThread = NIL_RTTHREAD;
+    }
+}
+
+
+/**
+ * Signal that the worker thread should stop.
+ *
+ * Called by vgsvcVMInfoStop().
+ */
+void VGSvcVMInfoWinStop(void)
+{
+    if (g_hVGSvcVMInfoWinIpChangeThread != NIL_RTTHREAD)
+    {
+        ASMAtomicWriteBool(&g_fVGSvcVMInfoWinIpChangeShutdown, true);
+        SetEvent(g_hVGSvcVMInfoWinIpChangeEvent);
+    }
+}
+
+
+/**
+ * Terminate - cleanup stuff.
+ *
+ * Called by vgsvcVMInfoTerm().
+ */
+void VGSvcVMInfoWinTerm(void)
+{
+    if (g_hVGSvcVMInfoWinIpChangeThread != NIL_RTTHREAD)
+        VGSvcVMInfoWinWorkerStopping();
 }
 

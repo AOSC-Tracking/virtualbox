@@ -102,6 +102,12 @@ private slots:
        void sltMinimumHeightHintChanged(int iHint);
    /** @} */
 
+   /** @name Theme stuff stuff.
+     * @{ */
+       /** Updates palette. */
+       void sltUpdatePalette() { preparePalette(); }
+   /** @} */
+
 private:
 
     /** @name Prepare/Cleanup cascade.

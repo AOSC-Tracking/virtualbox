@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172152 $"
 
 # Validation Kit imports.
 from common.webutils                    import escapeAttr, escapeElem;
@@ -76,10 +76,8 @@ class WuiHlpBarGraph(WuiHlpGraphBase):
         for i in range(1, len(aoTable)):
             for oValue in aoTable[i].aoValues:
                 fpValue = float(oValue);
-                if fpValue < fpMin:
-                    fpMin = fpValue;
-                if fpValue > fpMax:
-                    fpMax = fpValue;
+                fpMin   = min(fpMin, fpValue);
+                fpMax   = max(fpMax, fpValue);
         assert fpMin >= 0;
 
         # Format the data.

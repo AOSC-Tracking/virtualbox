@@ -160,6 +160,7 @@ static DECLCALLBACK(int) vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
     {
         PVSCSIVPDPAGESUPPORTEDPAGES pVpdPages;
 
+        cVpdPages++;
         rc = vscsiVpdPagePoolAllocNewPage(&pVScsiLunSbc->VpdPagePool, VSCSI_VPD_SUPPORTED_PAGES_NUMBER,
                                           VSCSI_VPD_SUPPORTED_PAGES_SIZE + cVpdPages, (uint8_t **)&pVpdPages);
         if (RT_SUCCESS(rc))
@@ -169,6 +170,7 @@ static DECLCALLBACK(int) vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
             pVpdPages->u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
             pVpdPages->u16PageLength          = RT_H2BE_U16(cVpdPages);
 
+            pVpdPages->abVpdPages[idxVpdPage++] = VSCSI_VPD_SUPPORTED_PAGES_NUMBER;
             pVpdPages->abVpdPages[idxVpdPage++] = VSCSI_VPD_DEVID_NUMBER;
 
             if (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_UNMAP)
@@ -213,7 +215,9 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             /* Check for EVPD bit. */
             if (pVScsiReq->pbCDB[1] & 0x1)
             {
-                rc = vscsiVpdPagePoolQueryPage(&pVScsiLunSbc->VpdPagePool, pVScsiReq, pVScsiReq->pbCDB[2]);
+                uint16_t cbDataReq = scsiBE2H_U16(&pVScsiReq->pbCDB[3]);
+
+                rc = vscsiVpdPagePoolQueryPage(&pVScsiLunSbc->VpdPagePool, pVScsiReq, pVScsiReq->pbCDB[2], cbDataReq);
                 if (RT_UNLIKELY(rc == VERR_NOT_FOUND))
                 {
                     rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
@@ -598,11 +602,10 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         LogFlow(("%s: uLbaStart=%llu cSectorTransfer=%u\n",
                  __FUNCTION__, uLbaStart, cSectorTransfer));
 
-        vscsiReqSetXferSize(pVScsiReq, cSectorTransfer * 512);
-
         if (RT_UNLIKELY(uLbaStart + cSectorTransfer > pVScsiLunSbc->cSectors))
         {
             vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_NONE);
+            vscsiReqSetXferSize(pVScsiReq, 0);
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
             vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
         }
@@ -610,6 +613,7 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         {
             /* A 0 transfer length is not an error. */
             vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_NONE);
+            vscsiReqSetXferSize(pVScsiReq, 0);
             rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
         }
@@ -620,12 +624,15 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                     || enmTxDir == VSCSIIOREQTXDIR_FLUSH)
                 && (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_READONLY))
             {
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_NONE);
+                vscsiReqSetXferSize(pVScsiReq, 0);
                 rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_DATA_PROTECT, SCSI_ASC_WRITE_PROTECTED, 0x00);
                 vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
             }
             else
             {
                 vscsiReqSetXferDir(pVScsiReq, enmTxDir == VSCSIIOREQTXDIR_WRITE ? VSCSIXFERDIR_I2T : VSCSIXFERDIR_T2I);
+                vscsiReqSetXferSize(pVScsiReq, cSectorTransfer * 512);
                 rc = vscsiIoReqTransferEnqueue(pVScsiLun, pVScsiReq, enmTxDir,
                                                uLbaStart * 512, cSectorTransfer * 512);
             }

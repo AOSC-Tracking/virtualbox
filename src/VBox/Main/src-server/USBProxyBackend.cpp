@@ -313,7 +313,7 @@ int USBProxyBackend::stop(void)
         /*
          * Mark the thread for termination and kick it.
          */
-        ASMAtomicXchgSize(&mTerminate, true);
+        ASMAtomicWriteSize(&mTerminate, true);
         vrc = interruptWait();
         AssertRC(vrc);
 

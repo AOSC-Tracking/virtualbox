@@ -214,16 +214,16 @@ typedef struct
 #define ELF64_ST_INFO(bind, type)   (((bind) << 4) + ((type) & 0xf))
 
 /** Relocation type. */
-#define ELF64_R_TYPE(info)          ((unsigned char)(info))
+#define ELF64_R_TYPE(info)          ((uint32_t)(info))
 /** Relocation symbol index. */
 #define ELF64_R_SYM(info)           ((info) >> 32)
 /** Make r_info given the symbol index and type.  */
-#define ELF64_R_INFO(sym, type)     (((sym) << 32) + (unsigned char)(type))
+#define ELF64_R_INFO(sym, type)     (((sym) << 32) + (uint32_t)(type))
 
 /** The symbol's visibility. */
 #define ELF64_ST_VISIBILITY(other)  ((other) & 0x03)
-/** Make st_other given the visbility. */
-#define ELF64_ST_OTHER(visbility)   ((visbility) & 0x03)
+/** Make st_other given the visibility. */
+#define ELF64_ST_OTHER(visibility)   ((visibility) & 0x03)
 
 #endif /* !IPRT_INCLUDED_formats_elf64_h */
 

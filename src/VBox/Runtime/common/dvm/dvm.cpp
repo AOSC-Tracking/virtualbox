@@ -168,18 +168,34 @@ AssertCompile(RT_ELEMENTS(g_apszDvmVolTypes) == RTDVMVOLTYPE_END);
  */
 DECLHIDDEN(int) rtDvmDiskReadUnaligned(PCRTDVMDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
 {
+    size_t       cbTmpBuf;
+    uint64_t     offStart;
     size_t const cbSector = (size_t)pDisk->cbSector;
-    size_t const offDelta = off    % cbSector;
-    size_t const cbDelta  = cbRead % cbSector;
-    if (!cbDelta && !offDelta)
-        return rtDvmDiskRead(pDisk, off, pvBuf, cbRead);
+    size_t const offDelta = off % cbSector;
+    if (!offDelta)
+    {
+        size_t const cbDelta = cbRead % cbSector;
+        if (!cbDelta)
+            return rtDvmDiskRead(pDisk, off, pvBuf, cbRead);
+
+        offStart = off;
+        cbTmpBuf = cbRead + (cbSector - cbDelta);
+    }
+    else
+    {
+        uint64_t     offEnd  = off + cbRead;
+        size_t const cbDelta = offEnd % cbSector;
+        if (cbDelta)
+            offEnd += cbSector - cbDelta;
+        offStart = off - offDelta;
+        cbTmpBuf = offEnd - offStart;
+    }
 
     int rc;
-    size_t cbExtra = offDelta + (cbDelta ? cbSector - cbDelta: 0);
-    uint8_t *pbTmpBuf = (uint8_t *)RTMemTmpAlloc(cbRead + cbExtra);
+    uint8_t *pbTmpBuf = (uint8_t *)RTMemTmpAlloc(cbTmpBuf);
     if (pbTmpBuf)
     {
-        rc = rtDvmDiskRead(pDisk, off - offDelta, pbTmpBuf, cbRead + cbExtra);
+        rc = rtDvmDiskRead(pDisk, offStart, pbTmpBuf, cbTmpBuf);
         if (RT_SUCCESS(rc))
             memcpy(pvBuf, &pbTmpBuf[offDelta], cbRead);
         else

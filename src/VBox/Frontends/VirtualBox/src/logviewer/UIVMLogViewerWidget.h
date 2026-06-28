@@ -127,7 +127,7 @@ private slots:
 
     void sltPanelActionToggled(bool fChecked);
     /** Handles the search result highlight changes. */
-    void sltSearchResultHighLigting();
+    void sltSearchResultHighlighting();
     void sltHandleSearchUpdated();
     /** Handles the tab change of the logviewer. */
     void sltCurrentTabChanged(int tabIndex);

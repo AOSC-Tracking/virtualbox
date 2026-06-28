@@ -469,9 +469,15 @@ BEGINPROC TestProc64
         shlx   r8, rax, r15
 
         pmovmskb eax, mm2
+%ifdef __YASM__
         pmovmskb r9, mm2
+%endif
+        pmovmskb r9d, mm2
         pmovmskb eax, xmm3
+%ifdef __YASM__
         pmovmskb r10, xmm3
+%endif
+        pmovmskb r10d, xmm3
         vpmovmskb eax, xmm3
         vpmovmskb rax, xmm3
         vpmovmskb r11, ymm9
@@ -542,7 +548,7 @@ BEGINPROC TestProc64
         xend
         xtest
         enclu
-        swpgs
+        swapgs
         rdtscp
         rdfsbase rax
         wrgsbase r15

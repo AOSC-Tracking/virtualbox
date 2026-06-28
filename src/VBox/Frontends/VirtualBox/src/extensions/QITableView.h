@@ -50,9 +50,14 @@ class SHARED_LIBRARY_STUFF QITableViewCell : public QObject
 
 public:
 
-    /** Constructs table-view cell for passed @a pParentRow. */
-    QITableViewCell(QITableViewRow *pParentRow)
+    /** Acquires QITableViewCell* from passed @a idx. */
+    static QITableViewCell *toCell(const QModelIndex &idx);
+
+    /** Constructs table-view cell for passed @a pParentRow.
+      * @param  strText  Brings the cell text (optionally). */
+    QITableViewCell(QITableViewRow *pParentRow, const QString &strText = QString())
         : m_pRow(pParentRow)
+        , m_strText(strText)
     {}
 
     /** Defines the parent @a pRow reference. */
@@ -61,12 +66,17 @@ public:
     QITableViewRow *row() const { return m_pRow; }
 
     /** Returns the cell text. */
-    virtual QString text() const = 0;
+    QString text() const { return m_strText; }
+    /** Defines the cell @a strText. */
+    void setText(const QString &strText) { m_strText = strText; }
 
 private:
 
     /** Holds the parent row reference. */
     QITableViewRow *m_pRow;
+
+    /** Holds the cell text. */
+    QString  m_strText;
 };
 
 
@@ -76,6 +86,9 @@ class SHARED_LIBRARY_STUFF QITableViewRow : public QObject
     Q_OBJECT;
 
 public:
+
+    /** Acquires QITableViewRow* from passed @a idx. */
+    static QITableViewRow *toRow(const QModelIndex &idx);
 
     /** Constructs table-view row for passed @a pParentTable. */
     QITableViewRow(QITableView *pParentTable)
@@ -108,6 +121,8 @@ signals:
 
     /** Notifies listeners about index changed from @a previous to @a current. */
     void sigCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
+    /** Notifies listeners about selection changed from @a deselected to @a selected. */
+    void sigSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 
 public:
 
@@ -116,27 +131,36 @@ public:
     /** Destructs table-view. */
     virtual ~QITableView() RT_OVERRIDE;
 
+    /** Returns the number of children. */
+    int count() const;
+    /** Returns the child item with @a iIndex. */
+    QITableViewRow *child(int iIndex) const;
+
+    /** Returns current cell. */
+    QITableViewCell *currentCell() const;
+    /** Returns current row. */
+    QITableViewRow *currentRow() const;
+
     /** Makes sure current editor data committed. */
     void makeSureEditorDataCommitted();
 
-protected slots:
-
-    /** Stores the created @a pEditor for passed @a index in the map. */
-    virtual void sltEditorCreated(QWidget *pEditor, const QModelIndex &index);
-    /** Clears the destoyed @a pEditor from the map. */
-    virtual void sltEditorDestroyed(QObject *pEditor);
-
 protected:
 
-    /** Handles index change from @a previous to @a current. */
-    virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) RT_OVERRIDE;
+    /** This slot is called when a new item becomes the current item.
+      * The previous current item is specified by the @a previous index, and the new item by the @a current index. */
+    virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) RT_OVERRIDE RT_FINAL;
+    /** This slot is called when the selection is changed.
+      * The previous selection (which may be empty), is specified by @a deselected, and the new selection by @a selected. */
+    virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) RT_OVERRIDE RT_FINAL;
+
+private slots:
+
+    /** Stores the created @a pEditor for passed @a index in the map. */
+    void sltEditorCreated(QWidget *pEditor, const QModelIndex &index);
+    /** Clears the destoyed @a pEditor from the map. */
+    void sltEditorDestroyed(QObject *pEditor);
 
 private:
-
-    /** Prepares all. */
-    void prepare();
-    /** Cleanups all. */
-    void cleanup();
 
     /** Holds the map of editors stored for passed indexes. */
     QMap<QModelIndex, QObject*> m_editors;

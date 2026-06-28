@@ -74,7 +74,7 @@ int USBProxyBackendWindows::init(USBProxyService *aUsbProxyService, const com::U
      * Create the semaphore (considered fatal).
      */
     mhEventInterrupt = CreateEvent(NULL, FALSE, FALSE, NULL);
-    AssertReturn(mhEventInterrupt != INVALID_HANDLE_VALUE, VERR_OUT_OF_RESOURCES);
+    AssertReturn(mhEventInterrupt != INVALID_HANDLE_VALUE && mhEventInterrupt != NULL, VERR_OUT_OF_RESOURCES);
 
     /*
      * Initialize the USB lib and stuff.

@@ -434,7 +434,7 @@ static RTEXITCODE s2gParseArguments(PS2GCTX pThis, int argc, char **argv)
             case 'V':
             {
                 /* The following is assuming that svn does it's job here. */
-                static const char s_szRev[] = "$Revision: 170013 $";
+                static const char s_szRev[] = "$Revision: 171320 $";
                 const char *psz = RTStrStripL(strchr(s_szRev, ' '));
                 RTMsgInfo("r%.*s\n", strchr(psz, ' ') - psz, psz);
                 return RTEXITCODE_SUCCESS;
@@ -1781,32 +1781,34 @@ static RTEXITCODE s2gSvnExportSinglePath(PS2GCTX pThis, PS2GSVNREV pRev, const c
                         && fIsEmpty
                         && !fHasIgnores)
                         rcExit = s2gSvnAddGitIgnore(pThis, pszGitPath, NULL /*pvData*/, 0 /*cbData*/);
-
-                    /*
-                     * Need to delete .gitignore in the parent if the directory doesn't has svn:ignores set
-                     * and there is no .gitignore in the tree.
-                     */
-                    char szSvnPath[RTPATH_MAX];
-                    RTStrCopy(szSvnPath, sizeof(szSvnPath), pszSvnPath);
-                    RTPathStripFilename(szSvnPath);
-
-                    bool fHasGitIgnore = false;
-                    rcExit = s2gSvnHasGitIgnore(pRev, szSvnPath, &fHasGitIgnore);
-                    if (   rcExit == RTEXITCODE_SUCCESS
-                        && !fHasGitIgnore)
+                    if (rcExit == RTEXITCODE_SUCCESS)
                     {
-                        rcExit = s2gSvnHasIgnores(pRev, szSvnPath, &fHasIgnores);
-                        if (   rcExit == RTEXITCODE_SUCCESS
-                            && !fHasIgnores)
-                        {
-                            char szGitPath[RTPATH_MAX];
-                            RTStrCopy(szGitPath, sizeof(szGitPath), pszGitPath);
-                            RTPathStripFilename(szGitPath);
-                            RTStrCat(szGitPath, sizeof(szGitPath), "/.gitignore");
+                        /*
+                         * Need to delete .gitignore in the parent if the directory doesn't has svn:ignores set
+                         * and there is no .gitignore in the tree.
+                         */
+                        char szSvnPath[RTPATH_MAX];
+                        RTStrCopy(szSvnPath, sizeof(szSvnPath), pszSvnPath);
+                        RTPathStripFilename(szSvnPath);
 
-                            int rc = s2gGitTransactionFileRemove(pThis->hGitRepo, szGitPath);
-                            if (RT_FAILURE(rc))
-                                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to remove '%s' from git repository", szGitPath);
+                        bool fHasGitIgnore = false;
+                        rcExit = s2gSvnHasGitIgnore(pRev, szSvnPath, &fHasGitIgnore);
+                        if (   rcExit == RTEXITCODE_SUCCESS
+                            && !fHasGitIgnore)
+                        {
+                            rcExit = s2gSvnHasIgnores(pRev, szSvnPath, &fHasIgnores);
+                            if (   rcExit == RTEXITCODE_SUCCESS
+                                && !fHasIgnores)
+                            {
+                                char szGitPath[RTPATH_MAX];
+                                RTStrCopy(szGitPath, sizeof(szGitPath), pszGitPath);
+                                RTPathStripFilename(szGitPath);
+                                RTStrCat(szGitPath, sizeof(szGitPath), "/.gitignore");
+
+                                int rc = s2gGitTransactionFileRemove(pThis->hGitRepo, szGitPath);
+                                if (RT_FAILURE(rc))
+                                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to remove '%s' from git repository", szGitPath);
+                            }
                         }
                     }
                 }
@@ -2249,6 +2251,7 @@ static RTEXITCODE s2gSvnExportRevision(PS2GCTX pThis, uint32_t idRev)
                             Rev.pszGitAuthor      = &achAuthorInfo[0];
 
                             /* Now the E-Mail. */
+                            pszGithubMerge++; /* Skip < */
                             Rev.pszGitAuthorEmail = &achAuthorInfo[cchAuthorInfo];
                             while (*pszGithubMerge != '>')
                                 achAuthorInfo[cchAuthorInfo++] = *pszGithubMerge++;
@@ -2737,7 +2740,6 @@ static RTEXITCODE s2gSvnVerifyBlob(PS2GCTX pThis, PCS2GSVNREV pRev, const char *
         {
             /* Determine stream length, due to substitutions this is  almost always different compared to what svn reports. */
             s2gScratchBufReset(&pThis->BufScratch);
-            uint64_t cbFile = 0;
             for (;;)
             {
                 void *pv = s2gScratchBufEnsureSize(&pThis->BufScratch, _4K);
@@ -2746,8 +2748,6 @@ static RTEXITCODE s2gSvnVerifyBlob(PS2GCTX pThis, PCS2GSVNREV pRev, const char *
                 if (pSvnErr)
                     break;
                 s2gScratchBufAdvance(&pThis->BufScratch, cbThisRead);
-
-                cbFile += cbThisRead;
                 if (cbThisRead < _4K)
                     break;
             }

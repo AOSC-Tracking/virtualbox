@@ -300,9 +300,7 @@ SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession)
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
-        const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00340000
-                                   ? 0x00340001
-                                   : SUPDRV_IOC_VERSION & 0xffff0000;
+        const uint32_t uMinVersion = SUPDRV_IOC_VERSION;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
         if (    RT_SUCCESS(rc)
@@ -1129,7 +1127,7 @@ static int supPagePageAllocNoKernelFallback(size_t cPages, void **ppvPages, PSUP
     int rc = suplibOsPageAlloc(&g_supLibData, cPages, 0, ppvPages);
     if (RT_SUCCESS(rc))
     {
-        Assert(ASMMemIsZero(*ppvPages, cPages << PAGE_SHIFT));
+        Assert(ASMMemIsZero(*ppvPages, cPages << RTSystemGetPageShift()));
         if (!paPages)
             paPages = (PSUPPAGE)alloca(sizeof(paPages[0]) * cPages);
         rc = supR3PageLock(*ppvPages, cPages, paPages);
@@ -1216,13 +1214,13 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
                 if (pR0Ptr)
                 {
                     *pR0Ptr = pReq->u.Out.pvR0;
-                    Assert(ASMMemIsZero(pReq->u.Out.pvR3, cPages << PAGE_SHIFT));
+                    Assert(ASMMemIsZero(pReq->u.Out.pvR3, cPages << RTSystemGetPageShift()));
 #ifdef RT_OS_DARWIN /* HACK ALERT! */
                     supR3TouchPages(pReq->u.Out.pvR3, cPages);
 #endif
                 }
                 else
-                    RT_BZERO(pReq->u.Out.pvR3, cPages << PAGE_SHIFT);
+                    RT_BZERO(pReq->u.Out.pvR3, cPages << RTSystemGetPageShift());
 
                 if (paPages)
                     for (size_t iPage = 0; iPage < cPages; iPage++)
@@ -1259,8 +1257,8 @@ SUPR3DECL(int) SUPR3PageMapKernel(void *pvR3, uint32_t off, uint32_t cb, uint32_
      */
     AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
     AssertPtrReturn(pR0Ptr, VERR_INVALID_POINTER);
-    Assert(!(off & PAGE_OFFSET_MASK));
-    Assert(!(cb & PAGE_OFFSET_MASK) && cb);
+    Assert(!(off & RTSystemGetPageOffsetMask()));
+    Assert(!(cb & RTSystemGetPageOffsetMask()) && cb);
     Assert(!fFlags);
     *pR0Ptr = NIL_RTR0PTR;
 
@@ -2331,8 +2329,8 @@ SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAn
 }
 
 #endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
-
 #ifdef RT_ARCH_ARM64
+
 SUPR3DECL(int) SUPR3ArmQuerySysRegs(RTCPUID idCpu, uint32_t fFlags, uint32_t cMaxRegs,
                                     uint32_t *pcRegsReturned, uint32_t *pcRegsAvailable, PSUPARMSYSREGVAL paSysRegValues)
 {
@@ -2379,6 +2377,86 @@ SUPR3DECL(int) SUPR3ArmQuerySysRegs(RTCPUID idCpu, uint32_t fFlags, uint32_t cMa
     RTMemTmpFree(pReq);
     return rc;
 }
+
+
+/**
+ * Gets a collection of ARM system registers useful for identify
+ * CPU capatbilites.
+ *
+ * @returns VBox status code.
+ * @param   idCpu               The CPU to query the registers on, NIL_RTCPUID
+ *                              if any will do.
+ * @param   cMaxEntries         Maximum number of entries @a paEntries may hold.
+ * @param   pcEntriesReturned   Number of entries returned.
+ * @param   pcEntriesAvailable  Number of entries available, optional. If higher
+ *                              than @a *pcEntriesReturned, try again with an
+ *                              array of this size to get them all.
+ * @param   paEntries           Array where to store the cache level information
+ *                              entries.
+ * @param   puCacheLevelIdReg   The value of the CLIDR_EL1 register. Optional.
+ * @param   puCacheTypeReg      The value of the CTR_EL0 register. Optional.
+ * @param   puDataCacheZeroId   The value of the DCZID_EL0 register. Optional.
+ */
+SUPR3DECL(int) SUPR3ArmQueryCacheInfo(RTCPUID idCpu, uint32_t cMaxEntries,
+                                      uint64_t *puCacheLevelIdReg, uint64_t *puCacheTypeReg, uint64_t *puDataCacheZeroId,
+                                      uint32_t *pcEntriesReturned, uint32_t *pcEntriesAvailable, PSUPARMCACHELEVEL paEntries)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtr(pcEntriesReturned);
+    *pcEntriesReturned = 0;
+    if (pcEntriesAvailable)
+        *pcEntriesAvailable = 0;
+    if (puCacheLevelIdReg)
+        *puCacheLevelIdReg  = UINT64_MAX;
+    if (puCacheTypeReg)
+        *puCacheTypeReg     = UINT64_MAX;
+    if (puDataCacheZeroId)
+        *puDataCacheZeroId  = UINT64_MAX;
+    AssertReturn(cMaxEntries < 128, VERR_OUT_OF_RANGE);
+
+    /*
+     * Allocate temporary request.
+     */
+    uint32_t            cbReq = SUP_IOCTL_ARM_GET_CACHE_INFO_SIZE(cMaxEntries);
+    PSUPARMGETCACHEINFO pReq = (PSUPARMGETCACHEINFO)RTMemTmpAllocZ(cbReq);
+    AssertReturn(pReq, VERR_NO_TMP_MEMORY);
+
+    pReq->Hdr.u32Cookie           = g_u32Cookie;
+    pReq->Hdr.u32SessionCookie    = g_u32SessionCookie;
+    pReq->Hdr.cbIn                = SUP_IOCTL_ARM_GET_CACHE_INFO_SIZE_IN;
+    pReq->Hdr.cbOut               = SUP_IOCTL_ARM_GET_CACHE_INFO_SIZE_OUT(cMaxEntries);
+    pReq->Hdr.fFlags              = SUPREQHDR_FLAGS_DEFAULT;
+    pReq->Hdr.rc                  = VERR_INTERNAL_ERROR;
+
+    pReq->u.In.idCpu              = idCpu;
+    pReq->u.In.fFlags             = 0; /* reserved */
+
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_ARM_GET_CACHE_INFO, pReq, cbReq);
+    if (RT_SUCCESS(rc))
+        rc = pReq->Hdr.rc;
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t const cRetEntries = RT_MIN(cMaxEntries, pReq->u.Out.cEntries); /* paranoia */
+        AssertCompile(sizeof(paEntries[0]) == sizeof(pReq->u.Out.aEntries[0]));
+        memcpy(paEntries, pReq->u.Out.aEntries, sizeof(pReq->u.Out.aEntries[0]) * cRetEntries);
+        *pcEntriesReturned = cRetEntries;
+        if (pcEntriesAvailable)
+            *pcEntriesAvailable = pReq->u.Out.cEntriesAvailable;
+        if (puCacheLevelIdReg)
+            *puCacheLevelIdReg  = pReq->u.Out.uCacheLevelIdReg;
+        if (puCacheTypeReg)
+            *puCacheTypeReg     = pReq->u.Out.uCacheTypeReg;
+        if (puDataCacheZeroId)
+            *puDataCacheZeroId  = pReq->u.Out.uDataCacheZeroId;
+    }
+
+    RTMemTmpFree(pReq);
+    return rc;
+
+}
+
 #endif /* RT_ARCH_ARM64 */
 
 SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void)

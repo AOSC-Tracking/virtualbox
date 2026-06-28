@@ -44,6 +44,7 @@ class PlatformProperties;
 namespace settings
 {
     struct SystemProperties;
+    struct PlatformProperties;
 }
 
 class ATL_NO_VTABLE SystemProperties :
@@ -64,8 +65,8 @@ public:
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
-    HRESULT i_loadSettings(const settings::SystemProperties &data);
-    HRESULT i_saveSettings(settings::SystemProperties &data);
+    HRESULT i_loadSettings(const settings::SystemProperties &data, const settings::PlatformProperties &platform);
+    HRESULT i_saveSettings(settings::SystemProperties &system, settings::PlatformProperties &platform);
 
     ComObjPtr<MediumFormat> i_mediumFormat(const Utf8Str &aFormat);
     ComObjPtr<MediumFormat> i_mediumFormatFromExtension(const Utf8Str &aExt);

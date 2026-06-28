@@ -470,24 +470,28 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; editing process.\n"
                     ";\n"
                     "%%ifdef ASM_FORMAT_OMF\n"
-                    " %%macro VTG_GLOBAL 2\n"
+                    " %%macro VTG_GLOBAL 2-3\n"
                     "  global NAME(%%1)\n"
                     "  NAME(%%1):\n"
+                    " %%endmacro\n"
+                    " %%macro VTG_SIZE 1\n"
                     " %%endmacro\n"
                     " segment VTG.Obj public CLASS=VTG align=4096 use32\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_MACHO\n"
-                    " %%macro VTG_GLOBAL 2\n"
+                    " %%macro VTG_GLOBAL 2-3\n"
                     "  global NAME(%%1)\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
-                    "  %%ifdef IN_RING3\n"
-                    "   %%define VTG_NEW_MACHO_LINKER\n"
-                    "  %%elif ARCH_BITS == 64\n"
-                    "   %%define VTG_NEW_MACHO_LINKER\n"
-                    "  %%elifdef IN_RING0_AGNOSTIC\n"
-                    "   %%define VTG_NEW_MACHO_LINKER\n"
-                    "  %%endif\n"
+                    " %%macro VTG_SIZE 1\n"
+                    " %%endmacro\n"
+                    " %%ifdef IN_RING3\n"
+                    "  %%define VTG_NEW_MACHO_LINKER\n"
+                    " %%elif ARCH_BITS == 64\n"
+                    "  %%define VTG_NEW_MACHO_LINKER\n"
+                    " %%elifdef IN_RING0_AGNOSTIC\n"
+                    "  %%define VTG_NEW_MACHO_LINKER\n"
+                    " %%endif\n"
                     " %%ifdef VTG_NEW_MACHO_LINKER\n"
                     "  ; Section order hack!\n"
                     "  ; With the ld64-97.17 linker there was a problem with it determining the section\n"
@@ -497,25 +501,47 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  extern section$end$__VTG$__VTGObj\n"
                     " %%else\n"
                     "  ; Creating 32-bit kext of the type MH_OBJECT. No fancy section end/start symbols handy.\n"
+                    "  %%ifdef __?NASM_VER?__\n"
+                    "  [section __VTG,__VTGObj        align=16]\n"
+                    "  %%else\n"
                     "  [section __VTG __VTGObj        align=16]\n"
+                    "  %%endif\n"
                     "VTG_GLOBAL g_aVTGObj_LinkerPleaseNoticeMe, data\n"
+                    "  %%ifdef __?NASM_VER?__\n"
+                    "  [section __VTG,__VTGPrLc.Begin align=16]\n"
+                    "  %%else\n"
                     "  [section __VTG __VTGPrLc.Begin align=16]\n"
+                    "  %%endif\n"
                     "  dq 0, 0 ; Paranoia, related to the fudge below.\n"
                     "VTG_GLOBAL g_aVTGPrLc, data\n"
+                    "  %%ifdef __?NASM_VER?__\n"
+                    "  [section __VTG,__VTGPrLc align=16]\n"
+                    "  %%else\n"
                     "  [section __VTG __VTGPrLc align=16]\n"
+                    "  %%endif\n"
                     "VTG_GLOBAL g_aVTGPrLc_LinkerPleaseNoticeMe, data\n"
+                    "  %%ifdef __?NASM_VER?__\n"
+                    "  [section __VTG,__VTGPrLc.End   align=16]\n"
+                    "  %%else\n"
                     "  [section __VTG __VTGPrLc.End   align=16]\n"
+                    "  %%endif\n"
                     "VTG_GLOBAL g_aVTGPrLc_End, data\n"
                     "  dq 0, 0 ; Fudge to work around unidentified linker where it would otherwise generate\n"
                     "          ; a fix up of the first dword in __VTGPrLc.Begin despite the fact that it were\n"
                     "          ; an empty section with nothing whatsoever to fix up.\n"
                     " %%endif\n"
+                    " %%ifdef __?NASM_VER?__\n"
+                    " [section __VTG,__VTGObj]\n"
+                    " %%else\n"
                     " [section __VTG __VTGObj]\n"
+                    " %%endif\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_PE\n"
-                    " %%macro VTG_GLOBAL 2\n"
+                    " %%macro VTG_GLOBAL 2-3\n"
                     "  global NAME(%%1)\n"
                     "  NAME(%%1):\n"
+                    " %%endmacro\n"
+                    " %%macro VTG_SIZE 1\n"
                     " %%endmacro\n"
                     " [section VTGPrLc.Begin data align=64]\n"
                     /*"   times 16 db 0xcc\n"*/
@@ -527,8 +553,12 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     " [section VTGObj   data align=32]\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_ELF\n"
-                    " %%macro VTG_GLOBAL 2\n"
+                    " %%macro VTG_GLOBAL 2-3\n"
+                    "  %%if %%0 = 3\n"
+                    "  global NAME(%%1):%%2 hidden (NAME(%%3) - NAME(%%1))\n"
+                    "  %%else\n"
                     "  global NAME(%%1):%%2 hidden\n"
+                    "  %%endif\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
                     " [section .VTGData progbits alloc noexec write align=4096]\n"
@@ -612,7 +642,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     ";\n"
                     "; The string table.\n"
                     ";\n"
-                    "VTG_GLOBAL g_achVTGStringTable, data\n");
+                    "VTG_GLOBAL g_achVTGStringTable, data, g_achVTGStringTable_End\n");
     g_offStrTab = 0;
     RTStrSpaceEnumerate(&g_StrSpace, generateAssemblyStrTabCallback, pStrm);
     ScmStreamPrintf(pStrm,
@@ -627,7 +657,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; The argument lists.\n"
                     ";\n"
                     "ALIGNDATA(16)\n"
-                    "VTG_GLOBAL g_aVTGArgLists, data\n");
+                    "VTG_GLOBAL g_aVTGArgLists, data, g_achVTGStringTable_End\n");
     uint32_t off = 0;
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
     {
@@ -698,7 +728,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; Prob definitions.\n"
                     ";\n"
                     "ALIGNDATA(16)\n"
-                    "VTG_GLOBAL g_aVTGProbes, data\n"
+                    "VTG_GLOBAL g_aVTGProbes, data, g_aVTGProbes_End\n"
                     "\n");
     uint32_t iProvider = 0;
     uint32_t iProbe = 0;
@@ -739,7 +769,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; Provider data.\n"
                     ";\n"
                     "ALIGNDATA(16)\n"
-                    "VTG_GLOBAL g_aVTGProviders, data\n");
+                    "VTG_GLOBAL g_aVTGProviders, data, g_aVTGProviders_End\n");
     iProvider = 0;
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
     {
@@ -786,7 +816,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; Probe enabled flags.\n"
                     ";\n"
                     "ALIGNDATA(16)\n"
-                    "VTG_GLOBAL g_acVTGProbeEnabled, data\n"
+                    "VTG_GLOBAL g_acVTGProbeEnabled, data, g_acVTGProbeEnabled_End\n"
                     );
     uint32_t        cProbes = 0;
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
@@ -831,8 +861,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         {
             ScmStreamPrintf(pStrm,
                             "\n"
-                            "VTG_GLOBAL VTGProbeStub_%s_%s, function; (VBOXTPGPROBELOC pVTGProbeLoc",
-                            pProvider->pszName, pProbe->pszMangledName);
+                            "VTG_GLOBAL VTGProbeStub_%s_%s, function, VTGProbeStub_%s_%s.end_proc; (VBOXTPGPROBELOC pVTGProbeLoc",
+                            pProvider->pszName, pProbe->pszMangledName, pProvider->pszName, pProbe->pszMangledName);
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
                 ScmStreamPrintf(pStrm, ", %s %s", pArg->pszTracerType, pArg->pszName);
@@ -881,6 +911,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
             ScmStreamPrintf(pStrm,
                             ".return:\n"
                             "        ret                        ; The probe was disabled, return\n"
+                            ".end_proc:\n"
                             "\n");
         }
     }
@@ -2512,7 +2543,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
             case 'V':
             {
                 /* The following is assuming that svn does it's job here. */
-                static const char s_szRev[] = "$Revision: 170187 $";
+                static const char s_szRev[] = "$Revision: 174043 $";
                 const char *psz = RTStrStripL(strchr(s_szRev, ' '));
                 RTPrintf("r%.*s\n", strchr(psz, ' ') - psz, psz);
                 return RTEXITCODE_SUCCESS;

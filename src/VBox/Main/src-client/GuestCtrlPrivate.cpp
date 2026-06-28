@@ -1180,14 +1180,22 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                     vrc = HGCMSvcGetPv(&pSvcCb->mpaParms[idx++], &dataCb.pvPayload, &dataCb.cbPayload);
                     AssertRCReturn(vrc, vrc);
 
-                    try
+                    int const vrcGuest = (int)dataCb.rc;
+                    if (   RT_SUCCESS(vrcGuest)
+                        && dataCb.uType != 0)
+                        vrc = signalWaitEventInternalEx(pCtxCb, VERR_INVALID_PARAMETER, VINF_SUCCESS /* vrcGuest */,
+                                                        NULL /* pPayload */);
+                    else
                     {
-                        GuestWaitEventPayload evPayload(dataCb.uType, dataCb.pvPayload, dataCb.cbPayload);
-                        vrc = signalWaitEventInternal(pCtxCb, dataCb.rc, &evPayload);
-                    }
-                    catch (int vrcEx) /* Thrown by GuestWaitEventPayload constructor. */
-                    {
-                        vrc = vrcEx;
+                        try
+                        {
+                            GuestWaitEventPayload evPayload(dataCb.uType, dataCb.pvPayload, dataCb.cbPayload);
+                            vrc = signalWaitEventInternal(pCtxCb, vrcGuest, &evPayload);
+                        }
+                        catch (int vrcEx) /* Thrown by GuestWaitEventPayload constructor. */
+                        {
+                            vrc = vrcEx;
+                        }
                     }
                 }
                 else

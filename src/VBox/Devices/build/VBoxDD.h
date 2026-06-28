@@ -117,6 +117,9 @@ extern const PDMDEVREG g_DeviceQemuFwCfg;
 extern const PDMDEVREG g_DeviceTpm;
 extern const PDMDEVREG g_DeviceTpmPpi;
 #endif
+#ifdef VBOX_WITH_VFIO_PCI_PASSTHROUGH
+extern const PDMDEVREG g_DevicePciVfio;
+#endif
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
@@ -240,6 +243,14 @@ extern const PDMDEVREG g_DevicePlatform;
 
 extern const PDMDRVREG g_DrvGpioButton;
 #endif
+
+#ifdef VBOX_WITH_USB_CARDREADER
+extern const PDMUSBREG g_UsbSCardReader;
+# ifdef VBOX_WITH_USB_CARDREADER_TEST
+extern const PDMDRVREG g_DrvCardReaderReg;
+# endif
+#endif
+
 
 /* VBoxAcpi.cpp */
 int acpiPrepareDsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbDsdt);

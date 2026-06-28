@@ -70,6 +70,7 @@
 /UnattendedTemplates/*.sif:             --external-copyright
 /UnattendedTemplates/*.xml:             --dont-set-svn-eol --no-convert-eol
 /UnattendedTemplates/os2_response_files.rsp: --treat-as batch --external-copyright
+/UnattendedTemplates/ubuntu_autoinstall_*data: --treat-as shell --external-copyright
 
 # The webservice is fun.
 /webservice/Makefile.webtest:           --treat-as Makefile

@@ -999,7 +999,7 @@ typedef struct VMSVGA3DDXCONTEXT
     /** Copy of the guest memory for this context. The guest will be updated on unbind. */
     SVGADXContextMobFormat    svgaDXContext;
     /* Context-Object Tables bound to this context. */
-    PVMSVGAMOB aCOTMobs[VBSVGA_NUM_COTABLES];
+    uint32_t aCOTMobs[VBSVGA_NUM_COTABLES];
     struct
     {
         SVGACOTableDXRTViewEntry          *paRTView;
@@ -1371,8 +1371,17 @@ DECLINLINE(int) vmsvga3dDXContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PV
 }
 
 void vmsvga3dDXInitContextMobData(SVGADXContextMobFormat *p);
-void vmsvga3dDXCbFinishQuery(PVGASTATECC pThisCC, SVGACOTableDXQueryEntry *pEntry,
+void vmsvga3dDXCbFinishQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId,
                              SVGADXQueryResultUnion const *pQueryResult, uint32_t cbQueryResult);
+
+DECLINLINE(uint32_t) vmsvga3dDXContextObjectId(uint32_t id, uint32_t cObjects)
+{
+    if (RT_LIKELY(   id < cObjects
+                  || id == SVGA3D_INVALID_ID))
+        return id;
+    ASSERT_GUEST_MSG_FAILED(("Invalid context object id %u (%u objects)\n", id, cObjects));
+    return SVGA3D_INVALID_ID;
+}
 #endif
 
 DECLINLINE(int) vmsvga3dSurfaceFromSid(PVMSVGA3DSTATE pState, uint32_t sid, PVMSVGA3DSURFACE *ppSurface)
@@ -1416,6 +1425,14 @@ void vmsvga3dSurfaceMapInit(VMSVGA3D_MAPPED_SURFACE *pMap, VMSVGA3D_SURFACE_MAP 
     } \
 } while (0)
 
+DECLINLINE(uint32_t) vmsvga3dClampedUMul32(uint32_t a, uint32_t b)
+{
+    uint64_t const u64Tmp = (uint64_t)a * (uint64_t)b;
+    if (RT_LIKELY(u64Tmp <= UINT64_C(0xFFFFFFFF)))
+        return (uint32_t)u64Tmp;
+    return UINT32_C(0xFFFFFFFF);
+}
+
 #if defined(VMSVGA3D_DIRECT3D)
 HRESULT D3D9UpdateTexture(PVMSVGA3DCONTEXT pContext,
                           PVMSVGA3DSURFACE pSurface);
@@ -1457,9 +1474,6 @@ void FormatConvReadTexture(PVMSVGA3DSTATE pState,
 
 int vmsvga3dShaderParse(SVGA3dShaderType type, uint32_t cbShaderData, uint32_t *pShaderData);
 void vmsvga3dShaderLogRel(char const *pszMsg, SVGA3dShaderType type, uint32_t cbShaderData, uint32_t const *pShaderData);
-
-int vmsvga3dSurfaceCopySysMem(PVMSVGA3DSTATE pState, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src,
-                               uint32_t cCopyBoxes, SVGA3dCopyBox *pBox);
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_internal_h */
 

@@ -54,7 +54,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Platform *aParent, Machine *aMachine);
-    HRESULT init(Platform *aParent, Machine *aMachine, PlatformARM *aThat);
+    HRESULT initWithPeer(Platform *aParent, Machine *aMachine, PlatformARM *aThat);
     HRESULT initCopy(Platform *aParent, Machine *aMachine, PlatformARM *aThat);
     void uninit();
 

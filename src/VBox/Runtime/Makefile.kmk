@@ -793,6 +793,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/vfs/vfsstdpipe.cpp \
 	common/vfs/vfsprintf.cpp \
 	common/zip/cpiovfs.cpp \
+	common/zip/detect.cpp \
 	common/zip/tarcmd.cpp \
 	common/zip/tarvfs.cpp \
 	common/zip/tarvfswriter.cpp \
@@ -2248,6 +2249,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/compiler/vcc/stack-except-seh-vcc.cpp \
   	common/compiler/vcc/stack-probe-vcc.asm \
   	common/compiler/vcc/except-seh-vcc.cpp
+  RuntimeR3_ASINCS.win.x86 = common/compiler/vcc/ # NASM crap
   RuntimeR3_SOURCES.win.x86 = $(RuntimeBaseR3_SOURCES.win.x86) \
   	r3/win/nocrt-atexit-win.asm \
   	r3/win/nocrt-mainCRTStartup-win.asm \
@@ -2539,6 +2541,7 @@ RuntimeBldProg_SOURCES          = \
 	common/sort/shellsort.cpp \
 	common/string/base64.cpp \
 	common/string/RTStrCat.cpp \
+	common/string/RTStrCatEx.cpp \
 	common/string/RTStrCmp.cpp \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
@@ -2596,10 +2599,13 @@ RuntimeBldProg_SOURCES          = \
 	common/vfs/vfsmisc.cpp \
 	common/vfs/vfsmsg.cpp \
 	common/vfs/vfsprintf.cpp \
+	common/vfs/vfsreadahead.cpp \
 	common/vfs/vfsstddir.cpp \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \
 	common/zip/gzipvfs.cpp \
+	common/zip/cpiovfs.cpp \
+	common/zip/detect.cpp \
 	common/zip/tarcmd.cpp \
 	common/zip/tarvfs.cpp \
 	common/zip/tarvfswriter.cpp \
@@ -2957,10 +2963,8 @@ VBoxRT_DEFS                   := $(filter-out RT_NO_GIP, $(RuntimeBaseR3_DEFS)) 
 	IPRT_WITH_XAR \
 	IPRT_WITH_GHIDRA_DBG_MOD \
 	$(if-expr !defined(VBOX_WITH_ALT_HASH_CODE),IPRT_WITHOUT_SHA512T224 IPRT_WITHOUT_SHA512T256,)
-ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
- ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.arm64)
-  VBoxRT_DEFS                 += RT_NO_GIP
- endif
+ifndef VBOX_WITH_R0_MODULES
+ VBoxRT_DEFS                  += RT_NO_GIP
 endif
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_DEFS                  += IPRT_WITH_HTTP
@@ -3083,10 +3087,10 @@ VBoxRT_LDFLAGS.darwin          = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 VBoxRT_LDFLAGS.win             = /MANIFEST \
 	/delayload:user32.dll \
-	/delayload:shell32.dll \
 	/delayload:ole32.dll \
 	/delayload:oleaut32.dll \
-	/delayload:advapi32.dll
+	/delayload:advapi32.dll \
+	/delayload:mpr.dll
 
 if1of (VBoxRT, $(DLLS))
  $(call VBOX_SET_VER_INFO_DLL,VBoxRT,VirtualBox Runtime)
@@ -3169,6 +3173,7 @@ if1of ($(DLLS), VBoxRT)
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86"  ,-e "/not-x86/d",  -e "/only-x86/d") \
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-e "/not-amd64/d",-e "/only-amd64/d") \
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "arm64",-e "/not-arm64/d",-e "/only-arm64/d") \
+		$(if-expr defined(VBOX_WITH_R0_MODULES)     ,-e "/no-gip/d",   -e "/with-gip/d") \
 		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
                          && ("$(KBUILD_TARGET)" != "win" || !$(intersects RT_RELAXED_CALLBACKS_TYPES,$(DEFS))) \
 		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
@@ -3252,6 +3257,7 @@ if1of ($(DLLS), VBoxRT-x86)
 		-e "/not-x86/d" \
 		-e "/only-amd64/d" \
 		-e "/only-arm64/d" \
+		$(if-expr defined(VBOX_WITH_R0_MODULES)     ,-e "/no-gip/d",   -e "/with-gip/d") \
 		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
 		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
 		$(VBOX_PATH_RUNTIME_SRC)/r3/win/VBoxRT-x86.def
@@ -3326,6 +3332,7 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64 linux.amd64 dar
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86"  ,-e "/not-x86/d",  -e "/only-x86/d") \
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64",-e "/not-amd64/d",-e "/only-amd64/d") \
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "arm64",-e "/not-arm64/d",-e "/only-arm64/d") \
+		$(if-expr defined(VBOX_WITH_R0_MODULES)     ,-e "/no-gip/d",   -e "/with-gip/d") \
 		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.arm64",, -e "/only-darwin.arm64/d") \
 		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
 			,-e "/before-noexcept/d", -e "/after-noexcept/d") \
@@ -3385,6 +3392,7 @@ RuntimeR3NoCrt_SOURCES  := \
 	generic/rtStrFormatKernelAddress-generic.cpp
 
 RuntimeR3NoCrt_SOURCES.x86 := \
+	common/misc/setjmp.asm \
 	common/string/memcpy.asm \
 	common/string/memchr.asm \
 	common/string/memcmp.asm \
@@ -3397,6 +3405,7 @@ RuntimeR3NoCrt_SOURCES.x86 := \
 	common/string/RTStrEnd.asm
 
 RuntimeR3NoCrt_SOURCES.amd64 := \
+	common/misc/setjmp.asm \
 	common/string/memcpy.asm \
 	common/string/memchr.asm \
 	common/string/memcmp.asm \
@@ -3947,7 +3956,8 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/thread2-r0drv-nt.cpp \
 	r0drv/nt/time-r0drv-nt.cpp \
 	r0drv/nt/timer-r0drv-nt.cpp \
-	r0drv/nt/RTTimerGetSystemGranularity-r0drv-nt.cpp
+	r0drv/nt/RTTimerGetSystemGranularity-r0drv-nt.cpp \
+	common/compiler/vcc/loadcfg-vcc.c
 
 RuntimeR0Drv_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES) \
 	common/misc/zero.asm \
@@ -3957,6 +3967,7 @@ RuntimeR0Drv_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES) \
 	common/string/memset.asm \
 	common/string/memmove.asm \
 	common/string/strlen.asm \
+	r0drv/nt/security-cookie-vcc.asm \
 	r0drv/nt/toxic-chkstk-r0drv-nt.asm
 
 RuntimeR0Drv_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES) \
@@ -3969,6 +3980,7 @@ RuntimeR0Drv_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES) \
 	common/string/strlen.asm \
 	r0drv/nt/nt3fakes-stub-r0drv-nt.cpp \
 	r0drv/nt/alloca-x86-r0drv-nt.asm \
+	r0drv/nt/security-cookie-vcc.asm \
 	r0drv/nt/toxic-chkstk-r0drv-nt.asm
 
 RuntimeR0Drv_SOURCES.win.arm64 := \
@@ -4120,6 +4132,11 @@ RuntimeR0Drv_SOURCES.darwin.amd64 = \
 RuntimeR0Drv_SOURCES.darwin.x86 = \
 	common/string/memchr.asm \
 	common/string/mempcpy.asm
+
+RuntimeR0Drv_SOURCES.darwin.arm64 = \
+	common/asm/ASMMemFirstNonZero-generic.cpp \
+	common/string/memchr.cpp \
+	common/string/mempcpy.cpp
 
 RuntimeR0Drv_SOURCES.os2 = \
 	common/path/RTPathFilenameUtf16.cpp \
@@ -4950,7 +4967,8 @@ if1of ($(LIBRARIES), RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 		| $(SED) \
 			-e 's/[[:space:]]\+/ /g' \
 			-e '/^  *[[:digit:]]\+:/!d' \
-			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:digit:]]\+ \+//' \
+			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:xdigit:]]\+ \+//' \
+			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+0[xX][[:xdigit:]]\+ \+//' \
 			-e '/^SECTION/d' \
 			-e '/^FILE/d' \
 			-e 's/^[[:alpha:]]\+ \+//' \

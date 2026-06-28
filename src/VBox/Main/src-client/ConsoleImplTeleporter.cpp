@@ -674,8 +674,7 @@ HRESULT Console::i_teleporterSrc(TeleporterStateSrc *pState)
     AssertRC(vrc);
 
     /* Read and check the welcome message. */
-    char szLine[RT_MAX(128, sizeof(g_szWelcome))];
-    RT_ZERO(szLine);
+    char szLine[RT_MAX(128, sizeof(g_szWelcome))] = {0};
     vrc = RTTcpRead(pState->mhSocket, szLine, sizeof(g_szWelcome) - 1, NULL);
     if (RT_FAILURE(vrc))
         return setErrorBoth(E_FAIL, vrc, tr("Failed to read welcome message: %Rrc"), vrc);

@@ -669,6 +669,19 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
 
     const char *pszValue = NULL;
 
+    VBOXOSTYPE enmOsArch = mpUnattended->i_getGuestOsArch();
+    static struct
+    {
+        const char *apszArch[5];
+    } s_aArches[] =
+    {
+        /* VBOXOSTYPE_x86   */ { "x86",     "x86",    "i386",   "i486",   "i686" },
+        /* VBOXOSTYPE_x64   */ { "amd64", "x86_64", "x86_64", "x86_64", "x86_64" },
+        /* VBOXOSTYPE_arm32 */ { "arm32",  "arm32",  "arm32",  "arm32",  "arm32" },
+        /* VBOXOSTYPE_arm64 */ { "arm64",  "arm64",  "arm64",  "arm64",  "arm64" },
+    };
+    uint8_t const idxArch = (uint8_t)(enmOsArch >> 8); /** @todo r=aeichner This is a bit ugly, maybe there is some better way? */
+
     /*
      * Variables
      */
@@ -693,15 +706,15 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
     else if (IS_MATCH("IMAGE_INDEX"))
         pszValue = rstrTmp.printf("%u", mpUnattended->i_getImageIndex()).c_str();
     else if (IS_MATCH("OS_ARCH"))
-        pszValue = mpUnattended->i_isGuestOs64Bit() ? "amd64" : "x86";
+        pszValue = s_aArches[idxArch].apszArch[0];
     else if (IS_MATCH("OS_ARCH2"))
-        pszValue = mpUnattended->i_isGuestOs64Bit() ? "x86_64" : "x86";
+        pszValue = s_aArches[idxArch].apszArch[1];
     else if (IS_MATCH("OS_ARCH3"))
-        pszValue = mpUnattended->i_isGuestOs64Bit() ? "x86_64" : "i386";
+        pszValue = s_aArches[idxArch].apszArch[2];
     else if (IS_MATCH("OS_ARCH4"))
-        pszValue = mpUnattended->i_isGuestOs64Bit() ? "x86_64" : "i486";
+        pszValue = s_aArches[idxArch].apszArch[3];
     else if (IS_MATCH("OS_ARCH6"))
-        pszValue = mpUnattended->i_isGuestOs64Bit() ? "x86_64" : "i686";
+        pszValue = s_aArches[idxArch].apszArch[4];
     else if (IS_MATCH("GUEST_OS_VERSION"))
         pszValue = mpUnattended->i_getDetectedOSVersion().c_str();
     else if (IS_MATCH("GUEST_OS_MAJOR_VERSION"))
@@ -768,6 +781,10 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
      */
     else if (IS_MATCH("IS_INSTALLING_ADDITIONS"))
         pszValue = mpUnattended->i_getInstallGuestAdditions() ? "1" : "0";
+    else if (IS_MATCH("IS_ROOT_PASSWORD_SET"))
+        pszValue = mpUnattended->i_getIsAdminPasswordEmpty() ? "0" : "1";
+    else if (IS_MATCH("IS_ROOT_PASSWORD_NOT_SET"))
+        pszValue = mpUnattended->i_getIsAdminPasswordEmpty() ? "1" : "0";
     else if (IS_MATCH("IS_USER_LOGIN_ADMINISTRATOR"))
         pszValue = mpUnattended->i_getUser().compare("Administrator", RTCString::CaseInsensitive) == 0 ? "1" : "0";
     else if (IS_MATCH("IS_INSTALLING_TEST_EXEC_SERVICE"))
@@ -851,6 +868,11 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
         *pfOutputting = mpUnattended->i_getProxy().isNotEmpty();
     else if (IS_PLACEHOLDER_MATCH("AVOID_UPDATES_OVER_NETWORK"))
         *pfOutputting = mpUnattended->i_getAvoidUpdatesOverNetwork();
+    /* Is root password set explicitly. */
+    else if (IS_PLACEHOLDER_MATCH("IS_ROOT_PASSWORD_SET"))
+        *pfOutputting = !mpUnattended->i_getIsAdminPasswordEmpty();
+    else if (IS_PLACEHOLDER_MATCH("IS_ROOT_PASSWORD_NOT_SET"))
+        *pfOutputting = mpUnattended->i_getIsAdminPasswordEmpty();
     else
         return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Unknown conditional placeholder '%.*s'"),
                                         cchPlaceholder, pachPlaceholder);

@@ -292,7 +292,7 @@ CPU 386
         mov     cr0, eax
 
         ; Load all the code.
-.do_load
+.do_load:
         mov     [g_bBootDrv], dl
         call    NAME(bs3InitLoadImage)
 %if 0

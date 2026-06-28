@@ -1200,7 +1200,9 @@ static int ladr_match(PPCNETSTATE pThis, const uint8_t *buf, size_t size)
  */
 DECLINLINE(RTGCPHYS32) pcnetRdraAddr(PPCNETSTATE pThis, int idx)
 {
-    return pThis->GCRDRA + ((CSR_RCVRL(pThis) - idx) << pThis->iLog2DescSize);
+    uint16_t uRingLen = CSR_RCVRL(pThis);
+    uint16_t uIndex   = uRingLen - idx;   /* PCNet uses reverse indexing */
+    return pThis->GCRDRA + ((uIndex % uRingLen) << pThis->iLog2DescSize);
 }
 
 /**
@@ -1208,7 +1210,9 @@ DECLINLINE(RTGCPHYS32) pcnetRdraAddr(PPCNETSTATE pThis, int idx)
  */
 DECLINLINE(RTGCPHYS32) pcnetTdraAddr(PPCNETSTATE pThis, int idx)
 {
-    return pThis->GCTDRA + ((CSR_XMTRL(pThis) - idx) << pThis->iLog2DescSize);
+    uint16_t uRingLen = CSR_XMTRL(pThis);
+    uint16_t uIndex   = uRingLen - idx;   /* PCNet uses reverse indexing */
+    return pThis->GCTDRA + ((uIndex % uRingLen) << pThis->iLog2DescSize);
 }
 
 
@@ -1757,7 +1761,7 @@ static void pcnetReceiveNoSync(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTAT
             PCRTNETETHERHDR pEth = (PCRTNETETHERHDR)buf;
             bool fStrip = false;
             size_t len_802_3;
-            uint8_t   *src = &pThis->abRecvBuf[8];
+            uint8_t   *src = pThis->abRecvBuf;
             RTGCPHYS32 crda = CSR_CRDA(pThis);
             RTGCPHYS32 next_crda;
             RMD        rmd, next_rmd;
@@ -1981,7 +1985,8 @@ DECLINLINE(int) pcnetXmitAllocBuf(PPCNETSTATE pThis, PPCNETSTATECC pThisCC, size
     {
         pSgLoop->fFlags      = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
         pSgLoop->cbUsed      = 0;
-        pSgLoop->cbAvailable = sizeof(pThis->abLoopBuf);
+        AssertCompile(sizeof(pThis->abLoopBuf) > 4);
+        pSgLoop->cbAvailable = sizeof(pThis->abLoopBuf) - 4;    /* leave room for FCS */
         pSgLoop->pvAllocator = pThis;
         pSgLoop->pvUser      = NULL;
         pSgLoop->cSegs       = 1;
@@ -2117,7 +2122,7 @@ static void pcnetXmitRead1stSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, uns
 
 
 /**
- * pcnetXmitSgReadMore worker that handles the unlikely + slower segmented code
+ * pcnetXmitReadMore worker that handles the unlikely + slower segmented code
  * path.
  */
 static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, unsigned cbFrame, PPDMSCATTERGATHER pSgBuf)
@@ -2931,8 +2936,8 @@ static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCN
                 return rc;
             }
             Log(("#%d: WRITE CSR%d, %#06x (hacked %#06x) (alt init)\n", PCNET_INST_NR,
-                 u32RAP, val, 1 + ~(uint16_t)val));
-            val = 1 + ~(uint16_t)val;
+                 u32RAP, val, (uint16_t)(val ? 1 + ~(uint16_t)val : 512)));
+            val = val ? 1 + ~(uint16_t)val : 512;   /* Do not allow zero-length rings. */
 
             /*
              * HACK ALERT! Set the counter registers too.

@@ -178,7 +178,6 @@ typedef struct VMXSTATISTICS
     STAMPROFILEADV          StatExitVmentry;
     STAMPROFILEADV          StatImportGuestState;
     STAMPROFILEADV          StatExportGuestState;
-    STAMPROFILEADV          StatLoadGuestFpuState;
     STAMPROFILEADV          StatInGC;
     STAMPROFILEADV          StatPoke;
     STAMPROFILEADV          StatSpinPoke;
@@ -292,7 +291,7 @@ typedef struct VMXSTATISTICS
 
     STAMCOUNTER             StatExportMinimal;
     STAMCOUNTER             StatExportFull;
-    STAMCOUNTER             StatLoadGuestFpu;
+    //STAMCOUNTER             StatLoadGuestFpu;
     STAMCOUNTER             StatExportHostState;
 
     STAMCOUNTER             StatVmxCheckBadRmSelBase;

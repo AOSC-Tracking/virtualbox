@@ -111,9 +111,9 @@
 static VBOXSTRICTRC iemCImplA64_mrs_OSDTRRX_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -177,9 +177,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_OSDTRRX_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_MDCCINT_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -245,9 +245,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDCCINT_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_MDSCR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -302,9 +302,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDSCR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_OSDTRTX_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -370,9 +370,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDSELR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fDebugV8p9)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -438,9 +438,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDSTEPOP_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fStep2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -504,9 +504,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDSTEPOP_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_OSECCR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -580,9 +580,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_OSECCR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_MDRAR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x900) /*TDE,TDRA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -626,9 +626,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDRAR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_OSLSR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x500) /*TDE,TDOSA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -677,9 +677,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_OSLSR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_OSDLR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x500) /*TDE,TDOSA*/) && pGstFeats->fDoubleLock)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -741,9 +741,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_OSDLR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_DBGPRCR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x500) /*TDE,TDOSA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -794,7 +794,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCCNTSVR_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3Ss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,0,14,11,7), "PMCCNTSVR_EL1", puDst, uInstrEssence);
     /* -------- Original code specification: -------- */
@@ -840,7 +840,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMICNTSVR_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3Icntr || !pGstFeats->fPmuV3Ss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,0,14,12,0), "PMICNTSVR_EL1", puDst, uInstrEssence);
     /* -------- Original code specification: -------- */
@@ -884,9 +884,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMICNTSVR_EL1(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_DBGAUTHSTATUS_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -943,9 +943,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_DBGAUTHSTATUS_EL1(PVMCPU pVCpu, uint64_t * p
 static VBOXSTRICTRC iemCImplA64_mrs_DBGCLAIMSET_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -998,9 +998,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_DBGCLAIMSET_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_DBGCLAIMCLR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -1055,9 +1055,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMACCESSR_EL1(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -1127,9 +1127,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMIIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -1219,9 +1219,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMDEVARCH_EL1(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -1311,9 +1311,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMDEVAFF_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -1403,9 +1403,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMCFGR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -1495,9 +1495,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMINTENSET_EL1(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -1587,9 +1587,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMINTENCLR_EL1(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -1677,9 +1677,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCTRACEIDR(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -1749,9 +1749,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCVICTLR(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -1821,9 +1821,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR8(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -1897,9 +1897,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIMSPEC0(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -1969,9 +1969,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCPRGCTLR(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2043,9 +2043,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCQCTLR(PVMCPU pVCpu, uint64_t * puDst, uin
         || !pGstFeats->fTrcSr
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,8,7)) >> 14) & UINT32_C(1)/*QFILT*/) != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2117,9 +2117,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCVIIECTLR(PVMCPU pVCpu, uint64_t * puDst, 
         || !pGstFeats->fTrcSr
         || (iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) & UINT32_C(0xf)/*NUMACPAIRS*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2189,9 +2189,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR9(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2265,9 +2265,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCRSR(PVMCPU pVCpu, uint64_t * puDst, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2337,9 +2337,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR2(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2415,9 +2415,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCSTALLCTLR(PVMCPU pVCpu, uint64_t * puDst,
         || !pGstFeats->fTrcSr
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,11,7)) >> 26) & UINT32_C(1)/*STALLCTL*/) != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2491,9 +2491,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR3(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2569,9 +2569,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCTSCTLR(PVMCPU pVCpu, uint64_t * puDst, ui
         || !pGstFeats->fTrcSr
         || !(iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,8,7)) & UINT32_C(0x1f000000)/*TSSIZE*/))
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2641,9 +2641,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR4(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2717,9 +2717,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCSYNCPR(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2789,9 +2789,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR5(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2867,9 +2867,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCCCCTLR(PVMCPU pVCpu, uint64_t * puDst, ui
         || !pGstFeats->fTrcSr
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,8,7)) >>  7) & UINT32_C(1)/*TRCCCI*/) != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -2939,9 +2939,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR6(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3018,9 +3018,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCBBCTLR(PVMCPU pVCpu, uint64_t * puDst, ui
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,8,7)) >>  5) & UINT32_C(1)/*TRCBB*/) != 1
         || (iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) & UINT32_C(0xf)/*NUMACPAIRS*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3093,9 +3093,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR7(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3169,9 +3169,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCITEEDCR(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr || !pGstFeats->fIte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3243,9 +3243,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCVISSCTLR(PVMCPU pVCpu, uint64_t * puDst, 
         || !pGstFeats->fTrcSr
         || (iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) & UINT32_C(0xf)/*NUMACPAIRS*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3315,9 +3315,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR10(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3391,9 +3391,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCSTATR(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3465,9 +3465,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCVIPCSSCTLR(PVMCPU pVCpu, uint64_t * puDst
         || !pGstFeats->fTrcSr
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 12) & UINT32_C(0xf)/*NUMPC*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3541,9 +3541,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR11(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3617,9 +3617,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCCONFIGR(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3689,9 +3689,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR12(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3765,9 +3765,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR13(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3841,9 +3841,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCAUXCTLR(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3915,9 +3915,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCSEQRSTEVR(PVMCPU pVCpu, uint64_t * puDst,
         || !pGstFeats->fTrcSr
         || !(iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,13,7)) & UINT32_C(0xe000000)/*NUMSEQSTATE*/))
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -3989,9 +3989,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCSEQSTR(PVMCPU pVCpu, uint64_t * puDst, ui
         || !pGstFeats->fTrcSr
         || !(iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,13,7)) & UINT32_C(0xe000000)/*NUMSEQSTATE*/))
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4063,9 +4063,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCEVENTCTL0R(PVMCPU pVCpu, uint64_t * puDst
         || !pGstFeats->fTrcSr
         || !(iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) & UINT32_C(0xf0000)/*NUMRSPAIR*/))
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4139,9 +4139,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR0(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4215,9 +4215,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCEVENTCTL1R(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4291,9 +4291,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCIDR1(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4367,9 +4367,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCOSLSR(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4442,9 +4442,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCCIDCCTLR0(PVMCPU pVCpu, uint64_t * puDst,
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 24) & UINT32_C(0xf)/*NUMCIDC*/) <= 0
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,10,7)) >>  5) & UINT32_C(0x1f)/*CIDSIZE*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4520,9 +4520,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCCIDCCTLR1(PVMCPU pVCpu, uint64_t * puDst,
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 24) & UINT32_C(0xf)/*NUMCIDC*/) <= 4
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,10,7)) >>  5) & UINT32_C(0x1f)/*CIDSIZE*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4598,9 +4598,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCVMIDCCTLR0(PVMCPU pVCpu, uint64_t * puDst
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 28) & UINT32_C(0xf)/*NUMVMIDC*/) <= 0
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,10,7)) >> 10) & UINT32_C(0x1f)/*VMIDSIZE*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4680,9 +4680,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCVMIDCCTLR1(PVMCPU pVCpu, uint64_t * puDst
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 28) & UINT32_C(0xf)/*NUMVMIDC*/) <= 4
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,10,7)) >> 10) & UINT32_C(0x1f)/*VMIDSIZE*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4759,9 +4759,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCAUTHSTATUS(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4835,9 +4835,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCDEVARCH(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4911,9 +4911,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCDEVID(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -4983,9 +4983,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCCLAIMSET(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -5055,9 +5055,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCCLAIMCLR(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -5127,9 +5127,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBCR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5202,9 +5202,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBFCR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5269,9 +5269,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBTS_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5336,9 +5336,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBINFINJ_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5407,9 +5407,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBSRCINJ_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5478,9 +5478,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBTGTINJ_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5549,9 +5549,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBIDR0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5614,7 +5614,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBIDR0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_MDCCSR_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_32(12)/*TDCC*/)
         {
@@ -5630,7 +5630,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDCCSR_EL0(PVMCPU pVCpu, uint64_t * puDst, u
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,3,0,1,0), "MDCCSR_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5718,7 +5718,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDCCSR_EL0(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_DBGDTR_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_32(12)/*TDCC*/)
         {
@@ -5734,7 +5734,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_DBGDTR_EL0(PVMCPU pVCpu, uint64_t * puDst, u
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpReadDbgDtrEl0U64(pVCpu, puDst);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5792,7 +5792,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_DBGDTR_EL0(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_DBGDTRRX_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_32(12)/*TDCC*/)
         {
@@ -5808,7 +5808,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_DBGDTRRX_EL0(PVMCPU pVCpu, uint64_t * puDst,
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpReadDbgDtrEl0U32(pVCpu, puDst);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -5870,7 +5870,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMCR_EL0(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -5897,7 +5897,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMCR_EL0(PVMCPU pVCpu, uint64_t * puDst, ui
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = SPMCR_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)>;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6030,7 +6030,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMCNTENSET_EL0(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -6057,7 +6057,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMCNTENSET_EL0(PVMCPU pVCpu, uint64_t * puD
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = SPMCNTENSET_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)>;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6190,7 +6190,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMCNTENCLR_EL0(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -6217,7 +6217,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMCNTENCLR_EL0(PVMCPU pVCpu, uint64_t * puD
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = SPMCNTENCLR_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)>;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6350,7 +6350,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMOVSCLR_EL0(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -6377,7 +6377,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMOVSCLR_EL0(PVMCPU pVCpu, uint64_t * puDst
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = SPMOVSCLR_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)>;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6508,7 +6508,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMSELR_EL0(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -6520,7 +6520,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMSELR_EL0(PVMCPU pVCpu, uint64_t * puDst, 
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,3,9,12,5), "SPMSELR_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6594,7 +6594,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMOVSSET_EL0(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -6621,7 +6621,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMOVSSET_EL0(PVMCPU pVCpu, uint64_t * puDst
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = SPMOVSSET_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)>;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6752,9 +6752,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_DBGVCR32_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAa32El1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6795,9 +6795,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBCR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6845,9 +6845,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMACCESSR_EL2(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -6888,9 +6888,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_BRBCR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x8e0, puDst);
@@ -6950,9 +6950,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMACCESSR_EL12(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x8e8, puDst);
@@ -7125,7 +7125,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPMSCR_EL1(PVMCPU pVCpu, uint64_t * puDst) R
 static VBOXSTRICTRC iemCImplA64_mrs_MIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7135,7 +7135,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             *puDst = pVCpu->cpum.GstCtx.VPidrEl2.u64;
@@ -7178,7 +7178,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_MPIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7188,7 +7188,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             *puDst = pVCpu->cpum.GstCtx.VMpidrEl2.u64;
@@ -7231,7 +7231,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_REVIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7241,7 +7241,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_REVIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(16)/*TID1*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7283,7 +7283,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_REVIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7293,7 +7293,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7345,7 +7345,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7355,7 +7355,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, 
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7407,7 +7407,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_ID_DFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7417,7 +7417,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_DFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7469,7 +7469,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_DFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7479,7 +7479,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7531,7 +7531,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7541,7 +7541,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR0_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7593,7 +7593,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR0_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7603,7 +7603,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR1_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7655,7 +7655,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR1_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7665,7 +7665,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR2_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7717,7 +7717,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR2_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR3_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7727,7 +7727,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR3_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7779,7 +7779,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR3_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7789,7 +7789,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR0_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7841,7 +7841,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR0_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7851,7 +7851,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR1_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7903,7 +7903,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR1_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7913,7 +7913,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR2_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -7965,7 +7965,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR2_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR3_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -7975,7 +7975,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR3_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8027,7 +8027,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR3_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR4_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8037,7 +8037,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR4_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8089,7 +8089,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR4_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR5_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8099,7 +8099,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR5_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8151,7 +8151,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR5_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR4_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8161,7 +8161,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR4_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8217,7 +8217,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR4_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR6_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8227,7 +8227,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR6_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8283,7 +8283,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_ISAR6_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_MVFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8293,7 +8293,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MVFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8345,7 +8345,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MVFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_MVFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8355,7 +8355,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MVFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8407,7 +8407,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MVFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_MVFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8417,7 +8417,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MVFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8469,7 +8469,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_MVFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8479,7 +8479,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, 
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8535,7 +8535,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_PFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_ID_DFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8545,7 +8545,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_DFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, 
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8601,7 +8601,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_DFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR5_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8611,7 +8611,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR5_EL1(PVMCPU pVCpu, uint64_t * puDst,
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8667,7 +8667,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_MMFR5_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8677,7 +8677,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR0_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8729,7 +8729,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR0_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8739,7 +8739,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR1_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8791,7 +8791,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR1_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8801,7 +8801,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR2_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8857,7 +8857,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64PFR2_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ZFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8867,7 +8867,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ZFR0_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8923,7 +8923,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ZFR0_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64SMFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8933,7 +8933,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64SMFR0_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -8989,7 +8989,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64SMFR0_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64FPFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -8999,7 +8999,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64FPFR0_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9055,7 +9055,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64FPFR0_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9065,7 +9065,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR0_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9117,7 +9117,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR0_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9127,7 +9127,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR1_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9179,7 +9179,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR1_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9189,7 +9189,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR2_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9245,7 +9245,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64DFR2_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64AFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9255,7 +9255,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64AFR0_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9307,7 +9307,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64AFR0_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64AFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9317,7 +9317,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64AFR1_EL1(PVMCPU pVCpu, uint64_t * puD
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9369,7 +9369,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64AFR1_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9379,7 +9379,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR0_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9431,7 +9431,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR0_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9441,7 +9441,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR1_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9493,7 +9493,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR1_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9503,7 +9503,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR2_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9559,7 +9559,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR2_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR3_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9569,7 +9569,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR3_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9625,7 +9625,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64ISAR3_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9635,7 +9635,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR0_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9687,7 +9687,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR0_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9697,7 +9697,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR1_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9749,7 +9749,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR1_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9759,7 +9759,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR2_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9815,7 +9815,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR2_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR3_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9825,7 +9825,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR3_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9881,7 +9881,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR3_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR4_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -9891,7 +9891,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR4_EL1(PVMCPU pVCpu, uint64_t * pu
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(18)/*TID3*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9947,9 +9947,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ID_AA64MMFR4_EL1(PVMCPU pVCpu, uint64_t * pu
 static VBOXSTRICTRC iemCImplA64_mrs_SCTLR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -9997,9 +9997,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_ACTLR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(21)/*TACR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10038,9 +10038,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ACTLR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_CPACR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(31)/*TCPAC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10104,9 +10104,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSctlr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10171,9 +10171,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_RGSR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(56)/*ATA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10221,9 +10221,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(56)/*ATA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10271,9 +10271,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ZCR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSve)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 16) & UINT32_C(0x3)/*ZEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapSve(pVCpu, 1);
@@ -10359,9 +10359,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRFCR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrf)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(19)/*TTRF*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10417,9 +10417,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCITECR_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fIte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 7)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x888, puDst);
@@ -10475,9 +10475,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SMPRI_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10531,9 +10531,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SMCR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 24) & UINT32_C(0x3)/*SMEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapSme(pVCpu, 1);
@@ -10619,9 +10619,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLRMASK_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10689,9 +10689,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ACTLRMASK_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10754,9 +10754,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CPACRMASK_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10820,9 +10820,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2MASK_EL1(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10888,9 +10888,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2MASK_EL1(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_CPACRALIAS_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(31)/*TCPAC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10951,9 +10951,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CPACRALIAS_EL1(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_ACTLRALIAS_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(21)/*TACR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -10996,9 +10996,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ACTLRALIAS_EL1(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_SCTLRALIAS_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11047,9 +11047,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2ALIAS_EL1(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSctlr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11111,9 +11111,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2ALIAS_EL1(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_MAIR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11163,9 +11163,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MAIR2_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11228,9 +11228,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PIRE0_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11293,9 +11293,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PIR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11358,9 +11358,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_POR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11423,9 +11423,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_S2POR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS2Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11482,9 +11482,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_S2POR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_AMAIR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11537,9 +11537,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMAIR2_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11602,9 +11602,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_LORSA_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11664,9 +11664,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_LOREA_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11726,9 +11726,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_LORN_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11788,9 +11788,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_LORC_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11852,9 +11852,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAMIDR_EL1.HAS_HCR == 1 && AArch64.MPAMHCR_EL2.TRAP_MPAMIDR_EL1 == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11910,9 +11910,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBWIDR_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAMBW2_EL2.nTRAP_MPAMBWIDR_EL1 == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -11978,9 +11978,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_LORID_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -12035,9 +12035,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAM1_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAM2_EL2.TRAPMPAM1EL1 == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -12097,9 +12097,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAM0_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAM2_EL2.TRAPMPAM0EL1 == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -12151,9 +12151,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMSM_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || !pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAM2_EL2.EnMPAMSM == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -12205,9 +12205,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBW1_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAMBW2_EL2.nTRAP_MPAMBW1_EL1 == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -12281,9 +12281,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBW0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAMBW2_EL2.nTRAP_MPAMBW0_EL1 == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -12349,9 +12349,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBWSM_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl || !pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAMBW2_EL2.nTRAP_MPAMBWSM_EL1 == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -12417,9 +12417,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBWSM_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_VBAR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 3)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -12469,7 +12469,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_RVBAR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1 && !pGstFeats->fEl2)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1 && !pGstFeats->fEl2)
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,12,0,1), "RVBAR_EL1", puDst, uInstrEssence);
     return iemRaiseUndefined(pVCpu);
     /* -------- Original code specification: -------- */
@@ -12491,7 +12491,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_RMR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1 && !pGstFeats->fEl2)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1 && !pGstFeats->fEl2)
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,12,0,2), "RMR_EL1", puDst, uInstrEssence);
     return iemRaiseUndefined(pVCpu);
     /* -------- Original code specification: -------- */
@@ -12510,9 +12510,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_RMR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint
  */
 static VBOXSTRICTRC iemCImplA64_mrs_ISR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,12,1,0), "ISR_EL1", puDst, uInstrEssence);
     return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,12,1,0), "ISR_EL1", puDst, uInstrEssence);
     /* -------- Original code specification: -------- */
@@ -12542,9 +12542,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_DISR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !!(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(5)/*AMO*/))
             return iemCImplA64_mrs_novar(pVCpu,
@@ -12594,9 +12594,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_RPR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -12680,9 +12680,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_IAR1_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -12762,9 +12762,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_HPPIR1_EL1(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -12844,9 +12844,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_BPR1_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -12938,9 +12938,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_CTLR_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -13036,9 +13036,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_SRE_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.ICC_SRE_EL2.Enable == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -13107,9 +13107,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_IGRPEN0_EL1(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -13194,9 +13194,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_IGRPEN1_EL1(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -13293,9 +13293,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_IAR0_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -13375,9 +13375,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_HPPIR0_EL1(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -13457,9 +13457,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_BPR0_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -13539,9 +13539,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_NMIAR1_EL1(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3Nmi)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (!(pVCpu->cpum.GstCtx.Sctlr.u64 & RT_BIT_64(61)/*NMI*/))
             return iemRaiseUndefined(pVCpu);
@@ -13627,9 +13627,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_NMIAR1_EL1(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_CONTEXTIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -13684,7 +13684,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_RCWSMASK_EL1(PVMCPU pVCpu, uint64_t * puDst)
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fThe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     *puDst = RCWSMASK_EL1<[0x3f:0]>;
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -13730,9 +13730,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_RCWSMASK_EL1(PVMCPU pVCpu, uint64_t * puDst)
  */
 static VBOXSTRICTRC iemCImplA64_mrs_TPIDR_EL1(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         *puDst = pVCpu->cpum.GstCtx.aTpIdr[1].u64;
     else
         *puDst = pVCpu->cpum.GstCtx.aTpIdr[1].u64;
@@ -13764,9 +13764,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ACCDATA_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLs64Accdata)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -13819,9 +13819,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_RCWMASK_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fThe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -13876,9 +13876,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCXTNUM_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCvs2_2 && !pGstFeats->fCsv21p2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 3)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -13943,9 +13943,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTKCTL_EL1(PVMCPU pVCpu, uint64_t * puDst) 
     RT_NOREF(pVCpu, puDst);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         *puDst = pVCpu->cpum.GstCtx.CntKCtl.u64;
     else
     {
@@ -13979,9 +13979,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTKCTL_EL1(PVMCPU pVCpu, uint64_t * puDst) 
 static VBOXSTRICTRC iemCImplA64_mrs_TTBR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14029,9 +14029,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TTBR0_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_TTBR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14079,9 +14079,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TTBR1_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_TCR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14131,9 +14131,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTcr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14198,9 +14198,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APIAKeyLo_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14255,9 +14255,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APIAKeyHi_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14312,9 +14312,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APIBKeyLo_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14369,9 +14369,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APIBKeyHi_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14426,9 +14426,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APDAKeyLo_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14483,9 +14483,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APDAKeyHi_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14540,9 +14540,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APDBKeyLo_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14597,9 +14597,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APDBKeyHi_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14654,9 +14654,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APGAKeyLo_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14711,9 +14711,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_APGAKeyHi_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14768,9 +14768,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSCR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14834,9 +14834,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSPR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14895,9 +14895,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSCRE0_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -14950,9 +14950,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCRMASK_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15012,9 +15012,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2MASK_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15072,9 +15072,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2MASK_EL1(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_TCRALIAS_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15123,9 +15123,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2ALIAS_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTcr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15187,9 +15187,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2ALIAS_EL1(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_SPSR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 3)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15232,9 +15232,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPSR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_ELR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 3)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15276,7 +15276,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ELR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint
  */
 static VBOXSTRICTRC iemCImplA64_mrs_SP_EL0(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     if (!(pVCpu->cpum.GstCtx.fPState & UINT64_C(0x1)/*SP*/))
         return iemRaiseUndefined(pVCpu);
@@ -15309,7 +15309,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SP_EL0(PVMCPU pVCpu, uint64_t * puDst) RT_NO
  */
 static VBOXSTRICTRC iemCImplA64_mrs_SPSel(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     *puDst = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0x1)/*SP*/);
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -15332,9 +15332,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPSel(PVMCPU pVCpu, uint64_t * puDst) RT_NOE
 static VBOXSTRICTRC iemCImplA64_mrs_CurrentEL(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             *puDst = 8;
@@ -15368,7 +15368,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PAN(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXC
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPan)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     *puDst = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0x400000)/*PAN*/);
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -15395,7 +15395,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_UAO(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXC
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fUao)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     *puDst = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0x800000)/*UAO*/);
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -15422,7 +15422,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_ALLINT(PVMCPU pVCpu, uint64_t * puDst) RT_NO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fNmi)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     *puDst = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0x2000)/*ALLINT*/);
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -15449,7 +15449,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PM(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCE
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEbep)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     *puDst = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0x100000000)/*PM*/);
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -15478,9 +15478,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_PMR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -15556,9 +15556,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_PMR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_AFSR0_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15609,9 +15609,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AFSR0_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_AFSR1_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15662,9 +15662,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AFSR1_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_ESR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15714,9 +15714,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERRIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15771,9 +15771,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERRSELR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15826,9 +15826,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXGSR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15880,9 +15880,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXFR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15935,9 +15935,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXCTLR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -15990,9 +15990,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXSTATUS_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16049,9 +16049,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXADDR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16104,9 +16104,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXPFGF_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(47)/*FIEN*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16159,9 +16159,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXPFGCTL_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(47)/*FIEN*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16218,9 +16218,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXPFGCDN_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(47)/*FIEN*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16277,9 +16277,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXMISC0_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16332,9 +16332,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXMISC1_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16387,9 +16387,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXMISC2_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16442,9 +16442,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ERXMISC3_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16497,9 +16497,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TFSR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 3)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16559,9 +16559,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TFSRE0_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(56)/*ATA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16607,9 +16607,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TFSRE0_EL1(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_FAR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16659,9 +16659,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PFAR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPfar)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 7)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x2d0, puDst);
@@ -16714,9 +16714,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PFAR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
  */
 static VBOXSTRICTRC iemCImplA64_mrs_PAR_EL1(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         *puDst = pVCpu->cpum.GstCtx.Par.u64;
     else
         *puDst = pVCpu->cpum.GstCtx.Par.u64;
@@ -16748,9 +16748,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMBLIMITR_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 12) & UINT32_C(0x3)/*E2PB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16825,9 +16825,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMBPTR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 12) & UINT32_C(0x3)/*E2PB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16900,9 +16900,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMBSR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 12) & UINT32_C(0x3)/*E2PB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -16983,9 +16983,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSDSFR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpeFds)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17069,9 +17069,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMBMAR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpeNvm)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 12) & UINT32_C(0x3)/*E2PB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17151,9 +17151,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMBIDR_EL1(PVMCPU pVCpu, uint64_t * puDst) R
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         *puDst = iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,9,10,7));
     else
         *puDst = iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,9,10,7));
@@ -17187,9 +17187,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBLIMITR_EL1(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17267,9 +17267,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBPTR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17343,9 +17343,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBBASER_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17425,9 +17425,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBSR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17514,9 +17514,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBMAR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17590,9 +17590,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBMPAM_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbeMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17679,9 +17679,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBTRG_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17755,9 +17755,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBIDR_EL1(PVMCPU pVCpu, uint64_t * puDst) R
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         *puDst = iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,9,11,7));
     else
         *puDst = iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,9,11,7));
@@ -17799,7 +17799,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSSCR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3Ss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,9,13,3), "PMSSCR_EL1", puDst, uInstrEssence);
     /* -------- Original code specification: -------- */
@@ -17845,9 +17845,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMINTENSET_EL1(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17904,9 +17904,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMINTENCLR_EL1(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -17963,9 +17963,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMUACR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3p9)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18031,9 +18031,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMECR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEbep && !pGstFeats->fPmuV3Ss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18099,9 +18099,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMMIR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3p4)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18156,9 +18156,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMIAR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSebep)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18224,9 +18224,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSCR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18309,9 +18309,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSNEVFR_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpeFnE)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18398,9 +18398,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSICR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18471,9 +18471,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSIRR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18544,9 +18544,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSFCR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18613,9 +18613,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSEVFR_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18686,9 +18686,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSLATFR_EL1(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18759,9 +18759,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18828,7 +18828,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_CCSIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -18838,7 +18838,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CCSIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(17)/*TID2*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18882,7 +18882,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CCSIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_CLIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -18892,7 +18892,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CLIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(17)/*TID2*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18940,7 +18940,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CCSIDR2_EL1(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCcidx)
         UnimplementedIDRegister()
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -18950,7 +18950,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CCSIDR2_EL1(PVMCPU pVCpu, uint64_t * puDst, 
         }
         return iemRaiseUndefined(pVCpu);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(17)/*TID2*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -18999,7 +18999,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_GMID_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         UnimplementedIDRegister()
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -19009,7 +19009,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_GMID_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
         }
         return iemRaiseUndefined(pVCpu);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(58)/*TID5*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19069,7 +19069,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SMIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         UnimplementedIDRegister()
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -19079,7 +19079,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SMIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
         }
         return iemRaiseUndefined(pVCpu);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(16)/*TID1*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19120,7 +19120,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SMIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_AIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fIdst)
         {
@@ -19130,7 +19130,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_AIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
         }
         return iemRaiseUndefined(pVCpu);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(16)/*TID1*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19170,9 +19170,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AIDR_EL1(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_CSSELR_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(17)/*TID2*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19212,7 +19212,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CSSELR_EL1(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_CTR_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -19239,7 +19239,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CTR_EL0(PVMCPU pVCpu, uint64_t * puDst, uint
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,0,0,1));
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(17)/*TID2*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19290,9 +19290,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CTR_EL0(PVMCPU pVCpu, uint64_t * puDst, uint
  */
 static VBOXSTRICTRC iemCImplA64_mrs_DCZID_EL0(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         *puDst = iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,0,0,7));
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         *puDst = iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,0,0,7));
     else
         *puDst = iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,0,0,7));
@@ -19331,7 +19331,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_POR_EL0(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -19365,7 +19365,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_POR_EL0(PVMCPU pVCpu, uint64_t * puDst, uint
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,10,2,4), "POR_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(30)/*TRVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19440,9 +19440,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_POR_EL0(PVMCPU pVCpu, uint64_t * puDst, uint
  */
 static VBOXSTRICTRC iemCImplA64_mrs_TPIDR_EL0(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         *puDst = pVCpu->cpum.GstCtx.aTpIdr[0].u64;
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         *puDst = pVCpu->cpum.GstCtx.aTpIdr[0].u64;
     else
         *puDst = pVCpu->cpum.GstCtx.aTpIdr[0].u64;
@@ -19478,9 +19478,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TPIDR_EL0(PVMCPU pVCpu, uint64_t * puDst) RT
  */
 static VBOXSTRICTRC iemCImplA64_mrs_TPIDRRO_EL0(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         *puDst = pVCpu->cpum.GstCtx.TpIdrRoEl0.u64;
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         *puDst = pVCpu->cpum.GstCtx.TpIdrRoEl0.u64;
     else
         *puDst = pVCpu->cpum.GstCtx.TpIdrRoEl0.u64;
@@ -19519,7 +19519,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_TPIDR2_EL0(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -19546,7 +19546,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_TPIDR2_EL0(PVMCPU pVCpu, uint64_t * puDst, u
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,13,0,5), "TPIDR2_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19618,7 +19618,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCXTNUM_EL0(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCvs2_2 && !pGstFeats->fCsv21p2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -19645,7 +19645,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCXTNUM_EL0(PVMCPU pVCpu, uint64_t * puDst, 
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,13,0,7), "SCXTNUM_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(53)/*EnSCXT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19721,13 +19721,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCR_EL0(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(27)/*TGE*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19790,13 +19790,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCFGR_EL0(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(27)/*TGE*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19859,13 +19859,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCGCR_EL0(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(27)/*TGE*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19928,13 +19928,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMUSERENR_EL0(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = 0;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -19996,13 +19996,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCNTENCLR0_EL0(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(27)/*TGE*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20086,13 +20086,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCNTENSET0_EL0(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(27)/*TGE*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20174,13 +20174,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCG1IDR_EL0(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(27)/*TGE*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20249,13 +20249,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCNTENCLR1_EL0(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(27)/*TGE*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20339,13 +20339,13 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCNTENSET1_EL0(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(27)/*TGE*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20425,7 +20425,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMCNTENSET1_EL0(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_CNTFRQ_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -20473,7 +20473,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTFRQ_EL0(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_CNTPCT_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -20505,7 +20505,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTPCT_EL0(PVMCPU pVCpu, uint64_t * puDst, u
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = iemCImplHlpGetPhysicalSystemTimerCount(pVCpu);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & UINT32_C(1)/*EL1PCTEN_AT_00*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20556,7 +20556,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTPCT_EL0(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_CNTVCT_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -20590,7 +20590,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTVCT_EL0(PVMCPU pVCpu, uint64_t * puDst, u
         else
             *puDst = iemCImplHlpGetPhysicalSystemTimerCount(pVCpu);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & RT_BIT_32(14)/*EL1TVCT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20655,7 +20655,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTPCTSS_EL0(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEcv)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -20687,7 +20687,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTPCTSS_EL0(PVMCPU pVCpu, uint64_t * puDst,
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         *puDst = iemCImplHlpGetPhysicalSystemTimerCount(pVCpu);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & UINT32_C(1)/*EL1PCTEN_AT_00*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20742,7 +20742,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTVCTSS_EL0(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEcv)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -20776,7 +20776,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTVCTSS_EL0(PVMCPU pVCpu, uint64_t * puDst,
         else
             *puDst = iemCImplHlpGetPhysicalSystemTimerCount(pVCpu);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & RT_BIT_32(14)/*EL1TVCT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20843,7 +20843,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCCFILTR_EL0(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -20865,7 +20865,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCCFILTR_EL0(PVMCPU pVCpu, uint64_t * puDst
                                          puDst,
                                          uInstrEssence);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -20949,7 +20949,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCCFILTR_EL0(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_CNTP_TVAL_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -20992,7 +20992,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTP_TVAL_EL0(PVMCPU pVCpu, uint64_t * puDst
         else
             *puDst = 0;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fEl2
             && (   !pGstFeats->fVhe
@@ -21103,7 +21103,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTP_TVAL_EL0(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CTL_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -21141,7 +21141,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CTL_EL0(PVMCPU pVCpu, uint64_t * puDst,
         else
             *puDst = 0;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fEl2
             && (   !pGstFeats->fVhe
@@ -21213,7 +21213,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CTL_EL0(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CVAL_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -21255,7 +21255,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CVAL_EL0(PVMCPU pVCpu, uint64_t * puDst
                                          puDst,
                                          uInstrEssence);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fEl2
             && (   !pGstFeats->fVhe
@@ -21337,7 +21337,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_TVAL_EL0(PVMCPU pVCpu, uint64_t * puDst
     RT_NOREF(pVCpu, puDst, uInstrEssence);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -21389,7 +21389,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_TVAL_EL0(PVMCPU pVCpu, uint64_t * puDst
         else
             *puDst = (uint64_t)(uint32_t)(pVCpu->cpum.GstCtx.CntvCValEl0 - iemCImplHlpGetPhysicalSystemTimerCount(pVCpu));
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fEcv && (pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & RT_BIT_32(13)/*EL1TVT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -21512,7 +21512,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_TVAL_EL0(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CTL_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -21549,7 +21549,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CTL_EL0(PVMCPU pVCpu, uint64_t * puDst,
                                          uInstrEssence);
         *puDst = pVCpu->cpum.GstCtx.CntvCtlEl0;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fEcv && (pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & RT_BIT_32(13)/*EL1TVT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -21611,7 +21611,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CTL_EL0(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CVAL_EL0(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -21648,7 +21648,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CVAL_EL0(PVMCPU pVCpu, uint64_t * puDst
                                          uInstrEssence);
         *puDst = pVCpu->cpum.GstCtx.CntvCValEl0;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fEcv && (pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & RT_BIT_32(13)/*EL1TVT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -21822,7 +21822,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSPR_EL0(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!pGstFeats->fEl2 || ((pVCpu->cpum.GstCtx.HcrEl2.u64 >> 27) & UINT32_C(1)/*TGE*/) != 1)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -21837,7 +21837,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSPR_EL0(PVMCPU pVCpu, uint64_t * puDst, ui
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,2,5,1), "GCSPR_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -21924,7 +21924,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_NZCV(PVMCPU pVCpu, uint64_t * puDst) RT_NOEX
 static VBOXSTRICTRC iemCImplA64_mrs_DAIF(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   pGstFeats->fVhe
                 && pGstFeats->fEl2
@@ -21968,7 +21968,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SVCR(PVMCPU pVCpu, uint64_t * puDst, uint32_
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -21999,7 +21999,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_SVCR(PVMCPU pVCpu, uint64_t * puDst, uint32_
             return iemRaiseSystemAccessTrapSme(pVCpu, 2);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,4,2,2), "SVCR", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 24) & UINT32_C(0x3)/*SMEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapSme(pVCpu, 1);
@@ -22169,7 +22169,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCO(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXC
 static VBOXSTRICTRC iemCImplA64_mrs_FPCR(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -22200,7 +22200,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_FPCR(PVMCPU pVCpu, uint64_t * puDst) RT_NOEX
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 2);
         *puDst = pVCpu->cpum.GstCtx.fpcr;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 20) & UINT32_C(0x3)/*FPEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 1);
@@ -22299,7 +22299,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_FPCR(PVMCPU pVCpu, uint64_t * puDst) RT_NOEX
 static VBOXSTRICTRC iemCImplA64_mrs_FPSR(PVMCPU pVCpu, uint64_t * puDst) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -22330,7 +22330,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_FPSR(PVMCPU pVCpu, uint64_t * puDst) RT_NOEX
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 2);
         *puDst = pVCpu->cpum.GstCtx.fpsr;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 20) & UINT32_C(0x3)/*FPEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 1);
@@ -22431,7 +22431,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_FPMR(PVMCPU pVCpu, uint64_t * puDst, uint32_
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFpmr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -22484,7 +22484,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_FPMR(PVMCPU pVCpu, uint64_t * puDst, uint32_
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 2);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,4,4,2), "FPMR", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fEl2
             && (   !pGstFeats->fVhe
@@ -22651,7 +22651,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCR_EL0(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             || (pGstFeats->fPmuV3p9 && (iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -22666,7 +22666,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCR_EL0(PVMCPU pVCpu, uint64_t * puDst, uin
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,9,12,0), "PMCR_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -22735,7 +22735,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCNTENSET_EL0(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -22752,7 +22752,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCNTENSET_EL0(PVMCPU pVCpu, uint64_t * puDs
                                      puDst,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -22830,7 +22830,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCNTENCLR_EL0(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -22847,7 +22847,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCNTENCLR_EL0(PVMCPU pVCpu, uint64_t * puDs
                                      puDst,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -22925,7 +22925,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMOVSCLR_EL0(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -22942,7 +22942,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMOVSCLR_EL0(PVMCPU pVCpu, uint64_t * puDst,
                                      puDst,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23020,7 +23020,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSELR_EL0(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x19) /*UEN,ER,EN*/))
             || (!pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x9) /*ER,EN*/)))
@@ -23033,7 +23033,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSELR_EL0(PVMCPU pVCpu, uint64_t * puDst, u
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,9,12,5), "PMSELR_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23109,7 +23109,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCEID0_EL0(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -23128,7 +23128,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCEID0_EL0(PVMCPU pVCpu, uint64_t * puDst, 
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,9,12,6), "PMCEID0_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23207,7 +23207,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCEID1_EL0(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -23226,7 +23226,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCEID1_EL0(PVMCPU pVCpu, uint64_t * puDst, 
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,9,12,7), "PMCEID1_EL0", puDst, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23305,7 +23305,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCCNTR_EL0(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x15) /*UEN,CR,EN*/))
             || (!pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x5) /*CR,EN*/)))
@@ -23327,7 +23327,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMCCNTR_EL0(PVMCPU pVCpu, uint64_t * puDst, 
                                          puDst,
                                          uInstrEssence);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23415,7 +23415,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMXEVTYPER_EL0(PVMCPU pVCpu, uint64_t * puDs
             return iemRaiseUndefined(pVCpu);
         ConstrainUnpredictableProcedure(Unpredictable_PMUEVENTCOUNTER)
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -23449,7 +23449,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMXEVTYPER_EL0(PVMCPU pVCpu, uint64_t * puDs
         else
             *puDst = PMEVTYPER_EL0<UInt(AArch64.PMSELR_EL0.SEL)>;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23592,7 +23592,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMXEVCNTR_EL0(PVMCPU pVCpu, uint64_t * puDst
             return iemRaiseUndefined(pVCpu);
         ConstrainUnpredictableProcedure(Unpredictable_PMUEVENTCOUNTER)
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x19) /*UEN,ER,EN*/))
             || (!pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x9) /*ER,EN*/)))
@@ -23617,7 +23617,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMXEVCNTR_EL0(PVMCPU pVCpu, uint64_t * puDst
         else
             *puDst = PMEVCNTR_EL0<UInt(AArch64.PMSELR_EL0.SEL)>;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23724,7 +23724,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMUSERENR_EL0(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23734,7 +23734,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMUSERENR_EL0(PVMCPU pVCpu, uint64_t * puDst
                                      puDst,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23807,7 +23807,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMOVSSET_EL0(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -23824,7 +23824,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMOVSSET_EL0(PVMCPU pVCpu, uint64_t * puDst,
                                      puDst,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -23904,7 +23904,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMICNTR_EL0(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3Icntr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/))
         {
@@ -23923,7 +23923,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMICNTR_EL0(PVMCPU pVCpu, uint64_t * puDst, 
                                          puDst,
                                          uInstrEssence);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24024,7 +24024,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMICFILTR_EL0(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3Icntr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/))
         {
@@ -24043,7 +24043,7 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMICFILTR_EL0(PVMCPU pVCpu, uint64_t * puDst
                                          puDst,
                                          uInstrEssence);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24148,9 +24148,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMICFILTR_EL0(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_VPIDR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x88, puDst);
@@ -24187,9 +24187,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_VPIDR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_VMPIDR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x50, puDst);
@@ -24226,9 +24226,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_VMPIDR_EL2(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_SCTLR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24258,9 +24258,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_ACTLR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24291,9 +24291,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2_EL2(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSctlr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24332,9 +24332,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2_EL2(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_HCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x78, puDst);
@@ -24368,9 +24368,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint
 static VBOXSTRICTRC iemCImplA64_mrs_MDCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24408,9 +24408,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MDCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_CPTR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24448,9 +24448,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CPTR_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_HSTR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x80, puDst);
@@ -24485,9 +24485,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HFGRTR_EL2(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1b8, puDst);
@@ -24533,9 +24533,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HFGWTR_EL2(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1c0, puDst);
@@ -24581,9 +24581,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HFGITR_EL2(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1c8, puDst);
@@ -24627,9 +24627,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HFGITR_EL2(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_HACR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24660,9 +24660,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ZCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSve)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24718,9 +24718,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRFCR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrf)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24761,9 +24761,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HCRX_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHcx)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0xa0, puDst);
@@ -24809,9 +24809,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCITECR_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fIte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24852,9 +24852,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SMPRIMAP_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1f8, puDst);
@@ -24902,9 +24902,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SMCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -24997,9 +24997,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLRMASK_EL2(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25040,9 +25040,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ACTLRMASK_EL2(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25083,9 +25083,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CPTRMASK_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25126,9 +25126,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2MASK_EL2(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25169,9 +25169,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MAIR2_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25210,9 +25210,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MAIR2_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_MAIR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25244,9 +25244,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PIRE0_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25287,9 +25287,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PIR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25330,9 +25330,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_POR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25373,9 +25373,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_S2PIR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS2Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x2b0, puDst);
@@ -25418,9 +25418,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_S2PIR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_AMAIR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25451,9 +25451,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMAIR2_EL2(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25496,9 +25496,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMHCR_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x930, puDst);
@@ -25553,9 +25553,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPMV_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x938, puDst);
@@ -25608,9 +25608,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAM2_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25657,9 +25657,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBW2_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -25720,9 +25720,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBWCAP_EL2(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl || AArch64.MPAMIDR_EL1.HAS_HCR != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x910, puDst);
@@ -25789,9 +25789,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPM0_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x940, puDst);
@@ -25846,9 +25846,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPM1_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x948, puDst);
@@ -25903,9 +25903,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPM2_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x950, puDst);
@@ -25960,9 +25960,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPM3_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x958, puDst);
@@ -26017,9 +26017,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPM4_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x960, puDst);
@@ -26074,9 +26074,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPM5_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 4)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x968, puDst);
@@ -26131,9 +26131,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPM6_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 5)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x970, puDst);
@@ -26188,9 +26188,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMVPM7_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) != 7)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x978, puDst);
@@ -26455,9 +26455,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_VMECID_A_EL2(PVMCPU pVCpu, uint64_t * puDst)
 static VBOXSTRICTRC iemCImplA64_mrs_VBAR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -26489,9 +26489,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_RVBAR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1 && pGstFeats->fEl2 && (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1 && pGstFeats->fEl2 && (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
         return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2 && pGstFeats->fEl2)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2 && pGstFeats->fEl2)
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,4,12,0,1), "RVBAR_EL2", puDst, uInstrEssence);
     return iemRaiseUndefined(pVCpu);
     /* -------- Original code specification: -------- */
@@ -26515,9 +26515,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_RMR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1 && pGstFeats->fEl2 && (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1 && pGstFeats->fEl2 && (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
         return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2 && pGstFeats->fEl2)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2 && pGstFeats->fEl2)
         return iemCImplA64_mrs_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,4,12,0,2), "RMR_EL2", puDst, uInstrEssence);
     return iemRaiseUndefined(pVCpu);
     /* -------- Original code specification: -------- */
@@ -26541,9 +26541,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_VDISR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x500, puDst);
@@ -26582,9 +26582,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICH_HCR_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x4c0, puDst);
@@ -26633,9 +26633,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICH_VTR_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -26680,9 +26680,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICH_MISR_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -26727,9 +26727,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICH_EISR_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -26774,9 +26774,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICH_ELRSR_EL2(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -26821,9 +26821,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICH_VMCR_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x4c8, puDst);
@@ -26870,9 +26870,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ICC_SRE_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -26916,9 +26916,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CONTEXTIDR_EL2(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fDebugV8p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -26949,9 +26949,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CONTEXTIDR_EL2(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_TPIDR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x90, puDst);
@@ -26987,9 +26987,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCXTNUM_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCvs2_2 && !pGstFeats->fCsv21p2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27028,9 +27028,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCXTNUM_EL2(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_CNTVOFF_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x60, puDst);
@@ -27066,9 +27066,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTPOFF_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEcvPOff)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1a8, puDst);
@@ -27111,9 +27111,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTPOFF_EL2(PVMCPU pVCpu, uint64_t * puDst, 
 static VBOXSTRICTRC iemCImplA64_mrs_CNTHCTL_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27145,9 +27145,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTHP_TVAL_EL2(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27190,9 +27190,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTHP_CTL_EL2(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27226,9 +27226,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTHP_CVAL_EL2(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27264,9 +27264,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTHV_TVAL_EL2(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fVhe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27311,9 +27311,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTHV_CTL_EL2(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fVhe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27346,9 +27346,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTHV_CVAL_EL2(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fVhe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27585,9 +27585,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTHPS_CVAL_EL2(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_TTBR0_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27619,9 +27619,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TTBR1_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fVhe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27653,9 +27653,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TTBR1_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_TCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27687,9 +27687,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTcr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -27728,9 +27728,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_VTTBR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x20, puDst);
@@ -27764,9 +27764,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_VTTBR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_VTCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x40, puDst);
@@ -27802,9 +27802,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_VNCR_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fNv2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0xb0, puDst);
@@ -27841,9 +27841,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HDBSSBR_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHdbss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x2e0, puDst);
@@ -27888,9 +27888,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HDBSSPROD_EL2(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHdbss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x300, puDst);
@@ -27935,9 +27935,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HACDBSBR_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHacdbs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x2f0, puDst);
@@ -27982,9 +27982,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HACDBSCONS_EL2(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHacdbs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x308, puDst);
@@ -28029,9 +28029,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSCR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28073,9 +28073,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSPR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28186,9 +28186,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCRMASK_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28229,9 +28229,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2MASK_EL2(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28272,9 +28272,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_DACR32_EL2(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAa32El1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28447,9 +28447,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HDFGRTR_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1d0, puDst);
@@ -28495,9 +28495,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HDFGWTR_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1d8, puDst);
@@ -28543,9 +28543,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HAFGRTR_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1 || !pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1e8, puDst);
@@ -28623,9 +28623,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_HFGITR2_EL2(PVMCPU pVCpu, uint64_t * puDst) 
 static VBOXSTRICTRC iemCImplA64_mrs_SPSR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             *puDst = pVCpu->cpum.GstCtx.Spsr.u64;
@@ -28661,9 +28661,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPSR_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_ELR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             *puDst = pVCpu->cpum.GstCtx.Elr.u64;
@@ -28699,9 +28699,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ELR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint
 static VBOXSTRICTRC iemCImplA64_mrs_SP_EL1(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x240, puDst);
@@ -28735,9 +28735,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SP_EL1(PVMCPU pVCpu, uint64_t * puDst, uint3
 static VBOXSTRICTRC iemCImplA64_mrs_SPSR_irq(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28766,9 +28766,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPSR_irq(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_SPSR_abt(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28797,9 +28797,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPSR_abt(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_SPSR_und(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28828,9 +28828,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPSR_und(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_SPSR_fiq(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28861,9 +28861,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_IFSR32_EL2(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAa32El1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28894,9 +28894,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_IFSR32_EL2(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_AFSR0_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28925,9 +28925,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AFSR0_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_AFSR1_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -28956,9 +28956,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AFSR1_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_ESR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             *puDst = pVCpu->cpum.GstCtx.Esr.u64;
@@ -28996,9 +28996,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_VSESR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x508, puDst);
@@ -29035,9 +29035,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_FPEXC32_EL2(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAa32El1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -29093,9 +29093,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TFSR_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
         {
@@ -29152,9 +29152,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TFSR_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_FAR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             *puDst = pVCpu->cpum.GstCtx.Far.u64;
@@ -29190,9 +29190,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_FAR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint
 static VBOXSTRICTRC iemCImplA64_mrs_HPFAR_EL2(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -29224,9 +29224,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PFAR_EL2(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPfar)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -29267,9 +29267,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMBSR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpeExc)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -29324,9 +29324,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBSR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbeExc)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -29381,9 +29381,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSCR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -29429,9 +29429,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSCR_EL2(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_SCTLR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x110, puDst);
@@ -29474,9 +29474,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_ACTLR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x118, puDst);
@@ -29519,9 +29519,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ACTLR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_CPACR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x100, puDst);
@@ -29574,9 +29574,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2_EL12(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSctlr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x278, puDst);
@@ -29629,9 +29629,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ZCR_EL12(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSve)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1e0, puDst);
@@ -29693,9 +29693,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRFCR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrf)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x880, puDst);
@@ -29748,9 +29748,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRCITECR_EL12(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fIte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x888, puDst);
@@ -29803,9 +29803,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SMCR_EL12(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x1f0, puDst);
@@ -29867,9 +29867,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLRMASK_EL12(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x318, puDst);
@@ -29926,9 +29926,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ACTLRMASK_EL12(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x340, puDst);
@@ -29985,9 +29985,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CPACRMASK_EL12(PVMCPU pVCpu, uint64_t * puDs
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x320, puDst);
@@ -30044,9 +30044,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2MASK_EL12(PVMCPU pVCpu, uint64_t * puD
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x328, puDst);
@@ -30101,9 +30101,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCTLR2MASK_EL12(PVMCPU pVCpu, uint64_t * puD
 static VBOXSTRICTRC iemCImplA64_mrs_MAIR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x140, puDst);
@@ -30148,9 +30148,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MAIR2_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x280, puDst);
@@ -30203,9 +30203,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PIRE0_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x290, puDst);
@@ -30258,9 +30258,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PIR_EL12(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x2a0, puDst);
@@ -30313,9 +30313,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_POR_EL12(PVMCPU pVCpu, uint64_t * puDst, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x2a8, puDst);
@@ -30366,9 +30366,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_POR_EL12(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_AMAIR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x148, puDst);
@@ -30413,9 +30413,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AMAIR2_EL12(PVMCPU pVCpu, uint64_t * puDst, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x288, puDst);
@@ -30468,9 +30468,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAM1_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x900, puDst);
@@ -30529,9 +30529,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBW1_EL12(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x908, puDst);
@@ -30600,9 +30600,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_MPAMBW1_EL12(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_VBAR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x250, puDst);
@@ -30645,9 +30645,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_VBAR_EL12(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_CONTEXTIDR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x108, puDst);
@@ -30692,9 +30692,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCXTNUM_EL12(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCvs2_2 && !pGstFeats->fCsv21p2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x188, puDst);
@@ -30745,9 +30745,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SCXTNUM_EL12(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_CNTKCTL_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -30786,9 +30786,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTKCTL_EL12(PVMCPU pVCpu, uint64_t * puDst,
 static VBOXSTRICTRC iemCImplA64_mrs_CNTP_TVAL_EL02(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -30833,9 +30833,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTP_TVAL_EL02(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CTL_EL02(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
         {
@@ -30890,9 +30890,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CTL_EL02(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CVAL_EL02(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
         {
@@ -30949,9 +30949,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTP_CVAL_EL02(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_CNTV_TVAL_EL02(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -31001,9 +31001,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_TVAL_EL02(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CTL_EL02(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
         {
@@ -31058,9 +31058,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CTL_EL02(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CVAL_EL02(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
         {
@@ -31115,9 +31115,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_CNTV_CVAL_EL02(PVMCPU pVCpu, uint64_t * puDs
 static VBOXSTRICTRC iemCImplA64_mrs_TTBR0_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x200, puDst);
@@ -31160,9 +31160,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TTBR0_EL12(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_TTBR1_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x210, puDst);
@@ -31205,9 +31205,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TTBR1_EL12(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_TCR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x120, puDst);
@@ -31252,9 +31252,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2_EL12(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTcr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x270, puDst);
@@ -31307,9 +31307,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSCR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x8d0, puDst);
@@ -31364,9 +31364,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_GCSPR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x8c0, puDst);
@@ -31419,9 +31419,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCRMASK_EL12(PVMCPU pVCpu, uint64_t * puDst,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x330, puDst);
@@ -31474,9 +31474,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2MASK_EL12(PVMCPU pVCpu, uint64_t * puDst
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x338, puDst);
@@ -31527,9 +31527,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TCR2MASK_EL12(PVMCPU pVCpu, uint64_t * puDst
 static VBOXSTRICTRC iemCImplA64_mrs_SPSR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x160, puDst);
@@ -31572,9 +31572,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_SPSR_EL12(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_ELR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x230, puDst);
@@ -31617,9 +31617,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_ELR_EL12(PVMCPU pVCpu, uint64_t * puDst, uin
 static VBOXSTRICTRC iemCImplA64_mrs_AFSR0_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x128, puDst);
@@ -31662,9 +31662,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AFSR0_EL12(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_AFSR1_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x130, puDst);
@@ -31707,9 +31707,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_AFSR1_EL12(PVMCPU pVCpu, uint64_t * puDst, u
 static VBOXSTRICTRC iemCImplA64_mrs_ESR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x138, puDst);
@@ -31754,9 +31754,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TFSR_EL12(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x190, puDst);
@@ -31807,9 +31807,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TFSR_EL12(PVMCPU pVCpu, uint64_t * puDst, ui
 static VBOXSTRICTRC iemCImplA64_mrs_FAR_EL12(PVMCPU pVCpu, uint64_t * puDst, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x220, puDst);
@@ -31854,9 +31854,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PFAR_EL12(PVMCPU pVCpu, uint64_t * puDst, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPfar)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x2d0, puDst);
@@ -31909,9 +31909,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMBSR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x820, puDst);
@@ -31971,9 +31971,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_TRBSR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbeExc)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x860, puDst);
@@ -32044,9 +32044,9 @@ static VBOXSTRICTRC iemCImplA64_mrs_PMSCR_EL12(PVMCPU pVCpu, uint64_t * puDst, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemReadU64(pVCpu, 0x828, puDst);
@@ -39066,9 +39066,9 @@ IEM_CIMPL_DEF_2(iemCImplA64_mrs, uint32_t, idSysReg, uint32_t, idxGprDst)
 static VBOXSTRICTRC iemCImplA64_msr_OSDTRRX_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39132,9 +39132,9 @@ static VBOXSTRICTRC iemCImplA64_msr_OSDTRRX_EL1(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_msr_MDCCINT_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39200,9 +39200,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MDCCINT_EL1(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_msr_MDSCR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39257,9 +39257,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MDSCR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_OSDTRTX_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39325,9 +39325,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MDSELR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fDebugV8p9)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39393,9 +39393,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MDSTEPOP_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fStep2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39463,9 +39463,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MDSTEPOP_EL1(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_OSECCR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39524,9 +39524,9 @@ static VBOXSTRICTRC iemCImplA64_msr_OSECCR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_OSLAR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x500) /*TDE,TDOSA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39575,9 +39575,9 @@ static VBOXSTRICTRC iemCImplA64_msr_OSLAR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_OSDLR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x500) /*TDE,TDOSA*/) && pGstFeats->fDoubleLock)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39639,9 +39639,9 @@ static VBOXSTRICTRC iemCImplA64_msr_OSDLR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_DBGPRCR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x500) /*TDE,TDOSA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39690,9 +39690,9 @@ static VBOXSTRICTRC iemCImplA64_msr_DBGPRCR_EL1(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_msr_DBGCLAIMSET_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39745,9 +39745,9 @@ static VBOXSTRICTRC iemCImplA64_msr_DBGCLAIMSET_EL1(PVMCPU pVCpu, uint64_t uValu
 static VBOXSTRICTRC iemCImplA64_msr_DBGCLAIMCLR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & UINT64_C(0x300) /*TDE,TDA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39802,9 +39802,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMACCESSR_EL1(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39874,9 +39874,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMINTENSET_EL1(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -39966,9 +39966,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMINTENCLR_EL1(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -40056,9 +40056,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCTRACEIDR(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40128,9 +40128,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCVICTLR(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40200,9 +40200,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCIMSPEC0(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40272,9 +40272,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCPRGCTLR(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40346,9 +40346,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCQCTLR(PVMCPU pVCpu, uint64_t uValue, uint
         || !pGstFeats->fTrcSr
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,8,7)) >> 14) & UINT32_C(1)/*QFILT*/) != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40420,9 +40420,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCVIIECTLR(PVMCPU pVCpu, uint64_t uValue, u
         || !pGstFeats->fTrcSr
         || (iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) & UINT32_C(0xf)/*NUMACPAIRS*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40492,9 +40492,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCRSR(PVMCPU pVCpu, uint64_t uValue, uint32
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40566,9 +40566,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCSTALLCTLR(PVMCPU pVCpu, uint64_t uValue, 
         || !pGstFeats->fTrcSr
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,11,7)) >> 26) & UINT32_C(1)/*STALLCTL*/) != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40644,9 +40644,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCTSCTLR(PVMCPU pVCpu, uint64_t uValue, uin
         || !pGstFeats->fTrcSr
         || !(iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,8,7)) & UINT32_C(0x1f000000)/*TSSIZE*/))
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40716,9 +40716,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCSYNCPR(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40790,9 +40790,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCCCCTLR(PVMCPU pVCpu, uint64_t uValue, uin
         || !pGstFeats->fTrcSr
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,8,7)) >>  7) & UINT32_C(1)/*TRCCCI*/) != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40865,9 +40865,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCBBCTLR(PVMCPU pVCpu, uint64_t uValue, uin
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,8,7)) >>  5) & UINT32_C(1)/*TRCBB*/) != 1
         || (iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) & UINT32_C(0xf)/*NUMACPAIRS*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -40940,9 +40940,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCITEEDCR(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr || !pGstFeats->fIte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41014,9 +41014,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCVISSCTLR(PVMCPU pVCpu, uint64_t uValue, u
         || !pGstFeats->fTrcSr
         || (iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) & UINT32_C(0xf)/*NUMACPAIRS*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41088,9 +41088,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCVIPCSSCTLR(PVMCPU pVCpu, uint64_t uValue,
         || !pGstFeats->fTrcSr
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 12) & UINT32_C(0xf)/*NUMPC*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41164,9 +41164,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCCONFIGR(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41236,9 +41236,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCAUXCTLR(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41310,9 +41310,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCSEQRSTEVR(PVMCPU pVCpu, uint64_t uValue, 
         || !pGstFeats->fTrcSr
         || !(iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,13,7)) & UINT32_C(0xe000000)/*NUMSEQSTATE*/))
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41388,9 +41388,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCSEQSTR(PVMCPU pVCpu, uint64_t uValue, uin
         || !pGstFeats->fTrcSr
         || !(iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,13,7)) & UINT32_C(0xe000000)/*NUMSEQSTATE*/))
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41462,9 +41462,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCEVENTCTL0R(PVMCPU pVCpu, uint64_t uValue,
         || !pGstFeats->fTrcSr
         || !(iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) & UINT32_C(0xf0000)/*NUMRSPAIR*/))
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41538,9 +41538,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCEVENTCTL1R(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41617,9 +41617,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCCIDCCTLR0(PVMCPU pVCpu, uint64_t uValue, 
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 24) & UINT32_C(0xf)/*NUMCIDC*/) <= 0
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,10,7)) >>  5) & UINT32_C(0x1f)/*CIDSIZE*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41699,9 +41699,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCCIDCCTLR1(PVMCPU pVCpu, uint64_t uValue, 
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 24) & UINT32_C(0xf)/*NUMCIDC*/) <= 4
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,10,7)) >>  5) & UINT32_C(0x1f)/*CIDSIZE*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41781,9 +41781,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCVMIDCCTLR0(PVMCPU pVCpu, uint64_t uValue,
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 28) & UINT32_C(0xf)/*NUMVMIDC*/) <= 0
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,10,7)) >> 10) & UINT32_C(0x1f)/*VMIDSIZE*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41863,9 +41863,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCVMIDCCTLR1(PVMCPU pVCpu, uint64_t uValue,
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,12,7)) >> 28) & UINT32_C(0xf)/*NUMVMIDC*/) <= 4
         || ((iemCImplHlpGetIdSysReg(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(2,1,0,10,7)) >> 10) & UINT32_C(0x1f)/*VMIDSIZE*/) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -41942,9 +41942,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCCLAIMSET(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -42014,9 +42014,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCCLAIMCLR(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pVCpu->cpum.GstCtx.Cpacr.u64 & RT_BIT_32(28)/*TTA*/)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -42086,9 +42086,9 @@ static VBOXSTRICTRC iemCImplA64_msr_BRBCR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42161,9 +42161,9 @@ static VBOXSTRICTRC iemCImplA64_msr_BRBFCR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42228,9 +42228,9 @@ static VBOXSTRICTRC iemCImplA64_msr_BRBTS_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42295,9 +42295,9 @@ static VBOXSTRICTRC iemCImplA64_msr_BRBINFINJ_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42366,9 +42366,9 @@ static VBOXSTRICTRC iemCImplA64_msr_BRBSRCINJ_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42437,9 +42437,9 @@ static VBOXSTRICTRC iemCImplA64_msr_BRBTGTINJ_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42508,7 +42508,7 @@ static VBOXSTRICTRC iemCImplA64_msr_DBGDTR_EL0(PVMCPU pVCpu, uint64_t uValue, ui
     RT_NOREF(pVCpu, uValue, uInstrEssence);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_32(12)/*TDCC*/)
         {
@@ -42524,7 +42524,7 @@ static VBOXSTRICTRC iemCImplA64_msr_DBGDTR_EL0(PVMCPU pVCpu, uint64_t uValue, ui
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         Write_DBGDTR_EL0(X<t,0x40>)
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42588,7 +42588,7 @@ static VBOXSTRICTRC iemCImplA64_msr_DBGDTRTX_EL0(PVMCPU pVCpu, uint64_t uValue, 
     RT_NOREF(pVCpu, uValue, uInstrEssence);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_32(12)/*TDCC*/)
         {
@@ -42604,7 +42604,7 @@ static VBOXSTRICTRC iemCImplA64_msr_DBGDTRTX_EL0(PVMCPU pVCpu, uint64_t uValue, 
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         Write_DBGDTR_EL0(X<t,0x20>)
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(27)/*TDCC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42670,7 +42670,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMCR_EL0(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -42697,7 +42697,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMCR_EL0(PVMCPU pVCpu, uint64_t uValue, uin
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         SPMCR_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)> = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42830,7 +42830,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMCNTENSET_EL0(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -42857,7 +42857,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMCNTENSET_EL0(PVMCPU pVCpu, uint64_t uValu
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         SPMCNTENSET_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)> = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -42990,7 +42990,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMCNTENCLR_EL0(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -43017,7 +43017,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMCNTENCLR_EL0(PVMCPU pVCpu, uint64_t uValu
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         SPMCNTENCLR_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)> = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -43150,7 +43150,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMOVSCLR_EL0(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -43177,7 +43177,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMOVSCLR_EL0(PVMCPU pVCpu, uint64_t uValue,
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         SPMOVSCLR_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)> = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -43310,7 +43310,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMZR_EL0(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -43337,7 +43337,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMZR_EL0(PVMCPU pVCpu, uint64_t uValue, uin
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         SPMZR_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)> = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -43468,7 +43468,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMSELR_EL0(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -43484,7 +43484,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMSELR_EL0(PVMCPU pVCpu, uint64_t uValue, u
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -43562,7 +43562,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMOVSSET_EL0(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(pVCpu->cpum.GstCtx.Mdscr.u64 & RT_BIT_64(34)/*EnSPM*/))
         {
@@ -43589,7 +43589,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMOVSSET_EL0(PVMCPU pVCpu, uint64_t uValue,
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         SPMOVSSET_EL0<UInt(AArch64.SPMSELR_EL0.SYSPMUSEL)> = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(15)/*EnSPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -43720,9 +43720,9 @@ static VBOXSTRICTRC iemCImplA64_msr_DBGVCR32_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAa32El1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -43763,9 +43763,9 @@ static VBOXSTRICTRC iemCImplA64_msr_BRBCR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -43813,9 +43813,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMACCESSR_EL2(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -43856,9 +43856,9 @@ static VBOXSTRICTRC iemCImplA64_msr_BRBCR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x8e0, uValue);
@@ -43918,9 +43918,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMACCESSR_EL12(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpmu)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x8e8, uValue);
@@ -44096,9 +44096,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPMSCR_EL1(PVMCPU pVCpu, uint64_t uValue) RT
 static VBOXSTRICTRC iemCImplA64_msr_SCTLR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44161,9 +44161,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_ACTLR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(21)/*TACR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44211,9 +44211,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ACTLR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_CPACR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(31)/*TCPAC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44294,9 +44294,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSctlr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44382,9 +44382,9 @@ static VBOXSTRICTRC iemCImplA64_msr_RGSR_EL1(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(56)/*ATA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44432,9 +44432,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCR_EL1(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(56)/*ATA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44482,9 +44482,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ZCR_EL1(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSve)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 16) & UINT32_C(0x3)/*ZEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapSve(pVCpu, 1);
@@ -44570,9 +44570,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRFCR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrf)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(19)/*TTRF*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44633,9 +44633,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCITECR_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fIte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 7)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x888, uValue);
@@ -44699,9 +44699,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SMPRI_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44755,9 +44755,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SMCR_EL1(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 24) & UINT32_C(0x3)/*SMEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapSme(pVCpu, 1);
@@ -44843,9 +44843,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLRMASK_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -44926,9 +44926,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ACTLRMASK_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45007,9 +45007,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CPACRMASK_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45090,9 +45090,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2MASK_EL1(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45171,9 +45171,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2MASK_EL1(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_msr_CPACRALIAS_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(31)/*TCPAC*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45249,9 +45249,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CPACRALIAS_EL1(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_msr_ACTLRALIAS_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(21)/*TACR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45303,9 +45303,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ACTLRALIAS_EL1(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_msr_SCTLRALIAS_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45371,9 +45371,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2ALIAS_EL1(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSctlr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45456,9 +45456,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2ALIAS_EL1(PVMCPU pVCpu, uint64_t uValu
 static VBOXSTRICTRC iemCImplA64_msr_MAIR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45508,9 +45508,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MAIR2_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45573,9 +45573,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PIRE0_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45638,9 +45638,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PIR_EL1(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45703,9 +45703,9 @@ static VBOXSTRICTRC iemCImplA64_msr_POR_EL1(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45768,9 +45768,9 @@ static VBOXSTRICTRC iemCImplA64_msr_S2POR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS2Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45827,9 +45827,9 @@ static VBOXSTRICTRC iemCImplA64_msr_S2POR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_AMAIR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45882,9 +45882,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AMAIR2_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -45947,9 +45947,9 @@ static VBOXSTRICTRC iemCImplA64_msr_LORSA_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46009,9 +46009,9 @@ static VBOXSTRICTRC iemCImplA64_msr_LOREA_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46071,9 +46071,9 @@ static VBOXSTRICTRC iemCImplA64_msr_LORN_EL1(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46133,9 +46133,9 @@ static VBOXSTRICTRC iemCImplA64_msr_LORC_EL1(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLor)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(35)/*TLOR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46197,9 +46197,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAM1_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAM2_EL2.TRAPMPAM1EL1 == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46259,9 +46259,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAM0_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAM2_EL2.TRAPMPAM0EL1 == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46313,9 +46313,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMSM_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || !pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAM2_EL2.EnMPAMSM == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46367,9 +46367,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMBW1_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAMBW2_EL2.nTRAP_MPAMBW1_EL1 == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46451,9 +46451,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMBW0_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAMBW2_EL2.nTRAP_MPAMBW0_EL1 == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46523,9 +46523,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMBWSM_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl || !pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.MPAMBW2_EL2.nTRAP_MPAMBWSM_EL1 == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46591,9 +46591,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMBWSM_EL1(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_VBAR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 3)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -46643,7 +46643,7 @@ static VBOXSTRICTRC iemCImplA64_msr_RMR_EL1(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1 && !pGstFeats->fEl2)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1 && !pGstFeats->fEl2)
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,12,0,2), "RMR_EL1", uValue, uInstrEssence);
     return iemRaiseUndefined(pVCpu);
     /* -------- Original code specification: -------- */
@@ -46665,9 +46665,9 @@ static VBOXSTRICTRC iemCImplA64_msr_DISR_EL1(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !!(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(5)/*AMO*/))
             return iemCImplA64_msr_novar(pVCpu,
@@ -46717,9 +46717,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_DIR_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -46807,9 +46807,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_SGI1R_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -46884,9 +46884,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_ASGI1R_EL1(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -46965,9 +46965,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_SGI0R_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -47042,9 +47042,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_EOIR1_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -47124,9 +47124,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_BPR1_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -47218,9 +47218,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_CTLR_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -47316,9 +47316,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_SRE_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && AArch64.ICC_SRE_EL2.Enable == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -47387,9 +47387,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_IGRPEN0_EL1(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -47474,9 +47474,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_IGRPEN1_EL1(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -47573,9 +47573,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_EOIR0_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -47655,9 +47655,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_BPR0_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -47733,9 +47733,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_BPR0_EL1(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_CONTEXTIDR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -47790,7 +47790,7 @@ static VBOXSTRICTRC iemCImplA64_msr_RCWSMASK_EL1(PVMCPU pVCpu, uint64_t uValue) 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fThe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     RCWSMASK_EL1<[0x3f:0]> = uValue;
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -47836,9 +47836,9 @@ static VBOXSTRICTRC iemCImplA64_msr_RCWSMASK_EL1(PVMCPU pVCpu, uint64_t uValue) 
  */
 static VBOXSTRICTRC iemCImplA64_msr_TPIDR_EL1(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         pVCpu->cpum.GstCtx.aTpIdr[1].u64 = uValue;
     else
         pVCpu->cpum.GstCtx.aTpIdr[1].u64 = uValue;
@@ -47870,9 +47870,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ACCDATA_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fLs64Accdata)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -47929,9 +47929,9 @@ static VBOXSTRICTRC iemCImplA64_msr_RCWMASK_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fThe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -47986,9 +47986,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCXTNUM_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCvs2_2 && !pGstFeats->fCsv21p2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 3)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48061,9 +48061,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTKCTL_EL1(PVMCPU pVCpu, uint64_t uValue) R
     RT_NOREF(pVCpu, uValue);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         pVCpu->cpum.GstCtx.CntKCtl.u64 = uValue;
     else
     {
@@ -48097,9 +48097,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTKCTL_EL1(PVMCPU pVCpu, uint64_t uValue) R
 static VBOXSTRICTRC iemCImplA64_msr_TTBR0_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48147,9 +48147,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TTBR0_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_TTBR1_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48199,9 +48199,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR_EL1(PVMCPU pVCpu, uint64_t uValue, uint3
     RT_NOREF(pVCpu, uValue, uInstrEssence);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48270,9 +48270,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2_EL1(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTcr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48358,9 +48358,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APIAKeyLo_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48415,9 +48415,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APIAKeyHi_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48472,9 +48472,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APIBKeyLo_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48529,9 +48529,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APIBKeyHi_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48586,9 +48586,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APDAKeyLo_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48643,9 +48643,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APDAKeyHi_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48700,9 +48700,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APDBKeyLo_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48757,9 +48757,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APDBKeyHi_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48814,9 +48814,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APGAKeyLo_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48871,9 +48871,9 @@ static VBOXSTRICTRC iemCImplA64_msr_APGAKeyHi_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPAuth)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(40)/*APK*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48928,9 +48928,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCSCR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -48989,9 +48989,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCSPR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49050,9 +49050,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCSCRE0_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49105,9 +49105,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCRMASK_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49182,9 +49182,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2MASK_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49265,9 +49265,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCRALIAS_EL1(PVMCPU pVCpu, uint64_t uValue, 
     RT_NOREF(pVCpu, uValue, uInstrEssence);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49335,9 +49335,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2ALIAS_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTcr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49420,9 +49420,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2ALIAS_EL1(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_SPSR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fGcs
             && iemGetCurrentExlockEn(pVCpu, pGstFeats)
@@ -49485,9 +49485,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPSR_EL1(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_ELR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fGcs
             && iemGetCurrentExlockEn(pVCpu, pGstFeats)
@@ -49549,7 +49549,7 @@ static VBOXSTRICTRC iemCImplA64_msr_ELR_EL1(PVMCPU pVCpu, uint64_t uValue, uint3
  */
 static VBOXSTRICTRC iemCImplA64_msr_SP_EL0(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     if (!(pVCpu->cpum.GstCtx.fPState & UINT64_C(0x1)/*SP*/))
         return iemRaiseUndefined(pVCpu);
@@ -49582,7 +49582,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SP_EL0(PVMCPU pVCpu, uint64_t uValue) RT_NOE
  */
 static VBOXSTRICTRC iemCImplA64_msr_SPSel(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     pVCpu->cpum.GstCtx.fPState = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0xfffffffffffffffe)) | (uValue & 1);
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -49607,7 +49607,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PAN(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCE
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPan)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     pVCpu->cpum.GstCtx.fPState = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0xffffffffffbfffff)) | (uValue & 0x400000);
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -49634,7 +49634,7 @@ static VBOXSTRICTRC iemCImplA64_msr_UAO(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCE
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fUao)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     pVCpu->cpum.GstCtx.fPState = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0xffffffffff7fffff)) | (uValue & 0x800000);
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -49661,9 +49661,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ALLINT(PVMCPU pVCpu, uint64_t uValue) RT_NOE
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fNmi)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         pVCpu->cpum.GstCtx.fPState = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0xffffffffffffdfff)) | (uValue & 0x2000);
     else
         pVCpu->cpum.GstCtx.fPState = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0xffffffffffffdfff)) | (uValue & 0x2000);
@@ -49694,7 +49694,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PM(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEP
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEbep)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     pVCpu->cpum.GstCtx.fPState = (pVCpu->cpum.GstCtx.fPState & UINT64_C(0xfffffffeffffffff)) | (uValue & UINT64_C(0x100000000));
     return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
@@ -49723,9 +49723,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_PMR_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (AArch64.ICC_SRE_EL1.SRE == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -49801,9 +49801,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_PMR_EL1(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_msr_AFSR0_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49854,9 +49854,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AFSR0_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_AFSR1_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49907,9 +49907,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AFSR1_EL1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_ESR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -49959,9 +49959,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERRSELR_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50028,9 +50028,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXCTLR_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50097,9 +50097,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXSTATUS_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50170,9 +50170,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXADDR_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50239,9 +50239,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXPFGCTL_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(47)/*FIEN*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50298,9 +50298,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXPFGCDN_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(47)/*FIEN*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50357,9 +50357,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXMISC0_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50430,9 +50430,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXMISC1_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50503,9 +50503,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXMISC2_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50576,9 +50576,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ERXMISC3_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRasV1p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(36)/*TERR*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50649,9 +50649,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TFSR_EL1(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 3)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50711,9 +50711,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TFSRE0_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(56)/*ATA*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50759,9 +50759,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TFSRE0_EL1(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_FAR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50811,9 +50811,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PFAR_EL1(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPfar)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 7)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x2d0, uValue);
@@ -50866,9 +50866,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PFAR_EL1(PVMCPU pVCpu, uint64_t uValue, uint
  */
 static VBOXSTRICTRC iemCImplA64_msr_PAR_EL1(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         pVCpu->cpum.GstCtx.Par.u64 = uValue;
     else
         pVCpu->cpum.GstCtx.Par.u64 = uValue;
@@ -50900,9 +50900,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMBLIMITR_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 12) & UINT32_C(0x3)/*E2PB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -50977,9 +50977,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMBPTR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 12) & UINT32_C(0x3)/*E2PB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51052,9 +51052,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMBSR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 12) & UINT32_C(0x3)/*E2PB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51135,9 +51135,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSDSFR_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpeFds)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51225,9 +51225,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMBMAR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpeNvm)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 12) & UINT32_C(0x3)/*E2PB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51307,9 +51307,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBLIMITR_EL1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51387,9 +51387,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBPTR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51463,9 +51463,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBBASER_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51545,9 +51545,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBSR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51634,9 +51634,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBMAR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51710,9 +51710,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBMPAM_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbeMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51803,9 +51803,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBTRG_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (((pVCpu->cpum.GstCtx.MdcrEl2.u64 >> 24) & UINT32_C(0x3)/*E2TB*/) & 1) == 0)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51879,7 +51879,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSSCR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3Ss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
     return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,0,9,13,3), "PMSSCR_EL1", uValue, uInstrEssence);
     /* -------- Original code specification: -------- */
@@ -51925,9 +51925,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMINTENSET_EL1(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -51984,9 +51984,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMINTENCLR_EL1(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52043,9 +52043,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMUACR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3p9)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52111,9 +52111,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMECR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEbep && !pGstFeats->fPmuV3Ss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52179,9 +52179,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMIAR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSebep)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52247,9 +52247,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSCR_EL1(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52324,9 +52324,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSNEVFR_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpeFnE)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52417,9 +52417,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSICR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52490,9 +52490,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSIRR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52563,9 +52563,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSFCR_EL1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52632,9 +52632,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSEVFR_EL1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52705,9 +52705,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSLATFR_EL1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(14)/*TPMS*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52780,9 +52780,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSLATFR_EL1(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_CSSELR_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(17)/*TID2*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52824,7 +52824,7 @@ static VBOXSTRICTRC iemCImplA64_msr_POR_EL0(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -52858,7 +52858,7 @@ static VBOXSTRICTRC iemCImplA64_msr_POR_EL0(PVMCPU pVCpu, uint64_t uValue, uint3
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,10,2,4), "POR_EL0", uValue, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(26)/*TVM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -52933,9 +52933,9 @@ static VBOXSTRICTRC iemCImplA64_msr_POR_EL0(PVMCPU pVCpu, uint64_t uValue, uint3
  */
 static VBOXSTRICTRC iemCImplA64_msr_TPIDR_EL0(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         pVCpu->cpum.GstCtx.aTpIdr[0].u64 = uValue;
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         pVCpu->cpum.GstCtx.aTpIdr[0].u64 = uValue;
     else
         pVCpu->cpum.GstCtx.aTpIdr[0].u64 = uValue;
@@ -52971,9 +52971,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TPIDR_EL0(PVMCPU pVCpu, uint64_t uValue) RT_
  */
 static VBOXSTRICTRC iemCImplA64_msr_TPIDRRO_EL0(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEPT
 {
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         pVCpu->cpum.GstCtx.TpIdrRoEl0.u64 = uValue;
     else
         pVCpu->cpum.GstCtx.TpIdrRoEl0.u64 = uValue;
@@ -53005,7 +53005,7 @@ static VBOXSTRICTRC iemCImplA64_msr_TPIDR2_EL0(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -53032,7 +53032,7 @@ static VBOXSTRICTRC iemCImplA64_msr_TPIDR2_EL0(PVMCPU pVCpu, uint64_t uValue, ui
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,13,0,5), "TPIDR2_EL0", uValue, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -53104,7 +53104,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SCXTNUM_EL0(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCvs2_2 && !pGstFeats->fCsv21p2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -53135,7 +53135,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SCXTNUM_EL0(PVMCPU pVCpu, uint64_t uValue, u
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && !(pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(53)/*EnSCXT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -53215,8 +53215,8 @@ static VBOXSTRICTRC iemCImplA64_msr_AMCR_EL0(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2)
-        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1))
+    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2)
+        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1))
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,13,2,0), "AMCR_EL0", uValue, uInstrEssence);
     return iemRaiseUndefined(pVCpu);
     /* -------- Original code specification: -------- */
@@ -53238,9 +53238,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AMUSERENR_EL0(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.CptrEl2.u64 & RT_BIT_32(30)/*TAM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -53292,8 +53292,8 @@ static VBOXSTRICTRC iemCImplA64_msr_AMCNTENCLR0_EL0(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2)
-        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1))
+    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2)
+        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1))
         return iemCImplA64_msr_novar(pVCpu,
                                      ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,13,2,4),
                                      "AMCNTENCLR0_EL0",
@@ -53319,8 +53319,8 @@ static VBOXSTRICTRC iemCImplA64_msr_AMCNTENSET0_EL0(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2)
-        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1))
+    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2)
+        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1))
         return iemCImplA64_msr_novar(pVCpu,
                                      ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,13,2,5),
                                      "AMCNTENSET0_EL0",
@@ -53346,8 +53346,8 @@ static VBOXSTRICTRC iemCImplA64_msr_AMCNTENCLR1_EL0(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2)
-        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1))
+    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2)
+        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1))
         return iemCImplA64_msr_novar(pVCpu,
                                      ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,13,3,0),
                                      "AMCNTENCLR1_EL0",
@@ -53373,8 +53373,8 @@ static VBOXSTRICTRC iemCImplA64_msr_AMCNTENSET1_EL0(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1)
         return iemRaiseUndefined(pVCpu);
-    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2)
-        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1))
+    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2)
+        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1))
         return iemCImplA64_msr_novar(pVCpu,
                                      ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,13,3,1),
                                      "AMCNTENSET1_EL0",
@@ -53398,8 +53398,8 @@ static VBOXSTRICTRC iemCImplA64_msr_AMCNTENSET1_EL0(PVMCPU pVCpu, uint64_t uValu
 static VBOXSTRICTRC iemCImplA64_msr_CNTFRQ_EL0(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2)
-        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1))
+    if (   (pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2)
+        || (!pGstFeats->fEl2 && IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1))
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,14,0,0), "CNTFRQ_EL0", uValue, uInstrEssence);
     return iemRaiseUndefined(pVCpu);
     /* -------- Original code specification: -------- */
@@ -53419,7 +53419,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCCFILTR_EL0(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -53441,7 +53441,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCCFILTR_EL0(PVMCPU pVCpu, uint64_t uValue,
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -53521,7 +53521,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCCFILTR_EL0(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_CNTP_TVAL_EL0(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -53563,7 +53563,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_TVAL_EL0(PVMCPU pVCpu, uint64_t uValue,
                                          (int64_t)(int32_t)(uValue) + iemCImplHlpGetPhysicalSystemTimerCount(pVCpu),
                                          uInstrEssence);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fEl2
             && (   !pGstFeats->fVhe
@@ -53650,7 +53650,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_TVAL_EL0(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_CNTP_CTL_EL0(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -53692,7 +53692,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_CTL_EL0(PVMCPU pVCpu, uint64_t uValue, 
                                          uValue,
                                          uInstrEssence);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fEl2
             && (   !pGstFeats->fVhe
@@ -53772,7 +53772,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_CTL_EL0(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_CNTP_CVAL_EL0(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -53814,7 +53814,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_CVAL_EL0(PVMCPU pVCpu, uint64_t uValue,
                                          uValue,
                                          uInstrEssence);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fEl2
             && (   !pGstFeats->fVhe
@@ -53894,7 +53894,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_CVAL_EL0(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_CNTV_TVAL_EL0(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -53940,7 +53940,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTV_TVAL_EL0(PVMCPU pVCpu, uint64_t uValue,
         else
             pVCpu->cpum.GstCtx.CntvCValEl0 = (int64_t)(int32_t)(uValue) + iemCImplHlpGetPhysicalSystemTimerCount(pVCpu);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fEcv && (pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & RT_BIT_32(13)/*EL1TVT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -54021,7 +54021,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTV_TVAL_EL0(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_CNTV_CTL_EL0(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -54058,7 +54058,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTV_CTL_EL0(PVMCPU pVCpu, uint64_t uValue, 
                                          uInstrEssence);
         pVCpu->cpum.GstCtx.CntvCtlEl0 = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fEcv && (pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & RT_BIT_32(13)/*EL1TVT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -54120,7 +54120,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTV_CTL_EL0(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_CNTV_CVAL_EL0(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -54157,7 +54157,7 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTV_CVAL_EL0(PVMCPU pVCpu, uint64_t uValue,
                                          uInstrEssence);
         pVCpu->cpum.GstCtx.CntvCValEl0 = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fEcv && (pVCpu->cpum.GstCtx.CntHCtlEl2.u64 & RT_BIT_32(13)/*EL1TVT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -54221,9 +54221,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCSPR_EL0(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -54292,7 +54292,7 @@ static VBOXSTRICTRC iemCImplA64_msr_NZCV(PVMCPU pVCpu, uint64_t uValue) RT_NOEXC
 static VBOXSTRICTRC iemCImplA64_msr_DAIF(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   pGstFeats->fVhe
                 && pGstFeats->fEl2
@@ -54336,7 +54336,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SVCR(PVMCPU pVCpu, uint64_t uValue, uint32_t
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -54367,7 +54367,7 @@ static VBOXSTRICTRC iemCImplA64_msr_SVCR(PVMCPU pVCpu, uint64_t uValue, uint32_t
             return iemRaiseSystemAccessTrapSme(pVCpu, 2);
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,4,2,2), "SVCR", uValue, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 24) & UINT32_C(0x3)/*SMEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapSme(pVCpu, 1);
@@ -54537,7 +54537,7 @@ static VBOXSTRICTRC iemCImplA64_msr_TCO(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCE
 static VBOXSTRICTRC iemCImplA64_msr_FPCR(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -54568,7 +54568,7 @@ static VBOXSTRICTRC iemCImplA64_msr_FPCR(PVMCPU pVCpu, uint64_t uValue) RT_NOEXC
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 2);
         pVCpu->cpum.GstCtx.fpcr = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 20) & UINT32_C(0x3)/*FPEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 1);
@@ -54667,7 +54667,7 @@ static VBOXSTRICTRC iemCImplA64_msr_FPCR(PVMCPU pVCpu, uint64_t uValue) RT_NOEXC
 static VBOXSTRICTRC iemCImplA64_msr_FPSR(PVMCPU pVCpu, uint64_t uValue) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -54698,7 +54698,7 @@ static VBOXSTRICTRC iemCImplA64_msr_FPSR(PVMCPU pVCpu, uint64_t uValue) RT_NOEXC
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 2);
         pVCpu->cpum.GstCtx.fpsr = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((((pVCpu->cpum.GstCtx.Cpacr.u64 >> 20) & UINT32_C(0x3)/*FPEN*/) & 1) == 0)
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 1);
@@ -54799,7 +54799,7 @@ static VBOXSTRICTRC iemCImplA64_msr_FPMR(PVMCPU pVCpu, uint64_t uValue, uint32_t
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFpmr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -54852,7 +54852,7 @@ static VBOXSTRICTRC iemCImplA64_msr_FPMR(PVMCPU pVCpu, uint64_t uValue, uint32_t
             return iemRaiseSystemAccessTrapAdvSimdFpAccessA64(pVCpu, 2);
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,4,4,2), "FPMR", uValue, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fEl2
             && (   !pGstFeats->fVhe
@@ -55019,7 +55019,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCR_EL0(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             || (pGstFeats->fPmuV3p9 && (iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -55034,7 +55034,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCR_EL0(PVMCPU pVCpu, uint64_t uValue, uint
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,9,12,0), "PMCR_EL0", uValue, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -55114,7 +55114,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCNTENSET_EL0(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -55131,7 +55131,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCNTENSET_EL0(PVMCPU pVCpu, uint64_t uValue
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -55209,7 +55209,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCNTENCLR_EL0(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -55226,7 +55226,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCNTENCLR_EL0(PVMCPU pVCpu, uint64_t uValue
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -55304,7 +55304,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMOVSCLR_EL0(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -55321,7 +55321,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMOVSCLR_EL0(PVMCPU pVCpu, uint64_t uValue, 
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -55399,7 +55399,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSWINC_EL0(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x13) /*UEN,SW,EN*/))
             || (!pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x3) /*SW,EN*/)))
@@ -55416,7 +55416,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSWINC_EL0(PVMCPU pVCpu, uint64_t uValue, u
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -55496,7 +55496,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSELR_EL0(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x19) /*UEN,ER,EN*/))
             || (!pGstFeats->fPmuV3p9 && !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT64_C(0x9) /*ER,EN*/)))
@@ -55509,7 +55509,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSELR_EL0(PVMCPU pVCpu, uint64_t uValue, ui
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,9,12,5), "PMSELR_EL0", uValue, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -55585,7 +55585,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCCNTR_EL0(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -55607,7 +55607,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMCCNTR_EL0(PVMCPU pVCpu, uint64_t uValue, u
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -55697,7 +55697,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMXEVTYPER_EL0(PVMCPU pVCpu, uint64_t uValue
             return iemRaiseUndefined(pVCpu);
         ConstrainUnpredictableProcedure(Unpredictable_PMUEVENTCOUNTER)
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -55735,7 +55735,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMXEVTYPER_EL0(PVMCPU pVCpu, uint64_t uValue
         else
             PMEVTYPER_EL0<UInt(AArch64.PMSELR_EL0.SEL)> = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -55879,7 +55879,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMXEVCNTR_EL0(PVMCPU pVCpu, uint64_t uValue,
             return iemRaiseUndefined(pVCpu);
         ConstrainUnpredictableProcedure(Unpredictable_PMUEVENTCOUNTER)
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -55905,7 +55905,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMXEVCNTR_EL0(PVMCPU pVCpu, uint64_t uValue,
         else
             PMEVCNTR_EL0<UInt(AArch64.PMSELR_EL0.SEL)> = uValue;
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56012,7 +56012,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMZR_EL0(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3p9)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -56025,7 +56025,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMZR_EL0(PVMCPU pVCpu, uint64_t uValue, uint
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         ZeroPMUCounters(X<t,0x40>)
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56101,9 +56101,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMUSERENR_EL0(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56160,7 +56160,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMOVSSET_EL0(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & UINT32_C(1)/*EN*/)
             && (!pGstFeats->fPmuV3p9 || !(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/)))
@@ -56177,7 +56177,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMOVSSET_EL0(PVMCPU pVCpu, uint64_t uValue, 
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56257,7 +56257,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMICNTR_EL0(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3Icntr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/))
         {
@@ -56273,7 +56273,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMICNTR_EL0(PVMCPU pVCpu, uint64_t uValue, u
             return iemRegPcA64IncAndFinishingClearingFlags(pVCpu, VINF_SUCCESS);
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,3,9,4,0), "PMICNTR_EL0", uValue, uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56374,7 +56374,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMICFILTR_EL0(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPmuV3Icntr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!(iemCImplHlpGetPmUserEnrEl0(pVCpu) & RT_BIT_32(4)/*UEN*/))
         {
@@ -56394,7 +56394,7 @@ static VBOXSTRICTRC iemCImplA64_msr_PMICFILTR_EL0(PVMCPU pVCpu, uint64_t uValue,
                                      uValue,
                                      uInstrEssence);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.MdcrEl2.u64 & RT_BIT_32(6)/*TPM*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56495,9 +56495,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMICFILTR_EL0(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_VPIDR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x88, uValue);
@@ -56533,9 +56533,9 @@ static VBOXSTRICTRC iemCImplA64_msr_VPIDR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_VMPIDR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x50, uValue);
@@ -56571,9 +56571,9 @@ static VBOXSTRICTRC iemCImplA64_msr_VMPIDR_EL2(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_SCTLR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56612,9 +56612,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ACTLR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     RT_NOREF(pVCpu, uValue, uInstrEssence);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56658,9 +56658,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2_EL2(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSctlr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56709,9 +56709,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2_EL2(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_HCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x78, uValue);
@@ -56745,9 +56745,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint3
 static VBOXSTRICTRC iemCImplA64_msr_MDCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56785,9 +56785,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MDCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_CPTR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -56831,9 +56831,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CPTR_EL2(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_HSTR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x80, uValue);
@@ -56868,9 +56868,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HFGRTR_EL2(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1b8, uValue);
@@ -56915,9 +56915,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HFGWTR_EL2(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1c0, uValue);
@@ -56962,9 +56962,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HFGITR_EL2(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1c8, uValue);
@@ -57007,9 +57007,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HFGITR_EL2(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_HACR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57040,9 +57040,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ZCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSve)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57098,9 +57098,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRFCR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrf)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57141,9 +57141,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HCRX_EL2(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHcx)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0xa0, uValue);
@@ -57188,9 +57188,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCITECR_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fIte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57231,9 +57231,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SMPRIMAP_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1f8, uValue);
@@ -57281,9 +57281,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SMCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57376,9 +57376,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLRMASK_EL2(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57425,9 +57425,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ACTLRMASK_EL2(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57474,9 +57474,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CPTRMASK_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57523,9 +57523,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2MASK_EL2(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57572,9 +57572,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MAIR2_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57613,9 +57613,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MAIR2_EL2(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_MAIR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57647,9 +57647,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PIRE0_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57690,9 +57690,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PIR_EL2(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57733,9 +57733,9 @@ static VBOXSTRICTRC iemCImplA64_msr_POR_EL2(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57776,9 +57776,9 @@ static VBOXSTRICTRC iemCImplA64_msr_S2PIR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS2Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x2b0, uValue);
@@ -57821,9 +57821,9 @@ static VBOXSTRICTRC iemCImplA64_msr_S2PIR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_AMAIR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57854,9 +57854,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AMAIR2_EL2(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -57899,9 +57899,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMHCR_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x930, uValue);
@@ -57956,9 +57956,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPMV_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x938, uValue);
@@ -58011,9 +58011,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAM2_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -58060,9 +58060,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMBW2_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -58123,9 +58123,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMBWCAP_EL2(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl || AArch64.MPAMIDR_EL1.HAS_HCR != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x910, uValue);
@@ -58192,9 +58192,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPM0_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x940, uValue);
@@ -58249,9 +58249,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPM1_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x948, uValue);
@@ -58306,9 +58306,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPM2_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x950, uValue);
@@ -58363,9 +58363,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPM3_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x958, uValue);
@@ -58420,9 +58420,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPM4_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 3)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x960, uValue);
@@ -58477,9 +58477,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPM5_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 4)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x968, uValue);
@@ -58534,9 +58534,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPM6_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) <= 5)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x970, uValue);
@@ -58591,9 +58591,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMVPM7_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam || AArch64.MPAMIDR_EL1.HAS_HCR != 1 || UInt(AArch64.MPAMIDR_EL1.VPMR_MAX) != 7)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x978, uValue);
@@ -58836,9 +58836,9 @@ static VBOXSTRICTRC iemCImplA64_msr_VMECID_A_EL2(PVMCPU pVCpu, uint64_t uValue) 
 static VBOXSTRICTRC iemCImplA64_msr_VBAR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -58870,9 +58870,9 @@ static VBOXSTRICTRC iemCImplA64_msr_RMR_EL2(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1 && pGstFeats->fEl2 && (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1 && pGstFeats->fEl2 && (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
         return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 2 && pGstFeats->fEl2)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 2 && pGstFeats->fEl2)
         return iemCImplA64_msr_novar(pVCpu, ARMV8_AARCH64_SYSREG_ID_CREATE(3,4,12,0,2), "RMR_EL2", uValue, uInstrEssence);
     return iemRaiseUndefined(pVCpu);
     /* -------- Original code specification: -------- */
@@ -58896,9 +58896,9 @@ static VBOXSTRICTRC iemCImplA64_msr_VDISR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x500, uValue);
@@ -58937,9 +58937,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICH_HCR_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x4c0, uValue);
@@ -58988,9 +58988,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICH_VMCR_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x4c8, uValue);
@@ -59037,9 +59037,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ICC_SRE_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGicV3 || !pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59083,9 +59083,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CONTEXTIDR_EL2(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fDebugV8p1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59116,9 +59116,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CONTEXTIDR_EL2(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_msr_TPIDR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x90, uValue);
@@ -59154,9 +59154,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCXTNUM_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCvs2_2 && !pGstFeats->fCsv21p2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59195,9 +59195,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCXTNUM_EL2(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_msr_CNTVOFF_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x60, uValue);
@@ -59233,9 +59233,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTPOFF_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEcvPOff)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1a8, uValue);
@@ -59278,9 +59278,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTPOFF_EL2(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_msr_CNTHCTL_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59312,9 +59312,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTHP_TVAL_EL2(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59348,9 +59348,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTHP_CTL_EL2(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59384,9 +59384,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTHP_CVAL_EL2(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fEl2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59420,9 +59420,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTHV_TVAL_EL2(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fVhe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59459,9 +59459,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTHV_CTL_EL2(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fVhe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59494,9 +59494,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTHV_CVAL_EL2(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fVhe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59725,9 +59725,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTHPS_CVAL_EL2(PVMCPU pVCpu, uint64_t uValu
 static VBOXSTRICTRC iemCImplA64_msr_TTBR0_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59759,9 +59759,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TTBR1_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fVhe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59795,9 +59795,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint3
     RT_NOREF(pVCpu, uValue, uInstrEssence);
 #ifdef IEM_SYSREG_TODO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59840,9 +59840,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2_EL2(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTcr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -59891,9 +59891,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2_EL2(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_VTTBR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x20, uValue);
@@ -59927,9 +59927,9 @@ static VBOXSTRICTRC iemCImplA64_msr_VTTBR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_VTCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x40, uValue);
@@ -59965,9 +59965,9 @@ static VBOXSTRICTRC iemCImplA64_msr_VNCR_EL2(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fNv2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0xb0, uValue);
@@ -60004,9 +60004,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HDBSSBR_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHdbss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x2e0, uValue);
@@ -60051,9 +60051,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HDBSSPROD_EL2(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHdbss)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x300, uValue);
@@ -60098,9 +60098,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HACDBSBR_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHacdbs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x2f0, uValue);
@@ -60145,9 +60145,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HACDBSCONS_EL2(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fHacdbs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x308, uValue);
@@ -60192,9 +60192,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCSCR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -60235,9 +60235,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCSPR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -60350,9 +60350,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCRMASK_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -60401,9 +60401,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2MASK_EL2(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -60450,9 +60450,9 @@ static VBOXSTRICTRC iemCImplA64_msr_DACR32_EL2(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAa32El1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -60625,9 +60625,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HDFGRTR_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1d0, uValue);
@@ -60672,9 +60672,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HDFGWTR_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1d8, uValue);
@@ -60719,9 +60719,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HAFGRTR_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAmuV1 || !pGstFeats->fFgt)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1e8, uValue);
@@ -60799,9 +60799,9 @@ static VBOXSTRICTRC iemCImplA64_msr_HFGITR2_EL2(PVMCPU pVCpu, uint64_t uValue) R
 static VBOXSTRICTRC iemCImplA64_msr_SPSR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fGcs
             && iemGetCurrentExlockEn(pVCpu, pGstFeats)
@@ -60857,9 +60857,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPSR_EL2(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_ELR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fGcs
             && iemGetCurrentExlockEn(pVCpu, pGstFeats)
@@ -60915,9 +60915,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ELR_EL2(PVMCPU pVCpu, uint64_t uValue, uint3
 static VBOXSTRICTRC iemCImplA64_msr_SP_EL1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x240, uValue);
@@ -60951,9 +60951,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SP_EL1(PVMCPU pVCpu, uint64_t uValue, uint32
 static VBOXSTRICTRC iemCImplA64_msr_SPSR_irq(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -60982,9 +60982,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPSR_irq(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_SPSR_abt(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61013,9 +61013,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPSR_abt(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_SPSR_und(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61044,9 +61044,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPSR_und(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_SPSR_fiq(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61077,9 +61077,9 @@ static VBOXSTRICTRC iemCImplA64_msr_IFSR32_EL2(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAa32El1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61110,9 +61110,9 @@ static VBOXSTRICTRC iemCImplA64_msr_IFSR32_EL2(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_AFSR0_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61141,9 +61141,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AFSR0_EL2(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_AFSR1_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61172,9 +61172,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AFSR1_EL2(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_ESR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             pVCpu->cpum.GstCtx.Esr.u64 = uValue;
@@ -61212,9 +61212,9 @@ static VBOXSTRICTRC iemCImplA64_msr_VSESR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fRas)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x508, uValue);
@@ -61251,9 +61251,9 @@ static VBOXSTRICTRC iemCImplA64_msr_FPEXC32_EL2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAa32El1)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61309,9 +61309,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TFSR_EL2(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
         {
@@ -61372,9 +61372,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TFSR_EL2(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_FAR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 5) == 5)
             pVCpu->cpum.GstCtx.Far.u64 = uValue;
@@ -61410,9 +61410,9 @@ static VBOXSTRICTRC iemCImplA64_msr_FAR_EL2(PVMCPU pVCpu, uint64_t uValue, uint3
 static VBOXSTRICTRC iemCImplA64_msr_HPFAR_EL2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61444,9 +61444,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PFAR_EL2(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPfar)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61487,9 +61487,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMBSR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpeExc)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61544,9 +61544,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBSR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbeExc)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61601,9 +61601,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSCR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -61649,9 +61649,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSCR_EL2(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_SCTLR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x110, uValue);
@@ -61694,9 +61694,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_ACTLR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x118, uValue);
@@ -61739,9 +61739,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ACTLR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_CPACR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x100, uValue);
@@ -61794,9 +61794,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2_EL12(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSctlr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x278, uValue);
@@ -61849,9 +61849,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ZCR_EL12(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSve)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1e0, uValue);
@@ -61913,9 +61913,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRFCR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrf)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x880, uValue);
@@ -61968,9 +61968,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRCITECR_EL12(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fIte || !pGstFeats->fTrcSr)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x888, uValue);
@@ -62027,9 +62027,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SMCR_EL12(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSme)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x1f0, uValue);
@@ -62091,9 +62091,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLRMASK_EL12(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x318, uValue);
@@ -62150,9 +62150,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ACTLRMASK_EL12(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x340, uValue);
@@ -62209,9 +62209,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CPACRMASK_EL12(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x320, uValue);
@@ -62268,9 +62268,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2MASK_EL12(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x328, uValue);
@@ -62325,9 +62325,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCTLR2MASK_EL12(PVMCPU pVCpu, uint64_t uValu
 static VBOXSTRICTRC iemCImplA64_msr_MAIR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x140, uValue);
@@ -62372,9 +62372,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MAIR2_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x280, uValue);
@@ -62427,9 +62427,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PIRE0_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x290, uValue);
@@ -62482,9 +62482,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PIR_EL12(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Pie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x2a0, uValue);
@@ -62537,9 +62537,9 @@ static VBOXSTRICTRC iemCImplA64_msr_POR_EL12(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fS1Poe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x2a8, uValue);
@@ -62590,9 +62590,9 @@ static VBOXSTRICTRC iemCImplA64_msr_POR_EL12(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_AMAIR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x148, uValue);
@@ -62637,9 +62637,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AMAIR2_EL12(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fAie)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x288, uValue);
@@ -62692,9 +62692,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAM1_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpam)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x900, uValue);
@@ -62753,9 +62753,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMBW1_EL12(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMpamPeBwCtrl)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x908, uValue);
@@ -62828,9 +62828,9 @@ static VBOXSTRICTRC iemCImplA64_msr_MPAMBW1_EL12(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_VBAR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x250, uValue);
@@ -62873,9 +62873,9 @@ static VBOXSTRICTRC iemCImplA64_msr_VBAR_EL12(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_CONTEXTIDR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x108, uValue);
@@ -62920,9 +62920,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCXTNUM_EL12(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fCvs2_2 && !pGstFeats->fCsv21p2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x188, uValue);
@@ -62977,9 +62977,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SCXTNUM_EL12(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_CNTKCTL_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -63018,9 +63018,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTKCTL_EL12(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_msr_CNTP_TVAL_EL02(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -63061,9 +63061,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_TVAL_EL02(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_msr_CNTP_CTL_EL02(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
         {
@@ -63120,9 +63120,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_CTL_EL02(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_CNTP_CVAL_EL02(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
         {
@@ -63179,9 +63179,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTP_CVAL_EL02(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_msr_CNTV_TVAL_EL02(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -63222,9 +63222,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTV_TVAL_EL02(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_msr_CNTV_CTL_EL02(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
         {
@@ -63279,9 +63279,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTV_CTL_EL02(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_CNTV_CVAL_EL02(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
         {
@@ -63336,9 +63336,9 @@ static VBOXSTRICTRC iemCImplA64_msr_CNTV_CVAL_EL02(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_msr_TTBR0_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x200, uValue);
@@ -63381,9 +63381,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TTBR0_EL12(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_TTBR1_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x210, uValue);
@@ -63426,9 +63426,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TTBR1_EL12(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_TCR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x120, uValue);
@@ -63473,9 +63473,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2_EL12(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTcr2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x270, uValue);
@@ -63528,9 +63528,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCSCR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x8d0, uValue);
@@ -63583,9 +63583,9 @@ static VBOXSTRICTRC iemCImplA64_msr_GCSPR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x8c0, uValue);
@@ -63638,9 +63638,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCRMASK_EL12(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x330, uValue);
@@ -63693,9 +63693,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2MASK_EL12(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSrMask)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x338, uValue);
@@ -63750,9 +63750,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TCR2MASK_EL12(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_msr_SPSR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x160, uValue);
@@ -63795,9 +63795,9 @@ static VBOXSTRICTRC iemCImplA64_msr_SPSR_EL12(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_ELR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x230, uValue);
@@ -63840,9 +63840,9 @@ static VBOXSTRICTRC iemCImplA64_msr_ELR_EL12(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_msr_AFSR0_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x128, uValue);
@@ -63885,9 +63885,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AFSR0_EL12(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_AFSR1_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x130, uValue);
@@ -63930,9 +63930,9 @@ static VBOXSTRICTRC iemCImplA64_msr_AFSR1_EL12(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_msr_ESR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x138, uValue);
@@ -63977,9 +63977,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TFSR_EL12(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x190, uValue);
@@ -64030,9 +64030,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TFSR_EL12(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_msr_FAR_EL12(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x220, uValue);
@@ -64077,9 +64077,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PFAR_EL12(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPfar)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x2d0, uValue);
@@ -64132,9 +64132,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMBSR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x820, uValue);
@@ -64194,9 +64194,9 @@ static VBOXSTRICTRC iemCImplA64_msr_TRBSR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTrbeExc)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x860, uValue);
@@ -64267,9 +64267,9 @@ static VBOXSTRICTRC iemCImplA64_msr_PMSCR_EL12(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemGetEffHcrEl2NVx(pVCpu, pGstFeats) == 5)
             return iemCImplHlpNVMemWriteU64(pVCpu, 0x828, uValue);
@@ -70967,9 +70967,9 @@ static VBOXSTRICTRC iemCImplA64_sys_IC_IALLUIS(PVMCPU pVCpu, uint64_t uValue, ui
 {
     RT_NOREF(uValue);
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(24)/*TPU*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71007,9 +71007,9 @@ static VBOXSTRICTRC iemCImplA64_sys_IC_IALLUIS(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_sys_DC_CSW(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71053,9 +71053,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGSW(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71101,9 +71101,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDSW(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71147,9 +71147,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDSW(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_DC_CISW(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71193,9 +71193,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGSW(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71241,9 +71241,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGDSW(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71289,9 +71289,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIVAPS(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPoPs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71336,9 +71336,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGDVAPS(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPoPs || !pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71382,9 +71382,9 @@ static VBOXSTRICTRC iemCImplA64_sys_IC_IALLU(PVMCPU pVCpu, uint64_t uValue, uint
 {
     RT_NOREF(uValue);
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(24)/*TPU*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71426,9 +71426,9 @@ static VBOXSTRICTRC iemCImplA64_sys_IC_IALLU(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_DC_IVAC(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71470,9 +71470,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_IVAC(PVMCPU pVCpu, uint64_t uValue, uint3
 static VBOXSTRICTRC iemCImplA64_sys_DC_ISW(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71516,9 +71516,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_IGVAC(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71564,9 +71564,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_IGSW(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71612,9 +71612,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_IGDVAC(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71660,9 +71660,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_IGDSW(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(22)/*TSW*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71709,9 +71709,9 @@ static VBOXSTRICTRC iemCImplA64_sys_GCSPUSHX(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fGcs
             && iemGetCurrentExlockEn(pVCpu, pGstFeats)
@@ -71770,9 +71770,9 @@ static VBOXSTRICTRC iemCImplA64_sys_GCSPOPCX(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (   pGstFeats->fGcs
             && iemGetCurrentExlockEn(pVCpu, pGstFeats)
@@ -71831,9 +71831,9 @@ static VBOXSTRICTRC iemCImplA64_sys_GCSPOPX(PVMCPU pVCpu, uint64_t uValue) RT_NO
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (iemCImplHlpIsGcsEnabled(pVCpu, 1))
             return iemCImplHlpA64GcsPopX(pVCpu);
@@ -71868,9 +71868,9 @@ static VBOXSTRICTRC iemCImplA64_sys_GCSPOPX(PVMCPU pVCpu, uint64_t uValue) RT_NO
 static VBOXSTRICTRC iemCImplA64_sys_AT_S1E1R(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(44)/*AT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71904,9 +71904,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E1R(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_AT_S1E1W(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(44)/*AT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71940,9 +71940,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E1W(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_AT_S1E0R(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(44)/*AT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -71976,9 +71976,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E0R(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_AT_S1E0W(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(44)/*AT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72014,9 +72014,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E1RP(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPan2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(44)/*AT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72054,9 +72054,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E1WP(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fPan2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(44)/*AT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72094,9 +72094,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E1A(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fATs1a)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_64(44)/*AT*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72134,9 +72134,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLE1OS(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72216,9 +72216,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE1OS(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72337,9 +72337,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ASIDE1OS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72419,9 +72419,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAAE1OS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72540,9 +72540,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE1OS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72661,9 +72661,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAALE1OS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72782,9 +72782,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE1IS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -72903,9 +72903,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAAE1IS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73024,9 +73024,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE1IS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73145,9 +73145,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAALE1IS(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73264,9 +73264,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAALE1IS(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLE1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73342,9 +73342,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLE1IS(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73459,9 +73459,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE1IS(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_ASIDE1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73537,9 +73537,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ASIDE1IS(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAAE1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73654,9 +73654,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAAE1IS(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73771,9 +73771,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE1IS(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAALE1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -73890,9 +73890,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE1OS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange || !pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -74011,9 +74011,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAAE1OS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange || !pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -74132,9 +74132,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE1OS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange || !pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -74253,9 +74253,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAALE1OS(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange || !pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -74374,9 +74374,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE1(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -74520,9 +74520,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAAE1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -74666,9 +74666,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE1(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -74812,9 +74812,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAALE1(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -74956,9 +74956,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAALE1(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLE1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -75056,9 +75056,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLE1(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -75198,9 +75198,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE1(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_ASIDE1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -75293,9 +75293,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ASIDE1(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAAE1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -75435,9 +75435,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAAE1(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -75577,9 +75577,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE1(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAALE1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -75723,9 +75723,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLE1OSNXS(PVMCPU pVCpu, uint64_t uVa
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -75806,9 +75806,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE1OSNXS(PVMCPU pVCpu, uint64_t uValue
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -75922,9 +75922,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ASIDE1OSNXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76005,9 +76005,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAAE1OSNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76121,9 +76121,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE1OSNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76237,9 +76237,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAALE1OSNXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76353,9 +76353,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE1ISNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76469,9 +76469,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAAE1ISNXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76585,9 +76585,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE1ISNXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76701,9 +76701,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAALE1ISNXS(PVMCPU pVCpu, uint64_t uVa
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76815,9 +76815,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLE1ISNXS(PVMCPU pVCpu, uint64_t uVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -76894,9 +76894,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE1ISNXS(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77006,9 +77006,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ASIDE1ISNXS(PVMCPU pVCpu, uint64_t uVal
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77085,9 +77085,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAAE1ISNXS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77197,9 +77197,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE1ISNXS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77309,9 +77309,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAALE1ISNXS(PVMCPU pVCpu, uint64_t uVal
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77423,9 +77423,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE1OSNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77539,9 +77539,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAAE1OSNXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77655,9 +77655,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE1OSNXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77771,9 +77771,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAALE1OSNXS(PVMCPU pVCpu, uint64_t uVa
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -77887,9 +77887,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE1NXS(PVMCPU pVCpu, uint64_t uValue,
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78016,9 +78016,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAAE1NXS(PVMCPU pVCpu, uint64_t uValue
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78145,9 +78145,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE1NXS(PVMCPU pVCpu, uint64_t uValue
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78274,9 +78274,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAALE1NXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78401,9 +78401,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLE1NXS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78486,9 +78486,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE1NXS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78611,9 +78611,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ASIDE1NXS(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78696,9 +78696,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAAE1NXS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78821,9 +78821,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE1NXS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -78946,9 +78946,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAALE1NXS(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79072,9 +79072,9 @@ static VBOXSTRICTRC iemCImplA64_sys_BRB_IALL(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79140,9 +79140,9 @@ static VBOXSTRICTRC iemCImplA64_sys_BRB_INJ(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fBrbe)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && pGstFeats->fFgt)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79205,7 +79205,7 @@ static VBOXSTRICTRC iemCImplA64_sys_BRB_INJ(PVMCPU pVCpu, uint64_t uValue, uint3
 static VBOXSTRICTRC iemCImplA64_sys_DC_CVAC(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79236,7 +79236,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVAC(PVMCPU pVCpu, uint64_t uValue, uint3
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoC);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79296,7 +79296,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGVAC(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79327,7 +79327,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGVAC(PVMCPU pVCpu, uint64_t uValue, uint
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoC);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79389,7 +79389,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVAC(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79420,7 +79420,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVAC(PVMCPU pVCpu, uint64_t uValue, uin
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoC);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79482,7 +79482,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVAOC(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fOccmo)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79513,7 +79513,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVAOC(PVMCPU pVCpu, uint64_t uValue, uint
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_OuterCache);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79573,7 +79573,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVAOC(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_DC_CVAU(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79611,7 +79611,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVAU(PVMCPU pVCpu, uint64_t uValue, uint3
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoU);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(24)/*TPU*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79677,7 +79677,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVAOC(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fOccmo || !pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79708,7 +79708,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVAOC(PVMCPU pVCpu, uint64_t uValue, ui
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_OuterCache);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79770,7 +79770,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVAP(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fDpb)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79801,7 +79801,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVAP(PVMCPU pVCpu, uint64_t uValue, uint3
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoP);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79863,7 +79863,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGVAP(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79894,7 +79894,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGVAP(PVMCPU pVCpu, uint64_t uValue, uint
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoP);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -79956,7 +79956,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVAP(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -79987,7 +79987,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVAP(PVMCPU pVCpu, uint64_t uValue, uin
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoP);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80049,7 +80049,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVADP(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fDpb2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80080,7 +80080,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CVADP(PVMCPU pVCpu, uint64_t uValue, uint
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoDP);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80142,7 +80142,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGVADP(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fDpb2 || !pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80173,7 +80173,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGVADP(PVMCPU pVCpu, uint64_t uValue, uin
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoDP);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80235,7 +80235,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVADP(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fDpb2 || !pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80266,7 +80266,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVADP(PVMCPU pVCpu, uint64_t uValue, ui
                                    kIemCImplA64CacheOp_Clean,
                                    kIemCImplA64CacheOpScope_PoDP);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80326,7 +80326,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CGDVADP(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_sys_DC_CIVAC(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80357,7 +80357,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIVAC(PVMCPU pVCpu, uint64_t uValue, uint
                                    kIemCImplA64CacheOp_CleanInvalidate,
                                    kIemCImplA64CacheOpScope_PoC);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80417,7 +80417,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGVAC(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80448,7 +80448,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGVAC(PVMCPU pVCpu, uint64_t uValue, uin
                                    kIemCImplA64CacheOp_CleanInvalidate,
                                    kIemCImplA64CacheOpScope_PoC);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80510,7 +80510,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGDVAC(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80541,7 +80541,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGDVAC(PVMCPU pVCpu, uint64_t uValue, ui
                                    kIemCImplA64CacheOp_CleanInvalidate,
                                    kIemCImplA64CacheOpScope_PoC);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80603,7 +80603,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIVAOC(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fOccmo)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80634,7 +80634,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIVAOC(PVMCPU pVCpu, uint64_t uValue, uin
                                    kIemCImplA64CacheOp_CleanInvalidate,
                                    kIemCImplA64CacheOpScope_OuterCache);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80696,7 +80696,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGDVAOC(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fOccmo || !pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80727,7 +80727,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGDVAOC(PVMCPU pVCpu, uint64_t uValue, u
                                    kIemCImplA64CacheOp_CleanInvalidate,
                                    kIemCImplA64CacheOpScope_OuterCache);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(23)/*TPCP*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80813,7 +80813,7 @@ static VBOXSTRICTRC iemCImplA64_sys_CFP_RCTX(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpecres)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80833,7 +80833,7 @@ static VBOXSTRICTRC iemCImplA64_sys_CFP_RCTX(PVMCPU pVCpu, uint64_t uValue, uint
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpA64RestrictPrediction(pVCpu, uValue, kIemCImplA64RestrictType_ControlFlow);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80885,7 +80885,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DVP_RCTX(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpecres)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80905,7 +80905,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DVP_RCTX(PVMCPU pVCpu, uint64_t uValue, uint
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpA64RestrictPrediction(pVCpu, uValue, kIemCImplA64RestrictType_DataValue);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -80957,7 +80957,7 @@ static VBOXSTRICTRC iemCImplA64_sys_COSP_RCTX(PVMCPU pVCpu, uint64_t uValue, uin
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpecres2)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -80977,7 +80977,7 @@ static VBOXSTRICTRC iemCImplA64_sys_COSP_RCTX(PVMCPU pVCpu, uint64_t uValue, uin
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpA64RestrictPrediction(pVCpu, uValue, kIemCImplA64RestrictType_Other);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81029,7 +81029,7 @@ static VBOXSTRICTRC iemCImplA64_sys_CPP_RCTX(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fSpecres)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -81049,7 +81049,7 @@ static VBOXSTRICTRC iemCImplA64_sys_CPP_RCTX(PVMCPU pVCpu, uint64_t uValue, uint
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpA64RestrictPrediction(pVCpu, uValue, kIemCImplA64RestrictType_CachePrefetch);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81099,7 +81099,7 @@ static VBOXSTRICTRC iemCImplA64_sys_CPP_RCTX(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_DC_ZVA(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -81126,7 +81126,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_ZVA(PVMCPU pVCpu, uint64_t uValue, uint32
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpA64MemZero(pVCpu, uValue, kIemCImplA64CacheType_Data);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(28)/*TDZ*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81178,7 +81178,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_GVA(PVMCPU pVCpu, uint64_t uValue, uint32
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -81205,7 +81205,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_GVA(PVMCPU pVCpu, uint64_t uValue, uint32
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpA64MemZero(pVCpu, uValue, kIemCImplA64CacheType_Tag);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(28)/*TDZ*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81259,7 +81259,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_GZVA(PVMCPU pVCpu, uint64_t uValue, uint3
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fMte)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -81286,7 +81286,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_GZVA(PVMCPU pVCpu, uint64_t uValue, uint3
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpA64MemZero(pVCpu, uValue, kIemCImplA64CacheType_DataTag);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(28)/*TDZ*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81338,7 +81338,7 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_GZVA(PVMCPU pVCpu, uint64_t uValue, uint3
 static VBOXSTRICTRC iemCImplA64_sys_IC_IVAU(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (   (   !pGstFeats->fVhe
                 || !pGstFeats->fEl2
@@ -81372,7 +81372,7 @@ static VBOXSTRICTRC iemCImplA64_sys_IC_IVAU(PVMCPU pVCpu, uint64_t uValue, uint3
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
         return iemCImplHlpA64SysIcWithArg(pVCpu, uValue, kIemCImplA64CacheOpScope_PoU);
     }
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(24)/*TPU*/))
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81430,7 +81430,7 @@ static VBOXSTRICTRC iemCImplA64_sys_GCSPUSHM(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fGcs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
     {
         if (!pGstFeats->fEl2 || ((pVCpu->cpum.GstCtx.HcrEl2.u64 >> 27) & UINT32_C(1)/*TGE*/) != 1)
             return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
@@ -81439,7 +81439,7 @@ static VBOXSTRICTRC iemCImplA64_sys_GCSPUSHM(PVMCPU pVCpu, uint64_t uValue, uint
         if (iemCImplHlpIsGcsEnabled(pVCpu, 0))
             return iemCImplHlpA64GcsPushM(pVCpu, uValue);
     }
-    else if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    else if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
         return iemRaiseSystemAccessTrap(pVCpu, 1, uInstrEssence);
     else
         return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81554,9 +81554,9 @@ static VBOXSTRICTRC iemCImplA64_sys_DC_CIGDPAE(PVMCPU pVCpu, uint64_t uValue) RT
 static VBOXSTRICTRC iemCImplA64_sys_AT_S1E2R(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81588,9 +81588,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E2R(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_AT_S1E2W(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81622,9 +81622,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E2W(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_AT_S12E1R(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81667,9 +81667,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S12E1R(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_sys_AT_S12E1W(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81712,9 +81712,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S12E1W(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_sys_AT_S12E0R(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81757,9 +81757,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S12E0R(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_sys_AT_S12E0W(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81804,9 +81804,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E2A(PVMCPU pVCpu, uint64_t uValue, uint
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fATs1a)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81840,9 +81840,9 @@ static VBOXSTRICTRC iemCImplA64_sys_AT_S1E2A(PVMCPU pVCpu, uint64_t uValue, uint
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2E1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81896,9 +81896,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2E1IS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -81952,9 +81952,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2E1IS(PVMCPU pVCpu, uint64_t uValu
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2LE1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82008,9 +82008,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2LE1IS(PVMCPU pVCpu, uint64_t uVal
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82066,9 +82066,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE2OS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82125,9 +82125,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE2OS(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82212,9 +82212,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE1OS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82254,9 +82254,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE2OS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82341,9 +82341,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLS12E1OS(PVMCPU pVCpu, uint64_t uVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82387,9 +82387,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE2IS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82474,9 +82474,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLWS2E1IS(PVMCPU pVCpu, uint64_t uVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbiW)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82519,9 +82519,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE2IS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82604,9 +82604,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE2IS(PVMCPU pVCpu, uint64_t uValue,
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE2IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82659,9 +82659,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE2IS(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE2IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82742,9 +82742,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE2IS(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82780,9 +82780,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE1IS(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE2IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82863,9 +82863,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE2IS(PVMCPU pVCpu, uint64_t uValue, 
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLS12E1IS(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82907,9 +82907,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2E1OS(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -82963,9 +82963,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2E1OS(PVMCPU pVCpu, uint64_t uValue
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2E1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83019,9 +83019,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2E1(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83077,9 +83077,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2E1OS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange || !pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83135,9 +83135,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2LE1OS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83191,9 +83191,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2LE1OS(PVMCPU pVCpu, uint64_t uValu
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2LE1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83247,9 +83247,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2LE1(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83305,9 +83305,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2LE1OS(PVMCPU pVCpu, uint64_t uVal
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange || !pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83363,9 +83363,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE2OS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange || !pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83450,9 +83450,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLWS2E1OS(PVMCPU pVCpu, uint64_t uVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbiW)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83495,9 +83495,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE2OS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange || !pGstFeats->fTlbios)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83582,9 +83582,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE2(PVMCPU pVCpu, uint64_t uValue, ui
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83669,9 +83669,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLWS2E1(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbiW)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83714,9 +83714,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE2(PVMCPU pVCpu, uint64_t uValue, u
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fTlbirange)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83799,9 +83799,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE2(PVMCPU pVCpu, uint64_t uValue, u
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83854,9 +83854,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE2(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83937,9 +83937,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE2(PVMCPU pVCpu, uint64_t uValue, uin
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -83975,9 +83975,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE1(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE2(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84058,9 +84058,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE2(PVMCPU pVCpu, uint64_t uValue, ui
 static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLS12E1(PVMCPU pVCpu, uint64_t uValue, uint32_t uInstrEssence) RT_NOEXCEPT
 {
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84102,9 +84102,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2E1ISNXS(PVMCPU pVCpu, uint64_t uVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84162,9 +84162,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2E1ISNXS(PVMCPU pVCpu, uint64_t uV
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84222,9 +84222,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2LE1ISNXS(PVMCPU pVCpu, uint64_t uV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84282,9 +84282,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2LE1ISNXS(PVMCPU pVCpu, uint64_t u
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84344,9 +84344,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE2OSNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84407,9 +84407,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE2OSNXS(PVMCPU pVCpu, uint64_t uValue
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84498,9 +84498,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE1OSNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84544,9 +84544,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE2OSNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84635,9 +84635,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLS12E1OSNXS(PVMCPU pVCpu, uint64_t 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84685,9 +84685,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE2ISNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84776,9 +84776,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLWS2E1ISNXS(PVMCPU pVCpu, uint64_t 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84825,9 +84825,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE2ISNXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84914,9 +84914,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE2ISNXS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -84973,9 +84973,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE2ISNXS(PVMCPU pVCpu, uint64_t uValue
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85060,9 +85060,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE1ISNXS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85102,9 +85102,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE2ISNXS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85189,9 +85189,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLS12E1ISNXS(PVMCPU pVCpu, uint64_t 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85237,9 +85237,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2E1OSNXS(PVMCPU pVCpu, uint64_t uVa
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85297,9 +85297,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2E1NXS(PVMCPU pVCpu, uint64_t uValu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85357,9 +85357,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2E1NXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85419,9 +85419,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2E1OSNXS(PVMCPU pVCpu, uint64_t uV
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85481,9 +85481,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2LE1OSNXS(PVMCPU pVCpu, uint64_t uV
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85541,9 +85541,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_IPAS2LE1NXS(PVMCPU pVCpu, uint64_t uVal
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85601,9 +85601,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2LE1NXS(PVMCPU pVCpu, uint64_t uVa
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85663,9 +85663,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RIPAS2LE1OSNXS(PVMCPU pVCpu, uint64_t u
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85725,9 +85725,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE2OSNXS(PVMCPU pVCpu, uint64_t uValu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85816,9 +85816,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLWS2E1OSNXS(PVMCPU pVCpu, uint64_t 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85865,9 +85865,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE2OSNXS(PVMCPU pVCpu, uint64_t uVal
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -85956,9 +85956,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVAE2NXS(PVMCPU pVCpu, uint64_t uValue,
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -86047,9 +86047,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLWS2E1NXS(PVMCPU pVCpu, uint64_t uV
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -86096,9 +86096,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_RVALE2NXS(PVMCPU pVCpu, uint64_t uValue
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -86185,9 +86185,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE2NXS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -86244,9 +86244,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VAE2NXS(PVMCPU pVCpu, uint64_t uValue, 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -86331,9 +86331,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_ALLE1NXS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -86373,9 +86373,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VALE2NXS(PVMCPU pVCpu, uint64_t uValue,
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -86460,9 +86460,9 @@ static VBOXSTRICTRC iemCImplA64_sys_TLBI_VMALLS12E1NXS(PVMCPU pVCpu, uint64_t uV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap(pVCpu, 2, uInstrEssence);
@@ -89153,9 +89153,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE1OS(PVMCPU pVCpu, PCRTUINT128U puV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -89274,9 +89274,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAAE1OS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -89395,9 +89395,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE1OS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -89516,9 +89516,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAALE1OS(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -89637,9 +89637,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE1IS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -89758,9 +89758,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAAE1IS(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -89879,9 +89879,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE1IS(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90000,9 +90000,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAALE1IS(PVMCPU pVCpu, PCRTUINT128U 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90121,9 +90121,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE1IS(PVMCPU pVCpu, PCRTUINT128U puV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90242,9 +90242,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAAE1IS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90363,9 +90363,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE1IS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90484,9 +90484,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAALE1IS(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90605,9 +90605,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE1OS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90726,9 +90726,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAAE1OS(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90847,9 +90847,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE1OS(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -90968,9 +90968,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAALE1OS(PVMCPU pVCpu, PCRTUINT128U 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -91089,9 +91089,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE1(PVMCPU pVCpu, PCRTUINT128U puVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -91235,9 +91235,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAAE1(PVMCPU pVCpu, PCRTUINT128U puV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -91381,9 +91381,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE1(PVMCPU pVCpu, PCRTUINT128U puV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -91527,9 +91527,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAALE1(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -91673,9 +91673,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE1(PVMCPU pVCpu, PCRTUINT128U puVal
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -91819,9 +91819,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAAE1(PVMCPU pVCpu, PCRTUINT128U puVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -91965,9 +91965,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE1(PVMCPU pVCpu, PCRTUINT128U puVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -92111,9 +92111,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAALE1(PVMCPU pVCpu, PCRTUINT128U puV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -92259,9 +92259,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE1OSNXS(PVMCPU pVCpu, PCRTUINT128U 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -92375,9 +92375,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAAE1OSNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -92491,9 +92491,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE1OSNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -92607,9 +92607,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAALE1OSNXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -92723,9 +92723,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE1ISNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -92839,9 +92839,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAAE1ISNXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -92955,9 +92955,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE1ISNXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93071,9 +93071,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAALE1ISNXS(PVMCPU pVCpu, PCRTUINT12
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93187,9 +93187,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE1ISNXS(PVMCPU pVCpu, PCRTUINT128U 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93303,9 +93303,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAAE1ISNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93419,9 +93419,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE1ISNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93535,9 +93535,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAALE1ISNXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93651,9 +93651,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE1OSNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93767,9 +93767,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAAE1OSNXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93883,9 +93883,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE1OSNXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -93999,9 +93999,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAALE1OSNXS(PVMCPU pVCpu, PCRTUINT12
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -94115,9 +94115,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE1NXS(PVMCPU pVCpu, PCRTUINT128U p
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -94244,9 +94244,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAAE1NXS(PVMCPU pVCpu, PCRTUINT128U 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -94373,9 +94373,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE1NXS(PVMCPU pVCpu, PCRTUINT128U 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -94502,9 +94502,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAALE1NXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -94631,9 +94631,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE1NXS(PVMCPU pVCpu, PCRTUINT128U pu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -94760,9 +94760,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAAE1NXS(PVMCPU pVCpu, PCRTUINT128U p
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -94889,9 +94889,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE1NXS(PVMCPU pVCpu, PCRTUINT128U p
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95018,9 +95018,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAALE1NXS(PVMCPU pVCpu, PCRTUINT128U 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if (pGstFeats->fEl2 && (pVCpu->cpum.GstCtx.HcrEl2.u64 & RT_BIT_32(25)/*TTLB*/))
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95145,9 +95145,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2E1IS(PVMCPU pVCpu, PCRTUINT128U 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95203,9 +95203,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2E1IS(PVMCPU pVCpu, PCRTUINT128U
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95261,9 +95261,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2LE1IS(PVMCPU pVCpu, PCRTUINT128U
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95319,9 +95319,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2LE1IS(PVMCPU pVCpu, PCRTUINT128
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95377,9 +95377,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE2OS(PVMCPU pVCpu, PCRTUINT128U puV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95464,9 +95464,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE2OS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95551,9 +95551,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE2IS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95638,9 +95638,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE2IS(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95725,9 +95725,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE2IS(PVMCPU pVCpu, PCRTUINT128U puV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95812,9 +95812,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE2IS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95899,9 +95899,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2E1OS(PVMCPU pVCpu, PCRTUINT128U 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -95957,9 +95957,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2E1(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96015,9 +96015,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2E1(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96073,9 +96073,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2E1OS(PVMCPU pVCpu, PCRTUINT128U
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96131,9 +96131,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2LE1OS(PVMCPU pVCpu, PCRTUINT128U
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96189,9 +96189,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2LE1(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96247,9 +96247,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2LE1(PVMCPU pVCpu, PCRTUINT128U 
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96305,9 +96305,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2LE1OS(PVMCPU pVCpu, PCRTUINT128
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96363,9 +96363,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE2OS(PVMCPU pVCpu, PCRTUINT128U pu
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96450,9 +96450,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE2OS(PVMCPU pVCpu, PCRTUINT128U p
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96537,9 +96537,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE2(PVMCPU pVCpu, PCRTUINT128U puVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96624,9 +96624,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE2(PVMCPU pVCpu, PCRTUINT128U puV
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96711,9 +96711,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE2(PVMCPU pVCpu, PCRTUINT128U puVal
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96798,9 +96798,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE2(PVMCPU pVCpu, PCRTUINT128U puVa
     const CPUMFEATURESARMV8 * const pGstFeats = IEM_GET_GUEST_CPU_FEATURES(pVCpu);
     if (!pGstFeats->fD128)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96887,9 +96887,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2E1ISNXS(PVMCPU pVCpu, PCRTUINT12
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -96949,9 +96949,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2E1ISNXS(PVMCPU pVCpu, PCRTUINT1
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97011,9 +97011,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2LE1ISNXS(PVMCPU pVCpu, PCRTUINT1
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97073,9 +97073,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2LE1ISNXS(PVMCPU pVCpu, PCRTUINT
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97135,9 +97135,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE2OSNXS(PVMCPU pVCpu, PCRTUINT128U 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97226,9 +97226,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE2OSNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97317,9 +97317,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE2ISNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97408,9 +97408,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE2ISNXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97499,9 +97499,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE2ISNXS(PVMCPU pVCpu, PCRTUINT128U 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97590,9 +97590,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE2ISNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97681,9 +97681,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2E1OSNXS(PVMCPU pVCpu, PCRTUINT12
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97743,9 +97743,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2E1NXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97805,9 +97805,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2E1NXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97867,9 +97867,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2E1OSNXS(PVMCPU pVCpu, PCRTUINT1
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97929,9 +97929,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2LE1OSNXS(PVMCPU pVCpu, PCRTUINT1
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -97991,9 +97991,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_IPAS2LE1NXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -98053,9 +98053,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2LE1NXS(PVMCPU pVCpu, PCRTUINT12
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -98115,9 +98115,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RIPAS2LE1OSNXS(PVMCPU pVCpu, PCRTUINT
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -98177,9 +98177,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE2OSNXS(PVMCPU pVCpu, PCRTUINT128U
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -98268,9 +98268,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE2OSNXS(PVMCPU pVCpu, PCRTUINT128
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -98359,9 +98359,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVAE2NXS(PVMCPU pVCpu, PCRTUINT128U p
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -98450,9 +98450,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_RVALE2NXS(PVMCPU pVCpu, PCRTUINT128U 
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -98541,9 +98541,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VAE2NXS(PVMCPU pVCpu, PCRTUINT128U pu
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);
@@ -98632,9 +98632,9 @@ static VBOXSTRICTRC iemCImplA64_sysp_TLBIP_VALE2NXS(PVMCPU pVCpu, PCRTUINT128U p
         return iemRaiseUndefined(pVCpu);
     if (!pGstFeats->fXs)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 0)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 0)
         return iemRaiseUndefined(pVCpu);
-    if (IEM_F_MODE_ARM_GET_EL(pVCpu->iem.s.fExec) == 1)
+    if (IEM_F_MODE_ARM_GET_EL(ICORE(pVCpu).fExec) == 1)
     {
         if ((iemGetEffHcrEl2NVx(pVCpu, pGstFeats) & 1) == 1)
             return iemRaiseSystemAccessTrap128Bit(pVCpu, 2, uInstrEssence);

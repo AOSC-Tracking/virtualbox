@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172152 $"
 
 
 # Validation Kit imports.
@@ -620,8 +620,7 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
 
                 if fIncludeWithoutReason:
                     aiValues.append(oPeriod.cWithoutReason);
-                    if oPeriod.cWithoutReason > cMax:
-                        cMax = oPeriod.cWithoutReason;
+                    cMax = max(cMax, oPeriod.cWithoutReason);
 
                 oTable.addRow(oPeriod.sDesc, aiValues);
 

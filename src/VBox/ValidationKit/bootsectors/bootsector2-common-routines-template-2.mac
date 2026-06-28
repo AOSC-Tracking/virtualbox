@@ -35,7 +35,7 @@
 ;
 
 %include "bootsector2-template-header.mac"
-ALIGNCODE(32)
+ALIGNCODE(16)
 GLOBALNAME TMPL_NM(g_szMode)
         db TMPL_MODE_STR, 0
 

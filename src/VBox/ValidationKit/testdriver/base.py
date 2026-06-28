@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170811 $"
+__version__ = "$Revision: 172152 $"
 
 
 # Standard Python imports.
@@ -70,7 +70,9 @@ g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    long = int;     # pylint: disable=redefined-builtin,invalid-name
+    long = int;         # pylint: disable=redefined-builtin,invalid-name
+else:
+    long = long;        # pylint: disable=redefined-builtin,invalid-name,self-assigning-variable
 
 
 #
@@ -1311,8 +1313,7 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
             if cMsToDeadline >= 0:
                 # Adjust for fudge and enforce the minimum timeout
                 cMsToDeadline -= self.secTimeoutFudge * 1000;
-                if cMsToDeadline < (cMsMinimum if cMsMinimum is not None else 10000):
-                    cMsToDeadline = cMsMinimum if cMsMinimum is not None else 10000;
+                cMsToDeadline  = max(cMsToDeadline, cMsMinimum if cMsMinimum is not None else 10000);
 
                 # Is the timeout beyond the (adjusted) deadline, if so change it.
                 if cMsTimeout > cMsToDeadline:

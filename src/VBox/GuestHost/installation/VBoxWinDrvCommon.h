@@ -38,37 +38,69 @@
 
 #include <VBox/GuestHost/VBoxWinDrvDefs.h>
 
-/**
- * Enumeration specifying the INF (driver) type.
- */
-typedef enum VBOXWINDRVINFTYPE
-{
-    /** Invalid type. */
-    VBOXWINDRVINFTYPE_INVALID = 0,
-    /** Primitive driver.
-     *  This uses a "DefaultInstall" (plus optionally "DefaultUninstall") sections
-     *  and does not have a PnP ID. */
-    VBOXWINDRVINFTYPE_PRIMITIVE,
-    /** Normal driver.
-     *  Uses a "Manufacturer" section and can have a PnP ID. */
-    VBOXWINDRVINFTYPE_NORMAL
-} VBOXWINDRVINFTYPE;
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** Function pointer for a general try INF section callback. */
+typedef int (*PFNVBOXWINDRVINST_TRYINFSECTION_CALLBACK)(HINF hInf, PCRTUTF16 pwszSection, void *pvCtx);
+
+
+/* newdev.dll: */
+typedef BOOL(WINAPI* PFNDIINSTALLDRIVERW) (HWND hwndParent, LPCWSTR InfPath, DWORD Flags, PBOOL NeedReboot);
+typedef BOOL(WINAPI* PFNDIUNINSTALLDRIVERW) (HWND hwndParent, LPCWSTR InfPath, DWORD Flags, PBOOL NeedReboot);
+typedef BOOL(WINAPI* PFNUPDATEDRIVERFORPLUGANDPLAYDEVICESW) (HWND hwndParent, LPCWSTR HardwareId, LPCWSTR FullInfPath, DWORD InstallFlags, PBOOL bRebootRequired);
+/* setupapi.dll: */
+typedef VOID(WINAPI* PFNINSTALLHINFSECTIONW) (HWND Window, HINSTANCE ModuleHandle, PCWSTR CommandLine, INT ShowCommand);
+typedef BOOL(WINAPI* PFNSETUPCOPYOEMINFW) (PCWSTR SourceInfFileName, PCWSTR OEMSourceMediaLocation, DWORD OEMSourceMediaType, DWORD CopyStyle, PWSTR DestinationInfFileName, DWORD DestinationInfFileNameSize, PDWORD RequiredSize, PWSTR DestinationInfFileNameComponent);
+typedef HINF(WINAPI* PFNSETUPOPENINFFILEW) (PCWSTR FileName, PCWSTR InfClass, DWORD InfStyle, PUINT ErrorLine);
+typedef VOID(WINAPI* PFNSETUPCLOSEINFFILE) (HINF InfHandle);
+typedef BOOL(WINAPI* PFNSETUPDIGETINFCLASSW) (PCWSTR, LPGUID, PWSTR, DWORD, PDWORD);
+typedef BOOL(WINAPI* PFNSETUPUNINSTALLOEMINFW) (PCWSTR InfFileName, DWORD Flags, PVOID Reserved);
+typedef BOOL(WINAPI *PFNSETUPSETNONINTERACTIVEMODE) (BOOL NonInteractiveFlag);
+/* advapi32.dll: */
+typedef BOOL(WINAPI *PFNQUERYSERVICESTATUSEX) (SC_HANDLE, SC_STATUS_TYPE, LPBYTE, DWORD, LPDWORD);
+
+extern PFNDIINSTALLDRIVERW                    g_pfnDiInstallDriverW;
+extern PFNDIUNINSTALLDRIVERW                  g_pfnDiUninstallDriverW;
+extern PFNUPDATEDRIVERFORPLUGANDPLAYDEVICESW  g_pfnUpdateDriverForPlugAndPlayDevicesW;
+
+extern PFNINSTALLHINFSECTIONW                 g_pfnInstallHinfSectionW;
+extern PFNSETUPCOPYOEMINFW                    g_pfnSetupCopyOEMInf;
+extern PFNSETUPOPENINFFILEW                   g_pfnSetupOpenInfFileW;
+extern PFNSETUPCLOSEINFFILE                   g_pfnSetupCloseInfFile;
+extern PFNSETUPDIGETINFCLASSW                 g_pfnSetupDiGetINFClassW;
+extern PFNSETUPUNINSTALLOEMINFW               g_pfnSetupUninstallOEMInfW;
+extern PFNSETUPSETNONINTERACTIVEMODE          g_pfnSetupSetNonInteractiveMode;
+
+extern PFNQUERYSERVICESTATUSEX                g_pfnQueryServiceStatusEx;
+
 
 int VBoxWinDrvInfOpenEx(PCRTUTF16 pwszInfFile, PRTUTF16 pwszClassName, HINF *phInf);
 int VBoxWinDrvInfOpen(PCRTUTF16 pwszInfFile, HINF *phInf);
 int VBoxWinDrvInfOpenUtf8(const char *pszInfFile, HINF *phInf);
 int VBoxWinDrvInfClose(HINF hInf);
+PRTUTF16 VBoxWinDrvInfGetPathFromId(unsigned idDir, PCRTUTF16 pwszSubDir);
 VBOXWINDRVINFTYPE VBoxWinDrvInfGetTypeEx(HINF hInf, PRTUTF16 *ppwszSection);
 VBOXWINDRVINFTYPE VBoxWinDrvInfGetType(HINF hInf);
+int VBoxWinDrvInfQueryCopyFiles(HINF hInf, PRTUTF16 pwszSection, PVBOXWINDRVINFLIST *ppCopyFiles);
 int VBoxWinDrvInfQueryFirstModel(HINF hInf, PCRTUTF16 pwszSection, PRTUTF16 *ppwszModel);
 int VBoxWinDrvInfQueryFirstPnPId(HINF hInf, PRTUTF16 pwszModel, PRTUTF16 *ppwszPnPId);
 int VBoxWinDrvInfQueryKeyValue(PINFCONTEXT pCtx, DWORD iValue, PRTUTF16 *ppwszValue, PDWORD pcwcValue);
 int VBoxWinDrvInfQueryModelEx(HINF hInf, PCRTUTF16 pwszSection, unsigned uIndex, PRTUTF16 *ppwszValue, PDWORD pcwcValue);
 int VBoxWinDrvInfQueryModel(HINF hInf, PCRTUTF16 pwszSection, unsigned uIndex, PRTUTF16 *ppwszValue, PDWORD pcwcValue);
-int VBoxWinDrvInfQueryInstallSectionEx(HINF hInf, PCRTUTF16 pwszModel, PRTUTF16 *ppwszValue, PDWORD pcwcValue);
-int VBoxWinDrvInfQueryInstallSection(HINF hInf, PCRTUTF16 pwszModel, PRTUTF16 *ppwszValue);
+int VBoxWinDrvInfQueryModelSection(HINF hInf, PCRTUTF16 pwszModel, PRTUTF16 *ppwszSection);
+int VBoxWinDrvInfQueryParms(HINF hInf, PVBOXWINDRVINFPARMS pParms, bool fForce);
+int VBoxWinDrvInfQuerySectionKeyByIndex(HINF hInf, PCRTUTF16 pwszSection, PRTUTF16 *ppwszValue, PDWORD pcwcValue);
 int VBoxWinDrvInfQuerySectionVerEx(HINF hInf, UINT uIndex, PVBOXWINDRVINFSECVERSION pVer);
 int VBoxWinDrvInfQuerySectionVer(HINF hInf, PVBOXWINDRVINFSECVERSION pVer);
+bool VBoxWinDrvInfSectionExists(HINF hInf, PCRTUTF16 pwszSection);
+int VBoxWinDrvInfTrySection(HINF hInf, PCRTUTF16 pwszSection, PCRTUTF16 pwszSuffix, PFNVBOXWINDRVINST_TRYINFSECTION_CALLBACK pfnCallback, void *pvCtx);
+
+PVBOXWINDRVINFLIST VBoxWinDrvInfListCreate(VBOXWINDRVINFLISTENTRY_T enmType);
+int VBoxWinDrvInfListInit(PVBOXWINDRVINFLIST pInfList, VBOXWINDRVINFLISTENTRY_T enmType);
+void VBoxWinDrvInfListDestroy(PVBOXWINDRVINFLIST pInfList);
+PVBOXWINDRVINFLIST VBoxWinDrvInfListDup(PVBOXWINDRVINFLIST pInfList);
 
 const char *VBoxWinDrvSetupApiErrToStr(const DWORD dwErr);
 const char *VBoxWinDrvWinErrToStr(const DWORD dwErr);

@@ -32,7 +32,6 @@
 
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
-#include "VBoxServiceUtils.h"
 
 #undef NTDDI_VERSION
 #define NTDDI_VERSION NTDDI_LONGHORN
@@ -113,6 +112,60 @@ static DECLCALLBACK(int) vgsvcDisplayConfigInit(void)
     return VINF_SUCCESS;
 }
 
+static void ResetPreferredMode(void)
+{
+    NTSTATUS rcNt;
+
+    D3DKMT_ENUMADAPTERS EnumAdapters;
+    RT_ZERO(EnumAdapters);
+    EnumAdapters.NumAdapters = RT_ELEMENTS(EnumAdapters.Adapters);
+    rcNt = g_pfnD3DKMTEnumAdapters(&EnumAdapters);
+    VGSvcVerbose(3, "D3DKMTEnumAdapters rcNt=%#x NumAdapters=%u\n", rcNt, EnumAdapters.NumAdapters);
+
+    for (ULONG i = 0; i < EnumAdapters.NumAdapters; ++i)
+    {
+        D3DKMT_ADAPTERINFO *pAdapterInfo = &EnumAdapters.Adapters[i];
+        VGSvcVerbose(3, "#%u: NumOfSources=%u hAdapter=0x%p Luid(%u, %u)\n",
+            i, pAdapterInfo->NumOfSources, pAdapterInfo->hAdapter, pAdapterInfo->AdapterLuid.HighPart, pAdapterInfo->AdapterLuid.LowPart);
+    }
+
+    D3DKMT_OPENADAPTERFROMLUID OpenAdapterData;
+    RT_ZERO(OpenAdapterData);
+    OpenAdapterData.AdapterLuid = EnumAdapters.Adapters[0].AdapterLuid;
+    rcNt = g_pfnD3DKMTOpenAdapterFromLuid(&OpenAdapterData);
+    VGSvcVerbose(3, "D3DKMTOpenAdapterFromLuid rcNt=%#x hAdapter=0x%p\n", rcNt, OpenAdapterData.hAdapter);
+
+    if (OpenAdapterData.hAdapter)
+    {
+        /*
+         * Disable the preferred modes for all targets by setting the resolutions to 0x0.
+         */
+        VBOXDISPIFESCAPE_UPDATEMODES UpdateModes;
+        RT_ZERO(UpdateModes);
+        UpdateModes.EscapeHdr.escapeCode = VBOXESC_UPDATEMODES_SET_PREFERRED;
+        UpdateModes.u32TargetId = D3DDDI_ID_UNINITIALIZED;
+        UpdateModes.Size.cx = 0;
+        UpdateModes.Size.cy = 0;
+
+        D3DKMT_ESCAPE EscapeData;
+        RT_ZERO(EscapeData);
+        EscapeData.hAdapter = OpenAdapterData.hAdapter;
+        EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+        EscapeData.Flags.HardwareAccess = 1;
+        EscapeData.pPrivateDriverData = &UpdateModes;
+        EscapeData.PrivateDriverDataSize = sizeof(UpdateModes);
+
+        rcNt = g_pfnD3DKMTEscape(&EscapeData);
+        VGSvcVerbose(3, "D3DKMTEscape(VBOXESC_UPDATEMODES_SET_PREFERRED) rcNt=%#x\n", rcNt);
+
+        D3DKMT_CLOSEADAPTER CloseAdapter;
+        CloseAdapter.hAdapter = OpenAdapterData.hAdapter;
+
+        rcNt = g_pfnD3DKMTCloseAdapter(&CloseAdapter);
+        VGSvcVerbose(3, "D3DKMTCloseAdapter rcNt=%#x\n", rcNt);
+    }
+}
+
 void ReconnectDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
 {
     D3DKMT_HANDLE hAdapter;
@@ -154,6 +207,29 @@ void ReconnectDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
 
     if (hAdapter)
     {
+        /* Set a single resolution mode for each display.
+         * The miniport driver will use this mode instead of a list of resolutions.
+         */
+        for (uint32_t i = 0; i < cDisplays; ++i)
+        {
+            VBOXDISPIFESCAPE_UPDATEMODES UpdateModes;
+            RT_ZERO(UpdateModes);
+            UpdateModes.EscapeHdr.escapeCode = VBOXESC_UPDATEMODES_SET_PREFERRED;
+            UpdateModes.u32TargetId = paDisplays[i].idDisplay;
+            UpdateModes.Size.cx = paDisplays[i].cx;
+            UpdateModes.Size.cy = paDisplays[i].cy;
+
+            D3DKMT_ESCAPE EscapeData = {0};
+            EscapeData.hAdapter = hAdapter;
+            EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+            EscapeData.Flags.HardwareAccess = 1;
+            EscapeData.pPrivateDriverData = &UpdateModes;
+            EscapeData.PrivateDriverDataSize = sizeof(UpdateModes);
+
+            rcNt = g_pfnD3DKMTEscape(&EscapeData);
+            VGSvcVerbose(3, "D3DKMTEscape(VBOXESC_UPDATEMODES_SET_PREFERRED) rcNt=%#x\n", rcNt);
+        }
+
         VBOXDISPIFESCAPE_RECONNECT_TARGETS VBoxEscapeReconnectTargets = {{0}};
 
         VBoxEscapeReconnectTargets.EscapeHdr.escapeCode = VBOXESC_RECONNECT_TARGETS;
@@ -250,53 +326,92 @@ DECLCALLBACK(int) vgsvcDisplayConfigWorker(bool volatile *pfShutdown)
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     VGSvcVerbose(3, "VbglR3CtlFilterMask set rc=%Rrc\n", rc);
 
-    for (;;)
-    {
-        uint32_t fEvents = 0;
+    bool fCapAcquired = false;
 
+    do
+    {
         if (HasActiveLocalUser())
         {
+            /* Release the GRAPHICS capability and delegate VBoxTray processing of resize requests */
+            if (fCapAcquired)
+            {
+                ResetPreferredMode();
+
+                rc = VbglR3AcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
+                if (RT_SUCCESS(rc))
+                {
+                    fCapAcquired = false;
+                    LogRel((": GRAPHICS capability released by VBoxService\n"));
+                }
+            }
+
             RTThreadSleep(1000);
+            continue;
         }
-        else
+
+        /* Acquire the GRAPHICS capability and wait 1 sec for resize requests */
+        if (!fCapAcquired)
         {
             rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
-            VGSvcVerbose(3, "VbglR3AcquireGuestCaps acquire VMMDEV_GUEST_SUPPORTS_GRAPHICS rc=%Rrc\n", rc);
-
-            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 2000 /*ms*/, &fEvents);
-            VGSvcVerbose(3, "VbglR3WaitEvent rc=%Rrc\n", rc);
-
             if (RT_SUCCESS(rc))
             {
-                VMMDevDisplayDef aDisplays[64];
-                uint32_t cDisplays = RT_ELEMENTS(aDisplays);
-
-                rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true);
-                VGSvcVerbose(3, "VbglR3GetDisplayChangeRequestMulti rc=%Rrc cDisplays=%d\n", rc, cDisplays);
-                if (cDisplays > 0)
-                {
-                    for(uint32_t i = 0; i < cDisplays; i++)
-                    {
-                        VGSvcVerbose(2, "%u) Display[%u] flags=%#x (%dx%d)\n", i, aDisplays[i].idDisplay,
-                            aDisplays[i].fDisplayFlags,
-                            aDisplays[i].cx, aDisplays[i].cy);
-                    }
-
-                    ReconnectDisplays(cDisplays, &aDisplays[0]);
-                }
+                fCapAcquired = true;
+                LogRel((": GRAPHICS capability acquired by VBoxService\n"));
             }
             else
             {
-                /* To prevent CPU throttle in case of multiple failures */
-                RTThreadSleep(200);
+                LogRelMax(8, (": VBoxService failed to acquire GRAPHICS capability\n"));
+                RTThreadSleep(1000);
+                continue;
             }
-
-            rc = VbglR3AcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
-            VGSvcVerbose(3, "VbglR3AcquireGuestCaps release VMMDEV_GUEST_SUPPORTS_GRAPHICS rc=%Rrc\n", rc);
         }
 
-        if (*pfShutdown)
-            break;
+        uint32_t fEvents = 0;
+
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 1000 /*ms*/, &fEvents);
+        VGSvcVerbose(3, "VbglR3WaitEvent rc=%Rrc\n", rc);
+
+        if (RT_SUCCESS(rc))
+        {
+            VMMDevDisplayDef aDisplays[64];
+            uint32_t cDisplays = RT_ELEMENTS(aDisplays);
+
+            rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true);
+            VGSvcVerbose(3, "VbglR3GetDisplayChangeRequestMulti rc=%Rrc cDisplays=%d\n", rc, cDisplays);
+            if (cDisplays > 0)
+            {
+                for(uint32_t i = 0; i < cDisplays; i++)
+                {
+                    VGSvcVerbose(2, "%u) Display[%u] flags=%#x (%dx%d)\n", i, aDisplays[i].idDisplay,
+                        aDisplays[i].fDisplayFlags,
+                        aDisplays[i].cx, aDisplays[i].cy);
+                }
+
+                ReconnectDisplays(cDisplays, &aDisplays[0]);
+
+                /* Throttle a bit. Constantly reconnecting displays caused bugchecks in DXGK code. */
+                RTThreadSleep(1000);
+            }
+        }
+        else if (rc == VERR_TIMEOUT)
+        {
+            /* No requests still arrived from host, just wait one more time */
+        }
+        else
+        {
+            /* To prevent CPU throttle in case of multiple failures */
+            RTThreadSleep(1000);
+        }
+    } while(*pfShutdown == false);
+
+    if (fCapAcquired)
+    {
+        rc = VbglR3AcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
+        if (RT_SUCCESS(rc))
+        {
+            fCapAcquired = false;
+            LogRel((": GRAPHICS capability released by VBoxService\n"));
+        }
     }
 
     rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
@@ -332,6 +447,8 @@ VBOXSERVICE g_DisplayConfig =
     NULL,
     /* pszOptions. */
     NULL,
+    /* paOptions, cOptions. */
+    NULL, 0,
     /* methods */
     VGSvcDefaultPreInit,
     VGSvcDefaultOption,

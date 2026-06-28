@@ -315,7 +315,7 @@ BS3_PROC_BEGIN Bs3Trap64GenericCommon
         mov     rax, [rax + rbx * 8]
         or      rax, rax
         jnz     .call_handler
-        lea     rax, [BS3_WRT_RIP(Bs3TrapDefaultHandler)]
+        lea     rax, [RT_WRT_RIP(Bs3TrapDefaultHandler)]
 .call_handler:
         sub     rsp, 20h
         mov     [rsp], rdi

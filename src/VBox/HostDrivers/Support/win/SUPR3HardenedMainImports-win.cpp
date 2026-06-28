@@ -45,6 +45,7 @@
 #include <iprt/ctype.h>
 #include <iprt/initterm.h>
 #include <iprt/param.h>
+#include <iprt/stackcheck.h>
 #include <iprt/string.h>
 #include <iprt/utf16.h>
 #ifdef RT_ARCH_ARM64
@@ -194,10 +195,11 @@ typedef SUPHNTIMPDLL *PSUPHNTIMPDLL;
     extern uint32_t RT_CONCAT(g_uApiNo, a_Name); \
     extern FNRT     RT_CONCAT(a_Name, _Syscall);
 #endif
+#define SUPHARNT_IMPORT_SYSCALL_HASH_STACK(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86)
 #define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
     extern PFNRT    RT_CONCAT(g_pfn, a_Name); \
     extern FNRT     RT_CONCAT(a_Name, _Early);
-#define SUPHARNT_IMPORT_STDCALL_OPTIONAL(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
+#define SUPHARNT_IMPORT_STDCALL_OPTIONAL(a_Name, a_cbParamsX86)   SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 
 RT_C_DECLS_BEGIN
 #include "import-template-ntdll.h"
@@ -208,12 +210,14 @@ RT_C_DECLS_END
  * Import functions.
  */
 #undef SUPHARNT_IMPORT_SYSCALL
+#undef SUPHARNT_IMPORT_SYSCALL_HASH_STACK
 #undef SUPHARNT_IMPORT_STDCALL_EARLY
 #undef SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL
 #undef SUPHARNT_IMPORT_STDCALL
 #undef SUPHARNT_IMPORT_STDCALL_OPTIONAL
 #define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
     { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL, false },
+#define SUPHARNT_IMPORT_SYSCALL_HASH_STACK(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86)
 #define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) \
     { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL, false },
 #define SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL(a_Name, a_cbParamsX86) \
@@ -238,6 +242,7 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
  * Syscalls in ntdll.
  */
 #undef SUPHARNT_IMPORT_SYSCALL
+#undef SUPHARNT_IMPORT_SYSCALL_STACK_HASH
 #undef SUPHARNT_IMPORT_STDCALL_EARLY
 #undef SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL
 #undef SUPHARNT_IMPORT_STDCALL
@@ -263,6 +268,7 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
 #else
 # error "port me"
 #endif
+#define SUPHARNT_IMPORT_SYSCALL_HASH_STACK(a_Name, a_cbParamsX86)     SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86)
 #define SUPHARNT_IMPORT_STDCALL_OPTIONAL(a_Name, a_cbParamsX86)       SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 #define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86)          SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 #define SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
@@ -328,6 +334,8 @@ static void supR3HardenedFindOrLoadModule(PSUPHNTIMPDLL pDll)
 /** @sa rtR0DbgKrnlNtParseModule  */
 static void supR3HardenedParseModule(PSUPHNTIMPDLL pDll)
 {
+    RT_STACK_CHECK_RET_ADDR();
+
     /*
      * Locate the PE header, do some basic validations.
      */
@@ -413,6 +421,8 @@ static void supR3HardenedParseModule(PSUPHNTIMPDLL pDll)
 /** @sa rtR0DbgKrnlInfoLookupSymbol */
 static const char *supR3HardenedResolveImport(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImport, bool fReportErrors)
 {
+    RT_STACK_CHECK_RET_ADDR();
+
     /*
      * Binary search.
      */
@@ -470,6 +480,8 @@ static const char *supR3HardenedResolveImport(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUN
 static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImport, PCSUPHNTIMPSYSCALL pSyscall,
                                        PSUPHNTLDRCACHEENTRY pLdrEntry, uint8_t *pbBits, bool fReportErrors)
 {
+    RT_STACK_CHECK_RET_ADDR();
+
     /*
      * Skip non-syscall entries.
      */
@@ -664,6 +676,7 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
  */
 DECLHIDDEN(void) supR3HardenedWinInitSyscalls(bool fReportErrors, PRTERRINFO pErrInfo)
 {
+    RT_STACK_CHECK_RET_ADDR();
     for (uint32_t iDll = 0; iDll < RT_ELEMENTS(g_aSupNtImpDlls); iDll++)
         if (g_aSupNtImpDlls[iDll].paSyscalls)
         {
@@ -707,6 +720,8 @@ DECLHIDDEN(void) supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
                                                      PFNNTWAITFORSINGLEOBJECT *ppfnNtWaitForSingleObject,
                                                      PFNNTSETEVENT *ppfnNtSetEvent)
 {
+    RT_STACK_CHECK_RET_ADDR();
+
     /*
      * NTDLL is the first entry in the list.  Save it and do the parsing.
      */
@@ -746,6 +761,8 @@ DECLHIDDEN(void) supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
  */
 DECLHIDDEN(void) supR3HardenedWinInitImportsEarly(uintptr_t uNtDllAddr)
 {
+    RT_STACK_CHECK_RET_ADDR();
+
     /*
      * NTDLL is the first entry in the list.
      */

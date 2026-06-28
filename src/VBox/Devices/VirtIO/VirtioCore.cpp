@@ -1147,12 +1147,22 @@ DECLHIDDEN(int) virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
         if (desc.fFlags & VIRTQ_DESC_F_WRITE)
         {
             Log6Func(("%s IN  idx=%-4u seg=%-3u addr=%RGp cb=%u\n", pVirtq->szName, uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
+            if (cbIn + desc.cb < cbIn)
+            {
+                LogRelMax(64, ("Input segment size overflow (cbIn=%u Seg.cb=%u).\n", cbIn, desc.cb));
+                break;
+            }
             cbIn += desc.cb;
             pSeg = &paSegsIn[cSegsIn++];
         }
         else
         {
             Log6Func(("%s OUT desc_idx=%-4u seg=%-3u addr=%RGp cb=%u\n", pVirtq->szName, uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
+            if (cbOut + desc.cb < cbOut)
+            {
+                LogRelMax(64, ("Output segment size overflow (cbOut=%u Seg.cb=%u).\n", cbOut, desc.cb));
+                break;
+            }
             cbOut += desc.cb;
             pSeg = &paSegsOut[cSegsOut++];
 #ifdef DEEP_DEBUG
@@ -1455,7 +1465,10 @@ static void virtioCoreVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
         virtioCoreVirtqAvailCnt(pDevIns, pVirtio, pVirtq)));
 
     /* Inform client */
-    pVirtioCC->pfnVirtqNotified(pDevIns, pVirtio, uVirtq);
+    if ((pVirtq->uEnable || pVirtio->fLegacyDriver) && pVirtq->GCPhysVirtqDesc)
+        pVirtioCC->pfnVirtqNotified(pDevIns, pVirtio, uVirtq);
+    else
+        LogFunc(("Guest driver attempted to notify disabled queue (%u)\n", uVirtq));
     RT_NOREF2(pVirtio, pVirtq);
 }
 
@@ -2182,7 +2195,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortOut(PPDMDEVINS pDevIns, void
 #ifdef IN_RING3
         ASSERT_GUEST_MSG(cb == 2, ("cb=%u\n", cb));
         pVirtio->uQueueNotify =  u32 & 0xFFFF;
-        if (uVirtq < VIRTQ_MAX_COUNT)
+        if (pVirtio->uQueueNotify < VIRTQ_MAX_COUNT)
         {
             RT_UNTRUSTED_VALIDATED_FENCE();
 
@@ -2773,10 +2786,9 @@ DECLHIDDEN(int) virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHL
         AssertRCReturn(rc, rc);
     }
 
-    AssertLogRelMsgReturn(cQueues <= VIRTQ_MAX_COUNT, ("%#x\n", cQueues), VERR_SSM_LOAD_CONFIG_MISMATCH);
-    AssertLogRelMsgReturn(pVirtio->uVirtqSelect < cQueues || (cQueues == 0 && pVirtio->uVirtqSelect),
-                          ("uVirtqSelect=%u cQueues=%u\n", pVirtio->uVirtqSelect, cQueues),
-                          VERR_SSM_LOAD_CONFIG_MISMATCH);
+    AssertLogRelMsgReturn(cQueues <= VIRTQ_MAX_COUNT, ("cQueues=%u!\n", cQueues), VERR_SSM_LOAD_CONFIG_MISMATCH);
+    AssertLogRelMsgReturn(pVirtio->uVirtqSelect < cQueues || (!cQueues && !pVirtio->uVirtqSelect),
+                          ("uVirtqSelect=%u cQueues=%u\n", pVirtio->uVirtqSelect, cQueues), VERR_SSM_LOAD_CONFIG_MISMATCH);
 
     Log(("\nRestoring %d  legacy-only virtio-net device queues from saved state:\n", cQueues));
     for (unsigned uVirtq = 0; uVirtq < cQueues; uVirtq++)
@@ -2840,7 +2852,7 @@ DECLHIDDEN(int) virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHL
 DECLHIDDEN(int) virtioCoreR3ModernDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM,
                                                  uint32_t uVersion, uint32_t uTestVersion, uint32_t cQueues)
 {
-    RT_NOREF2(cQueues, uVersion);
+    RT_NOREF(uVersion);
     LogFunc(("\n"));
     /*
      * Check the marker and (embedded) version number.
@@ -2883,6 +2895,10 @@ DECLHIDDEN(int) virtioCoreR3ModernDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHL
     AssertRCReturn(rc, rc);
     rc = pHlp->pfnSSMGetU64(  pSSM, &pVirtio->uDriverFeatures);
     AssertRCReturn(rc, rc);
+
+    AssertLogRelMsgReturn(cQueues <= VIRTQ_MAX_COUNT, ("cQueues=%u!\n", cQueues), VERR_SSM_LOAD_CONFIG_MISMATCH);
+    AssertLogRelMsgReturn(pVirtio->uVirtqSelect < cQueues || (!cQueues && !pVirtio->uVirtqSelect),
+                          ("uVirtqSelect=%u cQueues=%u\n", pVirtio->uVirtqSelect, cQueues), VERR_SSM_LOAD_CONFIG_MISMATCH);
 
     /** @todo Adapt this loop use cQueues argument instead of static queue count (safely with SSM versioning) */
     for (uint32_t i = 0; i < VIRTQ_MAX_COUNT; i++)

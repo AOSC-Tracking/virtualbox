@@ -196,6 +196,7 @@ SUPR3_DEFS          = \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,) \
 	$(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,) \
 	$(if $(VBOX_WITH_R0_MODULES),VBOX_WITH_R0_MODULES,) \
+	$(if $(VBOX_WITH_DRIVERLESS_FORCED),VBOX_WITH_DRIVERLESS_FORCED,) \
 	VBOX_PERMIT_MORE \
 	VBOX_PERMIT_EVEN_MORE
 SUPR3_INCS         := $(PATH_SUB_CURRENT)
@@ -460,49 +461,60 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && !defined(VBOX_
 
  # Add necessary compiler specific files from the compiler lib dir.
  ifeq ($(KBUILD_TARGET),win)
-  ## @todo use the nocrt variants of this glue code!
-
-  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
-  SUPR3HardenedStatic_SOURCES.win += \
-  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/chkstk.obj
-
-  # And a few extracted from the static libc to support -guard and cookes.
-  # In 14.2 these files does not import anything from the win32 API and are
-  # mostly tiny bits of code. Needs not initialization that I can spot.
-  ifneq ($(VBOX_VCC_LD_GUARD_CF),)
+  if1of ($(KBUILD_TARGET_ARCH), amd64) ## @todo use the nocrt variants of this glue code!
+   SUPR3HardenedStatic_DEFS.win += IPRT_NOCRT_WITHOUT_FATAL_WRITE
    SUPR3HardenedStatic_SOURCES.win += \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/loadcfg.obj
-   # These are for the /guard option.
+   	$(VBOX_PATH_RUNTIME_SRC)/common/compiler/vcc/stack-probe-vcc.asm \
+   	$(VBOX_PATH_RUNTIME_SRC)/common/compiler/vcc/stack-vcc.asm \
+   	$(VBOX_PATH_RUNTIME_SRC)/common/compiler/vcc/stack-except-vcc.cpp \
+   	$(VBOX_PATH_RUNTIME_SRC)/common/compiler/vcc/stack-except-eh4-vcc.cpp \
+   	$(VBOX_PATH_RUNTIME_SRC)/common/compiler/vcc/guard-vcc.asm \
+   	$(VBOX_PATH_RUNTIME_SRC)/common/compiler/vcc/loadcfg-vcc.c
+  else
+   include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
    SUPR3HardenedStatic_SOURCES.win += \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/gs_cookie.obj \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/guard_support.obj
-   SUPR3HardenedStatic_SOURCES.win.amd64 += \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/guard_dispatch.obj \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/guard_xfg_dispatch.obj
-   SUPR3HardenedStatic_SOURCES.win.arm64 += \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/guard_dispatch.obj
-   # These next ones are for supporting the /GS option.  We skip gs_report.obj as it
-   # import lots from kernel32 and we're better of reporting the problem ourselves.
-   SUPR3HardenedStatic_SOURCES.win.amd64 += \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/amdsecgs.obj \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/gshandler.obj
-   SUPR3HardenedStatic_SOURCES.win.x86 += \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/secchk.obj \
-   	$(SUPR3HardenedStatic_0_OUTDIR)/alloca16.obj
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/chkstk.obj
 
-   $$(SUPR3HardenedStatic_0_OUTDIR)/loadcfg.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/gs_cookie.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/guard_support.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/guard_dispatch.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/guard_xfg_dispatch.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/amdsecgs.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/gs_report.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/gshandler.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/secchk.obj \
-   $$(SUPR3HardenedStatic_0_OUTDIR)/alloca16.obj: \
-   		$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib | $$(dir $$@)
+   # And a few extracted from the static libc to support -guard and cookes.
+   # In 14.2 these files does not import anything from the win32 API and are
+   # mostly tiny bits of code. Needs not initialization that I can spot.
+   ifneq ($(VBOX_VCC_LD_GUARD_CF),)
+    SUPR3HardenedStatic_SOURCES.win += \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/loadcfg.obj
+    # These are for the /guard option.
+    SUPR3HardenedStatic_SOURCES.win += \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/gs_cookie.obj \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/guard_support.obj
+    SUPR3HardenedStatic_SOURCES.win.amd64 += \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/guard_dispatch.obj \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/guard_xfg_dispatch.obj
+    SUPR3HardenedStatic_SOURCES.win.arm64 += \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/guard_dispatch.obj
+    # These next ones are for supporting the /GS option.  We skip gs_report.obj as it
+    # import lots from kernel32 and we're better of reporting the problem ourselves.
+    SUPR3HardenedStatic_SOURCES.win.amd64 += \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/amdsecgs.obj \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/gshandler.obj \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/gshandlereh4.obj
+    SUPR3HardenedStatic_SOURCES.win.x86 += \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/secchk.obj \
+    	$(SUPR3HardenedStatic_0_OUTDIR)/alloca16.obj
+
+    $$(SUPR3HardenedStatic_0_OUTDIR)/loadcfg.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/gs_cookie.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/guard_support.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/guard_dispatch.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/guard_xfg_dispatch.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/amdsecgs.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/gs_report.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/gshandler.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/gshandlereh4.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/secchk.obj \
+    $$(SUPR3HardenedStatic_0_OUTDIR)/alloca16.obj: \
+    		$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib | $$(dir $$@)
 	set -x; $(TOOL_$(VBOX_VCC_TOOL)_AR) "/EXTRACT:$$($(TOOL_$(VBOX_VCC_TOOL)_AR) /LIST "$<" | $(SED_EXT) -e '/$(notdir $@)/!d' -e '/arm64ec/d' )" "/OUT:$@" "$<"
-  endif
+   endif
+  endif ## @todo
  endif
 endif
 
@@ -788,7 +800,7 @@ if   !defined(VBOX_ONLY_DOCS) \
    VBoxDrv_LDFLAGS.solaris += -N drv/dtrace
   endif
   VBoxDrv_LDFLAGS.win.x86   = -Entry:DriverEntry@8
-  VBoxDrv_LDFLAGS.win.amd64 = -Entry:DriverEntry
+  VBoxDrv_LDFLAGS.win.amd64 = -Entry:DriverEntry -Export:RtlUnwind -Export:IoWithinStackLimits
   VBoxDrv_LDFLAGS.win.arm64 = -Entry:DriverEntry
 
   VBoxDrv_SOURCES.darwin  = \

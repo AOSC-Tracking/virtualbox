@@ -31,11 +31,12 @@
 --filter-out-files /testcase/dev.tar.gz
 
 /include/PGMGstDefs-x86.h: --no-fix-header-guards
-/include/PGMSlatDefs.h: --no-fix-header-guards
+/include/PGMSlatDefs.h:    --no-fix-header-guards
+/include/IEMCpuCoreTmpl.h: --no-fix-header-guards
 /VMMR0/PGMR0Bth.h: --no-fix-header-guards
-/VMMR3/PGMPhysRWTmpl.h: --no-fix-header-guards
+/VMMR3/PGMR3PhysRWTmpl.h: --no-fix-header-guards
 /VMMAll/CPUMAllCpuIdArmV8.cpp.h: --dont-set-svn-keywords
-/VMMAll/PGMAll*-*.cpp.h: --no-fix-header-guards
+/VMMAll/PGMAsll*-*.cpp.h: --no-fix-header-guards
 /VMMAll/target-armv8/IEMAllInstrA64Impl.h: --no-fix-header-guards
 /VMMAll/target-x86/IEMAllInstCommonBodyMacros-x86.h: --no-fix-header-guards
 /VMMAll/target-x86/IEMAllN8veLiveness-x86.h: --no-fix-header-guards
@@ -50,14 +51,14 @@
 /*.cpp: --only-guest-host-page
 /*.h:   --only-guest-host-page
 # Except in the pool where more care/work is needed.
-/VMMAll/PGMAllPool.cpp: --no-page-restrictions
-/VMMR3/PGMPool.cpp:     --no-page-restrictions
-/testcase/tstVMStructSize.cpp:     --no-page-restrictions
+/VMMAll/target-x86/PGMAllPool-x86.cpp: --no-page-restrictions
+/VMMR3/target-x86/PGMR3Pool-x86.cpp:   --no-page-restrictions
+/testcase/tstVMStructSize.cpp:         --no-page-restrictions
 
 # Forbid ASMMemIsZeroPage and ASMMemZeroPage.
 /*.cpp: --no-ASMMemPage-use
 /*.h:   --no-ASMMemPage-use
 # Except in the pool where more care/work is needed.
-/VMMR3/PGMPool.cpp:     --unrestricted-ASMMemPage-use
-/VMMAll/PGMAllPool.cpp: --unrestricted-ASMMemPage-use
+/VMMR3/target-x86/PGMPool-x86.cpp:     --unrestricted-ASMMemPage-use
+/VMMAll/target-x86/PGMAllPool-x86.cpp: --unrestricted-ASMMemPage-use
 

@@ -73,9 +73,9 @@
 bs2_big_image_start:
 entrypoint:
         mov     xAX, .s_szTestName
-        call    [TMPL_NM_CMN(g_pfnTestInit) xWrtRIP]
+        call    [RT_WRT_RIP(TMPL_NM_CMN(g_pfnTestInit))]
         call    TMPL_NM(TestInstrMain)
-        call    [TMPL_NM_CMN(g_pfnTestTerm) xWrtRIP]
+        call    [RT_WRT_RIP(TMPL_NM_CMN(g_pfnTestTerm))]
 .hltloop:
         hlt
         jmp     .hltloop

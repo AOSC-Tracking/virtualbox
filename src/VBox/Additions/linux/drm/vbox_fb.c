@@ -195,7 +195,7 @@ static void drm_fb_helper_sys_imageblit(struct fb_info *info, const struct fb_im
 static struct fb_ops vboxfb_ops = {
 	.owner = THIS_MODULE,
 	.fb_check_var = drm_fb_helper_check_var,
-#if RTLNX_VER_MAX(6,15,0) && !RTLNX_RHEL_RANGE(9,7, 9,99)
+#if RTLNX_VER_MAX(6,15,0) && !RTLNX_RHEL_RANGE(9,7, 9,99) && !RTLNX_RHEL_RANGE(10,1, 10,99)
 	/* We seem do not follow all the procedure of instantiating DRM Client.
 	 * Having this callback set will trigger panic on module load. Comment
 	 * it out for now. */
@@ -335,7 +335,9 @@ int vboxfb_create(struct drm_fb_helper *helper,
 		return ret;
 	}
 
-#if RTLNX_VER_MIN(6,2,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_RANGE(9,3, 9,99)
+#if RTLNX_VER_MIN(6,19,0)
+	info = helper->info;
+#elif RTLNX_VER_MIN(6,2,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_RANGE(9,3, 9,99)
 	info = drm_fb_helper_alloc_info(helper);
 #else
 	info = drm_fb_helper_alloc_fbi(helper);
@@ -418,7 +420,7 @@ int vboxfb_create(struct drm_fb_helper *helper,
 	return 0;
 }
 
-#if RTLNX_VER_MAX(6,15,0) && !RTLNX_RHEL_RANGE(9,7, 9,99)
+#if RTLNX_VER_MAX(6,15,0) && !RTLNX_RHEL_RANGE(9,7, 9,99) && !RTLNX_RHEL_RANGE(10,1, 10,99)
 static struct drm_fb_helper_funcs vbox_fb_helper_funcs = {
 	.fb_probe = vboxfb_create,
 };
@@ -491,7 +493,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 	vbox->fbdev = fbdev;
 	spin_lock_init(&fbdev->dirty_lock);
 
-#if RTLNX_VER_MIN(6,15,0) || RTLNX_RHEL_RANGE(9,7, 9,99)
+#if RTLNX_VER_MIN(6,15,0) || RTLNX_RHEL_RANGE(9,7, 9,99) || RTLNX_RHEL_RANGE(10,1, 10,99)
 	drm_fb_helper_prepare(dev, &fbdev->helper, 32, NULL);
 #elif RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_RANGE(9,3, 9,99)
 	drm_fb_helper_prepare(dev, &fbdev->helper, 32, &vbox_fb_helper_funcs);

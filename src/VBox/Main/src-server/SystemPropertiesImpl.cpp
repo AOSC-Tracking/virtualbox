@@ -1467,7 +1467,7 @@ HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitectur
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
+HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data, const settings::PlatformProperties &platform)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
@@ -1513,10 +1513,13 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
     hrc = i_setDefaultFrontend(data.strDefaultFrontend);
     if (FAILED(hrc)) return hrc;
 
+    hrc = m_platformProperties->i_loadSettings(platform);
+    if (FAILED(hrc)) return hrc;
+
     return S_OK;
 }
 
-HRESULT SystemProperties::i_saveSettings(settings::SystemProperties &data)
+HRESULT SystemProperties::i_saveSettings(settings::SystemProperties &data, settings::PlatformProperties &platform)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
@@ -1524,6 +1527,9 @@ HRESULT SystemProperties::i_saveSettings(settings::SystemProperties &data)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data = *m;
+
+    /* For exclusiveHwVirt. */
+    m_platformProperties->i_saveSettings(platform);
 
     return S_OK;
 }

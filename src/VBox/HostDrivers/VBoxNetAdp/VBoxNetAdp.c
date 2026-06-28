@@ -109,7 +109,7 @@ DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac)
 
     pMac->au8[3] = 0; /* pThis->iUnit >> 16; */
     pMac->au8[4] = 0; /* pThis->iUnit >> 8; */
-    pMac->au8[5] = pThis->iUnit;
+    pMac->au8[5] = (uint8_t)pThis->iUnit;
 }
 
 int vboxNetAdpCreate(PVBOXNETADP *ppNew, const char *pcszName)

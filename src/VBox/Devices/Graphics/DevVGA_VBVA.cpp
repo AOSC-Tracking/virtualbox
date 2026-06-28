@@ -36,6 +36,7 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/VMMDev.h>
 #include <VBox/AssertGuest.h>
+#include <VBox/version.h>
 #include <VBoxVideo.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
@@ -737,7 +738,7 @@ static int vbvaMousePointerShape(PVGASTATECC pThisCC, VBVACONTEXT *pCtx,
         static const uint32_t s_cxMax = 2048; //used to be: 8192;
         static const uint32_t s_cyMax = 2048; //used to be: 8192;
         ASSERT_GUEST_MSG_RETURN(   SafeShape.u32Width  <= s_cxMax
-                                || SafeShape.u32Height <= s_cyMax,
+                                && SafeShape.u32Height <= s_cyMax,
                                 ("Too large: %ux%u, max %ux%x\n", SafeShape.u32Width, SafeShape.u32Height, s_cxMax, s_cyMax),
                                 VERR_INVALID_PARAMETER);
 
@@ -1169,7 +1170,8 @@ int vboxVBVALoadStateExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion
             if (uVersion > VGA_SAVEDSTATE_VERSION_WDDM)
             {
                 /* Skip loading VHWA (2D Video Hardware Acceleration) state from older saved states. */
-                if (uVersion < VGA_SAVEDSTATE_VERSION_VHWA_REMOVED)
+                if (   uVersion < VGA_SAVEDSTATE_VERSION_VHWA_REMOVED
+                    || pHlp->pfnSSMHandleVersion(pSSM) < VBOX_FULL_VERSION_MAKE(7,2,0))
                 {
                     bool fLoadCommands;
                     if (uVersion < VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA)

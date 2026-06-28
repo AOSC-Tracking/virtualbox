@@ -1390,7 +1390,7 @@ int UIHelpBrowserWidget::zoomPercentage() const
 
 bool UIHelpBrowserWidget::shouldBeMaximized() const
 {
-    return gEDataManager->logWindowShouldBeMaximized();
+    return gEDataManager->helpBrowserDialogShouldBeMaximized();
 }
 
 void UIHelpBrowserWidget::prepare()

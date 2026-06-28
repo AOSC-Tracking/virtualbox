@@ -148,7 +148,7 @@ BS3_BEGIN_TEXT32
         jmp     dword BS3_SEL_R0_CS64:.load_full_gdt_base wrt FLAT
 .load_full_gdt_base:
         BS3_SET_BITS 64
-        lgdt    [Bs3Lgdt_Gdt wrt FLAT]
+        lgdt    [abs Bs3Lgdt_Gdt wrt FLAT]
         push    BS3_SEL_R0_CS32
         push    .back_to_32bit wrt FLAT
         o64 retf

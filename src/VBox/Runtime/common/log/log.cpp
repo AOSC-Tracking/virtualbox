@@ -1563,9 +1563,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
                     if (Thread != NIL_RTTHREAD)
                     {
                         int32_t c = RTLockValidatorWriteLockGetCount(Thread);
-                        RTSemSpinMutexRequest(pLoggerInt->hSpinMtx);
+                        rtlogLock(pLoggerInt);
                         c = RTLockValidatorWriteLockGetCount(Thread) - c;
-                        RTSemSpinMutexRelease(pLoggerInt->hSpinMtx);
+                        rtlogUnlock(pLoggerInt);
                         ASMAtomicWriteU32(&g_cLoggerLockCount, c);
                     }
 

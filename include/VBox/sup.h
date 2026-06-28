@@ -119,6 +119,9 @@ typedef enum SUPPAGINGMODE
 #define SUPKERNELFEATURES_SMAP                RT_BIT(1)
 /** GDT is read-only but the writable GDT can be fetched by SUPR0GetCurrentGdtRw(). */
 #define SUPKERNELFEATURES_GDT_NEED_WRITABLE   RT_BIT(2)
+/** FPU management disables preemption.
+ * @see SUPR0FpuBegin, SUPR0FpuEnd  */
+#define SUPKERNELFEATURES_FPU_NO_PREEMPT      RT_BIT(3)
 /** @} */
 
 /**
@@ -194,6 +197,29 @@ AssertCompileSize(SUPHWVIRTMSRS, 224);
 typedef SUPHWVIRTMSRS *PSUPHWVIRTMSRS;
 /** Pointer to a hardware-virtualization MSRs struct. */
 typedef const SUPHWVIRTMSRS *PCSUPHWVIRTMSRS;
+
+/**
+ * ARM cache level details (CSSEL_EL1/CCSIDR_EL1/CCSIDR2_EL1).
+ *
+ * @note Used by CPUM on non-ARM hosts.
+ */
+typedef struct SUPARMCACHELEVEL
+{
+    /** The CSSEL_EL1 value. */
+    uint8_t             bCsSel;
+    /** Reserved - zero. */
+    uint8_t             abReserved[3];
+    /** SUP_ARM_SYS_REG_VAL_F_XXX? */
+    uint32_t            fFlags;
+    /** The corresponding CCSIDR_EL1 value. */
+    uint64_t            uCcsIdR;
+    /** The corresponding CCSIDR2_EL1 value, UINT64_MAX if not present. */
+    uint64_t            uCcs2IdR;
+} SUPARMCACHELEVEL;
+/** Pointer to an ARM cache level info entry. */
+typedef SUPARMCACHELEVEL *PSUPARMCACHELEVEL;
+/** Pointer to a const ARM cache level info entry. */
+typedef SUPARMCACHELEVEL const *PCSUPARMCACHELEVEL;
 
 /**
  * ARM system register value.
@@ -2046,8 +2072,8 @@ SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAn
                                       PSUPMSRPROBERMODIFYRESULT pResult);
 
 #endif /* defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(DOXYGEN_RUNNING) */
-
 #if defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
+
 /**
  * Gets a collection of ARM system registers useful for identify
  * CPU capatbilites.
@@ -2067,6 +2093,29 @@ SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAn
  */
 SUPR3DECL(int) SUPR3ArmQuerySysRegs(RTCPUID idCpu, uint32_t fFlags, uint32_t cMaxRegs,
                                     uint32_t *pcRegsReturned, uint32_t *pcRegsAvailable, PSUPARMSYSREGVAL paSysRegValues);
+
+/**
+ * Gets a collection of ARM system registers useful for identify
+ * CPU capatbilites.
+ *
+ * @returns VBox status code.
+ * @param   idCpu               The CPU to query the registers on, NIL_RTCPUID
+ *                              if any will do.
+ * @param   cMaxEntries         Maximum number of entries @a paEntries may hold.
+ * @param   pcEntriesReturned   Number of entries returned.
+ * @param   pcEntriesAvailable  Number of entries available, optional. If higher
+ *                              than @a *pcEntriesReturned, try again with an
+ *                              array of this size to get them all.
+ * @param   paEntries           Array where to store the cache level information
+ *                              entries.
+ * @param   puCacheLevelIdReg   The value of the CLIDR_EL1 register. Optional.
+ * @param   puCacheTypeReg      The value of the CTR_EL0 register. Optional.
+ * @param   puDataCacheZeroId   The value of the DCZID_EL0 register. Optional.
+ */
+SUPR3DECL(int) SUPR3ArmQueryCacheInfo(RTCPUID idCpu, uint32_t cMaxEntries,
+                                      uint64_t *puCacheLevelIdReg, uint64_t *puCacheTypeReg, uint64_t *puDataCacheZeroId,
+                                      uint32_t *pcEntriesReturned, uint32_t *pcEntriesAvailable, PSUPARMCACHELEVEL paEntries);
+
 #endif /* defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING) */
 
 /**
@@ -2228,10 +2277,8 @@ typedef struct SUPLDRWRAPPEDMODULE
     /** SUPLDRWRAPPEDMODULE_F_XXX.   */
     uint16_t                    fFlags;
 
-    /** As close as possible to the start of the image. */
-    void                       *pvImageStart;
-    /** As close as possible to the end of the image. */
-    void                       *pvImageEnd;
+    /** Image section start+end address pairs. */
+    struct { void *pvStart, *pvEnd; } aImageSegs[7];
 
     /** @name Standar entry points
      * @{ */
@@ -2263,7 +2310,7 @@ typedef SUPLDRWRAPPEDMODULE const *PCSUPLDRWRAPPEDMODULE;
 /** Magic value for the wrapped module structure (Doris lessing). */
 #define SUPLDRWRAPPEDMODULE_MAGIC       UINT32_C(0x19191117)
 /** Current SUPLDRWRAPPEDMODULE structure version. */
-#define SUPLDRWRAPPEDMODULE_VERSION     UINT16_C(0x0001)
+#define SUPLDRWRAPPEDMODULE_VERSION     UINT16_C(0x0002)
 
 /** Set if this is the VMMR0 module.   */
 #define SUPLDRWRAPPEDMODULE_F_VMMR0     UINT16_C(0x0001)
@@ -2315,6 +2362,7 @@ SUPR0DECL(int) SUPR0QueryUcodeRev(PSUPDRVSESSION pSession, uint32_t *puMicrocode
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask);
 SUPR0DECL(int) SUPR0EnableHwvirt(bool fEnable);
+SUPR0DECL(int) SUPR0EnableHwvirtForVm(bool fEnable, void **pvState);
 #define SUP_TSCDELTA_MEASURE_F_FORCE        RT_BIT_32(0)
 #define SUP_TSCDELTA_MEASURE_F_ASYNC        RT_BIT_32(1)
 #define SUP_TSCDELTA_MEASURE_F_VALID_MASK   UINT32_C(0x00000003)
@@ -2446,25 +2494,79 @@ RT_IPRT_FORMAT_ATTR(1, 2) SUPR0Printf(const char *pszFormat, ...)
  */
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 
+
+/** @name SUPR0FPU_BEGIN_F_XXX - SUPR0FpuBegin() return flags.
+ * @note The support driver may return additional private bits, these are just
+ *       the definitions for public consumption.
+ * @{ */
+/** Reflects the fCtxHook value in the SUPR0FpuBegin() call. */
+#define SUPR0FPU_BEGIN_F_CTX_HOOK                   RT_BIT_32(0)
+/** Set if the host FPU state is fully saved. */
+#define SUPR0FPU_BEGIN_F_FULLY_SAVED                RT_BIT_32(1)
+/** Set if the host OS may replace the FPU state while running with interrupts
+ * enabled. */
+#define SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE     RT_BIT_32(2)
+/** Set if the host FPU state is locked.
+ * This if for linux.  */
+#define SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED          RT_BIT_32(3)
+/** @} */
+
 /**
  * Notification from R0 VMM prior to loading the guest-FPU register state.
  *
- * @returns Whether the host-FPU register state has been saved by the host kernel.
+ * @returns SUPR0FPU_BEGIN_F_XXX
  * @param   fCtxHook    Whether thread-context hooks are enabled.
  *
  * @remarks Called with preemption disabled.
  */
-SUPR0DECL(bool) SUPR0FpuBegin(bool fCtxHook);
+SUPR0DECL(uint32_t) SUPR0FpuBegin(bool fCtxHook);
+
+/**
+ * Ensures that our FPU state is still loaded and ready to use.
+ *
+ * This must be called prior to use when SUPR0FpuBegin returns the
+ * SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE flag set.
+ *
+ * @returns Indicates whether the host kernel had swapped out the state and it
+ *          required re-loading (@c true).
+ * @param   fBegin          Return values from SUPR0FpuBegin().
+ *
+ * @remarks Called with interrupts and preemption disabled.
+ */
+SUPR0DECL(bool) SUPR0FpuEnsureCurrent(uint32_t fBegin);
+
+/**
+ * Locks the host FPU state.
+ *
+ * This is only applicable when SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE is set
+ * and should not be called when that flag is not set.
+ *
+ * @returns The updated @a fBegin value (sets SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED
+ *          if actual locking took place, but may modify internal flags).
+ * @param   fBegin          Return values from SUPR0FpuBegin().
+ */
+SUPR0DECL(uint32_t) SUPR0FpuLock(uint32_t fBegin);
+
+/**
+ * Unlocks the host FPU state.
+ *
+ * @returns The updated @a fBegin value.
+ * @param   fBegin          Return values from SUPR0FpuBegin() and
+ *                          SUPR0FpuLock().
+ * @note    Avoid calling when SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED isn't set.
+ */
+SUPR0DECL(uint32_t) SUPR0FpuUnlock(uint32_t fBegin);
 
 /**
  * Notification from R0 VMM after saving the guest-FPU register state (and
  * potentially restoring the host-FPU register state) in ring-0.
  *
- * @param   fCtxHook    Whether thread-context hooks are enabled.
+ * @param   fBegin      Return values from SUPR0FpuBegin(), SUPR0FpuLock() and
+ *                      SUPR0FpuUnlock().
  *
  * @remarks Called with preemption disabled.
  */
-SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook);
+SUPR0DECL(void) SUPR0FpuEnd(uint32_t fBegin);
 
 /** @copydoc RTLogDefaultInstanceEx
  * @remarks To allow overriding RTLogDefaultInstanceEx locally. */

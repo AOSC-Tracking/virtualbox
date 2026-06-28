@@ -865,7 +865,7 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
             }
             else if (UICommon::hasAllowedExtension(strFile, isoExtensionList))
             {
-                openNewMachineWizard(strFile);
+                openNewMachineWizard(QString() /* means root group */, strFile);
             }
         }
     }
@@ -1233,7 +1233,7 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
         switch (enmType)
         {
             case WizardType_NewVM:
-                m_wizards[enmType] = new UIWizardNewVM(this, actionPool(), m_pWidget->fullGroupName(), m_strISOFilePath);
+                m_wizards[enmType] = new UIWizardNewVM(this, actionPool(), m_strGroupName, m_strISOFilePath);
                 break;
             case WizardType_CloneVM:
             {
@@ -1330,28 +1330,28 @@ void UIVirtualBoxManager::sltCloseWizard(WizardType enmType)
 
 void UIVirtualBoxManager::sltOpenNewMachineWizard()
 {
-    /* Get first selected item: */
-    UIVirtualMachineItem *pItem = currentItem();
+    /* Check the sender's action for the context-menu related flag: */
+    UIAction *pAction = actionPool()->action(UIActionIndexMN_M_Group_S_New);
+    AssertPtrReturnVoid(pAction);
+    const bool fIsContextMenuAction = pAction->property("is_context_menu_action").toBool();
 
-    /* If there is no items at all or first selected item is a local machine: */
-    if (!pItem || pItem->itemType() == UIVirtualMachineItemType_Local)
-        openNewMachineWizard();
-    /* Otherwise we guess it's cloud related item selected: */
-    else
-        sltOpenWizard(WizardType_NewCloudVM);
+    /* For the context-menu call we pass current group to wizard: */
+    openNewMachineWizard(fIsContextMenuAction ? m_pWidget->fullGroupName() : QString());
+}
+
+void UIVirtualBoxManager::sltOpenNewCloudMachineWizard()
+{
+    sltOpenWizard(WizardType_NewCloudVM);
 }
 
 void UIVirtualBoxManager::sltOpenAddMachineDialog()
 {
-    /* Get first selected item: */
-    UIVirtualMachineItem *pItem = currentItem();
+    openAddMachineDialog();
+}
 
-    /* If there is no items at all or first selected item is a local machine: */
-    if (!pItem || pItem->itemType() == UIVirtualMachineItemType_Local)
-        openAddMachineDialog();
-    /* Otherwise we guess it's cloud related item selected: */
-    else
-        sltOpenWizard(WizardType_AddCloudVM);
+void UIVirtualBoxManager::sltOpenAddCloudMachineWizard()
+{
+    sltOpenWizard(WizardType_AddCloudVM);
 }
 
 void UIVirtualBoxManager::sltOpenGroupNameEditor()
@@ -2626,8 +2626,12 @@ void UIVirtualBoxManager::prepareConnections()
     /* 'Group' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_New), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenNewMachineWizard);
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_NewCloud), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenNewCloudMachineWizard);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_AddCloud), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenAddCloudMachineWizard);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_Rename), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenGroupNameEditor);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_Remove), &UIAction::triggered,
@@ -2660,8 +2664,12 @@ void UIVirtualBoxManager::prepareConnections()
     /* 'Machine' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_New), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenNewMachineWizard);
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_NewCloud), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenNewCloudMachineWizard);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_AddCloud), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenAddCloudMachineWizard);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenSettingsDialogDefault);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Clone), &UIAction::triggered,
@@ -2959,9 +2967,11 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
     comVBox.RegisterMachine(comMachineNew);
 }
 
-void UIVirtualBoxManager::openNewMachineWizard(const QString &strISOFilePath /* = QString() */)
+void UIVirtualBoxManager::openNewMachineWizard(const QString &strGroupName /* = QString() */,
+                                               const QString &strISOFilePath /* = QString() */)
 {
     /* Configure wizard variables: */
+    m_strGroupName = strGroupName;
     m_strISOFilePath = strISOFilePath;
 
     /* Open New VM Wizard: */
@@ -3227,6 +3237,9 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_New));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Add));
         pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_NewCloud));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_AddCloud));
+        pMenu->addSeparator();
         if (   currentItem()
             && currentItem()->isItemPoweredOff())
             pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Start));
@@ -3286,6 +3299,9 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         /* Populate Machine-menu: */
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_New));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Add));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_NewCloud));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_AddCloud));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
         if (gEDataManager->isSettingsInExpertMode())
@@ -3649,7 +3665,9 @@ void UIVirtualBoxManager::updateActionsAppearance()
 
     /* Enable/disable group actions: */
     actionPool()->action(UIActionIndexMN_M_Group_S_New)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_New, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_NewCloud)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_NewCloud, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Add)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Add, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_AddCloud)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_AddCloud, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Rename)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Rename, items));
     actionPool()->action(UIActionIndexMN_M_Group_S_Remove)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Remove, items));
     actionPool()->action(UIActionIndexMN_M_Group_M_MoveToGroup)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_MoveToGroup, items));
@@ -3665,7 +3683,9 @@ void UIVirtualBoxManager::updateActionsAppearance()
 
     /* Enable/disable machine actions: */
     actionPool()->action(UIActionIndexMN_M_Machine_S_New)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_New, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_NewCloud)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_NewCloud, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Add)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Add, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_AddCloud)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_AddCloud, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Settings)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Settings, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Clone)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Clone, items));
     actionPool()->action(UIActionIndexMN_M_Machine_S_Move)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Move, items));
@@ -3851,9 +3871,13 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
             return true;
         /* For known *machine* action types: */
         case UIActionIndexMN_M_Group_S_New:
+        case UIActionIndexMN_M_Group_S_NewCloud:
         case UIActionIndexMN_M_Group_S_Add:
+        case UIActionIndexMN_M_Group_S_AddCloud:
         case UIActionIndexMN_M_Machine_S_New:
+        case UIActionIndexMN_M_Machine_S_NewCloud:
         case UIActionIndexMN_M_Machine_S_Add:
+        case UIActionIndexMN_M_Machine_S_AddCloud:
             return !isGroupSavingInProgress();
         default:
             break;

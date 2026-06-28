@@ -225,7 +225,7 @@ HRESULT HostNetworkInterface::saveAdapterConfig(void)
 {
     /* We care about host-only adapters only */
     if (mIfType != HostNetworkInterfaceType_HostOnly)
-        return true;
+        return S_OK;
 
     HRESULT hrc = saveAdapterConfigParameter("Name", mInterfaceName.c_str());
     if (FAILED(hrc))

@@ -51,8 +51,8 @@
 global __U4D
 __U4D:
 %endif
-global $_?U4D
-$_?U4D:
+global _?U4D
+_?U4D:
 %if TMPL_BITS >= 32
         ; Move dividend into EDX:EAX
         shl     eax, 10h

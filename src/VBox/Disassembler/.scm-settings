@@ -25,6 +25,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
 
---filter-out-files *.bin
 /*.h: --guard-relative-to-dir .
 

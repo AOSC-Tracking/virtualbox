@@ -180,7 +180,7 @@ int vbox_framebuffer_init(struct drm_device *dev,
 {
 	int ret;
 
-#if RTLNX_VER_MIN(6,17,0)
+#if RTLNX_VER_MIN(6,17,0) || RTLNX_RHEL_RANGE(9,8, 9,99) || RTLNX_RHEL_RANGE(10,2, 10,99)
 	const struct drm_format_info *format = drm_get_format_info(dev, mode_cmd->pixel_format, 0);
 	drm_helper_mode_fill_fb_struct(dev, &vbox_fb->base, format, mode_cmd);
 #elif RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
@@ -201,7 +201,7 @@ int vbox_framebuffer_init(struct drm_device *dev,
 static struct drm_framebuffer *vbox_user_framebuffer_create(
 		struct drm_device *dev,
 		struct drm_file *filp,
-#if RTLNX_VER_MIN(6,17,0)
+#if RTLNX_VER_MIN(6,17,0) || RTLNX_RHEL_RANGE(9,8, 9,99) || RTLNX_RHEL_RANGE(10,2, 10,99)
 		const struct drm_format_info *info,
 #endif
 #if RTLNX_VER_MIN(4,5,0) || RTLNX_RHEL_MAJ_PREREQ(7,3)
@@ -485,7 +485,7 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
 	vbox->dev = dev;
 
 	mutex_init(&vbox->hw_mutex);
-#if RTLNX_VER_MIN(6,18,0)
+#if RTLNX_VER_MIN(6,18,0) || RTLNX_RHEL_RANGE(9,8, 9,99) || RTLNX_RHEL_RANGE(10,2, 10,99)
 	mutex_init(&vbox->struct_mutex);
 #endif
 	ret = vbox_hw_init(vbox);
@@ -558,7 +558,10 @@ void vbox_driver_lastclose(struct drm_device *dev)
 {
 	struct vbox_private *vbox = dev->dev_private;
 
-#if RTLNX_VER_MIN(3,16,0) || RTLNX_RHEL_MAJ_PREREQ(7,1)
+#if RTLNX_VER_MIN(6,19,0)
+	if (vbox->fbdev)
+		drm_fb_helper_restore_fbdev_mode_unlocked(&vbox->fbdev->helper, false);
+#elif RTLNX_VER_MIN(3,16,0) || RTLNX_RHEL_MAJ_PREREQ(7,1)
 	if (vbox->fbdev)
 		drm_fb_helper_restore_fbdev_mode_unlocked(&vbox->fbdev->helper);
 #else
@@ -659,7 +662,11 @@ void vbox_gem_free_object(struct drm_gem_object *obj)
 	}
 #endif
 
+#if RTLNX_VER_MIN(6,19,0)
+	ttm_bo_fini(&vbox_bo->bo);
+#else
 	ttm_bo_put(&vbox_bo->bo);
+#endif
 }
 
 static inline u64 vbox_bo_mmap_offset(struct vbox_bo *bo)
@@ -683,7 +690,7 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 	struct vbox_bo *bo;
 	struct mutex *struct_mutex;
 
-#if RTLNX_VER_MIN(6,18,0)
+#if RTLNX_VER_MIN(6,18,0) || RTLNX_RHEL_RANGE(9,8, 9,99) || RTLNX_RHEL_RANGE(10,2, 10,99)
 	struct vbox_private *vbox = dev->dev_private;
 	struct_mutex = &vbox->struct_mutex;
 #else

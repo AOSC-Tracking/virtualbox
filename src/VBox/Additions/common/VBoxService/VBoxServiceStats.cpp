@@ -71,7 +71,6 @@
 #include <VBox/VBoxGuestLib.h>
 
 #include "VBoxServiceInternal.h"
-#include "VBoxServiceUtils.h"
 
 
 /*********************************************************************************************************************************
@@ -737,6 +736,8 @@ VBOXSERVICE g_VMStatistics =
     NULL,
     /* pszOptions. */
     NULL,
+    /* paOptions, cOptions. */
+    NULL, 0,
     /* methods */
     VGSvcDefaultPreInit,
     VGSvcDefaultOption,

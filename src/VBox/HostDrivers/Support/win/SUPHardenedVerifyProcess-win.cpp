@@ -53,6 +53,7 @@
 #include <iprt/alloca.h>
 #include <iprt/ctype.h>
 #include <iprt/param.h>
+#include <iprt/stackcheck.h>
 #include <iprt/string.h>
 #include <iprt/utf16.h>
 #include <iprt/zero.h>
@@ -85,6 +86,19 @@ AssertCompile(PAGE_SIZE == _4K);
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** Known image IDs. */
+typedef enum SUPHNTVPIMAGEID
+{
+    kSupHNtVpImageId_Invalid = 0,
+    kSupHNtVpImageId_NtDll,
+    kSupHNtVpImageId_Kernel32,
+    kSupHNtVpImageId_KernelBase,
+    kSupHNtVpImageId_AppHelp,
+    kSupHNtVpImageId_AppSetSchema,
+    kSupHNtVpImageId_Executable,
+    kSupHNtVpImageId_Other
+} SUPHNTVPIMAGEID;
+
 /**
  * Virtual address space region.
  */
@@ -113,6 +127,8 @@ typedef struct SUPHNTVPIMAGE
 #ifndef VBOX_WITH_MINIMAL_HARDENING
     /** The name from the allowed lists. */
     const char     *pszName;
+    /** Image ID for easy identification. */
+    SUPHNTVPIMAGEID enmImageId;
 #endif
     /** Name structure for NtQueryVirtualMemory/MemorySectionName. */
     struct
@@ -196,8 +212,9 @@ typedef struct SUPHNTVPSTATE
     uint8_t                 abMemory[_4K];
     /** File compare scratch buffer.*/
     uint8_t                 abFile[_4K];
-    /** Section headers for use when comparing file and loaded image. */
-    IMAGE_SECTION_HEADER    aSecHdrs[16];
+    /** Section headers for use when comparing file and loaded image.
+     * @note NTDLL.DLL from W11/26200 has 15...  */
+    IMAGE_SECTION_HEADER    aSecHdrs[24];
     /** Pointer to the error info. */
     PRTERRINFO              pErrInfo;
 } SUPHNTVPSTATE;
@@ -208,37 +225,39 @@ typedef SUPHNTVPSTATE *PSUPHNTVPSTATE;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#if defined(IN_RING3) || !defined(VBOX_WITH_MINIMAL_HARDENING)
 /**
  * System DLLs allowed to be loaded into the process.
  * @remarks supHardNtVpCheckDlls assumes these are lower case.
  */
-static const char *g_apszSupNtVpAllowedDlls[] =
+static struct { const char *pszName; SUPHNTVPIMAGEID enmImageId; } const g_aSupNtVpAllowedDlls[] =
 {
-    "ntdll.dll",
-    "kernel32.dll",
-    "kernelbase.dll",
-    "apphelp.dll",
-    "apisetschema.dll",
-#ifdef VBOX_PERMIT_VERIFIER_DLL
-    "verifier.dll",
-#endif
-#ifdef VBOX_PERMIT_MORE
-# define VBOX_PERMIT_MORE_FIRST_IDX 5
-    "sfc.dll",
-    "sfc_os.dll",
-    "user32.dll",
-    "acres.dll",
-    "acgenral.dll",
-#endif
-#ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
-    "psapi.dll",
-    "msvcrt.dll",
-    "advapi32.dll",
-    "sechost.dll",
-    "rpcrt4.dll",
-    "SamplingRuntime.dll",
-#endif
+    { "ntdll.dll",              kSupHNtVpImageId_NtDll },
+    { "kernel32.dll",           kSupHNtVpImageId_Kernel32 },
+    { "kernelbase.dll",         kSupHNtVpImageId_KernelBase },
+    { "apphelp.dll",            kSupHNtVpImageId_AppHelp },
+    { "apisetschema.dll",       kSupHNtVpImageId_AppSetSchema },
+# ifdef VBOX_PERMIT_VERIFIER_DLL
+    { "verifier.dll",           kSupHNtVpImageId_Other },
+# endif
+# ifdef VBOX_PERMIT_MORE
+#  define VBOX_PERMIT_MORE_FIRST_IDX 5
+    { "sfc.dll",                kSupHNtVpImageId_Other },
+    { "sfc_os.dll",             kSupHNtVpImageId_Other },
+    { "user32.dll",             kSupHNtVpImageId_Other },
+    { "acres.dll",              kSupHNtVpImageId_Other },
+    { "acgenral.dll",           kSupHNtVpImageId_Other },
+# endif
+# ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
+    { "psapi.dll",              kSupHNtVpImageId_Other },
+    { "msvcrt.dll",             kSupHNtVpImageId_Other },
+    { "advapi32.dll",           kSupHNtVpImageId_Other },
+    { "sechost.dll",            kSupHNtVpImageId_Other },
+    { "rpcrt4.dll",             kSupHNtVpImageId_Other },
+    { "SamplingRuntime.dll",    kSupHNtVpImageId_Other },
+# endif
 };
+#endif
 
 /**
  * VBox executables allowed to start VMs.
@@ -270,6 +289,18 @@ static const char *g_apszSupNtVpAllowedVmExes[] =
     "tstRTR0TimerDriver.exe",
     "tstSSM.exe",
     "tstInt.exe",
+#ifdef VBOX_WITH_MINIMAL_HARDENING /* (These testcases are disabled in regular hardened builds.) */
+    "tstContiguous.exe",
+    "tstGetPagingMode.exe",
+    "tstInit.exe",
+    "tstLow.exe",
+    "tstPage.exe",
+    "tstPin.exe",
+    "tstSupLoadModule.exe",
+    "tstSupSem.exe",
+    "tstSupSem-Zombie.exe",
+    "tstSupTscDelta.exe",
+#endif
 };
 
 /** Pointer to NtQueryVirtualMemory.  Initialized by SUPDrv-win.cpp in
@@ -284,7 +315,7 @@ PFNNTQUERYVIRTUALMEMORY g_pfnNtQueryVirtualMemory = NULL;
 /** The number of valid entries in the loader cache. */
 static uint32_t                 g_cSupNtVpLdrCacheEntries = 0;
 /** The loader cache entries. */
-static SUPHNTLDRCACHEENTRY      g_aSupNtVpLdrCacheEntries[RT_ELEMENTS(g_apszSupNtVpAllowedDlls) + 1 + 3];
+static SUPHNTLDRCACHEENTRY      g_aSupNtVpLdrCacheEntries[RT_ELEMENTS(g_aSupNtVpAllowedDlls) + 1 + 3];
 #endif
 
 
@@ -785,7 +816,6 @@ static DECLCALLBACK(int) supHardNtVpGetImport(RTLDRMOD hLdrMod, const char *pszM
  */
 static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage)
 {
-
     /*
      * Read and find the file headers.
      */
@@ -982,7 +1012,7 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
     uint32_t         cSkipAreas = 0;
     SUPHNTVPSKIPAREA aSkipAreas[7];
 #ifndef VBOX_WITH_MINIMAL_HARDENING
-    if (pImage->fNtCreateSectionPatch)
+    if (pImage->enmImageId == kSupHNtVpImageId_NtDll)
     {
         RTLDRADDR uValue;
         if (pThis->enmKind == SUPHARDNTVPKIND_VERIFY_ONLY)
@@ -1025,12 +1055,34 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
         aSkipAreas[cSkipAreas++].cb = HC_ARCH_BITS == 64 ? 13 : 12;
 # endif
 
-        /* LdrSystemDllInitBlock is filled in by the kernel. It mainly contains addresses of 32-bit ntdll method for wow64. */
+        /* LdrSystemDllInitBlock is filled in by the kernel. It mainly contains addresses of 32-bit ntdll method for wow64.
+           Lately, it also includes CET and other compatibility stuff.  It keeps growing... */
         rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "LdrSystemDllInitBlock", &uValue);
         if (RT_SUCCESS(rc))
         {
-            aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
-            aSkipAreas[cSkipAreas++].cb = RT_MAX(pbBits[(uint32_t)uValue], 0x50);
+            uint32_t uRva = (uint32_t)uValue;
+            uint32_t cb   = *(uint32_t const *)&pbBits[uRva]; /* from the image file, not memory */
+            uint32_t iSh  = 0;
+            while (   iSh < cSections
+                   && uRva - pThis->aSecHdrs[iSh].VirtualAddress >= pThis->aSecHdrs[iSh].Misc.VirtualSize)
+                iSh++;
+            if (iSh < cSections)
+            {
+                uint32_t cbMax = pThis->aSecHdrs[iSh].Misc.VirtualSize - (uRva - pThis->aSecHdrs[iSh].VirtualAddress);
+                cbMax = RT_MIN(cbMax, _16K);
+                if (   cb <= cbMax
+                    && cb >= 0x40 /* initial size was 0x60 according to Geoff. */ )
+                {   /* The size seems sane, so drop it from the sanitizing. */
+                    uRva += sizeof(uint32_t);
+                    cb   -= sizeof(uint32_t);
+                }
+                else if (cb > cbMax)
+                    cb = cbMax;
+            }
+            else
+                AssertFailedStmt(cb = RT_MIN(cb, _4K));
+            aSkipAreas[cSkipAreas].uRva = uRva;
+            aSkipAreas[cSkipAreas++].cb = cb;
         }
 
         Assert(cSkipAreas <= RT_ELEMENTS(aSkipAreas));
@@ -1437,12 +1489,14 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
     /*
      * Match it against known DLLs.
      */
-    pImage->pszName = NULL;
-    for (uint32_t i = 0; i < RT_ELEMENTS(g_apszSupNtVpAllowedDlls); i++)
-        if (supHardNtVpAreNamesEqual(g_apszSupNtVpAllowedDlls[i], pwszFilename))
+    pImage->pszName    = NULL;
+    pImage->enmImageId = kSupHNtVpImageId_Invalid;
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aSupNtVpAllowedDlls); i++)
+        if (supHardNtVpAreNamesEqual(g_aSupNtVpAllowedDlls[i].pszName, pwszFilename))
         {
-            pImage->pszName = g_apszSupNtVpAllowedDlls[i];
-            pImage->fDll    = true;
+            pImage->pszName    = g_aSupNtVpAllowedDlls[i].pszName;
+            pImage->enmImageId = g_aSupNtVpAllowedDlls[i].enmImageId;
+            pImage->fDll       = true;
 
 # ifndef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
             /* The directory name must match the one we've got for System32. */
@@ -1478,9 +1532,10 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
             if (supHardNtVpAreNamesEqual(g_apszSupNtVpAllowedVmExes[i], pwszFilename))
             {
 #ifndef VBOX_WITH_MINIMAL_HARDENING
-                pImage->pszName = g_apszSupNtVpAllowedVmExes[i];
+                pImage->pszName     = g_apszSupNtVpAllowedVmExes[i];
+                pImage->enmImageId  = kSupHNtVpImageId_Executable;
 #endif
-                pImage->fDll    = false;
+                pImage->fDll        = false;
                 break;
             }
     }
@@ -1574,9 +1629,9 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
     pImage->aRegions[0].fProt   = pMemInfo->Protect;
 
 #ifndef VBOX_WITH_MINIMAL_HARDENING
-    if (suplibHardenedStrCmp(pImage->pszName, "ntdll.dll") == 0)
+    if (pImage->enmImageId == kSupHNtVpImageId_NtDll)
         pImage->fNtCreateSectionPatch = true;
-    else if (suplibHardenedStrCmp(pImage->pszName, "apisetschema.dll") == 0)
+    else if (pImage->enmImageId == kSupHNtVpImageId_AppSetSchema)
         pImage->fApiSetSchemaOnlySection1 = true; /** @todo Check the ApiSetMap field in the PEB. */
 # ifdef VBOX_PERMIT_MORE
     else if (suplibHardenedStrCmp(pImage->pszName, "acres.dll") == 0)
@@ -1638,21 +1693,31 @@ static int supHardNtVpAddRegion(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PME
     return VINF_SUCCESS;
 }
 
-
 #ifdef IN_RING3
+
+/** Helper for supHardNtVpFreeOrReplacePrivateExecMemory(). */
+static int supHardNtVpFreeOrReplacePrivateExecMemoryFailed(HANDLE hProcess, void *pvCopy)
+{
+    supR3HardenedLogFlush();
+    NtTerminateProcess(hProcess, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED);
+    if (pvCopy)
+        RTMemFree(pvCopy);
+    return VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED;
+}
+
+
 /**
  * Frees (or replaces) executable memory of allocation type private.
  *
- * @returns True if nothing really bad happen, false if to quit ASAP because we
- *          killed the process being scanned.
+ * @returns VBox status code.
  * @param   pThis               The process scanning state structure. Details
  *                              about images are added to this.
  * @param   hProcess            The process to verify.
  * @param   pMemInfo            The information we've got on this private
  *                              executable memory.
  */
-static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess,
-                                                      MEMORY_BASIC_INFORMATION const *pMemInfo)
+static int supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess,
+                                                     MEMORY_BASIC_INFORMATION const *pMemInfo)
 {
     NTSTATUS rcNt;
 
@@ -1680,9 +1745,10 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
             break;
         cbFree += MemInfo2.RegionSize;
     }
-    SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: %s exec mem at %p (LB %#zx, %p LB %#zx)\n",
+    SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: %s exec mem at %p LB %#zx ([%p]/%p LB %#zx s=%#x ap=%#x rp=%#x t=%#x)\n",
                  pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW ? "Replacing" : "Freeing",
-                 pvFree, cbFree, pMemInfo->BaseAddress, pMemInfo->RegionSize));
+                 pvFree, cbFree, pMemInfo->AllocationBase, pMemInfo->BaseAddress, pMemInfo->RegionSize, pMemInfo->State,
+                 pMemInfo->AllocationProtect, pMemInfo->Protect, pMemInfo->Type));
 
     /*
      * In the BSOD workaround mode, we need to make a copy of the memory before
@@ -1698,7 +1764,7 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         if (!pvCopy)
         {
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED, "RTMemAllocZ(%#zx) failed", cbCopy);
-            return true;
+            return supHardNtVpFreeOrReplacePrivateExecMemoryFailed(hProcess, NULL);
         }
 
         rcNt = supHardNtVpReadMem(hProcess, uCopySrc, pvCopy, cbCopy);
@@ -1777,9 +1843,9 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
                                                    &MemInfo3, sizeof(MemInfo3), &cbActual);
         if (!NT_SUCCESS(rcNt2))
             break;
-        SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: QVM after free %u: [%p]/%p LB %#zx s=%#x ap=%#x rp=%#p\n",
+        SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: QVM after free %u: [%p]/%p LB %#zx s=%#x ap=%#x rp=%#x t=%#x\n",
                      i, MemInfo3.AllocationBase, MemInfo3.BaseAddress, MemInfo3.RegionSize, MemInfo3.State,
-                     MemInfo3.AllocationProtect, MemInfo3.Protect));
+                     MemInfo3.AllocationProtect, MemInfo3.Protect, MemInfo3.Type));
         supR3HardenedLogFlush();
         if (MemInfo3.State == MEM_FREE || !(pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW))
             break;
@@ -1802,11 +1868,9 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
                                 "NtAllocateVirtualMemory (%p LB %#zx) failed with rcNt=%#x allocating "
                                 "replacement memory for working around buggy protection software. "
-                                "See VBoxStartup.log for more details",
+                                "See VBoxHardening.log for more details",
                                 pvAlloc, cbFree, rcNt);
-            supR3HardenedLogFlush();
-            NtTerminateProcess(hProcess, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED);
-            return false;
+            return supHardNtVpFreeOrReplacePrivateExecMemoryFailed(hProcess, pvCopy);
         }
 
         if (   (uintptr_t)pvFree < (uintptr_t)pvAlloc
@@ -1815,9 +1879,7 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
                                 "We wanted NtAllocateVirtualMemory to get us %p LB %#zx, but it returned %p LB %#zx.",
                                 pMemInfo->BaseAddress, pMemInfo->RegionSize, pvFree, cbFree, rcNt);
-            supR3HardenedLogFlush();
-            NtTerminateProcess(hProcess, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED);
-            return false;
+            return supHardNtVpFreeOrReplacePrivateExecMemoryFailed(hProcess, pvCopy);
         }
 
         /*
@@ -1854,20 +1916,17 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         }
         else
         {
-            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
-                                "NtWriteVirtualMemory (%p LB %#zx) failed: %#x",
+            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED, "NtWriteVirtualMemory (%p LB %#zx) failed: %#x",
                                 pMemInfo->BaseAddress, pMemInfo->RegionSize, rcNt);
-            supR3HardenedLogFlush();
-            NtTerminateProcess(hProcess, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED);
-            return false;
+            return supHardNtVpFreeOrReplacePrivateExecMemoryFailed(hProcess, pvCopy);
         }
     }
     if (pvCopy)
         RTMemFree(pvCopy);
-    return true;
+    return VINF_SUCCESS;
 }
-#endif /* IN_RING3 */
 
+#endif /* IN_RING3 */
 
 /**
  * Scans the virtual memory of the process.
@@ -2017,8 +2076,9 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                  */
                 if (MemInfo.Type == MEM_PRIVATE)
                 {
-                    if (!supHardNtVpFreeOrReplacePrivateExecMemory(pThis, hProcess, &MemInfo))
-                        break;
+                    int const rc = supHardNtVpFreeOrReplacePrivateExecMemory(pThis, hProcess, &MemInfo);
+                    if (RT_FAILURE(rc))
+                        return rc;
                 }
                 /*
                  * Unmap mapped memory, failing that, drop exec privileges.
@@ -2052,7 +2112,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                 supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FOUND_EXEC_MEMORY,
                                     "Found executable memory at %p (%p LB %#zx): type=%#x prot=%#x state=%#x aprot=%#x abase=%p",
                                     uPtrWhere, MemInfo.BaseAddress, MemInfo.RegionSize, MemInfo.Type, MemInfo.Protect,
-                                    MemInfo.State, MemInfo.AllocationBase, MemInfo.AllocationProtect);
+                                    MemInfo.State, MemInfo.AllocationProtect, MemInfo.AllocationBase);
 
 # ifndef IN_RING3
             if (RT_FAILURE(pThis->rcResult))
@@ -2123,6 +2183,7 @@ DECLHIDDEN(int) supHardNtLdrCacheEntryGetBits(PSUPHNTLDRCACHEENTRY pEntry, uint8
                                               RTLDRADDR uBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser,
                                               PRTERRINFO pErrInfo)
 {
+    RT_STACK_CHECK_RET_ADDR();
     int rc;
 
     /*
@@ -2237,7 +2298,7 @@ DECLHIDDEN(void) supR3HardenedWinFlushLoaderCache(void)
  *
  * @returns Pointer to the cache entry if found, NULL if not.
  * @param   pszName             The name (from g_apszSupNtVpAllowedVmExes or
- *                              g_apszSupNtVpAllowedDlls).
+ *                              g_aSupNtVpAllowedDlls).
  */
 static PSUPHNTLDRCACHEENTRY supHardNtLdrCacheLookupEntry(const char *pszName)
 {
@@ -2348,23 +2409,25 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
  *
  * @returns VBox status code.
  * @param   pszName             The DLL name.  Must be one from the
- *                              g_apszSupNtVpAllowedDlls array.
+ *                              g_aSupNtVpAllowedDlls array.
  * @param   ppEntry             Where to return the entry we've opened/found.
  * @param   pErrInfo            Optional buffer where to return additional error
  *                              information.
  */
 DECLHIDDEN(int) supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY *ppEntry, PRTERRINFO pErrInfo)
 {
+    RT_STACK_CHECK_RET_ADDR();
+
     /*
      * Locate the dll.
      */
     uint32_t i = 0;
-    while (   i < RT_ELEMENTS(g_apszSupNtVpAllowedDlls)
-           && strcmp(pszName, g_apszSupNtVpAllowedDlls[i]))
+    while (   i < RT_ELEMENTS(g_aSupNtVpAllowedDlls)
+           && strcmp(pszName, g_aSupNtVpAllowedDlls[i].pszName))
         i++;
-    if (i >= RT_ELEMENTS(g_apszSupNtVpAllowedDlls))
+    if (i >= RT_ELEMENTS(g_aSupNtVpAllowedDlls))
         return VERR_FILE_NOT_FOUND;
-    pszName = g_apszSupNtVpAllowedDlls[i];
+    pszName = g_aSupNtVpAllowedDlls[i].pszName;
 
     /*
      * Try the cache.
@@ -2607,7 +2670,7 @@ static int supHardNtVpCheckDlls(PSUPHNTVPSTATE pThis)
 
     /*
      * Check that both ntdll and kernel32 are present.
-     * ASSUMES the entries in g_apszSupNtVpAllowedDlls are all lower case.
+     * ASSUMES the entries in g_aSupNtVpAllowedDlls are all lower case.
      */
     uint32_t iNtDll    = UINT32_MAX;
     uint32_t iKernel32 = UINT32_MAX;
@@ -2778,6 +2841,7 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
                                             uint32_t *pcFixes, PRTERRINFO pErrInfo)
 {
     RT_NOREF(hThread);
+    RT_STACK_CHECK_RET_ADDR();
     if (pcFixes)
         *pcFixes = 0;
 

@@ -2464,11 +2464,9 @@ static VBOXSTRICTRC vmxHCExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
                 case PGMMODE_AMD64:             /* 64-bit AMD paging (long mode). */
                 case PGMMODE_AMD64_NX:          /* 64-bit AMD paging (long mode) with NX enabled. */
                 {
-#ifdef VBOX_WITH_64_BITS_GUESTS
                     /* For our assumption in vmxHCShouldSwapEferMsr. */
                     Assert(u64GuestCr4 & X86_CR4_PAE);
                     break;
-#endif
                 }
                 default:
                     AssertFailed();
@@ -7213,7 +7211,7 @@ static VBOXSTRICTRC vmxHCHandleSplitLockAcXcpt(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
                                        HMVMX_CPUMCTX_XPCT_AC>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
         AssertRCReturn(rc, rc);
 
-        VBOXVMM_XCPT_DF(pVCpu, &pVCpu->cpum.GstCtx);
+        VBOXVMM_VMX_SPLIT_LOCK(pVCpu, &pVCpu->cpum.GstCtx);
 
         if (DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_VMX_SPLIT_LOCK))
         {
@@ -7234,7 +7232,10 @@ static VBOXSTRICTRC vmxHCHandleSplitLockAcXcpt(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
         Log8Func(("cs:rip=%#04x:%08RX64 rflags=%#RX64 cr0=%#RX64 split-lock #AC\n", pVCpu->cpum.GstCtx.cs.Sel,
                   pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0));
 
-        /** @todo For SMP configs we should do a rendezvous here. */
+#ifndef IN_RING0 /* No ring-0 IEM TLB. */
+        if (!VM_IS_EXEC_ENGINE_IEM(pVM))
+            IEMTlbInvalidateAll(pVCpu);
+#endif
         VBOXSTRICTRC rcStrict = IEMExecOneIgnoreLock(pVCpu);
         if (rcStrict == VINF_SUCCESS)
 #if 0 /** @todo r=bird: This is potentially wrong.  Might have to just do a whole state sync above and mark everything changed to be safe... */
@@ -7518,6 +7519,9 @@ static VBOXSTRICTRC vmxHCExitXcptGP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     int rc = vmxHCImportGuestState<HMVMX_CPUMCTX_EXTRN_ALL>(pVCpu, pVmcsInfo, __FUNCTION__);
     AssertRCReturn(rc, rc);
 
+# ifndef IN_RING0 /* No ring-0 IEM TLB. */
+    IEMTlbInvalidateAll(pVCpu);
+# endif
     VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
     if (rcStrict == VINF_SUCCESS)
     {
@@ -8995,7 +8999,12 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                 }
             }
             else
+            {
+#ifndef IN_RING0 /* No ring-0 IEM TLB. */
+                IEMTlbInvalidateAll(pVCpu);
+#endif
                 rcStrict = IEMExecOne(pVCpu);
+            }
 
             ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP);
             fUpdateRipAlready = true;
@@ -9742,7 +9751,12 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
 
     VBOXSTRICTRC rcStrict;
     if (!pExitRec)
+    {
+# ifndef IN_RING0 /* No ring-0 IEM TLB. */
+        IEMTlbInvalidateAll(pVCpu);
+# endif
         rcStrict = IEMExecOne(pVCpu);
+    }
     else
     {
         /* Frequent access or probing. */

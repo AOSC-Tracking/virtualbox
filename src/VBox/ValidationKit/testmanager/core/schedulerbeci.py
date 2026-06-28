@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172152 $"
 
 
 # Validation Kit imports.
@@ -68,10 +68,8 @@ class SchdulerBeci(SchedulerBase): # pylint: disable=too-few-public-methods
                 assert iPrio in range(32);
                 iPrio = iPrio // 4;
                 assert iPrio in range(8);
-                if iPrio > iMaxPriority:
-                    iMaxPriority = iPrio;
-                if iPrio < iMinPriority:
-                    iMinPriority = iPrio;
+                iMinPriority = min(iMinPriority, iPrio);
+                iMaxPriority = max(iMaxPriority, iPrio);
 
                 oTestCase.iBeciPrio      = iPrio;
                 oTestCase.iNextVariation = -1;

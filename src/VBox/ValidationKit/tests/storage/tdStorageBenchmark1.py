@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 170187 $"
+__version__ = "$Revision: 172158 $"
 
 
 # Standard Python imports.
@@ -1169,7 +1169,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         return (None, None);
 
-    def testOneCfg(self, sVmName, eStorageController, sHostIoCache, sDiskFormat, # pylint: disable=too-many-arguments,too-many-locals,too-many-statements
+    def testOneCfg(self, # pylint: disable=too-many-arguments,too-many-locals,too-many-statements,too-many-positional-arguments
+                   sVmName, eStorageController, sHostIoCache, sDiskFormat,
                    sDiskVariant, sDiskPath, cCpus, sIoTest, sVirtMode, sTestSet):
         """
         Runs the specified VM thru test #1.

@@ -62,7 +62,6 @@
 #include <VBox/err.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
-#include "VBoxServiceUtils.h"
 
 #ifdef RT_OS_LINUX
 # include <iprt/param.h>
@@ -450,6 +449,8 @@ VBOXSERVICE g_MemBalloon =
     NULL,
     /* pszOptions. */
     NULL,
+    /* paOptions, cOptions. */
+    NULL, 0,
     /* methods */
     VGSvcDefaultPreInit,
     VGSvcDefaultOption,

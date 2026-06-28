@@ -1006,19 +1006,6 @@ void Console::uninit()
     }
     mcLedSets = 0;
 
-#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
-    /* Close the release log before unloading the cryptographic module. */
-    if (m_fEncryptedLog)
-    {
-        PRTLOGGER pLogEnc = RTLogRelSetDefaultInstance(NULL);
-        int vrc = RTLogDestroy(pLogEnc);
-        AssertRC(vrc);
-    }
-#endif
-
-    HRESULT hrc = i_unloadCryptoIfModule();
-    AssertComRC(hrc);
-
     LogFlowThisFuncLeave();
 }
 
@@ -3319,7 +3306,8 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
         }
 
         /* second, create the given folder */
-        hrc = i_createSharedFolder(aName, SharedFolderData(aHostPath, !!aWritable, !!aAutomount, aAutoMountPoint));
+        hrc = i_createSharedFolder(aName, SharedFolderData(aHostPath, !!aWritable, !!aAutomount, aAutoMountPoint,
+                                                           pSharedFolder->i_getSymlinkPolicy()));
         if (FAILED(hrc))
             return hrc;
     }
@@ -7048,6 +7036,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     if (FAILED(hrc))
         return hrc;
 
+    /* what does this step do? */
     bool fInsertDiskIntegrityDrv = false;
     Bstr strDiskIntegrityFlag;
     hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableDiskIntegrityDriver").raw(), strDiskIntegrityFlag.asOutParam());
@@ -7081,20 +7070,16 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     if (FAILED(hrc))
         return hrc;
 
+    /* Query the PDM Media interface. */
     PPDMIBASE pIBase = NULL;
-    PPDMIMEDIA pIMedium = NULL;
     vrc = ptrVM.vtable()->pfnPDMR3QueryDriverOnLun(ptrVM.rawUVM(), pcszDevice, uInstance, uLUN, "VD", &pIBase);
-    if (RT_SUCCESS(vrc))
-    {
-        if (pIBase)
-        {
-            pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
-            if (!pIMedium)
-                return setError(E_FAIL, tr("could not query medium interface of controller"));
-        }
-        else
-            return setError(E_FAIL, tr("could not query base interface of controller"));
-    }
+    if (RT_FAILURE(vrc))
+        return setErrorVrc(vrc, tr("PDMR3QueryDriverOnLun(,%s,%u,%u,,) failed unexpectedly: %Rrc"),
+                           pcszDevice, uInstance, uLUN, vrc);
+    AssertPtrReturn(pIBase, setError(E_FAIL, tr("could not query base interface of controller")));
+    PPDMIMEDIA pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
+    if (!pIMedium)
+        return setError(E_FAIL, tr("could not query medium interface of controller"));
 
     /* Finally trigger the merge. */
     vrc = pIMedium->pfnMerge(pIMedium, onlineMergeMediumProgress, aProgress);
@@ -8670,7 +8655,8 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                 sharedFolders[it->first] = SharedFolderData(pSF->i_getHostPath(),
                                                             pSF->i_isWritable(),
                                                             pSF->i_isAutoMounted(),
-                                                            pSF->i_getAutoMountPoint());
+                                                            pSF->i_getAutoMountPoint(),
+                                                            pSF->i_getSymlinkPolicy());
             }
         }
 
@@ -9449,9 +9435,14 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
                 if (FAILED(hrc)) throw hrc;
                 Utf8Str strAutoMountPoint(bstr);
 
+                SymlinkPolicy_T enmSymlinkPolicy = SymlinkPolicy_None;
+                hrc = pSharedFolder->COMGETTER(SymlinkPolicy)(&enmSymlinkPolicy);
+                if (FAILED(hrc)) throw hrc;
+
                 m_mapGlobalSharedFolders.insert(std::make_pair(strName,
                                                                SharedFolderData(strHostPath, !!writable,
-                                                                                 !!autoMount, strAutoMountPoint)));
+                                                                                !!autoMount, strAutoMountPoint,
+                                                                                enmSymlinkPolicy)));
 
                 /* send changes to HGCM if the VM is running */
                 if (online)
@@ -9477,7 +9468,8 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
 
                             /* create the new global folder */
                             hrc = i_createSharedFolder(strName,
-                                                       SharedFolderData(strHostPath, !!writable, !!autoMount, strAutoMountPoint));
+                                                       SharedFolderData(strHostPath, !!writable, !!autoMount, strAutoMountPoint,
+                                                                        enmSymlinkPolicy));
                             if (FAILED(hrc)) throw hrc;
                         }
                     }
@@ -9543,9 +9535,14 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
                 if (FAILED(hrc)) throw hrc;
                 Utf8Str strAutoMountPoint(bstr);
 
+                SymlinkPolicy_T enmSymlinkPolicy = SymlinkPolicy_None;
+                hrc = pSharedFolder->COMGETTER(SymlinkPolicy)(&enmSymlinkPolicy);
+                if (FAILED(hrc)) throw hrc;
+
                 m_mapMachineSharedFolders.insert(std::make_pair(strName,
                                                                 SharedFolderData(strHostPath, !!writable,
-                                                                                 !!autoMount, strAutoMountPoint)));
+                                                                                 !!autoMount, strAutoMountPoint,
+                                                                                 enmSymlinkPolicy)));
 
                 /* send changes to HGCM if the VM is running */
                 if (online)
@@ -9572,7 +9569,8 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
 
                             /* create the new machine folder */
                             hrc = i_createSharedFolder(strName,
-                                                       SharedFolderData(strHostPath, !!writable, !!autoMount, strAutoMountPoint));
+                                                       SharedFolderData(strHostPath, !!writable, !!autoMount, strAutoMountPoint,
+                                                       enmSymlinkPolicy));
                             if (FAILED(hrc)) throw hrc;
                         }
                     }
@@ -9722,7 +9720,7 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
                       | (fSymlinksCreate    ? SHFL_ADD_MAPPING_F_CREATE_SYMLINKS : 0)
                       | (fMissing           ? SHFL_ADD_MAPPING_F_MISSING : 0));
         SHFLSTRING_TO_HGMC_PARAM(&aParams[3], pAutoMountPoint);
-        HGCMSvcSetU32(&aParams[4], SymlinkPolicy_None);
+        HGCMSvcSetU32(&aParams[4], aData.m_enmSymlinkPolicy);
         AssertCompile(SHFL_CPARMS_ADD_MAPPING == 5);
 
         vrc = m_pVMMDev->hgcmHostCall("VBoxSharedFolders", SHFL_FN_ADD_MAPPING, SHFL_CPARMS_ADD_MAPPING, aParams);
@@ -9788,6 +9786,8 @@ HRESULT Console::i_removeSharedFolder(const Utf8Str &strName)
     return S_OK;
 }
 
+extern DECL_HIDDEN_CONST(VBOXCRYPTOIF) g_VBoxCryptoIf;
+
 /**
  * Retains a reference to the default cryptographic interface.
  *
@@ -9802,89 +9802,13 @@ int Console::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
     AssertReturn(ppCryptoIf != NULL, VERR_INVALID_PARAMETER);
 
     int vrc = VINF_SUCCESS;
-    if (mhLdrModCrypto == NIL_RTLDRMOD)
-    {
-#ifdef VBOX_WITH_EXTPACK
-        /*
-         * Check that a crypto extension pack name is set and resolve it into a
-         * library path.
-         */
-        HRESULT hrc = S_OK;
-        Bstr bstrExtPack;
-
-        ComPtr<IVirtualBox> pVirtualBox;
-        hrc = mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
-        ComPtr<ISystemProperties> pSystemProperties;
-        if (SUCCEEDED(hrc))
-            hrc = pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-        if (SUCCEEDED(hrc))
-            hrc = pSystemProperties->COMGETTER(DefaultCryptoExtPack)(bstrExtPack.asOutParam());
-        if (FAILED(hrc))
-        {
-            setErrorBoth(hrc, VERR_INVALID_PARAMETER,
-                         tr("Failed to query default extension pack name for the cryptographic module"));
-            return VERR_INVALID_PARAMETER;
-        }
-
-        Utf8Str strExtPack(bstrExtPack);
-        if (strExtPack.isEmpty())
-        {
-            setError(VBOX_E_OBJECT_NOT_FOUND,
-                     tr("Ńo extension pack providing a cryptographic support module could be found"));
-            return VERR_NOT_FOUND;
-        }
-
-        Utf8Str strCryptoLibrary;
-        vrc = mptrExtPackManager->i_getCryptoLibraryPathForExtPack(&strExtPack, &strCryptoLibrary);
-        if (RT_SUCCESS(vrc))
-        {
-            RTERRINFOSTATIC ErrInfo;
-            vrc = SUPR3HardenedLdrLoadPlugIn(strCryptoLibrary.c_str(), &mhLdrModCrypto, RTErrInfoInitStatic(&ErrInfo));
-            if (RT_SUCCESS(vrc))
-            {
-                /* Resolve the entry point and query the pointer to the cryptographic interface. */
-                PFNVBOXCRYPTOENTRY pfnCryptoEntry = NULL;
-                vrc = RTLdrGetSymbol(mhLdrModCrypto, VBOX_CRYPTO_MOD_ENTRY_POINT, (void **)&pfnCryptoEntry);
-                if (RT_SUCCESS(vrc))
-                {
-                    vrc = pfnCryptoEntry(&mpCryptoIf);
-                    if (RT_FAILURE(vrc))
-                        setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                     tr("Failed to query the interface callback table from the cryptographic support module '%s' from extension pack '%s'"),
-                                     strCryptoLibrary.c_str(), strExtPack.c_str());
-                }
-                else
-                    setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                 tr("Failed to resolve the entry point for the cryptographic support module '%s' from extension pack '%s'"),
-                                 strCryptoLibrary.c_str(), strExtPack.c_str());
-
-                if (RT_FAILURE(vrc))
-                {
-                    RTLdrClose(mhLdrModCrypto);
-                    mhLdrModCrypto = NIL_RTLDRMOD;
-                }
-            }
-            else
-                setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                             tr("Couldn't load the cryptographic support module '%s' from extension pack '%s' (error: '%s')"),
-                             strCryptoLibrary.c_str(), strExtPack.c_str(), ErrInfo.Core.pszMsg);
-        }
-        else
-            setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                         tr("Couldn't resolve the library path of the crpytographic support module for extension pack '%s'"),
-                         strExtPack.c_str());
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+    *ppCryptoIf = &g_VBoxCryptoIf;
 #else
-        setError(VBOX_E_NOT_SUPPORTED,
-                 tr("The cryptographic support module is not supported in this build because extension packs are not supported"));
-        vrc = VERR_NOT_SUPPORTED;
+    setError(VBOX_E_NOT_SUPPORTED,
+             tr("The cryptographic support module is not supported in this build because extension packs are not supported"));
+    vrc = VERR_NOT_SUPPORTED;
 #endif
-    }
-
-    if (RT_SUCCESS(vrc))
-    {
-        ASMAtomicIncU32(&mcRefsCrypto);
-        *ppCryptoIf = mpCryptoIf;
-    }
 
     return vrc;
 }
@@ -9899,9 +9823,7 @@ int Console::i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf)
  */
 int Console::i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf)
 {
-    AssertReturn(pCryptoIf == mpCryptoIf, VERR_INVALID_PARAMETER);
-
-    ASMAtomicDecU32(&mcRefsCrypto);
+    AssertReturn(pCryptoIf == &g_VBoxCryptoIf, VERR_INVALID_PARAMETER);
     return VINF_SUCCESS;
 }
 
@@ -9916,20 +9838,6 @@ HRESULT Console::i_unloadCryptoIfModule(void)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
-
-    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mcRefsCrypto)
-        return setError(E_ACCESSDENIED,
-                        tr("The cryptographic support module is in use and can't be unloaded"));
-
-    if (mhLdrModCrypto != NIL_RTLDRMOD)
-    {
-        int vrc = RTLdrClose(mhLdrModCrypto);
-        AssertRC(vrc);
-        mhLdrModCrypto = NIL_RTLDRMOD;
-    }
-
     return S_OK;
 }
 

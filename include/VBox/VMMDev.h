@@ -178,6 +178,7 @@ typedef enum VMMDevRequestType
     VMMDevReq_VideoModeSupported2        = 57, /**< @since version 3.2.0 */
     VMMDevReq_GetDisplayChangeRequestEx  = 80, /**< @since version 4.2.4 */
     VMMDevReq_GetDisplayChangeRequestMulti = 81,
+    VMMDevReq_GetDisplayChangeRequestMulti2= 82,
 #ifdef VBOX_WITH_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -1238,6 +1239,8 @@ AssertCompileSize(VMMDevDisplayChangeRequestEx, 24+32);
 #define VMMDEV_DISPLAY_CX       UINT32_C(0x00000008) /**< Change the horizontal resolution of the display. */
 #define VMMDEV_DISPLAY_CY       UINT32_C(0x00000010) /**< Change the vertical resolution of the display. */
 #define VMMDEV_DISPLAY_BPP      UINT32_C(0x00000020) /**< Change the color depth of the display. */
+#define VMMDEV_DISPLAY_CHGREQ   UINT32_C(0x00010000) /**< A display change request has been sent for this display
+                                                      *   and acknowledged by the guest, VMMDevReq_GetDisplayChangeRequestMulti2 only. */
 
 /** Definition of one monitor. Used by VMMDevReq_GetDisplayChangeRequestMulti. */
 typedef struct VMMDevDisplayDef
@@ -1737,13 +1740,11 @@ AssertCompileSize(HGCMPageListInfo, 4+2+2+8);
 /** Get the pointer to the first parmater of a 32-bit HGCM call request.  */
 # define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
 
-# ifdef VBOX_WITH_64_BITS_GUESTS
 /* Explicit defines for the host code. */
-#  ifdef VBOX_HGCM_HOST_CODE
-#   define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
-#   define VMMDEV_HGCM_CALL_PARMS64(a) ((HGCMFunctionParameter64 *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
-#  endif /* VBOX_HGCM_HOST_CODE */
-# endif /* VBOX_WITH_64_BITS_GUESTS */
+# ifdef VBOX_HGCM_HOST_CODE
+#  define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
+#  define VMMDEV_HGCM_CALL_PARMS64(a) ((HGCMFunctionParameter64 *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
+# endif /* VBOX_HGCM_HOST_CODE */
 
 # define VBOX_HGCM_MAX_PARMS 32
 
@@ -1885,6 +1886,7 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
         case VMMDevReq_GetDisplayChangeRequestEx:
             return sizeof(VMMDevDisplayChangeRequestEx);
         case VMMDevReq_GetDisplayChangeRequestMulti:
+        case VMMDevReq_GetDisplayChangeRequestMulti2:
             return RT_UOFFSETOF(VMMDevDisplayChangeRequestMulti, aDisplays[0]);
         case VMMDevReq_VideoModeSupported:
             return sizeof(VMMDevVideoModeSupportedRequest);
@@ -1901,10 +1903,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevHGCMDisconnect);
         case VMMDevReq_HGCMCall32:
             return sizeof(VMMDevHGCMCall);
-# ifdef VBOX_WITH_64_BITS_GUESTS
         case VMMDevReq_HGCMCall64:
             return sizeof(VMMDevHGCMCall);
-# endif
         case VMMDevReq_HGCMCancel:
             return sizeof(VMMDevHGCMCancel);
 #endif /* VBOX_WITH_HGCM */
