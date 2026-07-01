@@ -565,6 +565,10 @@ extern int testRTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTF
     if (g_fFailIfNotLowercase && !RTStrIsLowerCased(strpbrk(pszPath, "/\\")))
         return VERR_FILE_NOT_FOUND;
     RT_ZERO(*pObjInfo);
+    if (g_testRTDirOpen_hDir != NIL_RTDIR)
+        pObjInfo->Attr.fMode = RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | RTFS_UNIX_IROTH | RTFS_UNIX_IXOTH;
+    else
+        pObjInfo->Attr.fMode = RTFS_TYPE_FILE | RTFS_DOS_NT_NORMAL | RTFS_UNIX_IROTH | RTFS_UNIX_IXOTH;
     return VINF_SUCCESS;
 }
 

@@ -483,7 +483,7 @@ int vmsvgaR3GboMapPages(PPDMDEVINS pDevIns, PVMSVGAGBO pGbo)
 #ifdef VBOX_WITH_VMSVGA3D
 static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, PVMSVGAGBO pGbo)
 {
-    ASSERT_GUEST_RETURN(sizeInBytes <= _128M, VERR_INVALID_PARAMETER); /** @todo Less than SVGA_REG_MOB_MAX_SIZE */
+    ASSERT_GUEST_RETURN(sizeInBytes <= SVGA3D_MAX_SURFACE_MEM_SIZE, VERR_INVALID_PARAMETER);
 
     /*
      * The 'baseAddress' is a page number and points to the 'root page' of the GBO.
@@ -772,7 +772,29 @@ static void vmsvgaR3GboDestroy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
     }
 }
 
-/** @todo static void vmsvgaR3GboWriteProtect(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo, bool fWriteProtect) */
+
+DECLINLINE(void) vmsvgaR3GboMemCpy(void *pvDst, void const *pvSrc, size_t cb)
+{
+    /* This is a wrapper for memcpy which transfers data between guest and host memory.
+     * 32 and 64 bit transfers are done in unsplit chunks because they are used for
+     * fence value and query status updates.
+     */
+    if (cb == 8)
+    {
+        uint64_t volatile *pu64Dst = (uint64_t volatile *)pvDst;
+        uint64_t volatile const *pu64Src = (uint64_t volatile *)pvSrc;
+        *pu64Dst = *pu64Src;
+    }
+    else if (cb == 4)
+    {
+        uint32_t volatile *pu32Dst = (uint32_t volatile *)pvDst;
+        uint32_t volatile const *pu32Src = (uint32_t volatile *)pvSrc;
+        *pu32Dst = *pu32Src;
+    }
+    else
+        memcpy(pvDst, pvSrc, cb);
+}
+
 
 typedef enum VMSVGAGboTransferDirection
 {
@@ -932,9 +954,9 @@ static int vmsvgaR3GboTransfer(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
             Log5Func(("%s pv=%p\n", (enmDirection == VMSVGAGboTransferDirection_Read) ? "READ" : "WRITE", pbGuest));
 
             if (enmDirection == VMSVGAGboTransferDirection_Read)
-                memcpy(pu8CurrentHost, pbGuest, cbToCopy);
+                vmsvgaR3GboMemCpy(pu8CurrentHost, pbGuest, cbToCopy);
             else
-                memcpy(pbGuest, pu8CurrentHost, cbToCopy);
+                vmsvgaR3GboMemCpy(pbGuest, pu8CurrentHost, cbToCopy);
 
             cbData         -= cbToCopy;
             pu8CurrentHost += cbToCopy;
@@ -4079,24 +4101,27 @@ static int vmsvga3dCmdDXTransferFromBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXTrans
 
                     uint8_t *pu8Surface = (uint8_t *)mapSurface.pvData;
 
-                    uint32_t const cbRowCopy = RT_MIN(pCmd->srcPitch, mapSurface.cbRow);
+                    /* For planar formats the guest sets srcPitch and srcSlicePitch to 0.
+                     * This means that the buffer content maps exactly to the entire planar surface.
+                     */
+                    uint32_t srcPitch = pCmd->srcPitch ? pCmd->srcPitch : mapSurface.cbRow;
+                    uint32_t const cbRowCopy = RT_MIN(srcPitch, mapSurface.cbRow);
                     for (uint32_t z = 0; z < mapSurface.box.d && RT_SUCCESS(rc); ++z)
                     {
                         uint8_t const *pu8BufferRow = pu8Buffer;
                         uint8_t *pu8SurfaceRow = pu8Surface;
                         for (uint32_t iRow = 0; iRow < mapSurface.cRows; ++iRow)
                         {
-                            ASSERT_GUEST_STMT_BREAK(   (uintptr_t)pu8BufferRow >= (uintptr_t)pu8BufferBegin
-                                                    && (uintptr_t)pu8BufferRow < (uintptr_t)pu8BufferEnd
-                                                    && (uintptr_t)pu8BufferRow < (uintptr_t)(pu8BufferRow + cbRowCopy)
-                                                    && (uintptr_t)(pu8BufferRow + cbRowCopy) > (uintptr_t)pu8BufferBegin
-                                                    && (uintptr_t)(pu8BufferRow + cbRowCopy) <= (uintptr_t)pu8BufferEnd,
-                                                    rc = VERR_INVALID_PARAMETER);
+                            ASSERT_GUEST_STMT_BREAK((uintptr_t)pu8BufferRow >= (uintptr_t)pu8BufferBegin, rc = VERR_INVALID_PARAMETER);
+                            ASSERT_GUEST_STMT_BREAK((uintptr_t)pu8BufferRow < (uintptr_t)pu8BufferEnd, rc = VERR_INVALID_PARAMETER);
+                            ASSERT_GUEST_STMT_BREAK((uintptr_t)pu8BufferRow < (uintptr_t)(pu8BufferRow + cbRowCopy), rc = VERR_INVALID_PARAMETER);
+                            ASSERT_GUEST_STMT_BREAK((uintptr_t)(pu8BufferRow + cbRowCopy) > (uintptr_t)pu8BufferBegin, rc = VERR_INVALID_PARAMETER);
+                            ASSERT_GUEST_STMT_BREAK((uintptr_t)(pu8BufferRow + cbRowCopy) <= (uintptr_t)pu8BufferEnd, rc = VERR_INVALID_PARAMETER);
 
                             memcpy(pu8SurfaceRow, pu8BufferRow, cbRowCopy);
 
                             pu8SurfaceRow += mapSurface.cbRowPitch;
-                            pu8BufferRow += pCmd->srcPitch;
+                            pu8BufferRow += srcPitch;
                         }
 
                         pu8Buffer += pCmd->srcSlicePitch;

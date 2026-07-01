@@ -50,6 +50,57 @@
 #include "DevVGA-SVGA-internal.h"
 
 
+static void vmsvgaSurfaceStatsLog(PVGASTATECC pThisCC)
+{
+    uint32_t cBuffers = 0;
+    uint32_t cTextures = 0;
+
+    uint64_t cbBuffers = 0;
+    uint64_t cbTextures = 0;
+
+    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
+    for (uint32_t sid = 0; sid < p3dState->cSurfaces; ++sid)
+    {
+        PVMSVGA3DSURFACE pSurface = p3dState->papSurfaces[sid];
+        if (pSurface->id == SVGA3D_INVALID_ID)
+            continue;
+
+        if (pSurface->format == SVGA3D_BUFFER)
+        {
+            ++cBuffers;
+            cbBuffers += pSurface->paMipmapLevels[0].cbSurface;
+        }
+        else
+        {
+            ++cTextures;
+            uint32_t cbSurface = 0;
+            for (uint32_t i = 0; i < pSurface->cLevels * pSurface->surfaceDesc.numArrayElements; ++i)
+                cbSurface += pSurface->paMipmapLevels[i].cbSurface;
+            cbTextures += cbSurface;
+        }
+    }
+
+    LogRel6(("VMSVGA: surface stats begin\n"));
+
+    LogRel6(("Total buffers %RU32 size = %RU64 %RU64MB\n", cBuffers, cbBuffers, cbBuffers / _1M));
+    LogRel6(("Total textures %RU32 size = %RU64 %RU64MB\n", cTextures, cbTextures, cbTextures / _1M));
+
+    LogRel6(("VMSVGA: surface stats end\n"));
+}
+
+
+static void vmsvgaSurfaceStats(PVGASTATECC pThisCC)
+{
+    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
+    uint64_t const u64NsNow = RTTimeNanoTS();
+    if ((u64NsNow - p3dState->stats.u64TsNsLastStatsDump) / RT_NS_1MS_64 > 10000)
+    {
+        vmsvgaSurfaceStatsLog(pThisCC);
+        p3dState->stats.u64TsNsLastStatsDump = u64NsNow;
+    }
+}
+
+
 static int vmsvga3dSurfaceAllocMipLevels(PVMSVGA3DSURFACE pSurface)
 {
     /* Allocate buffer to hold the surface data until we can move it into a D3D object */
@@ -271,7 +322,6 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceAllFla
     pSurface->cbBlock = vmsvga3dSurfaceFormatSize(format, &pSurface->cxBlock, &pSurface->cyBlock, &pSurface->cbPitchBlock);
     AssertReturn(pSurface->cbBlock, VERR_INVALID_PARAMETER);
 
-    /** @todo cbMemRemaining = value of SVGA_REG_MOB_MAX_SIZE */
     uint32_t cbMemRemaining = SVGA3D_MAX_SURFACE_MEM_SIZE; /* Do not allow more than this for a surface. */
     SVGA3dSize mipmapSize = *pMipLevel0Size;
     int rc = VINF_SUCCESS;
@@ -1321,6 +1371,9 @@ void vmsvga3dProcessPendingTasks(PVGASTATE pThis, PVGASTATECC pThisCC)
 
     if (pSvgaR3State->pFuncs3D && pSvgaR3State->pFuncs3D->pfnProcessPendingTasks)
         pSvgaR3State->pFuncs3D->pfnProcessPendingTasks(pThis, pThisCC);
+
+    if (LogRelIs6Enabled())
+        vmsvgaSurfaceStats(pThisCC);
 }
 
 

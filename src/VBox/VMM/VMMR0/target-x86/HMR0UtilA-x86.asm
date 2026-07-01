@@ -267,9 +267,9 @@ BEGINPROC VMXGetCurrentVmcs
     ret
 %else
  %ifdef ASM_CALL64_GCC
-    vmptrst qword [rdi]
+    vmptrst [rdi]
  %else
-    vmptrst qword [rcx]
+    vmptrst [rcx]
  %endif
     xor     eax, eax
 .the_end:

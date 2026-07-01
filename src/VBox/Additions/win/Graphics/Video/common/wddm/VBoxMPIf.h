@@ -136,10 +136,6 @@ typedef struct VBOXDXALLOCATIONDESC
     } resourceInfo;
 } VBOXDXALLOCATIONDESC, *PVBOXDXALLOCATIONDESC;
 
-/// @todo Development define, remove. Support for requests to rename an allocation.
-#define DX_RENAME_ALLOCATION
-#define DX_RENAME_ALLOCATION_UNLIMITED
-
 /* D3DDDI_PATCHLOCATIONLIST::DriverId */
 #define VBOXDXPATCHID_NULL        0
 #define VBOXDXPATCHID_SURFACE     ((UINT)VBOXDXALLOCATIONTYPE_SURFACE)

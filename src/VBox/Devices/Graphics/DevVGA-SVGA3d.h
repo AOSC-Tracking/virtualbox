@@ -47,14 +47,14 @@
 #define SVGA3D_MAX_SAMPLERS            (SVGA3D_MAX_SAMPLERS_PS + SVGA3D_MAX_SAMPLERS_DMAP + SVGA3D_MAX_SAMPLERS_VS)
 /** Arbitrary upper limit; seen 8 so far. */
 #define SVGA3D_MAX_LIGHTS                       32
-/** Arbitrary upper limit; 2GB enough for 32768x16384*4. */
-#define SVGA3D_MAX_SURFACE_MEM_SIZE             0x80000000
 /** Arbitrary upper limit. [0,15] is enough for 2^15=32768x32768. */
 #define SVGA3D_MAX_MIP_LEVELS                   16
 /** Maximum dimension of 1D, 2D and cubemap textures (D3D limit). */
 #define SVGA3D_MAX_TEXTURE_DIMENSION            16384
 /** Maximum dimension of 3D textures (D3D limit). */
 #define SVGA3D_MAX_VOLUME_TEXTURE_DIMENSION     2048
+/** Arbitrary upper limit; enough for maximum 2D texture dimension at 4 bytes per pixel. */
+#define SVGA3D_MAX_SURFACE_MEM_SIZE             (SVGA3D_MAX_TEXTURE_DIMENSION * SVGA3D_MAX_TEXTURE_DIMENSION * 4)
 
 
 /* A surface description provided by the guest. Mostly mirrors SVGA3dCmdDefineGBSurface_v4 */
@@ -491,7 +491,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXDefineContext,             (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXDestroyContext,            (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXBindContext,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
-    DECLCALLBACKMEMBER(int, pfnDXSwitchContext,             (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
+    DECLCALLBACKMEMBER(int, pfnDXSwitchContext,             (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContextFrom, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXReadbackContext,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXInvalidateContext,         (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSetSingleConstantBuffer,   (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t slot, SVGA3dShaderType type, SVGA3dSurfaceId sid, uint32_t offsetInBytes, uint32_t sizeInBytes));
@@ -548,7 +548,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXDefineStreamOutput,        (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid, SVGACOTableDXStreamOutputEntry const *pEntry));
     DECLCALLBACKMEMBER(int, pfnDXDestroyStreamOutput,       (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid));
     DECLCALLBACKMEMBER(int, pfnDXSetStreamOutput,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid));
-    DECLCALLBACKMEMBER(int, pfnDXSetCOTable,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGACOTableType type, uint32_t cValidEntries));
+    DECLCALLBACKMEMBER(int, pfnDXSetCOTable,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGACOTableType type, uint32_t cValidEntries, bool fGrow));
     DECLCALLBACKMEMBER(int, pfnDXBufferCopy,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSurfaceCopyAndReadback,    (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXMoveQuery,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
@@ -655,7 +655,7 @@ typedef struct VMSVGA3DBACKENDDESC
 #ifdef VMSVGA3D_DX
 /* Helpers. */
 int vmsvga3dDXUnbindContext(PVGASTATECC pThisCC, uint32_t cid, SVGADXContextMobFormat *pSvgaDXContext);
-int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid);
+int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cidFrom, uint32_t cid);
 
 /* Command handlers. */
 int vmsvga3dDXDefineContext(PVGASTATECC pThisCC, uint32_t cid);

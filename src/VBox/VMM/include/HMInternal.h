@@ -509,8 +509,9 @@ typedef struct HMR0PERVM
     bool                        fNestedPaging;
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
-    bool                        afAlignment1[1];
 
+    /** Set if SUPR0EnableHwvirtForVm has been called */
+    bool                        fSupR0EnableForVmCalled;
     /** State variable for SUPR0EnableHwvirtForVm. */
     R0PTRTYPE(void *)           pvSupR0EnableState;
 

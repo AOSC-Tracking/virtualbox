@@ -43,6 +43,9 @@
 #include <iprt/errcore.h>
 #include <iprt/assert.h>
 #include <iprt/dbg.h>
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include "internal/initterm.h"
 
 
@@ -143,6 +146,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
      */
     g_fLnxIsCetSupported = false;
     g_fLnxIsCetEnabled   = false;
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     {
         uint32_t uLeaves = ASMCpuId_EAX(0);
         if (   uLeaves >= 7
@@ -154,6 +158,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
             g_fLnxIsCetEnabled   = RT_BOOL(fSupCet & MSR_IA32_CET_ENDBR_EN);
         }
     }
+#endif
 
     /*
      * There are some unexported symbols we want, try get them:

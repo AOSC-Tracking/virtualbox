@@ -254,6 +254,7 @@ static NTSTATUS svgaHwStart(VBOXWDDM_EXT_VMSVGA *pSvga)
     if (pSvga->u32Caps & SVGA_CAP_GBOBJECTS)
     {
         pSvga->u32MaxMobSize  = SVGARegRead(pSvga, SVGA_REG_MOB_MAX_SIZE);
+        pSvga->u64GBObjectMemSize = (uint64_t)SVGARegRead(pSvga, SVGA_REG_GBOBJECT_MEM_SIZE_KB) * UINT64_C(1024);
     }
 
     if (pSvga->u32Caps & SVGA_CAP_GMR2)

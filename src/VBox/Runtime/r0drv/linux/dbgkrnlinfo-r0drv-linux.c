@@ -61,7 +61,9 @@
 #include <iprt/dbg.h>
 
 #include <iprt/asm.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
@@ -85,18 +87,6 @@
 
 #if defined(IPRT_LNX_CAN_USE_PROC_KALLSYMS) || defined(IPRT_LNX_CAN_USE_KPROBES)
 # define IPRT_LNX_HAVE_IMPLEMENTATION
-#endif
-
-
-#define X86_CPUID_STEXT_FEATURE_EDX_CET_IBT RT_BIT_32(20)
-#ifndef MSR_IA32_S_CET
-# define MSR_IA32_S_CET                     0x6a2
-#endif
-#ifndef MSR_IA32_CET_ENDBR_EN
-# define MSR_IA32_CET_ENDBR_EN              RT_BIT_64(2)
-#endif
-#ifndef MSR_IA32_CET_SUPPRESS
-# define MSR_IA32_CET_SUPPRESS              RT_BIT_64(10)
 #endif
 
 
@@ -597,21 +587,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
      *       (Setting the SUPPRESS bit to 1 probably won't help much here, as
      *       the call is done via __x86_indirect_thunk_xxx.)
      */
-    RTTHREADPREEMPTSTATE Preempt = RTTHREADPREEMPTSTATE_INITIALIZER;
-    uint32_t const uLeaves = ASMCpuId_EAX(0);
-    RTThreadPreemptDisable(&Preempt);
-    if (   uLeaves >= 7
-        && RTX86IsValidStdRange(uLeaves)
-        && (ASMCpuIdEx_EDX(7, 0) & X86_CPUID_STEXT_FEATURE_EDX_CET_IBT))
-    {
-        uint64_t const fSupCet = ASMRdMsr(MSR_IA32_S_CET);
-        ASMWrMsr(MSR_IA32_S_CET, fSupCet & ~MSR_IA32_CET_ENDBR_EN);
-        *ppvSymbol = (void *)g_pfnKallsymsLookupName(pszSymbol);
-        ASMWrMsr(MSR_IA32_S_CET, fSupCet);
-    }
-    else
-        *ppvSymbol = (void *)g_pfnKallsymsLookupName(pszSymbol);
-    RTThreadPreemptRestore(&Preempt);
+    RTLNX_CET_UNSAFE_CALL(g_pfnKallsymsLookupName, *ppvSymbol = (void *)g_pfnKallsymsLookupName(pszSymbol));
 
     if (*ppvSymbol != NULL)
         return VINF_SUCCESS;
