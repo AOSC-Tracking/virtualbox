@@ -9651,6 +9651,21 @@ bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T enmDrvT
     return false;
 }
 
+void MachineConfigFile::sanitizeImportedSerialPorts()
+{
+    for (SerialPortsList::iterator it = hardwareMachine.llSerialPorts.begin();
+            it != hardwareMachine.llSerialPorts.end();
+            ++it)
+    {
+        SerialPort &port = *it;
+        if (port.portMode == PortMode_RawFile)
+        {
+            port.portMode = PortMode_Disconnected;
+            port.strPath.setNull();
+        }
+    }
+}
+
 /**
  * Called from write() before calling ConfigFileBase::createStubDocument().
  * This adjusts the settings version in m->sv if incompatible settings require

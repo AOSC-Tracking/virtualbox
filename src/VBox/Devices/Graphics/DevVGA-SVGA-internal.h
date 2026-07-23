@@ -62,6 +62,16 @@ typedef struct
     PVMSVGAGMRDESCRIPTOR    paDesc;
 } GMR, *PGMR;
 
+typedef struct _VMSVGAGMRINFO
+{
+    uint32_t            u32GMRId;                   /* GMR identifier. Index in pSVGAState->paGMR. */
+    uint32_t            cDescriptors;               /* Elements in paDesc array. 0 if GMR must be freed. */
+    uint32_t            cPagesTotal;                /* Total number of pages in descriptors. */
+    uint32_t            u32Reserved;
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    VMSVGAGMRDESCRIPTOR paDescs[RT_FLEXIBLE_ARRAY]; /* GMR pages. */
+} VMSVGAGMRINFO;
+
 
 typedef struct VMSVGACMDBUF *PVMSVGACMDBUF;
 typedef struct VMSVGACMDBUFCTX *PVMSVGACMDBUFCTX;
@@ -74,6 +84,7 @@ typedef enum VMSVGACMDBUFTYPE
 } VMSVGACMDBUFTYPE;
 
 #define VMSVGACMDBUF_HOSTCOMMAND_CURSOR_MOBID 1
+#define VMSVGACMDBUF_HOSTCOMMAND_GMR_DESCRIPTOR 2
 
 /* Command buffer. */
 #include "vmsvga_headers_begin.h" /* GCC complains that 'ISO C++ prohibits anonymous structs' when "-Wpedantic" is enabled. */

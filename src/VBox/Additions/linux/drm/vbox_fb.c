@@ -335,7 +335,7 @@ int vboxfb_create(struct drm_fb_helper *helper,
 		return ret;
 	}
 
-#if RTLNX_VER_MIN(6,19,0)
+#if RTLNX_VER_MIN(6,19,0) || RTLNX_RHEL_RANGE(9,9, 9,99)
 	info = helper->info;
 #elif RTLNX_VER_MIN(6,2,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_RANGE(9,3, 9,99)
 	info = drm_fb_helper_alloc_info(helper);

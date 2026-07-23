@@ -99,7 +99,7 @@ pd_loop:
     mov     eax, cr0
     or      eax, X86_CR0_PE | X86_CR0_PG
     mov     cr0, eax
-    jmp far 0x0008:((code32_start - start) + BS_ADDR) ; 8=32-bit CS
+    jmp     0x0008:((code32_start - start) + BS_ADDR) ; 8=32-bit CS
 
 BITS 32
 code32_start:

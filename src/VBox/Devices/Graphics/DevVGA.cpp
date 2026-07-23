@@ -6676,6 +6676,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                             "|VMSVGA3dOverlayEnabled"
                                             "|VMSVGA3dMSAA"
                                             "|VMSVGA2dGBO"
+                                            "|VMSVGA3dGraphicsMemSizeGB"
+                                            "|VMSVGA3dVideoAcceleration"
 # endif
                                             "|SuppressNewYearSplash"
                                             "|3DEnabled";
@@ -6757,6 +6759,15 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->svga.f3DEnabled || pThis->fVMSVGAPciId == 0) /* The fVMSVGA2dGBO is for 2D mode of vmwgfx.ko only*/
         pThis->svga.fVMSVGA2dGBO = false;
     Log(("VMSVGA: fVMSVGA2dGBO = %d\n", pThis->svga.fVMSVGA2dGBO));
+
+    uint64_t u64VMSVGA3dGraphicsMemSizeGB = 0;
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "VMSVGA3dGraphicsMemSizeGB", &u64VMSVGA3dGraphicsMemSizeGB, 4);
+    AssertLogRelRCReturn(rc, rc);
+    pThis->svga.cbGBObjectMemSize = RT_MIN(u64VMSVGA3dGraphicsMemSizeGB, 32) * _1G;
+
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "VMSVGA3dVideoAcceleration", &pThis->svga.fVMSVGA3dVideoAcceleration, true);
+    AssertLogRelRCReturn(rc, rc);
+    Log(("VMSVGA: VMSVGA3dVideoAcceleration = %d\n", pThis->svga.fVMSVGA3dVideoAcceleration));
 # endif
 
 # ifdef VBOX_WITH_VMSVGA

@@ -1,4 +1,4 @@
-; $Id: VBoxVgaBiosAlternative386.asm $ 
+; $Id: VBoxVgaBiosAlternative386.asm $
 ;; @file
 ; Auto Generated source file. Do not edit.
 ;
@@ -7,71 +7,71 @@
 ; Source file: vgarom.asm
 ;
 ;  ============================================================================================
-;  
+;
 ;   Copyright (C) 2001,2002 the LGPL VGABios developers Team
-;  
+;
 ;   This library is free software; you can redistribute it and/or
 ;   modify it under the terms of the GNU Lesser General Public
 ;   License as published by the Free Software Foundation; either
 ;   version 2 of the License, or (at your option) any later version.
-;  
+;
 ;   This library is distributed in the hope that it will be useful,
 ;   but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ;   Lesser General Public License for more details.
-;  
+;
 ;   You should have received a copy of the GNU Lesser General Public
 ;   License along with this library; if not, write to the Free Software
 ;   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-;  
+;
 ;  ============================================================================================
-;  
+;
 ;   This VGA Bios is specific to the plex86/bochs Emulated VGA card.
 ;   You can NOT drive any physical vga card with it.
-;  
+;
 ;  ============================================================================================
-;  
+;
 
 ;
 ; Source file: vberom.asm
 ;
 ;  ============================================================================================
-;  
+;
 ;   Copyright (C) 2002 Jeroen Janssen
-;  
+;
 ;   This library is free software; you can redistribute it and/or
 ;   modify it under the terms of the GNU Lesser General Public
 ;   License as published by the Free Software Foundation; either
 ;   version 2 of the License, or (at your option) any later version.
-;  
+;
 ;   This library is distributed in the hope that it will be useful,
 ;   but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ;   Lesser General Public License for more details.
-;  
+;
 ;   You should have received a copy of the GNU Lesser General Public
 ;   License along with this library; if not, write to the Free Software
 ;   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-;  
+;
 ;  ============================================================================================
-;  
+;
 ;   This VBE is part of the VGA Bios specific to the plex86/bochs Emulated VGA card.
 ;   You can NOT drive any physical vga card with it.
-;  
+;
 ;  ============================================================================================
-;  
+;
 ;   This VBE Bios is based on information taken from :
 ;    - VESA BIOS EXTENSION (VBE) Core Functions Standard Version 3.0 located at www.vesa.org
-;  
+;
 ;  ============================================================================================
 
 ;
 ; Source file: vgabios.c
 ;
 ;  // ============================================================================================
-;  
+;
 ;  vgabios.c
-;  
+;
 ;  // ============================================================================================
 ;  //
 ;  //  Copyright (C) 2001,2002 the LGPL VGABios developers Team
@@ -671,7 +671,8 @@ vgabios_int10_handler:                       ; 0xc0028 LB 0x548
     ; mov ah, al                                ; 8a e0                     ; 0xc0398 vgarom.asm:723
     mov dx, 003c9h                            ; ba c9 03                    ; 0xc039a vgarom.asm:724
     in AL, DX                                 ; ec                          ; 0xc039d vgarom.asm:725
-    xchg al, ah                               ; 86 e0                       ; 0xc039e vgarom.asm:726
+    db  086h, 0e0h
+    ; xchg al, ah                               ; 86 e0                     ; 0xc039e vgarom.asm:726
     push ax                                   ; 50                          ; 0xc03a0 vgarom.asm:727
     in AL, DX                                 ; ec                          ; 0xc03a1 vgarom.asm:728
     db  08ah, 0e8h
@@ -948,15 +949,18 @@ vgabios_int10_handler:                       ; 0xc0028 LB 0x548
     times 0xb db 0
   ; disGetNextSymbol 0xc0570 LB 0x397 -> off=0x0 cb=0000000000000007 uValue=00000000000c0570 'do_out_dx_ax'
 do_out_dx_ax:                                ; 0xc0570 LB 0x7
-    xchg ah, al                               ; 86 c4                       ; 0xc0570 vberom.asm:69
+    db  086h, 0c4h
+    ; xchg ah, al                               ; 86 c4                     ; 0xc0570 vberom.asm:69
     out DX, AL                                ; ee                          ; 0xc0572 vberom.asm:70
-    xchg ah, al                               ; 86 c4                       ; 0xc0573 vberom.asm:71
+    db  086h, 0c4h
+    ; xchg ah, al                               ; 86 c4                     ; 0xc0573 vberom.asm:71
     out DX, AL                                ; ee                          ; 0xc0575 vberom.asm:72
     retn                                      ; c3                          ; 0xc0576 vberom.asm:73
   ; disGetNextSymbol 0xc0577 LB 0x390 -> off=0x0 cb=0000000000000040 uValue=00000000000c0577 'do_in_ax_dx'
 do_in_ax_dx:                                 ; 0xc0577 LB 0x40
     in AL, DX                                 ; ec                          ; 0xc0577 vberom.asm:76
-    xchg ah, al                               ; 86 c4                       ; 0xc0578 vberom.asm:77
+    db  086h, 0c4h
+    ; xchg ah, al                               ; 86 c4                     ; 0xc0578 vberom.asm:77
     in AL, DX                                 ; ec                          ; 0xc057a vberom.asm:78
     retn                                      ; c3                          ; 0xc057b vberom.asm:79
     push ax                                   ; 50                          ; 0xc057c vberom.asm:90
@@ -1780,7 +1784,8 @@ vga_read_2bpp_char:                          ; 0xc0c6f LB 0x35
     mov DH, strict byte 080h                  ; b6 80                       ; 0xc0c7b vgabios.c:462
     xor dl, dl                                ; 30 d2                       ; 0xc0c7d vgabios.c:463
     mov ax, word [es:bx]                      ; 26 8b 07                    ; 0xc0c7f vgabios.c:464
-    xchg ah, al                               ; 86 c4                       ; 0xc0c82
+    db  086h, 0c4h
+    ; xchg ah, al                               ; 86 c4                     ; 0xc0c82
     xor bx, bx                                ; 31 db                       ; 0xc0c84 vgabios.c:466
     jmp short 00c8dh                          ; eb 05                       ; 0xc0c86
     cmp bx, strict byte 00008h                ; 83 fb 08                    ; 0xc0c88
@@ -7737,7 +7742,7 @@ vesa_pm_end:                                 ; 0xc4754 LB 0x1
 section _DATA progbits vstart=0x4780 align=1 ; size=0x3745 class=DATA group=DGROUP
   ; disGetNextSymbol 0xc4780 LB 0x3745 -> off=0x0 cb=000000000000002c uValue=00000000000c0000 '_msg_vga_init'
 _msg_vga_init:                               ; 0xc4780 LB 0x2c
-    db  'Oracle VirtualBox Version 7.2.12 VGA BIOS', 00dh, 00ah, 000h
+    db  'Oracle VirtualBox Version 7.2.14 VGA BIOS', 00dh, 00ah, 000h
   ; disGetNextSymbol 0xc47ac LB 0x3719 -> off=0x0 cb=0000000000000080 uValue=00000000000c002c 'vga_modes'
 vga_modes:                                   ; 0xc47ac LB 0x80
     db  000h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 001h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
@@ -8668,7 +8673,7 @@ _vbebios_product_name:                       ; 0xc7e32 LB 0x1e
     db  'Oracle VirtualBox VBE Adapter', 000h
   ; disGetNextSymbol 0xc7e50 LB 0x75 -> off=0x0 cb=0000000000000021 uValue=00000000000c36d0 '_vbebios_product_revision'
 _vbebios_product_revision:                   ; 0xc7e50 LB 0x21
-    db  'Oracle VirtualBox Version 7.2.12', 000h
+    db  'Oracle VirtualBox Version 7.2.14', 000h
   ; disGetNextSymbol 0xc7e71 LB 0x54 -> off=0x0 cb=000000000000002b uValue=00000000000c36f1 '_vbebios_info_string'
 _vbebios_info_string:                        ; 0xc7e71 LB 0x2b
     db  'VirtualBox VBE Display Adapter enabled', 00dh, 00ah, 00dh, 00ah, 000h
@@ -8703,4 +8708,4 @@ section CONST2 progbits vstart=0x7ec6 align=1 ; size=0x0 class=DATA group=DGROUP
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 04ch
+    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 048h

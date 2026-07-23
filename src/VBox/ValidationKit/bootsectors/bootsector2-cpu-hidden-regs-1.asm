@@ -188,7 +188,7 @@ BITS 16
         mov     ax, [cs:.s_dwDummy]      ; works on intel
         mov     dword [cs:.s_dwDummy], 3 ; ditto
 
-        jmp     far 0000:.load_rm_cs
+        jmp     0000:.load_rm_cs
 .load_rm_cs:
         ; Display CS to check that it remained unchanged.
         mov     ax, .s_szzRMEO2

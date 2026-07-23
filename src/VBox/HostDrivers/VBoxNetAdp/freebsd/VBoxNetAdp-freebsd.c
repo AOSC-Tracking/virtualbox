@@ -184,7 +184,7 @@ VBoxNetAdpFreeBSDCtrlioctl(struct cdev *dev, u_long iCmd, caddr_t data, int flag
             if (RT_FAILURE(rc))
                 return EINVAL;
 
-            strncpy(pReq->szName, pAdp->szName, sizeof(pReq->szName) - 1);
+            vboxNetAdpStrncpy(pReq->szName, pAdp->szName, sizeof(pReq->szName) - 1);
             pReq->szName[sizeof(pReq->szName) - 1] = '\0';
             break;
 
@@ -321,7 +321,7 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac)
     ether_ifattach(ifp, (void *)pMac);
     ifp->if_baudrate = 0;
 
-    strncpy(pThis->szName, ifp->if_xname, VBOXNETADP_MAX_NAME_LEN);
+    vboxNetAdpStrncpy(pThis->szName, ifp->if_xname, VBOXNETADP_MAX_NAME_LEN);
     pThis->u.s.ifp = ifp;
     VBOXCURVNET_RESTORE();
     return 0;

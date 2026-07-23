@@ -353,7 +353,6 @@ $(VBoxEfiFirmware_0_OUTDIR)/arm64/Conf/tools_def.txt: \
 	$(RM) -f -- "$@"
 	$(SED) \
 		-e 's,@VBOX_IASLCMD@,$(VBOX_RTIASL),' \
-		-e 's,@VBOX_YASMCMD@,$(VBOX_YASMCMD),' \
 		-e 's,@VBOX_NASMCMD@,$(VBOX_NASMCMD),' \
 		-e 's,@KMK@,$(MAKE),' \
                \

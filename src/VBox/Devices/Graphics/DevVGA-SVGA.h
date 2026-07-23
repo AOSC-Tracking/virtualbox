@@ -199,11 +199,6 @@ struct {
  * @todo Does this include the header? */
 #define VMSVGA_CURSOR_MAX_BYTES         (VMSVGA_CURSOR_MAX_DIMENSION * VMSVGA_CURSOR_MAX_DIMENSION * sizeof(uint32_t) * 2)
 
-/** "The maximum amount of guest-backed objects that the device can have resident at a time"
- * @todo Make configurable.
- */
-#define VMSVGA_GBOBJECT_MEM_SIZE        _4G
-
 /* u32ActionFlags */
 #define VMSVGA_ACTION_CHANGEMODE_BIT    0
 #define VMSVGA_ACTION_CHANGEMODE        RT_BIT(VMSVGA_ACTION_CHANGEMODE_BIT)
@@ -450,6 +445,8 @@ typedef struct VMSVGAState
     uint32_t                    u32GuestDriverVer3;
     /** The last fence received. */
     uint32_t                    u32FenceLast;
+    /* "The maximum amount of guest-backed objects that the device can have resident at a time" */
+    uint64_t                    cbGBObjectMemSize;
     /** Port io index register. */
     uint32_t                    u32IndexReg;
     /** FIFO request semaphore. */
@@ -471,7 +468,7 @@ typedef struct VMSVGAState
     /** Whether MSAA support is enabled. */
     bool                        fVMSVGA3dMSAA;
     bool                        fVMSVGA2dGBO;
-    bool                        afPadding[1];
+    bool                        fVMSVGA3dVideoAcceleration;
     uint32_t                    uWidth;
     uint32_t                    uHeight;
     uint32_t                    uBpp;

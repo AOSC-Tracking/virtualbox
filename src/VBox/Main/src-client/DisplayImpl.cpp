@@ -81,6 +81,8 @@ HRESULT Display::FinalConstruct()
     mfu32SupportedOrders = 0;
     mcVRDPRefs = 0;
 
+    mGraphicsController = GraphicsControllerType_Null;
+
     mfSeamlessEnabled = false;
     mpRectVisibleRegion = NULL;
     mcRectVisibleRegion = 0;
@@ -464,6 +466,9 @@ HRESULT Display::init(Console *aParent)
     HRESULT hrc = mParent->i_machine()->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
     AssertComRCReturnRC(hrc);
     AssertReturn(!pGraphicsAdapter.isNull(), E_FAIL);
+
+    hrc = pGraphicsAdapter->COMGETTER(GraphicsControllerType)(&mGraphicsController);
+    AssertComRCReturnRC(hrc);
 
     ULONG ul;
     pGraphicsAdapter->COMGETTER(MonitorCount)(&ul);

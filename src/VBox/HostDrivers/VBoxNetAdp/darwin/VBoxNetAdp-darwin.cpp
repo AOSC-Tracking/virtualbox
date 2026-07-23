@@ -416,7 +416,7 @@ static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFla
                 return rc == VERR_OUT_OF_RESOURCES ? ENOMEM : EINVAL;
 
             Assert(strlen(pReq->szName) < sizeof(pReq->szName));
-            strncpy(pReq->szName, pNew->szName, sizeof(pReq->szName) - 1);
+            vboxNetAdpStrncpy(pReq->szName, pNew->szName, sizeof(pReq->szName) - 1);
             pReq->szName[sizeof(pReq->szName) - 1] = '\0';
             Log(("VBoxNetAdpDarwinIOCtl: Added '%s'\n", pReq->szName));
             break;

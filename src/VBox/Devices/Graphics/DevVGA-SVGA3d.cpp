@@ -92,6 +92,9 @@ static void vmsvgaSurfaceStatsLog(PVGASTATECC pThisCC)
 static void vmsvgaSurfaceStats(PVGASTATECC pThisCC)
 {
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
+    if (!p3dState)
+        return; /* No surfaces in 2D mode. */
+
     uint64_t const u64NsNow = RTTimeNanoTS();
     if ((u64NsNow - p3dState->stats.u64TsNsLastStatsDump) / RT_NS_1MS_64 > 10000)
     {

@@ -1273,7 +1273,7 @@ static NTSTATUS vboxUsbRtUrbSend(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp, PUSBSUP_URB
 
         __try
         {
-            MmProbeAndLockPages(pMdlBuf, KernelMode, IoModifyAccess);
+            MmProbeAndLockPages(pMdlBuf, UserMode, IoModifyAccess);
         }
         __except(EXCEPTION_EXECUTE_HANDLER)
         {

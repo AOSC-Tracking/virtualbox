@@ -162,6 +162,16 @@ DECLHIDDEN(int) vboxNetAdpDestroy(PVBOXNETADP pThis);
 DECLHIDDEN(PVBOXNETADP) vboxNetAdpFindByName(const char *pszName);
 DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac);
 
+# if defined(RT_OS_LINUX)
+#  if RTLNX_VER_MIN(7,2,0)
+#   define vboxNetAdpStrncpy strscpy
+#  else  /* 7.2.0 */
+#   define vboxNetAdpStrncpy strncpy
+#  endif /* < 7.2.0 */
+# else /* !RT_OS_LINUX */
+#  define vboxNetAdpStrncpy strncpy
+# endif
+
 
 /**
  * This is called to perform OS-specific structure initializations.

@@ -557,7 +557,7 @@ DECLHIDDEN(int) nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     else if (errno == EACCES)
         rc = RTErrInfoSet(pErrInfo, VERR_ACCESS_DENIED, "Do not have access to open /dev/kvm for reading & writing.");
     else if (errno == ENOENT)
-        rc = RTErrInfoSet(pErrInfo, VERR_NOT_SUPPORTED, "KVM is not availble (/dev/kvm does not exist)");
+        rc = RTErrInfoSet(pErrInfo, VERR_NOT_SUPPORTED, "KVM is not available (/dev/kvm does not exist)");
     else
         rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromErrno(errno), "Failed to open '/dev/kvm': %u", errno);
 

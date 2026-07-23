@@ -193,7 +193,7 @@
 # include <drm/drm_framebuffer.h>
 #endif
 
-#if RTLNX_VER_MIN(6,19,0)
+#if RTLNX_VER_MIN(6,19,0) || RTLNX_RHEL_RANGE(9,9, 9,99)
 #include <drm/drm_print.h>
 #endif
 

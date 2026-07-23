@@ -268,13 +268,13 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         {
             case 't':   // --netname
                 if (pNetName)
-                    return errorSyntax(Nat::tr("You can only specify --netname only once."));
+                    return errorSyntax(Nat::tr("You can specify --netname only once."));
                 pNetName = ValueUnion.psz;
                 break;
 
             case 'n':   // --network
                 if (pPrefixIPv4)
-                    return errorSyntax(Nat::tr("You can only specify --network only once."));
+                    return errorSyntax(Nat::tr("You can specify --network only once."));
                 pPrefixIPv4 = ValueUnion.psz;
                 break;
 

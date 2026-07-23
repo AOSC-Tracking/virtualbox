@@ -1428,6 +1428,13 @@ void vboxDXDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
     /* Remove from the list of active resources. */
     RTListNodeRemove(&pResource->pKMResource->nodeResource);
 
+    /* Remove from the list of resources to be offered. */
+    if (pResource->pKMResource->flags.fPendingOffered)
+    {
+        pResource->pKMResource->flags.fPendingOffered = 0;
+        RTListNodeRemove(&pResource->pKMResource->resource.nodeOffered);
+    }
+
     if (pResource->pKMResource->flags.fShared)
     {
         /* Delete immediately. */

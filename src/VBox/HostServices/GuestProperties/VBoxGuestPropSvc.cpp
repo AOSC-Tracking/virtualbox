@@ -1363,20 +1363,23 @@ int Service::notifyHost(const char *pszName, const char *pszValue, uint64_t nsTi
         pHostCallbackData->u32Magic     = GUESTPROPHOSTCALLBACKDATA_MAGIC;
 
         pHostCallbackData->pcszName     = (const char *)pu8;
-        memcpy(pu8, pszName, cbName);
+        if (cbName)
+            memcpy(pu8, pszName, cbName);
         pu8 += cbName;
         *pu8++ = 0;
 
         /* NULL value means property was deleted. */
         pHostCallbackData->pcszValue    = pszValue ? (const char *)pu8 : NULL;
-        memcpy(pu8, pszValue, cbValue);
+        if (cbValue)
+            memcpy(pu8, pszValue, cbValue);
         pu8 += cbValue;
         *pu8++ = 0;
 
         pHostCallbackData->u64Timestamp = nsTimestamp;
 
         pHostCallbackData->pcszFlags    = (const char *)pu8;
-        memcpy(pu8, pszFlags, cbFlags);
+        if (cbFlags)
+            memcpy(pu8, pszFlags, cbFlags);
         pu8 += cbFlags;
         *pu8++ = 0;
 

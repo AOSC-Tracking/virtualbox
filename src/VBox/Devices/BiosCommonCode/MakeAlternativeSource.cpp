@@ -208,7 +208,7 @@ static bool disError(const char *pszFormat, ...)
 static bool disFileHeader(void)
 {
     bool fRc;
-    fRc = outputPrintf("; $Id: MakeAlternativeSource.cpp $ \n"
+    fRc = outputPrintf("; $Id: MakeAlternativeSource.cpp $\n"
                        ";; @file\n"
                        "; Auto Generated source file. Do not edit.\n"
                        ";\n"
@@ -280,7 +280,7 @@ static bool disFileHeader(void)
                 if (strstr(psz, "LGPL"))
                     fNeedLgplDisclaimer = true;
 
-                fRc = outputPrintf(";  %s\n", psz) && fRc;
+                fRc = outputPrintf(*psz ? ";  %s\n": ";\n", psz) && fRc;
             }
 
             RTStrmClose(hStrm);
@@ -921,9 +921,10 @@ static bool disAccessesMemory(PCDISSTATE pDis)
 
 
 /**
- * Deals with instructions that YASM will assemble differently than WASM/WCC.
+ * Deals with instructions that YASM/NASM will assemble differently than
+ * WASM/WCC or different from one another.
  */
-static size_t disHandleYasmDifferences(PDISSTATE pDis, uint32_t uFlatAddr, uint32_t cbInstr,
+static size_t disHandleYasmNasmDifferences(PDISSTATE pDis, uint32_t uFlatAddr, uint32_t cbInstr,
                                        char *pszBuf, size_t cbBuf, size_t cchUsed)
 {
     bool fDifferent = DISFormatYasmIsOddEncoding(pDis);
@@ -948,6 +949,9 @@ static size_t disHandleYasmDifferences(PDISSTATE pDis, uint32_t uFlatAddr, uint3
              && pb[1] == 0x66
              && pb[2] == 0x6d)
         fDifferent = true; /* rep insd      - prefix switched. */
+    else if (   pb[0] == 0x67
+             && pb[1] == 0x66)
+        fDifferent = true; /* 0x67 0x66     - prefix switched. */
     else if (   pb[0] == 0xc6
              && pb[1] == 0xc5
              && pb[2] == 0xba)
@@ -958,6 +962,14 @@ static size_t disHandleYasmDifferences(PDISSTATE pDis, uint32_t uFlatAddr, uint3
      */
     else if (   pb[0] == 0x66
              && pb[1] == 0xcb)
+        fDifferent = true;
+
+    /*
+     * NASM gets xchg register-only ordering wrong (e.g. xchg Gv,Ev instead
+     * of xchg Ev,Gv as in the AMD and Intel docs).
+     */
+    else if (   pDis->pCurInstr->uOpcode == OP_XCHG
+             && OP_PARM_VTYPE(pDis->pCurInstr->fParam1) == OP_PARM_E)
         fDifferent = true;
 
     /*
@@ -1154,7 +1166,7 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                                              DIS_FMT_FLAGS_STRICT
                                              | DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_BYTES_COMMENT | DIS_FMT_FLAGS_BYTES_SPACED,
                                              NULL, NULL);
-                cch = disHandleYasmDifferences(&Dis, uFlatAddr, cbInstr, szTmp, sizeof(szTmp), cch);
+                cch = disHandleYasmNasmDifferences(&Dis, uFlatAddr, cbInstr, szTmp, sizeof(szTmp), cch);
                 Assert(cch < sizeof(szTmp));
 
                 if (g_cVerbose > 1)
@@ -2158,7 +2170,7 @@ int main(int argc, char **argv)
             case 'V':
             {
                 /* The following is assuming that svn does it's job here. */
-                char szRev[] = "$Revision: 170187 $";
+                char szRev[] = "$Revision: 174503 $";
                 char *psz = szRev;
                 while (*psz && !RT_C_IS_DIGIT(*psz))
                     psz++;
