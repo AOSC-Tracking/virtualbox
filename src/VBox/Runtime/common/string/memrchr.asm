@@ -98,6 +98,7 @@ RT_NOCRT_BEGINPROC memrchr
 %endif
         cld
         ret
+        int3
 
 .not_found:
 %ifdef ASM_CALL64_MSC
@@ -120,3 +121,4 @@ RT_NOCRT_BEGINPROC memrchr
         ret
 ENDPROC RT_NOCRT(memrchr)
 
+MARK_OBJECT_RETPOLINE_SAFE

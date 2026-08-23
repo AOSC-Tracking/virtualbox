@@ -187,7 +187,7 @@ int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadles
 
                 rc = ShClX11ThreadStart(&pCtx->X11, true /* grab shared clipboard */);
                 if (RT_FAILURE(rc))
-                    ShClX11Destroy(&pCtx->X11);
+                    ShClX11Term(&pCtx->X11);
             }
 
             if (RT_FAILURE(rc))
@@ -248,7 +248,7 @@ int ShClBackendDisconnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient)
      *        it won't go wrong. */
     AssertRC(rc);
 
-    ShClX11Destroy(&pCtx->X11);
+    ShClX11Term(&pCtx->X11);
     RTCritSectDelete(&pCtx->CritSect);
 
     RTMemFree(pCtx);

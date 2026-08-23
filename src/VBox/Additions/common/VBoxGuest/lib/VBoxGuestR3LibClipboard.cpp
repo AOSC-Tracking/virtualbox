@@ -2818,6 +2818,12 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms, PVB
  *
  * @returns IPRT status code.
  * @param   pEvent              Event to free (destroy).
+ *
+ * @todo r=bird: This is a BAD idea, as allocations and free calls should always
+ *       be in the same file, or at least in the same module.  This is to make
+ *       sure the same allocation wrapper settings are in effect (e.g.
+ *       electric fence, whatever).  Add an allocation function or/and make
+ *       VbglR3ClipboardEventGetNext allocate it!
  */
 VBGLR3DECL(void) VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent)
 {

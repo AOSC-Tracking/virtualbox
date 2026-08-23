@@ -39,6 +39,7 @@
 # pragma once
 #endif
 
+#include <VBox/cdefs.h>
 #include <iprt/critsect.h>
 #include <iprt/types.h>
 #include <iprt/list.h>
@@ -74,6 +75,8 @@
 /** Maximum number of Shared Clipboard formats.
  *  This currently ASSUMES that there are no gaps in the bit mask. */
 #define VBOX_SHCL_FMT_MAX           VBOX_SHCL_FMT_VALID_MASK
+/** The last bit (0-based) in VBOX_SHCL_FMT_VALID_MASK */
+#define VBOX_SHCL_FMT_LAST_BIT      3
 /** @}  */
 
 
@@ -81,6 +84,8 @@
 typedef uint32_t SHCLFORMAT;
 /** Pointer to a single Shared Clipboard format (VBOX_SHCL_FMT_XXX). */
 typedef SHCLFORMAT *PSHCLFORMAT;
+
+VBGH_DECL(int) ShClFormatToBitNo(SHCLFORMAT uFmt);
 
 /** Bit map (flags) of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
 typedef uint32_t SHCLFORMATS;
@@ -215,16 +220,16 @@ typedef struct SHCLEVENTSOURCE
 /** @name Shared Clipboard data payload functions.
  *  @{
  */
-int ShClPayloadInit(uint32_t uID, void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload);
-int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload);
-void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload);
+int ShClPayloadCreate(uint32_t uID, void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload);
+int ShClPayloadCreateDupData(uint32_t uID, const void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload);
+void ShClPayloadDestroy(PSHCLEVENTPAYLOAD pPayload);
 /** @} */
 
 /** @name Shared Clipboard event source functions.
  *  @{
  */
-int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID idEvtSrc);
-int ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource);
+int ShClEventSourceInit(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID idEvtSrc);
+int ShClEventSourceTerm(PSHCLEVENTSOURCE pSource);
 void ShClEventSourceReset(PSHCLEVENTSOURCE pSource);
 int ShClEventSourceGenerateAndRegisterEvent(PSHCLEVENTSOURCE pSource, PSHCLEVENT *ppEvent);
 PSHCLEVENT ShClEventSourceGetFromId(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
@@ -267,7 +272,7 @@ typedef enum SHCLSOURCE
  *
  * One entry marks exactly one clipboard format at a time.
  */
-typedef struct _SHCLCACHEENTRY
+typedef struct SHCLCACHEENTRY
 {
     /** Entry data.
      *  Acts as a beacon for entry validation. */
@@ -281,25 +286,34 @@ typedef SHCLCACHEENTRY *PSHCLCACHEENTRY;
 /**
  * A (very simple) Shared Clipboard cache.
  */
-typedef struct _SHCLCACHE
+typedef struct SHCLCACHE
 {
+    /** Magic value (SHCLCACHE_MAGIC). */
+    uint32_t        u32Magic;
+    /** Explicit alignment padding. */
+    uint32_t        uReserved;
     /** Entries for all formats.
      *  Right now this is static to keep it simple. */
-    SHCLCACHEENTRY aEntries[VBOX_SHCL_FMT_MAX];
+    SHCLCACHEENTRY  aEntries[VBOX_SHCL_FMT_LAST_BIT + 1];
 } SHCLCACHE;
 /** Pointer to a Shared Clipboard cache. */
 typedef SHCLCACHE *PSHCLCACHE;
 
-void ShClCacheEntryGet(PSHCLCACHEENTRY pCacheEntry, void **pvData, size_t *pcbData);
+/** Magic value for SHCLCACHE::u32Magic (Jasper Fforde). */
+#define SHCLCACHE_MAGIC     UINT32_C(0x19610111)
 
-void ShClCacheInit(PSHCLCACHE pCache);
-void ShClCacheDestroy(PSHCLCACHE pCache);
-void ShClCacheInvalidate(PSHCLCACHE pCache);
-void ShClCacheInvalidateEntry(PSHCLCACHE pCache, SHCLFORMAT uFmt);
-PSHCLCACHEENTRY ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt);
-int ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData);
-int ShClCacheSetMultiple(PSHCLCACHE pCache, SHCLFORMATS uFmts, const void *pvData, size_t cbData);
-/** @}  */
+VBGH_DECL(void)             ShClCacheInit(PSHCLCACHE pCache);
+VBGH_DECL(void)             ShClCacheTerm(PSHCLCACHE pCache);
+VBGH_DECL(void)             ShClCacheInvalidate(PSHCLCACHE pCache);
+VBGH_DECL(void)             ShClCacheInvalidateEntry(PSHCLCACHE pCache, SHCLFORMAT uFmt);
+VBGH_DECL(PSHCLCACHEENTRY)  ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt);
+VBGH_DECL(int)              ShClCachePrep(PSHCLCACHE pCache, SHCLFORMAT uFmt, size_t cbData, void **ppvData);
+VBGH_DECL(int)              ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData);
+VBGH_DECL(int)              ShClCacheSetMultiple(PSHCLCACHE pCache, SHCLFORMATS uFmts, const void *pvData, size_t cbData);
+VBGH_DECL(bool)             ShClCacheEquals(SHCLCACHE const *pCache, SHCLCACHE const *pCacheOther);
+VBGH_DECL(int)              ShClCacheTransferAll(PSHCLCACHE pCache, PSHCLCACHE pOtherCache);
+
+/** @} */
 
 /** Opaque data structure for the X11/VBox frontend/glue code.
  * @{ */
@@ -310,7 +324,7 @@ typedef struct SHCLCONTEXT SHCLCONTEXT;
 typedef SHCLCONTEXT *PSHCLCONTEXT;
 
 /**
- * @name Shared Clipboard callback table.
+ * Shared Clipboard callback table.
  *
  * This table gets used by
  *   - the backends on the host (where required)
@@ -322,10 +336,8 @@ typedef SHCLCONTEXT *PSHCLCONTEXT;
  *
  * So overriding required callbacks on runtime for testing purposes makes this approach much
  * more flexible without implementing separate code paths for production code and test units.
- *
- * @{
  */
-typedef struct _SHCLCALLBACKS
+typedef struct SHCLCALLBACKS
 {
     /**
      * Callback for reporting supported clipoard formats of current clipboard data.
@@ -337,13 +349,12 @@ typedef struct _SHCLCALLBACKS
      * @param   pCtx            Opaque context pointer for the glue code.
      * @param   fFormats        The formats available.
      * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
-     *                          Optional and can be NULL.
+     *                          Optional.
      */
     DECLCALLBACKMEMBER(int, pfnReportFormats, (PSHCLCONTEXT pCtx, SHCLFORMATS fFormats, void *pvUser));
 
     /**
-     * Callback for reading data from the clipboard.
-     * Optional and can be NULL.
+     * Optional callback for reading data from the clipboard.
      *
      * @note Used for testing X11 clipboard code.
      *
@@ -355,13 +366,12 @@ typedef struct _SHCLCALLBACKS
      *                          Needs to be free'd with RTMemFree() by the caller.
      * @param   pcb             Returns the amount of data read (in bytes) on success.
      * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
-     *                          Optional and can be NULL.
+     *                          Optional.
      */
     DECLCALLBACKMEMBER(int, pfnOnClipboardRead, (PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, size_t *pcb, void *pvUser));
 
     /**
-     * Callback for writing data to the clipboard.
-     * Optional and can be NULL.
+     * Optional callback for writing data to the clipboard.
      *
      * @note Used for testing X11 clipboard code.
      *
@@ -372,7 +382,7 @@ typedef struct _SHCLCALLBACKS
      * @param   pv              The clipboard data to write.
      * @param   cb              The size of the data in @a pv.
      * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
-     *                          Optional and can be NULL.
+     *                          Optional.
      */
     DECLCALLBACKMEMBER(int, pfnOnClipboardWrite, (PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void *pv, size_t cb, void *pvUser));
 
@@ -392,7 +402,7 @@ typedef struct _SHCLCALLBACKS
      *                          Needs to be free'd with RTMemFree() by the caller.
      * @param   pcb             Returns the amount of data read (in bytes) on success.
      * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
-     *                          Optional and can be NULL.
+     *                          Optional.
      *                          On X11: Of type PSHCLX11READDATAREQ; We RTMemFree() this in this function.
      */
     DECLCALLBACKMEMBER(int, pfnOnRequestDataFromSource, (PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser));
@@ -405,14 +415,13 @@ typedef struct _SHCLCALLBACKS
      * @param   pv              The clipboard data returned if the request succeeded.
      * @param   cb              The size of the data in @a pv.
      * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
-     *                          Optional and can be NUL
+     *                          Optional.
      *                          On X11: Of type PSHCLX11READDATAREQ.
      */
     DECLCALLBACKMEMBER(int, pfnOnSendDataToDest, (PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser));
 } SHCLCALLBACKS;
 /** Pointer to a Shared Clipboard callback table. */
 typedef SHCLCALLBACKS *PSHCLCALLBACKS;
-/** @} */
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_h */
 

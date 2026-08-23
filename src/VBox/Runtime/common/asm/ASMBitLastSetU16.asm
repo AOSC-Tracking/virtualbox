@@ -69,6 +69,7 @@ RT_BEGINPROC ASMBitLastSetU16
         jc      .return
         dec     ax
         jmp     .next_bit
+        int3
 
 .return_zero:
         xor     ax, ax
@@ -93,9 +94,11 @@ RT_BEGINPROC ASMBitLastSetU16
         inc     eax
 .return:
         ret
+        int3
 .return_zero:
         xor     eax, eax
         ret
 %endif
 ENDPROC ASMBitLastSetU16
 
+MARK_OBJECT_RETPOLINE_SAFE

@@ -64,6 +64,7 @@ BEGINPROC_RAW   __allmul
         mul     dword [esp + 0ch]
 
         ret     10h
+        int3
 
         ;
         ; Complicated.
@@ -88,3 +89,4 @@ BEGINPROC_RAW   __allmul
         ret     10h
 ENDPROC_RAW     __allmul
 
+MARK_OBJECT_RETPOLINE_SAFE

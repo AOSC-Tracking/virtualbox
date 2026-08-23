@@ -2624,7 +2624,7 @@ static void vmsvga3dCmdDestroyGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisC
 
 
 /* SVGA_3D_CMD_BIND_GB_SCREENTARGET 1126 */
-static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBScreenTarget const *pCmd)
+static void vmsvga3dCmdBindGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dCmdBindGBScreenTarget const *pCmd)
 {
     //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2673,7 +2673,7 @@ static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBSc
                     rect.y = 0;
                     rect.w = entry.width;
                     rect.h = entry.height;
-                    vmsvga3dScreenUpdateFromScreenTarget(pThisCC, pScreen, rect, entry.image);
+                    vmsvga3dScreenUpdateFromScreenTarget(pThis, pThisCC, pScreen, rect, entry.image);
                 }
             }
         }
@@ -2682,7 +2682,7 @@ static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBSc
 
 
 /* SVGA_3D_CMD_UPDATE_GB_SCREENTARGET 1127 */
-static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBScreenTarget const *pCmd)
+static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dCmdUpdateGBScreenTarget const *pCmd)
 {
     //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2713,7 +2713,7 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
                     RT_UNTRUSTED_VALIDATED_FENCE();
 
                     VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[pCmd->stid];
-                    vmsvga3dScreenUpdateFromScreenTarget(pThisCC, pScreen, pCmd->rect, entryScreenTarget.image);
+                    vmsvga3dScreenUpdateFromScreenTarget(pThis, pThisCC, pScreen, pCmd->rect, entryScreenTarget.image);
                 }
             }
         }
@@ -6348,7 +6348,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdBindGBScreenTarget *pCmd = (SVGA3dCmdBindGBScreenTarget *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdBindGBScreenTarget(pThisCC, pCmd);
+        vmsvga3dCmdBindGBScreenTarget(pThis, pThisCC, pCmd);
         break;
     }
 
@@ -6356,7 +6356,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
     {
         SVGA3dCmdUpdateGBScreenTarget *pCmd = (SVGA3dCmdUpdateGBScreenTarget *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        vmsvga3dCmdUpdateGBScreenTarget(pThisCC, pCmd);
+        vmsvga3dCmdUpdateGBScreenTarget(pThis, pThisCC, pCmd);
         break;
     }
 
@@ -8614,7 +8614,6 @@ void vmsvgaR3CmdRemapGMR2(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdRemap
     if (paNewPage64)
         RTMemFree(paNewPage64);
 }
-#endif /* VBOX_WITH_VMSVGA3D */
 
 
 /**
@@ -8646,6 +8645,7 @@ void vmsvgaR3GmrFree(PVGASTATECC pThisCC, uint32_t idGMR)
     Assert(!pGMR->cMaxPages);
     Assert(!pGMR->cbTotal);
 }
+#endif /* VBOX_WITH_VMSVGA3D */
 
 
 /**

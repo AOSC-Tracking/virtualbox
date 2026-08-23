@@ -1117,7 +1117,7 @@ int ShClTransferCreateEx(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRAN
     rc = RTSemEventCreate(&pTransfer->StatusChangeEvent);
     AssertRCReturn(rc, rc);
 
-    rc = ShClEventSourceCreate(&pTransfer->Events, 0 /* uID */);
+    rc = ShClEventSourceInit(&pTransfer->Events, 0 /* uID */);
     if (RT_SUCCESS(rc))
     {
         if (pTransfer->Callbacks.pfnOnCreated)
@@ -1194,7 +1194,7 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
     AssertRCReturn(rc, rc);
     pTransfer->StatusChangeEvent = NIL_RTSEMEVENT;
 
-    ShClEventSourceDestroy(&pTransfer->Events);
+    ShClEventSourceTerm(&pTransfer->Events);
 
     RTMemFree(pTransfer);
     pTransfer = NULL;
@@ -2026,17 +2026,18 @@ int ShClTransferRootsSetFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16 
     size_t cwcRoots = cbRoots / sizeof(RTUTF16);
 
     /* This may slightly overestimate the space needed. */
-    size_t chDst = 0;
-    int rc = ShClUtf16LenUtf8(pwszRoots, cwcRoots, &chDst);
+#if 0
+    size_t cbDst = 0;
+    int rc = ShClHlpUtf16LenUtf8(pwszRoots, cwcRoots, &cbDst);
     if (RT_SUCCESS(rc))
     {
-        chDst++; /* Add space for terminator. */
+        cbDst++; /* Add space for terminator. */
 
-        char *pszDst = (char *)RTStrAlloc(chDst);
+        char *pszDst = (char *)RTStrAlloc(cbDst);
         if (pszDst)
         {
             size_t cbActual = 0;
-            rc = ShClConvUtf16CRLFToUtf8LF(pwszRoots, cwcRoots, pszDst, chDst, &cbActual);
+            rc = ShClHlpConvUtf16CRLFToUtf8LF(pwszRoots, cwcRoots, pszDst, cbDst, &cbActual);
             if (RT_SUCCESS(rc))
                 rc = ShClTransferRootsSetFromStringList(pTransfer, pszDst, cbActual + 1 /* Include terminator */);
 
@@ -2045,6 +2046,16 @@ int ShClTransferRootsSetFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16 
         else
             rc = VERR_NO_MEMORY;
     }
+#else
+    char  *pszTmp = NULL;
+    size_t cbLenSansTerm = 0;
+    int rc = ShClHlpConvUtf16CRLFToUtf8LFA(pwszRoots, cwcRoots, &pszTmp, &cbLenSansTerm);
+    if (RT_SUCCESS(rc))
+    {
+        rc = ShClTransferRootsSetFromStringList(pTransfer, pszTmp, cbLenSansTerm + 1 /* Include terminator */);
+        RTMemFree(pszTmp);
+    }
+#endif
 
     return rc;
 }

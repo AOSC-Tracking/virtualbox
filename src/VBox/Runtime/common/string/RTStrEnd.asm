@@ -91,6 +91,7 @@ RT_BEGINPROC RTStrEnd
  %endif
 %endif
         ret
+        int3
 
 .not_found:
 %ifdef ASM_CALL64_MSC
@@ -112,3 +113,4 @@ RT_BEGINPROC RTStrEnd
         ret
 ENDPROC RTStrEnd
 
+MARK_OBJECT_RETPOLINE_SAFE

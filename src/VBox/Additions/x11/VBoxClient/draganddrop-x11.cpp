@@ -70,7 +70,7 @@
 # undef VBOX_WITH_DRAG_AND_DROP_PROMISES
 #endif
 
-/**
+/** @page pg_vboxclient_x11_dnd     VBoxClient - X11 Drag & Drop
  * For X11 guest Xdnd is used. See http://www.acc.umu.se/~vatten/XDND.html for
  * a walk trough.
  *

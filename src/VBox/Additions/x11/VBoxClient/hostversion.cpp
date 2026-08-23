@@ -116,7 +116,7 @@ static DECLCALLBACK(int) vbclHostVerWorker(bool volatile *pfShutdown)
     return rc;
 }
 
-VBCLSERVICE g_SvcHostVersion =
+VBCLSERVICE const g_SvcHostVersion =
 {
     "hostversion",                   /* szName */
     "VirtualBox host version check", /* pszDescription */

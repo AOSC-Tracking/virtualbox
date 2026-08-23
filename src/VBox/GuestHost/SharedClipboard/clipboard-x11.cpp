@@ -428,11 +428,11 @@ static int clipThreadScheduleCall(PSHCLX11CTX pCtx,
  */
 static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
 {
-    SHCLFORMATS vboxFmt  = clipVBoxFormatForX11Format(pCtx->idxFmtText);
-                vboxFmt |= clipVBoxFormatForX11Format(pCtx->idxFmtBmp);
-                vboxFmt |= clipVBoxFormatForX11Format(pCtx->idxFmtHTML);
+    SHCLFORMATS vboxFmt = clipVBoxFormatForX11Format(pCtx->idxFmtText);
+    vboxFmt            |= clipVBoxFormatForX11Format(pCtx->idxFmtBmp);
+    vboxFmt            |= clipVBoxFormatForX11Format(pCtx->idxFmtHTML);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                vboxFmt |= clipVBoxFormatForX11Format(pCtx->idxFmtURI);
+    vboxFmt            |= clipVBoxFormatForX11Format(pCtx->idxFmtURI);
 #endif
 
     LogFlowFunc(("idxFmtText=%u ('%s'), idxFmtBmp=%u ('%s'), idxFmtHTML=%u ('%s')",
@@ -444,12 +444,12 @@ static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
 #endif
     Log((" -> vboxFmt=%#x\n", vboxFmt));
 
-#ifdef LOG_ENABLED
-    char *pszFmts = ShClFormatsToStrA(vboxFmt);
-    AssertPtrReturnVoid(pszFmts);
-    LogRel2(("Shared Clipboard: X11 reported available VBox formats '%s'\n", pszFmts));
-    RTStrFree(pszFmts);
-#endif
+    if (LogRelIs2Enabled())
+    {
+        char *pszFmts = ShClFormatsToStrA(vboxFmt);
+        LogRel2(("Shared Clipboard: X11 reported available VBox formats %#x / '%s'\n", vboxFmt, pszFmts ? pszFmts : "<alloc failed>"));
+        RTStrFree(pszFmts);
+    }
 
     if (pCtx->Callbacks.pfnReportFormats)
         pCtx->Callbacks.pfnReportFormats(pCtx->pFrontend, vboxFmt, NULL /* pvUser */);
@@ -1201,10 +1201,10 @@ void ShClX11SetCallbacks(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks)
  * Initializes a X11 context of the Shared Clipboard.
  *
  * @returns VBox status code.
- * @param   pCtx                The clipboard context to initialize.
- * @param   pCallbacks          Callback table to use.
- * @param   pParent             Parent context to use.
- * @param   fHeadless           Whether the code runs in a headless environment or not.
+ * @param   pCtx        The clipboard context to initialize.
+ * @param   pCallbacks  Callbacks to use (copied, not used directly). Optional.
+ * @param   pParent     Parent context to use.
+ * @param   fHeadless   Whether the code runs in a headless environment or not.
  */
 int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParent, bool fHeadless)
 {
@@ -1257,20 +1257,20 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParen
 }
 
 /**
- * Destroys a Shared Clipboard X11 context.
+ * Terminates (uninitializes) a Shared Clipboard X11 context.
  *
  * @returns VBox status code.
  * @param   pCtx                The X11 clipboard context to destroy.
  */
-int ShClX11Destroy(PSHCLX11CTX pCtx)
+int ShClX11Term(PSHCLX11CTX pCtx)
 {
     if (!pCtx)
         return VINF_SUCCESS;
 
     LogFlowFunc(("pCtx=%p\n", pCtx));
 
-    /* Destroy clipboard cache. */
-    ShClCacheDestroy(&pCtx->Cache);
+    /* Delete the clipboard cache. */
+    ShClCacheTerm(&pCtx->Cache);
 
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
@@ -1511,15 +1511,15 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
     AssertPtrReturn(ppv,  VERR_INVALID_POINTER);
     AssertPtrReturn(pcb,  VERR_INVALID_POINTER);
 
-#ifdef LOG_ENABLED
-    char *pszFmts = ShClFormatsToStrA(uFmt);
-    AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
-    LogRel2(("Shared Clipboard: Requesting data for X11 from source as '%s'\n", pszFmts));
-    RTStrFree(pszFmts);
-#endif
+    if (LogRelIs2Enabled())
+    {
+        char *pszFmts = ShClFormatsToStrA(uFmt);
+        LogRel2(("Shared Clipboard: Requesting data for X11 from source as %#x/'%s'\n",
+                 uFmt, pszFmts ? pszFmts : "<alloc failed>"));
+        RTStrFree(pszFmts);
+    }
 
-    int rc = VINF_SUCCESS;
-
+    int      rc;
     void    *pv = NULL;
     uint32_t cb = 0;
 
@@ -1530,42 +1530,39 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
         rc = pCtx->Callbacks.pfnOnRequestDataFromSource(pCtx->pFrontend, uFmt, &pv, &cb,
                                                         NULL /* pvUser */);
         if (RT_SUCCESS(rc))
+        {
             rc = ShClCacheSet(&pCtx->Cache, uFmt, pv, cb);
+            /** @todo r=bird: Leaks pv/cb on ShClCacheSet error? */
+        }
     }
     else /* Cache hit */
     {
-        void   *pvCache = NULL;
-        size_t  cbCache = 0;
-        ShClCacheEntryGet(pCacheEntry, &pvCache, &cbCache);
-        if (   pvCache
-            && cbCache)
+        Assert(pCacheEntry->pvData && pCacheEntry->cbData /* (ShClCacheGet already checks this) */);
+        cb = pCacheEntry->cbData;
+        pv = RTMemDup(pCacheEntry->pvData, cb);
+        if (pv)
+            rc = VINF_SUCCESS;
+        else
         {
-            pv = RTMemDup(pvCache, cbCache);
-            if (pv)
-            {
-                cb = cbCache;
-            }
-            else
-               rc = VERR_NO_MEMORY;
+            cb = 0;
+            rc = VERR_NO_MEMORY;
         }
     }
 
     LogFlowFunc(("pCtx=%p, uFmt=%#x -> Cache %s\n", pCtx, uFmt, pCacheEntry ? "HIT" : "MISS"));
 
-    /* Safey net in case the stuff above misbehaves
-     * (must return VERR_SHCLPB_NO_DATA if no data available). */
-    if (   RT_SUCCESS(rc)
-        && (pv == NULL || cb == 0))
-        rc = VERR_SHCLPB_NO_DATA;
-
     if (RT_SUCCESS(rc))
     {
-        *ppv = pv;
-        *pcb = cb;
+       /* Safey net in case the stuff above misbehaves (must return VERR_SHCLPB_NO_DATA if no data available). */
+        if (pv != NULL && cb > 0)
+        {
+            *ppv = pv;
+            *pcb = cb;
+        }
+        else
+            rc = VERR_SHCLPB_NO_DATA;
     }
-
-    if (   RT_FAILURE(rc)
-        && rc != VERR_SHCLPB_NO_DATA)
+    else
         LogRel(("Shared Clipboard: Requesting data for X11 from source failed with %Rrc\n", rc));
 
     LogFlowFunc(("Returning pv=%p, cb=%RU32, rc=%Rrc\n", pv, cb, rc));
@@ -1640,17 +1637,17 @@ static int clipConvertUtf16ToX11Data(Display *pDisplay, PRTUTF16 pwszSrc,
         return VERR_SHCLPB_NO_DATA;
 
     /* This may slightly overestimate the space needed. */
-    size_t chDst = 0;
-    int rc = ShClUtf16LenUtf8(pwszSrc, cwcSrc, &chDst);
+    size_t cbDst = 0;
+    int rc = ShClHlpUtf16LenUtf8(pwszSrc, cwcSrc, &cbDst);
     if (RT_SUCCESS(rc))
     {
-        chDst++; /* Add space for terminator. */
+        cbDst++; /* Add space for terminator. */
 
-        char *pszDst = (char *)XtMalloc(chDst);
+        char *pszDst = (char *)XtMalloc(cbDst);
         if (pszDst)
         {
             size_t cbActual = 0;
-            rc = ShClConvUtf16CRLFToUtf8LF(pwszSrc, cwcSrc, pszDst, chDst, &cbActual);
+            rc = ShClHlpConvUtf16CRLFToUtf8LF(pwszSrc, cwcSrc, pszDst, cbDst, &cbActual);
             if (RT_SUCCESS(rc))
             {
                 *atomTypeReturn = *atomTarget;
@@ -1658,6 +1655,8 @@ static int clipConvertUtf16ToX11Data(Display *pDisplay, PRTUTF16 pwszSrc,
                 *pcLenReturn    = cbActual + 1 /* Include terminator */;
                 *piFormatReturn = 8;
             }
+            else
+                XtFree(pszDst);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -1757,11 +1756,13 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     LogFlowFunc(("vboxFormats=0x%x, idxFmtX11=%u ('%s'), fmtX11=%u\n",
                  pCtx->vboxFormats, idxFmtX11, g_aFormats[idxFmtX11].pcszAtom, fmtX11));
 
-    char *pszFmts = ShClFormatsToStrA(pCtx->vboxFormats);
-    AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
-    LogRel2(("Shared Clipboard: Converting VBox formats '%s' to '%s' for X11\n",
-             pszFmts, fmtX11 == SHCLX11FMT_INVALID ? "<invalid>" : g_aFormats[idxFmtX11].pcszAtom));
-    RTStrFree(pszFmts);
+    if (LogRelIs2Enabled())
+    {
+        char *pszFmts = ShClFormatsToStrA(pCtx->vboxFormats);
+        LogRel2(("Shared Clipboard: Converting VBox formats %#x/'%s' to '%s' for X11\n", pCtx->vboxFormats,
+                 pszFmts ? pszFmts : "<alloc failed>", fmtX11 == SHCLX11FMT_INVALID ? "<invalid>" : g_aFormats[idxFmtX11].pcszAtom));
+        RTStrFree(pszFmts);
+    }
 
     void    *pv = NULL;
     uint32_t cb = 0;
@@ -1794,8 +1795,8 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
         if (RT_SUCCESS(rc))
         {
             /* Create a full BMP from it. */
-            rc = ShClDibToBmp(pv, cb, (void **)pValReturn,
-                              (size_t *)pcLenReturn);
+            rc = ShClHlpDibToBmp(pv, cb, (void **)pValReturn,
+                                  (size_t *)pcLenReturn);
         }
 
         if (RT_SUCCESS(rc))
@@ -1870,16 +1871,14 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     }
 
     if (   RT_FAILURE(rc)
-        && rc != VERR_SHCLPB_NO_DATA)
+        && rc != VERR_SHCLPB_NO_DATA
+        && LogRelIsEnabled())
     {
         char *pszFmts2 = ShClFormatsToStrA(pCtx->vboxFormats);
         char *pszAtomName = XGetAtomName(XtDisplay(pCtx->pWidget), *atomTarget);
-
         LogRel(("Shared Clipboard: Converting VBox formats '%s' to '%s' for X11 (idxFmtX11=%u, fmtX11=%u, atomTarget='%s') failed, rc=%Rrc\n",
-                pszFmts2 ? pszFmts2 : "unknown", g_aFormats[idxFmtX11].pcszAtom, idxFmtX11, fmtX11, pszAtomName ? pszAtomName : "unknown", rc));
-
-        if (pszFmts2)
-            RTStrFree(pszFmts2);
+                pszFmts2 ? pszFmts2 : "<alloc error>", g_aFormats[idxFmtX11].pcszAtom, idxFmtX11, fmtX11, pszAtomName ? pszAtomName : "unknown", rc));
+        RTStrFree(pszFmts2);
         if (pszAtomName)
             XFree(pszAtomName);
     }
@@ -1961,7 +1960,7 @@ static void clipGrabX11Clipboard(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 {
     LogFlowFuncEnter();
 
-    /** @ŧodo r=andy The docs say: "the value CurrentTime is not acceptable" here!? */
+    /** @todo r=andy The docs say: "the value CurrentTime is not acceptable" here!? */
     if (XtOwnSelection(pCtx->pWidget, clipGetAtom(pCtx, "CLIPBOARD"),
                        CurrentTime,
                        clipXtConvertSelectionProc, clipXtConvertSelectionProcLose, clipXtConvertSelectionProcDone))
@@ -2005,12 +2004,13 @@ static void shClX11ReportFormatsToX11Worker(void *pvUserData, void * /* interval
 
     RTMemFree(pReq);
 
-#ifdef LOG_ENABLED
-    char *pszFmts = ShClFormatsToStrA(fFormats);
-    AssertPtrReturnVoid(pszFmts);
-    LogRel2(("Shared Clipboard: Reported available VBox formats %s to X11\n", pszFmts));
-    RTStrFree(pszFmts);
-#endif
+    if (LogRelIs2Enabled())
+    {
+        char *pszFmts = ShClFormatsToStrA(fFormats);
+        LogRel2(("Shared Clipboard: Reported available VBox formats %#x/'%s' to X11\n",
+                 fFormats, pszFmts ? pszFmts : "<alloc failed>"));
+        RTStrFree(pszFmts);
+    }
 
     clipInvalidateClipboardCache(pCtx);
     clipGrabX11Clipboard(pCtx, fFormats);
@@ -2265,11 +2265,11 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
                 size_t cwDst;
                 /* If we are given broken UTF-8, we treat it as Latin1. */ /** @todo BUGBUG Is this acceptable? */
                 if (RT_SUCCESS(RTStrValidateEncodingEx((char *)pvSrc, cbSrc, 0)))
-                    rc = ShClConvUtf8LFToUtf16CRLF((const char *)pvSrc, cbSrc,
-                                                   (PRTUTF16 *)&pvDst, &cwDst);
+                    rc = ShClHlpConvUtf8LFToUtf16CRLF((const char *)pvSrc, cbSrc,
+                                                       (PRTUTF16 *)&pvDst, &cwDst);
                 else
-                    rc = ShClConvLatin1LFToUtf16CRLF((char *)pvSrc, cbSrc,
-                                                     (PRTUTF16 *)&pvDst, &cwDst);
+                    rc = ShClHlpConvLatin1LFToUtf16CRLF((char *)pvSrc, cbSrc,
+                                                         (PRTUTF16 *)&pvDst, &cwDst);
                 if (RT_SUCCESS(rc))
                 {
                     cwDst += 1                        /* Include terminator */;
@@ -2296,8 +2296,8 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
             {
                 const void *pDib;
                 size_t cbDibSize;
-                rc = ShClBmpGetDib((const void *)pvSrc, cbSrc,
-                                   &pDib, &cbDibSize);
+                rc = ShClHlpBmpGetDib((const void *)pvSrc, cbSrc,
+                                       &pDib, &cbDibSize);
                 if (RT_SUCCESS(rc))
                 {
                     pvDst = RTMemAlloc(cbDibSize);
@@ -2343,9 +2343,9 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
                  * at the start of the clipboard data.
                  */
                 if (   cbSrc >= sizeof(RTUTF16)
-                    && *(PRTUTF16)pvSrc == VBOX_SHCL_UTF16LEMARKER)
+                    && *(PRTUTF16)pvSrc == VBOX_SHCL_UTF16_BOM)
                 {
-                    rc = ShClConvUtf16ToUtf8HTML((PRTUTF16)pvSrc, cbSrc / sizeof(RTUTF16), (char**)&pvDst, &cbDst);
+                    rc = ShClHlpConvUtf16ToUtf8HTML((PRTUTF16)pvSrc, cbSrc / sizeof(RTUTF16), (char**)&pvDst, &cbDst);
                     if (RT_SUCCESS(rc))
                     {
                         LogFlowFunc(("UTF-16 Unicode source (%u bytes):\n%ls\n\n", cbSrc, pvSrc));
@@ -2433,7 +2433,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
 
             pvDst = NULL; /* The response owns the data now. */
 
-            rc = ShClPayloadInit(0 /* ID, unused */, pResp, cbResp, &pPayload);
+            rc = ShClPayloadCreate(0 /* ID, unused */, pResp, cbResp, &pPayload);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -2449,7 +2449,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
 
     if (pPayload) /* Free payload on error. */
     {
-        ShClPayloadFree(pPayload);
+        ShClPayloadDestroy(pPayload);
         pPayload = NULL;
     }
 
@@ -2486,11 +2486,14 @@ SHCL_X11_DECL(void) clipConvertDataFromX11(Widget widget, XtPointer pClient,
         if (pReq) /* Give some more clues, if available. */
         {
             AssertReturnVoid(pReq->enmType == SHCLX11EVENTTYPE_READ);
-            char *pszFmts = ShClFormatsToStrA(pReq->Read.uFmtVBox);
-            AssertPtrReturnVoid(pszFmts);
             AssertReturnVoid(pReq->Read.idxFmtX11 < SHCL_MAX_X11_FORMATS); /* Paranoia, should be checked already by the caller. */
-            LogRel2(("Shared Clipboard: Converting X11 format '%s' -> VBox format(s) '%s'\n", g_aFormats[pReq->Read.idxFmtX11].pcszAtom, pszFmts));
-            RTStrFree(pszFmts);
+            if (LogRelIs2Enabled())
+            {
+                char *pszFmts = ShClFormatsToStrA(pReq->Read.uFmtVBox);
+                LogRel2(("Shared Clipboard: Converting X11 format '%s' -> VBox format %#x/'%s'\n",
+                         g_aFormats[pReq->Read.idxFmtX11].pcszAtom, pReq->Read.uFmtVBox, pszFmts ? pszFmts : "<alloc failed>"));
+                RTStrFree(pszFmts);
+            }
 
             if (pReq->pCtx->Callbacks.pfnOnClipboardRead) /* Usually only used for testcases. */
             {
@@ -2746,7 +2749,7 @@ static int shClX11ReadDataFromX11Internal(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEv
                             pPayload->pvData = NULL; /* pvData (pResp) is owned by ppResp now. */
                             pPayload->cbData = 0;
 
-                            ShClPayloadFree(pPayload);
+                            ShClPayloadDestroy(pPayload);
 
                             *ppResp = pResp;
                         }

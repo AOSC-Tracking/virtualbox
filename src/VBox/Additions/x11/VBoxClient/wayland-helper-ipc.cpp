@@ -1,6 +1,8 @@
 /* $Id: wayland-helper-ipc.cpp $ */
 /** @file
  * Guest Additions - IPC between VBoxClient and vboxwl tool.
+ *
+ * @note Obsolete. Compiled with 'kmk VBOX_WITH_WAYLAND_ADDITIONS_LEGACY=1'.
  */
 
 /*
@@ -44,45 +46,48 @@
 #include "VBoxClient.h"
 #include "wayland-helper-ipc.h"
 
-RTDECL(int) vbcl_wayland_hlp_gtk_ipc_srv_name(const char *szNamePrefix, char *szBuf, size_t cbBuf)
+int vbcl_wayland_hlp_gtk_ipc_srv_name(const char *pszNamePrefix, char *pszBuf, size_t cbBuf)
 {
-    int rc;
-
-    char pszActiveTTY[128];
-    size_t cchRead;
-    struct passwd *pwd;
-
-    AssertPtrReturn(szNamePrefix, VERR_INVALID_POINTER);
-    AssertPtrReturn(szBuf, VERR_INVALID_POINTER);
+    /*
+     * Validate and prep input.
+     */
+    AssertPtrReturn(pszNamePrefix, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf > 0, VERR_INVALID_PARAMETER);
+    RT_BZERO(pszBuf, cbBuf);
 
-    RT_BZERO(szBuf, cbBuf);
-    RT_ZERO(pszActiveTTY);
-
-    rc = RTStrCat(szBuf, cbBuf, "GtkHlpIpcServer-");
+    /*
+     * Do work.
+     */
+    int rc = RTStrCat(pszBuf, cbBuf, "GtkHlpIpcServer-");
     if (RT_SUCCESS(rc))
-        rc = RTStrCat(szBuf, cbBuf, szNamePrefix);
+        rc = RTStrCat(pszBuf, cbBuf, pszNamePrefix);
     if (RT_SUCCESS(rc))
-        rc = RTStrCat(szBuf, cbBuf, "-");
+        rc = RTStrCat(pszBuf, cbBuf, "-");
     if (RT_SUCCESS(rc))
-        rc = RTLinuxSysFsReadStrFile(pszActiveTTY, sizeof(pszActiveTTY) - 1 /* reserve last byte for string termination */,
-                                     &cchRead, "class/tty/tty0/active");
-    if (RT_SUCCESS(rc))
-        rc = RTStrCat(szBuf, cbBuf, pszActiveTTY);
-
-    if (RT_SUCCESS(rc))
-        rc = RTStrCat(szBuf, cbBuf, "-");
-
-    pwd = getpwuid(geteuid());
-    if (RT_VALID_PTR(pwd))
     {
-        if (RT_VALID_PTR(pwd->pw_name))
-            rc = RTStrCat(szBuf, cbBuf, pwd->pw_name);
+        size_t cchRead;
+        char szActiveTTY[128] = {0};
+        rc = RTLinuxSysFsReadStrFile(szActiveTTY, sizeof(szActiveTTY) - 1 /* reserve last byte for string termination */,
+                                     &cchRead, "class/tty/tty0/active");
+        if (RT_SUCCESS(rc))
+            rc = RTStrCat(pszBuf, cbBuf, szActiveTTY);
+    }
+    if (RT_SUCCESS(rc))
+        rc = RTStrCat(pszBuf, cbBuf, "-");
+    if (RT_SUCCESS(rc))
+    {
+        struct passwd *pwd = getpwuid(geteuid());
+        if (RT_VALID_PTR(pwd))
+        {
+            if (RT_VALID_PTR(pwd->pw_name))
+                rc = RTStrCat(pszBuf, cbBuf, pwd->pw_name);
+            else
+                rc = VERR_NOT_FOUND;
+        }
         else
             rc = VERR_NOT_FOUND;
     }
-    else
-        rc = VERR_NOT_FOUND;
 
     return rc;
 }
@@ -154,63 +159,57 @@ bool vbcl::ipc::packet_verify(vbcl::ipc::packet_t *pPacket, size_t cbPacket)
 
 int vbcl::ipc::packet_read(uint32_t uSessionId, RTLOCALIPCSESSION hSession, uint32_t msTimeout, void **ppvData)
 {
-    int rc;
-
-    vbcl::ipc::packet_t Packet;
-
     AssertPtrReturn(ppvData, VERR_INVALID_PARAMETER);
 
-    rc = RTLocalIpcSessionWaitForData(hSession, msTimeout);
+    int rc = RTLocalIpcSessionWaitForData(hSession, msTimeout);
     if (RT_SUCCESS(rc))
     {
         /* Read IPC message header. */
+        vbcl::ipc::packet_t Packet = { 0, 0, CMD_UNKNOWN, 0 };
         rc = RTLocalIpcSessionRead(hSession, &Packet, sizeof(Packet), NULL);
         if (RT_SUCCESS(rc))
         {
             bool fCheck = true;
-
-#define _CHECK(_cond, _msg, _ptr) \
-    if (fCheck) \
-    { \
-        fCheck &= _cond; \
-        if (!fCheck) \
-            VBClLogVerbose(3, _msg "\n", _ptr); \
-    }
-
-            _CHECK(Packet.u64Crc > 0,                   "bad crc: 0x%x", Packet.u64Crc);
-            _CHECK(Packet.uSessionId == uSessionId,     "bad session id: %u vs %u", (Packet.uSessionId, uSessionId));
-            _CHECK(Packet.cbData > sizeof(Packet),      "bad cbData: %u", Packet.cbData);
-
-            /* Receive the rest of a message. */
+#define MY_CHECK(a_MustBeTrueExpr, a_szMsgFmt, a_MsgArg) \
+                if (!(a_MustBeTrueExpr)) \
+                { \
+                    VBClLogVerbose(3, a_szMsgFmt "\n", a_MsgArg); \
+                    fCheck = false; \
+                } else do {} while (0)
+            MY_CHECK(Packet.u64Crc != 0,                "bad crc: 0x%x", Packet.u64Crc);
+            MY_CHECK(Packet.uSessionId == uSessionId,   "bad session id: %u", Packet.uSessionId);
+            MY_CHECK(Packet.cbData > sizeof(Packet) && Packet.cbData <= _256M, /** @todo r=bird: what's a sensible max limit here? */
+                     "bad cbData: %u", Packet.cbData);
             if (fCheck)
             {
-                uint8_t *puData;
-
-                puData = (uint8_t *)RTMemAllocZ(Packet.cbData);
-                if (RT_VALID_PTR(puData))
+                /* Receive the rest of a message. */
+                uint8_t *pbData = (uint8_t *)RTMemAllocZ(Packet.cbData);
+                if (pbData)
                 {
                     /* Add generic header to the beginning of the output buffer
                      * and receive the rest of the data into it. */
-                    memcpy(puData, &Packet, sizeof(Packet));
+                    memcpy(pbData, &Packet, sizeof(Packet));
 
-                    rc = RTLocalIpcSessionRead(hSession, puData + sizeof(Packet),
-                                               Packet.cbData - sizeof(Packet), NULL);
+                    rc = RTLocalIpcSessionRead(hSession, &pbData[sizeof(Packet)], Packet.cbData - sizeof(Packet), NULL);
                     if (RT_SUCCESS(rc))
                     {
-                        if (vbcl::ipc::packet_verify((vbcl::ipc::packet_t *)puData, Packet.cbData))
+                        if (vbcl::ipc::packet_verify((vbcl::ipc::packet_t *)pbData, Packet.cbData))
                         {
                             /* Now return received data to the caller. */
-                            *ppvData = puData;
+                            *ppvData = pbData;
+                            pbData = NULL;
                         }
                         else
                             rc = VERR_NOT_EQUAL;
                     }
-
-                    if (RT_FAILURE(rc))
-                        RTMemFree(puData);
+                    RTMemFree(pbData);
                 }
                 else
+                {
+                    VBClLogError("Failed to allocate %#x bytes for IPC package!!\n", Packet.cbData);
+                    /** @todo r=bird: This is kind of fatal, since the IPC stream will be out of sync now. */
                     rc = VERR_NO_MEMORY;
+                }
             }
             else
                 rc = VERR_INVALID_PARAMETER;
@@ -251,12 +250,11 @@ int vbcl::ipc::packet_write(RTLOCALIPCSESSION hSession, vbcl::ipc::packet_t *pPa
 
 int vbcl::ipc::data::DataIpc::send_formats(uint32_t uSessionId, RTLOCALIPCSESSION hIpcSession)
 {
-    vbcl::ipc::data::formats_packet_t Packet;
     SHCLFORMATS fFormats;
     int rc = VINF_SUCCESS;
 
+    vbcl::ipc::data::formats_packet_t Packet;
     RT_ZERO(Packet);
-
     Packet.Hdr.u64Crc = 0;
     Packet.Hdr.uSessionId = uSessionId;
     Packet.Hdr.idCmd = VBOX_FORMATS;

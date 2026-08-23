@@ -1064,12 +1064,6 @@ static DECLCALLBACK(void) svcCall(void *, VBOXHGCMCALLHANDLE callHandle, uint32_
             pStat     = &g_StatMapFolder;
             pStatFail = &g_StatMapFolderFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_MAP_FOLDER\n"));
-            if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
-                Log(("SharedFolders host service: request to map folder '%s'\n",
-                     ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf8));
-            else
-                Log(("SharedFolders host service: request to map folder '%ls'\n",
-                     ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf16));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_MAP_FOLDER)
@@ -1101,11 +1095,11 @@ static DECLCALLBACK(void) svcCall(void *, VBOXHGCMCALLHANDLE callHandle, uint32_
                 {
                     rc = VERR_INVALID_PARAMETER;
 
-                    /* Fudge for windows GAs getting the length wrong by one char. */
+                    /* Fudge for windows GAs getting the length wrong by one char.  Let the
+                       validator check the adjusted length and terminator before accessing it. */
                     if (   !(pClient->fu32Flags & SHFL_CF_UTF8)
                         && paParms[0].u.pointer.size >= sizeof(SHFLSTRING)
-                        && pszMapName->u16Length >= 2
-                        && pszMapName->String.utf16[pszMapName->u16Length / 2 - 1] == 0x0000)
+                        && pszMapName->u16Length >= 2)
                     {
                         pszMapName->u16Length -= 2;
                         if (ShflStringIsValidIn(pszMapName, paParms[0].u.pointer.size, false /*fUtf8Not16*/))
@@ -1117,7 +1111,14 @@ static DECLCALLBACK(void) svcCall(void *, VBOXHGCMCALLHANDLE callHandle, uint32_
 
                 /* Execute the function. */
                 if (RT_SUCCESS(rc))
+                {
+                    if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
+                        Log(("SharedFolders host service: request to map folder '%s'\n", pszMapName->String.utf8));
+                    else
+                        Log(("SharedFolders host service: request to map folder '%ls'\n", pszMapName->String.utf16));
+
                     rc = vbsfMapFolder(pClient, pszMapName, delimiter, fCaseSensitive, &root);
+                }
 
                 if (RT_SUCCESS(rc))
                 {
@@ -1973,4 +1974,3 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pta
 
     return rc;
 }
-

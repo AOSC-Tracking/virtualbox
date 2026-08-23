@@ -105,3 +105,4 @@ RT_NOCRT_BEGINPROC fetestexcept
         ret
 ENDPROC   RT_NOCRT(fetestexcept)
 
+MARK_OBJECT_RETPOLINE_SAFE

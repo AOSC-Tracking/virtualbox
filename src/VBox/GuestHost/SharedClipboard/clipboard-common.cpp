@@ -1,6 +1,6 @@
 /* $Id: clipboard-common.cpp $ */
 /** @file
- * Shared Clipboard: Some helper function for converting between the various eol.
+ * Shared Clipboard: Common helper objects.
  */
 
 /*
@@ -36,8 +36,6 @@
 #include <iprt/rand.h>
 #include <iprt/utf16.h>
 
-#include <iprt/formats/bmp.h>
-
 #include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <VBox/GuestHost/clipboard-helper.h>
@@ -68,8 +66,7 @@ DECLINLINE(PSHCLEVENT) shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEven
  * @param   cbData              Size (in bytes) of data to associate.
  * @param   ppPayload           Where to store the allocated event payload on success.
  */
-int ShClPayloadInit(uint32_t uID, void *pvData, uint32_t cbData,
-                    PSHCLEVENTPAYLOAD *ppPayload)
+int ShClPayloadCreate(uint32_t uID, void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData > 0, VERR_INVALID_PARAMETER);
@@ -89,7 +86,7 @@ int ShClPayloadInit(uint32_t uID, void *pvData, uint32_t cbData,
 }
 
 /**
- * Allocates a new event payload.
+ * Allocates a new event payload, duplicating the data.
  *
  * @returns VBox status code.
  * @param   uID                 Payload ID to set for this payload. Useful for consequtive payloads.
@@ -97,15 +94,19 @@ int ShClPayloadInit(uint32_t uID, void *pvData, uint32_t cbData,
  * @param   cbData              Size (in bytes) of data block to allocate.
  * @param   ppPayload           Where to store the allocated event payload on success.
  */
-int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
-                     PSHCLEVENTPAYLOAD *ppPayload)
+int ShClPayloadCreateDupData(uint32_t uID, const void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData > 0, VERR_INVALID_PARAMETER);
 
     void *pvDataDup = RTMemDup(pvData, cbData);
     if (pvDataDup)
-        return ShClPayloadInit(uID, pvDataDup, cbData, ppPayload);
+    {
+        int rc = ShClPayloadCreate(uID, pvDataDup, cbData, ppPayload);
+        if (RT_FAILURE(rc))
+            RTMemFree(pvDataDup);
+        return rc;
+    }
 
     return VERR_NO_MEMORY;
 }
@@ -116,7 +117,7 @@ int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
  * @returns VBox status code.
  * @param   pPayload            Event payload to free.
  */
-void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload)
+void ShClPayloadDestroy(PSHCLEVENTPAYLOAD pPayload)
 {
     if (!pPayload)
         return;
@@ -135,13 +136,13 @@ void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload)
 }
 
 /**
- * Creates a new event source.
+ * Initializes a new event source.
  *
  * @returns VBox status code.
- * @param   pSource             Event source to create.
+ * @param   pSource             Event source to initialize.
  * @param   uID                 ID to use for event source.
  */
-int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
+int ShClEventSourceInit(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
 {
     LogFlowFunc(("pSource=%p, uID=%RU16\n", pSource, uID));
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
@@ -159,12 +160,12 @@ int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
 }
 
 /**
- * Destroys an event source.
+ * Terminates (uninitializes) an event source.
  *
  * @returns VBox status code.
- * @param   pSource             Event source to destroy.
+ * @param   pSource             Event source to delete.
  */
-int ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource)
+int ShClEventSourceTerm(PSHCLEVENTSOURCE pSource)
 {
     if (!pSource)
         return VINF_SUCCESS;
@@ -208,13 +209,12 @@ static void shClEventSourceResetInternal(PSHCLEVENTSOURCE pSource)
         if (!fDealloc)
             Log3Func(("Event %RU32 has %RU32 references left, skipping de-allocation\n", pEvIt->idEvent, pEvIt->cRefs));
 
-        shClEventDestroy(pEvIt);
-
         int rc2 = shClEventSourceUnregisterEvent(pSource, pEvIt);
         AssertRC(rc2);
 
         if (fDealloc)
         {
+            shClEventDestroy(pEvIt);
             RTMemFree(pEvIt);
             pEvIt = NULL;
         }
@@ -273,6 +273,7 @@ int ShClEventSourceGenerateAndRegisterEvent(PSHCLEVENTSOURCE pSource, PSHCLEVENT
                 {
                     pEvent->pParent = pSource;
                     pEvent->idEvent = idEvent;
+                    pEvent->cRefs   = 1; /* Reference returned to the caller. */
                     RTListAppend(&pSource->lstEvents, &pEvent->Node);
 
                     rc = RTCritSectLeave(&pSource->CritSect);
@@ -280,7 +281,6 @@ int ShClEventSourceGenerateAndRegisterEvent(PSHCLEVENTSOURCE pSource, PSHCLEVENT
 
                     LogFlowFunc(("uSource=%RU16: New event: %#x\n", pSource->uID, idEvent));
 
-                    ShClEventRetain(pEvent);
                     *ppEvent = pEvent;
 
                     return VINF_SUCCESS;
@@ -320,7 +320,7 @@ static void shClEventDestroy(PSHCLEVENT pEvent)
         pEvent->hEvtMulSem = NIL_RTSEMEVENT;
     }
 
-    ShClPayloadFree(pEvent->pPayload);
+    ShClPayloadDestroy(pEvent->pPayload);
     pEvent->pPayload = NULL;
 
     pEvent->idEvent = NIL_SHCLEVENTID;
@@ -529,27 +529,38 @@ uint32_t ShClEventRelease(PSHCLEVENT pEvent)
 
     AssertReturn(ASMAtomicReadU32(&pEvent->cRefs) > 0, UINT32_MAX);
 
-    uint32_t const cRefs = ASMAtomicDecU32(&pEvent->cRefs);
-    if (cRefs == 0)
+    /* Serialize the final release with a source reset, which can detach the event while we wait for the source lock. */
+    uint32_t cRefs;
+    int rc = VINF_SUCCESS;
+    PSHCLEVENTSOURCE pParent = pEvent->pParent;
+    if (   pParent
+        && RTCritSectIsInitialized(&pParent->CritSect))
     {
-        int rc;
-        PSHCLEVENTSOURCE pParent = pEvent->pParent;
-        if (   pParent
-            && RTCritSectIsInitialized(&pParent->CritSect))
+        rc = RTCritSectEnter(&pParent->CritSect);
+        if (RT_SUCCESS(rc))
         {
-            rc = RTCritSectEnter(&pParent->CritSect);
-            if (RT_SUCCESS(rc))
-            {
+            cRefs = ASMAtomicDecU32(&pEvent->cRefs);
+            if (   cRefs == 0
+                && pEvent->pParent == pParent)
                 rc = shClEventSourceUnregisterEvent(pParent, pEvent);
 
-                int rc2 = RTCritSectLeave(&pParent->CritSect);
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-            }
+            int rc2 = RTCritSectLeave(&pParent->CritSect);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+        else if (pEvent->pParent == NULL)
+        {
+            cRefs = ASMAtomicDecU32(&pEvent->cRefs);
+            rc = VINF_SUCCESS;
         }
         else
-            rc = VINF_SUCCESS;
+            return UINT32_MAX;
+    }
+    else
+        cRefs = ASMAtomicDecU32(&pEvent->cRefs);
 
+    if (cRefs == 0)
+    {
         if (RT_SUCCESS(rc))
         {
             shClEventDestroy(pEvent);
@@ -601,491 +612,6 @@ int ShClEventSignalEx(PSHCLEVENT pEvent, int rc, PSHCLEVENTPAYLOAD pPayload)
 int ShClEventSignal(PSHCLEVENT pEvent, PSHCLEVENTPAYLOAD pPayload)
 {
     return ShClEventSignalEx(pEvent, VINF_SUCCESS, pPayload);
-}
-
-int ShClUtf16LenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen)
-{
-    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(pchLen, VERR_INVALID_POINTER);
-
-    size_t chLen = 0;
-    int rc = RTUtf16CalcUtf8LenEx(pcwszSrc, cwcSrc, &chLen);
-    if (RT_SUCCESS(rc))
-        *pchLen = chLen;
-    return rc;
-}
-
-int ShClConvUtf16CRLFToUtf8LF(PCRTUTF16 pcwszSrc, size_t cwcSrc,
-                              char *pszBuf, size_t cbBuf, size_t *pcbLen)
-{
-    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn   (cwcSrc,   VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszBuf,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbLen,   VERR_INVALID_POINTER);
-
-    int rc;
-
-    PRTUTF16 pwszTmp = NULL;
-    size_t   cchTmp  = 0;
-
-    size_t   cbLen = 0;
-
-    /* How long will the converted text be? */
-    rc = ShClUtf16CRLFLenUtf8(pcwszSrc, cwcSrc, &cchTmp);
-    if (RT_SUCCESS(rc))
-    {
-        cchTmp++; /* Add space for terminator. */
-
-        pwszTmp = (PRTUTF16)RTMemAlloc(cchTmp * sizeof(RTUTF16));
-        if (pwszTmp)
-        {
-            rc = ShClConvUtf16CRLFToLF(pcwszSrc, cwcSrc, pwszTmp, cchTmp);
-            if (RT_SUCCESS(rc))
-                rc = RTUtf16ToUtf8Ex(pwszTmp + 1, cchTmp - 1, &pszBuf, cbBuf, &cbLen);
-
-            RTMemFree(reinterpret_cast<void *>(pwszTmp));
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        *pcbLen = cbLen;
-    }
-
-    return rc;
-}
-
-int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc,
-                           PRTUTF16 *ppwszDst, size_t *pcwDst)
-{
-    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppwszDst, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcwDst,   VERR_INVALID_POINTER);
-
-    PRTUTF16 pwszDst = NULL;
-    size_t   cchDst;
-
-    int rc = ShClUtf16CalcNormalizedEolToCRLFLength(pcwszSrc, cwcSrc, &cchDst);
-    if (RT_SUCCESS(rc))
-    {
-        pwszDst = (PRTUTF16)RTMemAlloc((cchDst + 1 /* Leave space for terminator */) * sizeof(RTUTF16));
-        if (pwszDst)
-        {
-            rc = ShClConvUtf16LFToCRLF(pcwszSrc, cwcSrc, pwszDst, cchDst + 1 /* Include terminator */);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        *ppwszDst = pwszDst;
-        *pcwDst   = cchDst;
-    }
-    else
-        RTMemFree(pwszDst);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
-                              PRTUTF16 *ppwszDst, size_t *pcwDst)
-{
-    AssertPtrReturn(pcszSrc,  VERR_INVALID_POINTER);
-    AssertReturn(cbSrc,       VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppwszDst, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcwDst,   VERR_INVALID_POINTER);
-
-    /* Intermediate conversion to UTF-16. */
-    size_t   cwcTmp;
-    PRTUTF16 pwcTmp = NULL;
-    int rc = RTStrToUtf16Ex(pcszSrc, cbSrc, &pwcTmp, 0, &cwcTmp);
-    if (RT_SUCCESS(rc))
-    {
-        rc = ShClConvUtf16LFToCRLFA(pwcTmp, cwcTmp, ppwszDst, pcwDst);
-        RTUtf16Free(pwcTmp);
-    }
-
-    return rc;
-}
-
-/**
- * Converts a Latin-1 string with LF line endings into an UTF-16 string with CRLF endings.
- *
- * @returns VBox status code.
- * @param   pcszSrc             Latin-1 string to convert.
- * @param   cbSrc               Size (in bytes) of Latin-1 string to convert.
- * @param   ppwszDst            Where to return the converted UTF-16 string on success.
- * @param   pcwDst              Where to return the length (in UTF-16 characters) on success.
- *
- * @note    Only converts the source until the string terminator is found (or length limit is hit).
- */
-int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
-                                PRTUTF16 *ppwszDst, size_t *pcwDst)
-{
-    AssertPtrReturn(pcszSrc,  VERR_INVALID_POINTER);
-    AssertReturn(cbSrc,       VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppwszDst, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcwDst,   VERR_INVALID_POINTER);
-
-    size_t chSrc = 0;
-
-    PRTUTF16 pwszDst = NULL;
-
-    /* Calculate the space needed. */
-    size_t cwDst = 0;
-    for (size_t i = 0; i < cbSrc && pcszSrc[i] != '\0'; ++i)
-    {
-        if (pcszSrc[i] == VBOX_SHCL_LINEFEED)
-            cwDst += 2; /* Space for VBOX_SHCL_CARRIAGERETURN + VBOX_SHCL_LINEFEED. */
-        else
-            ++cwDst;
-        chSrc++;
-    }
-
-    pwszDst = (PRTUTF16)RTMemAlloc((cwDst + 1 /* Leave space for the terminator */) * sizeof(RTUTF16));
-    AssertPtrReturn(pwszDst, VERR_NO_MEMORY);
-
-    /* Do the conversion, bearing in mind that Latin-1 expands "naturally" to UTF-16. */
-    for (size_t i = 0, j = 0; i < chSrc; ++i, ++j)
-    {
-        AssertMsg(j <= cwDst, ("cbSrc=%zu, j=%u vs. cwDst=%u\n", cbSrc, j, cwDst));
-        if (pcszSrc[i] != VBOX_SHCL_LINEFEED)
-            pwszDst[j] = pcszSrc[i];
-        else
-        {
-            pwszDst[j]     = VBOX_SHCL_CARRIAGERETURN;
-            pwszDst[j + 1] = VBOX_SHCL_LINEFEED;
-            ++j;
-        }
-    }
-
-    pwszDst[cwDst] = '\0';  /* Make sure we are zero-terminated. */
-
-    *ppwszDst = pwszDst;
-    *pcwDst   = cwDst;
-
-    return VINF_SUCCESS;
-}
-
-int ShClConvUtf16ToUtf8HTML(PCRTUTF16 pcwszSrc, size_t cwcSrc, char **ppszDst, size_t *pcbDst)
-{
-    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn   (cwcSrc,   VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppszDst,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbDst,   VERR_INVALID_POINTER);
-
-    int rc = VINF_SUCCESS;
-
-    size_t    cwTmp = cwcSrc;
-    PCRTUTF16 pwTmp = pcwszSrc;
-
-    char  *pchDst = NULL;
-    size_t cbDst  = 0;
-
-    size_t i = 0;
-    while (i < cwTmp)
-    {
-        /* Find  zero symbol (end of string). */
-        for (; i < cwTmp && pcwszSrc[i] != 0; i++)
-            ;
-
-        /* Convert found string. */
-        char  *psz = NULL;
-        size_t cch = 0;
-        rc = RTUtf16ToUtf8Ex(pwTmp, cwTmp, &psz, pwTmp - pcwszSrc, &cch);
-        if (RT_FAILURE(rc))
-            break;
-
-        /* Append new substring. */
-        char *pchNew = (char *)RTMemRealloc(pchDst, cbDst + cch + 1);
-        if (!pchNew)
-        {
-            RTStrFree(psz);
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        pchDst = pchNew;
-        memcpy(pchDst + cbDst, psz, cch + 1);
-
-        RTStrFree(psz);
-
-        cbDst += cch + 1;
-
-        /* Skip zero symbols. */
-        for (; i < cwTmp && pcwszSrc[i] == 0; i++)
-            ;
-
-        /* Remember start of string. */
-        pwTmp += i;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        *ppszDst = pchDst;
-        *pcbDst  = cbDst;
-
-        return VINF_SUCCESS;
-    }
-
-    RTMemFree(pchDst);
-
-    return rc;
-}
-
-int ShClUtf16CalcNormalizedEolToCRLFLength(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
-{
-    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(pchLen, VERR_INVALID_POINTER);
-
-    AssertMsgReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER,
-                    ("Big endian UTF-16 not supported yet\n"), VERR_NOT_SUPPORTED);
-
-    size_t cLen = 0;
-
-    /* Don't copy the endian marker. */
-    size_t i = pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER ? 1 : 0;
-
-    /* Calculate the size of the destination text string. */
-    /* Is this Utf16 or Utf16-LE? */
-    for (; i < cwSrc; ++i, ++cLen)
-    {
-        /* Check for a single line feed */
-        if (   pcwszSrc[i] == VBOX_SHCL_LINEFEED
-            && (i == 0 || pcwszSrc[i - 1] != VBOX_SHCL_CARRIAGERETURN))
-        {
-            ++cLen;
-        }
-#ifdef RT_OS_DARWIN
-        /* Check for a single carriage return (MacOS) */
-        if (   pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN
-            && (i + 1 >= cwSrc || pcwszSrc[i + 1] != VBOX_SHCL_LINEFEED))
-        {
-            ++cLen;
-        }
-#endif
-        if (pcwszSrc[i] == 0)
-        {
-            /* Don't count this, as we do so below. */
-            break;
-        }
-    }
-
-    *pchLen = cLen;
-
-    return VINF_SUCCESS;
-}
-
-int ShClUtf16CRLFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
-{
-    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn(cwSrc, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pchLen, VERR_INVALID_POINTER);
-
-    AssertMsgReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER,
-                    ("Big endian UTF-16 not supported yet\n"), VERR_NOT_SUPPORTED);
-
-    size_t cLen = 0;
-
-    /* Calculate the size of the destination text string. */
-    /* Is this Utf16 or Utf16-LE? */
-    if (pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER)
-        cLen = 0;
-    else
-        cLen = 1;
-
-    for (size_t i = 0; i < cwSrc; ++i, ++cLen)
-    {
-        if (   (i + 1 < cwSrc)
-            && (pcwszSrc[i]     == VBOX_SHCL_CARRIAGERETURN)
-            && (pcwszSrc[i + 1] == VBOX_SHCL_LINEFEED))
-        {
-            ++i;
-        }
-        if (pcwszSrc[i] == 0)
-            break;
-    }
-
-    *pchLen = cLen;
-
-    return VINF_SUCCESS;
-}
-
-int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, size_t cwcDst)
-{
-    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(pu16Dst, VERR_INVALID_POINTER);
-    AssertReturn(cwcDst, VERR_INVALID_PARAMETER);
-
-    AssertMsgReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER,
-                    ("Big endian UTF-16 not supported yet\n"), VERR_NOT_SUPPORTED);
-
-    /* Don't copy the endian marker. */
-    size_t      offDst = 0;
-    for (size_t offSrc = pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER ? 1 : 0; offSrc < cwcSrc; ++offSrc, ++offDst)
-    {
-        /* Ensure more output space: */
-        if (offDst < cwcDst) { /* likely */ }
-        else return VERR_BUFFER_OVERFLOW;
-
-        /* Don't copy the null byte, as we add it below. */
-        if (pcwszSrc[offSrc] == 0)
-            break;
-
-        /* Check for newlines not preceded by carriage return: "\n" -> "\r\n";  but not "\r\n" to "\r\r\n"! */
-        if (   pcwszSrc[offSrc] == VBOX_SHCL_LINEFEED
-            && (offSrc == 0 || pcwszSrc[offSrc - 1] != VBOX_SHCL_CARRIAGERETURN))
-        {
-            pu16Dst[offDst++] = VBOX_SHCL_CARRIAGERETURN;
-
-            /* Ensure sufficient output space: */
-            if (offDst < cwcDst) { /* likely */ }
-            else return VERR_BUFFER_OVERFLOW;
-        }
-#ifdef RT_OS_DARWIN
-        /* Check for a carriage return not followed by newline (MacOS): "\r" -> "\n\r";  but not "\r\n" to "\r\n\n"! */
-        else if (   pcwszSrc[offSrc] == VBOX_SHCL_CARRIAGERETURN
-                 && (offSrc + 1 >= cwcSrc || pcwszSrc[offSrc + 1] != VBOX_SHCL_LINEFEED))
-        {
-            pu16Dst[offDst++] = VBOX_SHCL_CARRIAGERETURN;
-
-            /* Ensure more output space: */
-            if (offDst < cwcDst) { /* likely */ }
-            else return VERR_BUFFER_OVERFLOW;
-
-            /* Add line feed. */
-            pu16Dst[offDst] = VBOX_SHCL_LINEFEED;
-            continue;
-        }
-#endif
-        pu16Dst[offDst] = pcwszSrc[offSrc];
-    }
-
-    /* Add terminator. */
-    if (offDst < cwcDst)
-    {
-        pu16Dst[offDst] = 0;
-        return VINF_SUCCESS;
-    }
-    return VERR_BUFFER_OVERFLOW;
-}
-
-int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, size_t cwDst)
-{
-    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn(cwcSrc,      VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pu16Dst,  VERR_INVALID_POINTER);
-    AssertReturn(cwDst,       VERR_INVALID_PARAMETER);
-
-    AssertMsgReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER,
-                    ("Big endian UTF-16 not supported yet\n"), VERR_NOT_SUPPORTED);
-
-    /* Prepend the Utf16 byte order marker if it is missing. */
-    size_t cwDstPos;
-    if (pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER)
-    {
-        cwDstPos = 0;
-    }
-    else
-    {
-        pu16Dst[0] = VBOX_SHCL_UTF16LEMARKER;
-        cwDstPos = 1;
-    }
-
-    for (size_t i = 0; i < cwcSrc; ++i, ++cwDstPos)
-    {
-        if (pcwszSrc[i] == 0)
-            break;
-
-        if (cwDstPos == cwDst)
-            return VERR_BUFFER_OVERFLOW;
-
-        if (   (i + 1 < cwcSrc)
-            && (pcwszSrc[i]     == VBOX_SHCL_CARRIAGERETURN)
-            && (pcwszSrc[i + 1] == VBOX_SHCL_LINEFEED))
-        {
-            ++i;
-        }
-
-        pu16Dst[cwDstPos] = pcwszSrc[i];
-    }
-
-    if (cwDstPos == cwDst)
-        return VERR_BUFFER_OVERFLOW;
-
-    /* Add terminating zero. */
-    pu16Dst[cwDstPos] = 0;
-
-    return VINF_SUCCESS;
-}
-
-int ShClDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDest, size_t *pcbDest)
-{
-    AssertPtrReturn(pvSrc,   VERR_INVALID_POINTER);
-    AssertReturn(cbSrc,      VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppvDest, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbDest, VERR_INVALID_POINTER);
-
-    PBMPWIN3XINFOHDR coreHdr = (PBMPWIN3XINFOHDR)pvSrc;
-    /** @todo Support all the many versions of the DIB headers. */
-    if (   cbSrc < sizeof(BMPWIN3XINFOHDR)
-        || RT_LE2H_U32(coreHdr->cbSize) < sizeof(BMPWIN3XINFOHDR)
-        || RT_LE2H_U32(coreHdr->cbSize) != sizeof(BMPWIN3XINFOHDR))
-    {
-        return VERR_INVALID_PARAMETER;
-    }
-
-    size_t offPixel = sizeof(BMPFILEHDR)
-                    + RT_LE2H_U32(coreHdr->cbSize)
-                    + RT_LE2H_U32(coreHdr->cClrUsed) * sizeof(uint32_t);
-    if (cbSrc < offPixel)
-        return VERR_INVALID_PARAMETER;
-
-    size_t cbDst = sizeof(BMPFILEHDR) + cbSrc;
-
-    void *pvDest = RTMemAlloc(cbDst);
-    if (!pvDest)
-        return VERR_NO_MEMORY;
-
-    PBMPFILEHDR fileHdr = (PBMPFILEHDR)pvDest;
-
-    fileHdr->uType       = BMP_HDR_MAGIC;
-    fileHdr->cbFileSize  = (uint32_t)RT_H2LE_U32(cbDst);
-    fileHdr->Reserved1   = 0;
-    fileHdr->Reserved2   = 0;
-    fileHdr->offBits     = (uint32_t)RT_H2LE_U32(offPixel);
-
-    memcpy((uint8_t *)pvDest + sizeof(BMPFILEHDR), pvSrc, cbSrc);
-
-    *ppvDest = pvDest;
-    *pcbDest = cbDst;
-
-    return VINF_SUCCESS;
-}
-
-int ShClBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest, size_t *pcbDest)
-{
-    AssertPtrReturn(pvSrc,   VERR_INVALID_POINTER);
-    AssertReturn(cbSrc,      VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppvDest, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbDest, VERR_INVALID_POINTER);
-
-    PBMPFILEHDR pBmpHdr = (PBMPFILEHDR)pvSrc;
-    if (   cbSrc < sizeof(BMPFILEHDR)
-        || pBmpHdr->uType != BMP_HDR_MAGIC
-        || RT_LE2H_U32(pBmpHdr->cbFileSize) != cbSrc)
-    {
-        return VERR_INVALID_PARAMETER;
-    }
-
-    *ppvDest = ((uint8_t *)pvSrc) + sizeof(BMPFILEHDR);
-    *pcbDest = cbSrc - sizeof(BMPFILEHDR);
-
-    return VINF_SUCCESS;
 }
 
 #ifdef LOG_ENABLED
@@ -1297,20 +823,19 @@ char *ShClFormatsToStrA(SHCLFORMATS fFormats)
 *********************************************************************************************************************************/
 
 /**
- * Returns (mutable) data of a cache entry.
+ * Return the log2 of @a uFmt.
  *
- * @param   pCacheEntry         Cache entry to return data for.
- * @param   pvData              Where to return the (mutable) data pointer.
- * @param   pcbData             Where to return the data size.
+ * @returns Bit number (0-based) corresponding to @a uFmt.  Will assert if
+ *          multiple formats present (first is returned) or if zero (-1 is
+ *          returned).
+ * @param   uFmt                Single VBox format.
  */
-void ShClCacheEntryGet(PSHCLCACHEENTRY pCacheEntry, void **pvData, size_t *pcbData)
+VBGH_DECL(int) ShClFormatToBitNo(SHCLFORMAT uFmt)
 {
-    AssertPtrReturnVoid(pCacheEntry);
-    AssertPtrReturnVoid(pvData);
-    AssertReturnVoid(pcbData);
-
-    *pvData  = pCacheEntry->pvData;
-    *pcbData = pCacheEntry->cbData;
+    AssertReturn(uFmt, -1);
+    AssertMsg(RT_IS_POWER_OF_TWO(uFmt), ("%#x\n", uFmt));
+    AssertCompile(sizeof(uint32_t) == sizeof(uFmt));
+    return (int)ASMBitFirstSetU32(uFmt) - 1;
 }
 
 /**
@@ -1325,7 +850,8 @@ static int shClCacheEntryInit(PSHCLCACHEENTRY pCacheEntry, const void *pvData, s
 {
     AssertReturn(RT_VALID_PTR(pvData) || cbData == 0, VERR_INVALID_PARAMETER);
 
-    RT_BZERO(pCacheEntry, sizeof(SHCLCACHEENTRY));
+    pCacheEntry->cbData = 0;
+    pCacheEntry->pvData = NULL;
 
     if (pvData)
     {
@@ -1349,11 +875,11 @@ DECLINLINE(bool) shClCacheEntryIsValid(PSHCLCACHEENTRY pCacheEntry)
 }
 
 /**
- * Destroys a cache entry.
+ * Re-initializes a cache entry, freeing any data kept there.
  *
- * @param   pCacheEntry         Cache entry to destroy.
+ * @param   pCacheEntry         Cache entry to re-init.
  */
-DECLINLINE(void) shClCacheEntryDestroy(PSHCLCACHEENTRY pCacheEntry)
+DECLINLINE(void) shClCacheEntryReInit(PSHCLCACHEENTRY pCacheEntry)
 {
     if (pCacheEntry->pvData)
     {
@@ -1362,6 +888,8 @@ DECLINLINE(void) shClCacheEntryDestroy(PSHCLCACHEENTRY pCacheEntry)
         pCacheEntry->pvData = NULL;
         pCacheEntry->cbData = 0;
     }
+    else
+        Assert(pCacheEntry->cbData == 0);
 }
 
 /**
@@ -1369,14 +897,12 @@ DECLINLINE(void) shClCacheEntryDestroy(PSHCLCACHEENTRY pCacheEntry)
  *
  * @param   pCache              Cache to init.
  */
-void ShClCacheInit(PSHCLCACHE pCache)
+VBGH_DECL(void) ShClCacheInit(PSHCLCACHE pCache)
 {
     AssertPtrReturnVoid(pCache);
 
-    RT_BZERO(pCache, sizeof(SHCLCACHE));
-
-    for (size_t i = 0; i < RT_ELEMENTS(pCache->aEntries); i++)
-        shClCacheEntryInit(&pCache->aEntries[i], NULL, 0);
+    RT_ZERO(*pCache);
+    pCache->u32Magic = SHCLCACHE_MAGIC;
 }
 
 /**
@@ -1384,24 +910,24 @@ void ShClCacheInit(PSHCLCACHE pCache)
  *
  * @param   pCache              Cache to destroy entries for.
  */
-DECLINLINE(void) shClCacheDestroyEntries(PSHCLCACHE pCache)
+DECLINLINE(void) shClCacheReInitAllEntries(PSHCLCACHE pCache)
 {
     for (size_t i = 0; i < RT_ELEMENTS(pCache->aEntries); i++)
-        shClCacheEntryDestroy(&pCache->aEntries[i]);
+        shClCacheEntryReInit(&pCache->aEntries[i]);
 }
 
 /**
- * Destroys a cache.
+ * Terminates (uninitializes) a cache.
  *
  * @param   pCache              Cache to destroy.
  */
-void ShClCacheDestroy(PSHCLCACHE pCache)
+VBGH_DECL(void) ShClCacheTerm(PSHCLCACHE pCache)
 {
     AssertPtrReturnVoid(pCache);
+    AssertMsgReturnVoid(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic));
+    pCache->u32Magic = ~SHCLCACHE_MAGIC;
 
-    shClCacheDestroyEntries(pCache);
-
-    RT_BZERO(pCache, sizeof(SHCLCACHE));
+    shClCacheReInitAllEntries(pCache);
 }
 
 /**
@@ -1409,11 +935,12 @@ void ShClCacheDestroy(PSHCLCACHE pCache)
  *
  * @param   pCache              Cache to invalidate.
  */
-void ShClCacheInvalidate(PSHCLCACHE pCache)
+VBGH_DECL(void) ShClCacheInvalidate(PSHCLCACHE pCache)
 {
     AssertPtrReturnVoid(pCache);
+    AssertMsgReturnVoid(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic));
 
-    shClCacheDestroyEntries(pCache);
+    shClCacheReInitAllEntries(pCache);
 }
 
 /**
@@ -1422,11 +949,14 @@ void ShClCacheInvalidate(PSHCLCACHE pCache)
  * @param   pCache              Cache to invalidate.
  * @param   uFmt                Format to invalidate entry for.
  */
-void ShClCacheInvalidateEntry(PSHCLCACHE pCache, SHCLFORMAT uFmt)
+VBGH_DECL(void) ShClCacheInvalidateEntry(PSHCLCACHE pCache, SHCLFORMAT uFmt)
 {
     AssertPtrReturnVoid(pCache);
-    AssertReturnVoid(uFmt < VBOX_SHCL_FMT_MAX);
-    shClCacheEntryDestroy(&pCache->aEntries[uFmt]);
+    AssertMsgReturnVoid(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic));
+    int const idxFmt = ShClFormatToBitNo(uFmt);
+    AssertMsgReturnVoid((unsigned)idxFmt < RT_ELEMENTS(pCache->aEntries), ("%#x/%d\n", uFmt, idxFmt));
+
+    shClCacheEntryReInit(&pCache->aEntries[idxFmt]);
 }
 
 /**
@@ -1436,16 +966,52 @@ void ShClCacheInvalidateEntry(PSHCLCACHE pCache, SHCLFORMAT uFmt)
  * @param   pCache              Cache to get entry for.
  * @param   uFmt                Format to get entry for.
  */
-PSHCLCACHEENTRY ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt)
+VBGH_DECL(PSHCLCACHEENTRY) ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt)
 {
-    AssertReturn(uFmt < VBOX_SHCL_FMT_MAX, NULL);
-    return shClCacheEntryIsValid(&pCache->aEntries[uFmt]) ? &pCache->aEntries[uFmt] : NULL;
+    AssertPtrReturn(pCache, NULL);
+    AssertMsgReturn(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic), NULL);
+    int const idxFmt = ShClFormatToBitNo(uFmt);
+    AssertMsgReturn((unsigned)idxFmt < RT_ELEMENTS(pCache->aEntries), ("%#x/%d\n", uFmt, idxFmt), NULL);
+
+    return shClCacheEntryIsValid(&pCache->aEntries[idxFmt]) ? &pCache->aEntries[idxFmt] : NULL;
+}
+
+/**
+ * Enteres a clipboard format into the cache before the data is read, returning
+ * a buffer for the user to fill.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_ALREADY_EXISTS if the cache entry is not empty.
+ * @param   pCache              Cache to set data for.
+ * @param   uFmt                Clipboard format to set data for.
+ * @param   cbData              Size (in bytes) of data to prep for.
+ * @param   ppvData             Where to return the buffer (zeroed) prepared for
+ *                              the data.  Caller must fill this.
+ */
+VBGH_DECL(int) ShClCachePrep(PSHCLCACHE pCache, SHCLFORMAT uFmt, size_t cbData, void **ppvData)
+{
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
+    AssertMsgReturn(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic), VERR_INVALID_MAGIC);
+    int const idxFmt = ShClFormatToBitNo(uFmt);
+    AssertMsgReturn((unsigned)idxFmt < RT_ELEMENTS(pCache->aEntries), ("%#x/%d\n", uFmt, idxFmt), VERR_INVALID_PARAMETER);
+    /* must be empty */
+    AssertReturn(!shClCacheEntryIsValid(&pCache->aEntries[idxFmt]), VERR_ALREADY_EXISTS);
+
+    pCache->aEntries[idxFmt].pvData = *ppvData = RTMemAllocZ(RT_MAX(cbData, 1));
+    if (pCache->aEntries[idxFmt].pvData)
+    {
+        pCache->aEntries[idxFmt].cbData = cbData;
+        return VINF_SUCCESS;
+    }
+    pCache->aEntries[idxFmt].cbData = 0;
+    return VERR_NO_MEMORY;
 }
 
 /**
  * Sets data to cache for a specific clipboard format, internal version.
  *
  * @returns VBox status code.
+ * @retval  VERR_ALREADY_EXISTS if the cache entry is not empty.
  * @param   pCache              Cache to set data for.
  * @param   uFmt                Clipboard format to set data for.
  * @param   pvData              Data to set.
@@ -1453,28 +1019,33 @@ PSHCLCACHEENTRY ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt)
  */
 DECLINLINE(int) shClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData)
 {
-    AssertReturn(uFmt < VBOX_SHCL_FMT_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(shClCacheEntryIsValid(&pCache->aEntries[uFmt]) == false, VERR_ALREADY_EXISTS);
+    AssertPtr(pCache);
+    int const idxFmt = ShClFormatToBitNo(uFmt);
+    AssertMsgReturn((unsigned)idxFmt < RT_ELEMENTS(pCache->aEntries), ("%#x/%d\n", uFmt, idxFmt), VERR_INVALID_PARAMETER);
 
-    return shClCacheEntryInit(&pCache->aEntries[uFmt], pvData, cbData);
+    /* must be empty */
+    AssertReturn(!shClCacheEntryIsValid(&pCache->aEntries[idxFmt]), VERR_ALREADY_EXISTS);
+
+    return shClCacheEntryInit(&pCache->aEntries[idxFmt], pvData, cbData);
 }
 
 /**
  * Sets data to cache for a specific clipboard format.
  *
  * @returns VBox status code.
+ * @retval  VERR_ALREADY_EXISTS if the cache entry is not empty.
  * @param   pCache              Cache to set data for.
  * @param   uFmt                Clipboard format to set data for.
  * @param   pvData              Data to set.
  * @param   cbData              Size (in bytes) of data to set.
  */
-int ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData)
+VBGH_DECL(int) ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData)
 {
     AssertPtrReturn(pCache, VERR_INVALID_POINTER);
-
+    AssertMsgReturn(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic), VERR_INVALID_MAGIC);
     if (!pvData) /* Nothing to cache? */
         return VINF_SUCCESS;
-
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
     return shClCacheSet(pCache, uFmt, pvData, cbData);
@@ -1491,27 +1062,31 @@ int ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t 
  * @param   pvData              Data to set.
  * @param   cbData              Size (in bytes) of data to set.
  */
-int ShClCacheSetMultiple(PSHCLCACHE pCache, SHCLFORMATS uFmts, const void *pvData, size_t cbData)
+VBGH_DECL(int) ShClCacheSetMultiple(PSHCLCACHE pCache, SHCLFORMATS uFmts, const void *pvData, size_t cbData)
 {
     AssertPtrReturn(pCache, VERR_INVALID_POINTER);
-
+    AssertMsgReturn(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic), VERR_INVALID_MAGIC);
     if (!pvData) /* Nothing to cache? */
         return VINF_SUCCESS;
-
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
-
     SHCLFORMATS uFmtsLeft = uFmts;
     while (uFmtsLeft)
     {
-        SHCLFORMAT  uFmt        = VBOX_SHCL_FMT_NONE;
-         void *pvConv = NULL;
-        size_t cbConv = 0;
+        void       *pvConv = NULL;
+        size_t      cbConv = 0;
+        SHCLFORMAT  uFmt;
         if (uFmtsLeft & VBOX_SHCL_FMT_UNICODETEXT)
         {
             uFmt = VBOX_SHCL_FMT_UNICODETEXT;
 
+            /** @todo r=bird: This is a terrible way of detecting UTF-8.  The little endian
+             * UTF-16 rending of any 7-bit unicode point is a valid UTF-8 with length 1!
+             * This nonsense probably just happens to work because all the input is UTF-8 or
+             * ASCII. */
+            AssertMsgFailed(("See @todo!\n"));
             rc = RTStrValidateEncoding((const char *)pvData);
             if (RT_SUCCESS(rc))
             {
@@ -1547,3 +1122,57 @@ int ShClCacheSetMultiple(PSHCLCACHE pCache, SHCLFORMATS uFmts, const void *pvDat
     return rc;
 }
 
+/**
+ * Compares the content of two caches.
+ *
+ * @returns true if they have the same content, false if not.
+ * @param   pCache              The first cache.
+ * @param   pOtherCache         The second cache.
+ */
+VBGH_DECL(bool) ShClCacheEquals(SHCLCACHE const *pCache, SHCLCACHE const *pOtherCache)
+{
+    AssertPtrReturn(pCache, false);
+    AssertMsgReturn(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic), false);
+    AssertPtrReturn(pOtherCache, false);
+    AssertMsgReturn(pOtherCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pOtherCache->u32Magic), false);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pCache->aEntries); i++)
+        if (pCache->aEntries[i].cbData != pOtherCache->aEntries[i].cbData)
+            return false;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pCache->aEntries); i++)
+        if (   pCache->aEntries[i].cbData > 0
+            && memcmp(pCache->aEntries[i].pvData, pOtherCache->aEntries[i].pvData, pCache->aEntries[i].cbData) != 0)
+            return false;
+
+    return true;
+}
+
+
+/**
+ * Transfers the content of @a pOtherCache into @a pCache, resetting the former.
+ *
+ * The buffers are simply moved from one cache to the other, no new allocations
+ * or data copying takes place here.
+ *
+ * @returns VBox status code.
+ * @param   pCache              The destination cache.
+ * @param   pOtherCache         The source cache.
+ */
+VBGH_DECL(int) ShClCacheTransferAll(PSHCLCACHE pCache, PSHCLCACHE pOtherCache)
+{
+    AssertPtrReturn(pCache, false);
+    AssertMsgReturn(pCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pCache->u32Magic), false);
+    AssertPtrReturn(pOtherCache, false);
+    AssertMsgReturn(pOtherCache->u32Magic == SHCLCACHE_MAGIC, ("%#x\n", pOtherCache->u32Magic), false);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pCache->aEntries); i++)
+    {
+        shClCacheEntryReInit(&pCache->aEntries[i]);
+        pCache->aEntries[i].cbData = pOtherCache->aEntries[i].cbData;
+        pCache->aEntries[i].pvData = pOtherCache->aEntries[i].pvData;
+        pOtherCache->aEntries[i].cbData = 0;
+        pOtherCache->aEntries[i].pvData = NULL;
+    }
+    return VINF_SUCCESS;
+}

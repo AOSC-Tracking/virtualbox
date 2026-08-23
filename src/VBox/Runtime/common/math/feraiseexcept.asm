@@ -186,3 +186,4 @@ g_r32Tiny:
         dd      1.0e-37
 %endif
 
+MARK_OBJECT_RETPOLINE_SAFE

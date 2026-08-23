@@ -56,6 +56,7 @@ BEGINPROC_RAW   __allshl
         shld    edx, eax, cl
         shl     eax, cl
         ret
+        int3
 
 .shift_32_or_more:
         test    cl, ~63
@@ -67,9 +68,11 @@ BEGINPROC_RAW   __allshl
 .return_zero_eax:
         xor     eax, eax
         ret
+        int3
 
 .shift_64_or_more:
         xor     edx, edx
         jmp     .return_zero_eax
 ENDPROC_RAW     __allshl
 
+MARK_OBJECT_RETPOLINE_SAFE

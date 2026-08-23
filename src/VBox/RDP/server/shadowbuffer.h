@@ -98,6 +98,7 @@ void shadowBufferOrder (unsigned uScreenId, void *pdata, uint32_t cbdata);
 
 void shadowBufferQueryRect (unsigned uScreenId, RGNRECT *prect);
 
+bool shadowBufferAreOrderCoordsValid(unsigned uScreenId, int32_t x, int32_t y, uint32_t w, uint32_t h);
 void shadowBufferTransformRect (unsigned uScreenId, RGNRECT *prect);
 void shadowBufferTransformRectGeneric (unsigned uScreenId, RGNRECT *prect, unsigned w, unsigned h);
 void shadowBufferTransformWidthHeight(unsigned uScreenId, unsigned *pw, unsigned *ph);

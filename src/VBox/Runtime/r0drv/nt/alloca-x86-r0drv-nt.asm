@@ -67,3 +67,4 @@ BEGINPROC _alloca_probe_16
         jmp     [eax]
 ENDPROC _alloca_probe_16
 
+MARK_OBJECT_RETPOLINE_SAFE  ;; @todo retpoline: _alloc_probe_16 is doing an indirect call...

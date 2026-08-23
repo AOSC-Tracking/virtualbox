@@ -69,3 +69,4 @@ RT_BEGINPROC ASMSerializeInstructionIRet
 %endif
 ENDPROC            ASMSerializeInstructionIRet
 
+MARK_OBJECT_RETPOLINE_SAFE

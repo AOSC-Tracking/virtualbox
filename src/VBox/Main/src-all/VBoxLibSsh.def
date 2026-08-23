@@ -28,7 +28,10 @@
 LIBRARY VBoxLibSsh
 EXPORTS
     ssh_key_free
-    ssh_pki_generate
+    ssh_pki_ctx_free
+    ssh_pki_ctx_new
+    ssh_pki_ctx_options_set
+    ssh_pki_generate_key
     ssh_pki_export_privkey_base64
     ssh_pki_export_privkey_file
     ssh_pki_export_pubkey_base64

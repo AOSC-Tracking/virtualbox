@@ -1,4 +1,4 @@
-/** $Id: clipboard-x11.cpp $ */
+/* $Id: clipboard-x11.cpp $ */
 /** @file
  * Guest Additions - X11 Shared Clipboard implementation.
  */
@@ -92,18 +92,7 @@ static DECLCALLBACK(int) vbclX11OnTransferInitializeCallback(PSHCLTRANSFERCALLBA
         }
 
         case SHCLTRANSFERDIR_FROM_REMOTE: /* H->G */
-        {
-            /* Retrieve the root entries as a first action, so that the transfer is ready to go
-             * once it gets registered to HTTP server. */
-            int rc2 = ShClTransferRootListRead(pTransfer);
-            if (   RT_SUCCESS(rc2)
-                /* As soon as we register the transfer with the HTTP server, the transfer needs to have its roots set. */
-                && ShClTransferRootsCount(pTransfer))
-            {
-                rc2 = ShClTransferHttpServerRegisterTransfer(&pCtx->X11.HttpCtx.HttpServer, pTransfer);
-            }
             break;
-        }
 
         default:
             break;
@@ -114,9 +103,44 @@ static DECLCALLBACK(int) vbclX11OnTransferInitializeCallback(PSHCLTRANSFERCALLBA
 }
 
 /**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
+ *
+ * @thread Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE) /* H->G */
+    {
+        /* The remote provider permits root-list reads only after the transfer
+         * has entered the INITIALIZED state, which happens before this callback. */
+        int rc = ShClTransferRootListRead(pTransfer);
+        if (RT_SUCCESS(rc))
+        {
+            if (ShClTransferRootsCount(pTransfer))
+                /* As soon as we register the transfer with the HTTP server, the transfer needs to have its roots set. */
+                rc = ShClTransferHttpServerRegisterTransfer(&pCtx->X11.HttpCtx.HttpServer, pTransfer);
+            else
+                rc = VERR_SHCLPB_NO_DATA;
+        }
+        if (RT_FAILURE(rc))
+            LogRel(("Shared Clipboard: Preparing HTTP transfer failed: %Rrc\n", rc));
+    }
+
+    LogFlowFuncLeave();
+}
+
+/**
  * @copydoc SHCLTRANSFERCALLBACKS::pfnOnRegistered
  *
- * This starts the HTTP server if not done yet and registers the transfer with it.
+ * This starts the HTTP server if not done yet.
  *
  * @thread Clipboard main thread.
  */
@@ -308,7 +332,7 @@ static DECLCALLBACK(int) vbclX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_
 }
 
 /**
- * Initializes the X11-specifc Shared Clipboard code.
+ * Initializes the X11-specific Shared Clipboard code.
  *
  * @returns VBox status code.
  */
@@ -316,7 +340,7 @@ int VBClX11ClipboardInit(void)
 {
     LogFlowFuncEnter();
 
-    int rc = ShClEventSourceCreate(&g_Ctx.EventSrc, 0 /* uID */);
+    int rc = ShClEventSourceInit(&g_Ctx.EventSrc, 0 /* uID */);
     AssertRCReturn(rc, rc);
 
     SHCLCALLBACKS Callbacks;
@@ -341,7 +365,7 @@ int VBClX11ClipboardInit(void)
     if (RT_FAILURE(rc))
     {
         VbglR3ClipboardDisconnectEx(&g_Ctx.CmdCtx);
-        ShClX11Destroy(&g_Ctx.X11);
+        ShClX11Term(&g_Ctx.X11);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -349,17 +373,17 @@ int VBClX11ClipboardInit(void)
 }
 
 /**
- * Destroys the X11-specifc Shared Clipboard code.
+ * Destroys the X11-specific Shared Clipboard code.
  *
  * @returns VBox status code.
  */
 int VBClX11ClipboardDestroy(void)
 {
-    return ShClEventSourceDestroy(&g_Ctx.EventSrc);
+    return ShClEventSourceTerm(&g_Ctx.EventSrc);
 }
 
 /**
- * The main loop of the X11-specifc Shared Clipboard code.
+ * The main loop of the X11-specific Shared Clipboard code.
  *
  * @returns VBox status code.
  *
@@ -385,6 +409,7 @@ int VBClX11ClipboardMain(void)
     pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialize   = vbclX11OnTransferInitializeCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialized  = vbclX11OnTransferInitializedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnRegistered   = vbclX11OnTransferRegisteredCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnUnregistered = vbclX11OnTransferUnregisteredCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted    = vbclX11OnTransferCompletedCallback;

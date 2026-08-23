@@ -97,6 +97,8 @@ void UIApplianceImportEditorWidget::setAppliance(const CAppliance &comAppliance)
     foreach (const QString &strText, warnings)
         m_pTextEditWarning->append("- " + strText);
     m_pPaneWarning->setVisible(fWarningsEnabled);
+    if (fWarningsEnabled)
+        emit importWarningsShown();
 }
 
 void UIApplianceImportEditorWidget::prepareImport()

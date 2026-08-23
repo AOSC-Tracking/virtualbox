@@ -91,3 +91,4 @@ BEGINPROC VMMTrashVolatileXMMRegs
         ret
 ENDPROC   VMMTrashVolatileXMMRegs
 
+MARK_OBJECT_RETPOLINE_SAFE

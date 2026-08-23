@@ -86,6 +86,7 @@ RT_NOCRT_BEGINPROC exp2f
 %endif
         fldz                            ; Signed, so return zero as that's a good approximation for 2**-Inf.
         jmp     .return_val
+        int3
 .input_ok:
 
         ;
@@ -115,3 +116,4 @@ RT_NOCRT_BEGINPROC exp2f
         ret
 ENDPROC   RT_NOCRT(exp2f)
 
+MARK_OBJECT_RETPOLINE_SAFE

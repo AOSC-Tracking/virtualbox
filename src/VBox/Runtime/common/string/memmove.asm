@@ -96,6 +96,7 @@ RT_NOCRT_BEGINPROC memmove
         cld
         rep movsb
         jmp .epilog
+        int3
 
 %else ; disabled - it seems to work, but play safe for now.
         ;sub     xAX, xSI
@@ -152,6 +153,7 @@ RT_NOCRT_BEGINPROC memmove
         pop     edi
 %endif
         ret
+        int3
 
         ;
         ; Slow/simple backward copy.
@@ -167,3 +169,4 @@ ALIGNCODE(16)
         jmp .epilog
 ENDPROC RT_NOCRT(memmove)
 
+MARK_OBJECT_RETPOLINE_SAFE

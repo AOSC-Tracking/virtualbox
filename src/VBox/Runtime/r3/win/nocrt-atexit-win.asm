@@ -42,3 +42,4 @@ BEGINPROC atexit
         jmp     NAME(nocrt_atexit)
 ENDPROC   atexit
 
+MARK_OBJECT_RETPOLINE_SAFE

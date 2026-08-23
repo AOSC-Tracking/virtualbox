@@ -40,6 +40,11 @@
 /not-some-systems/d
 
 #
+# Check the external side of function aliases.
+#
+s/=[^ ;]*//
+
+#
 # Remove comments and space. Skip empty lines.
 #
 s/;.*$//g
@@ -54,7 +59,8 @@ s/[[:space:]][[:space:]]*$//g
 s/^EXPORTS$//
 /^$/b end
 
-/^?/b cpp_export
+/^?.*[[:space:]]DATA$/b cpp_data_export
+/^?.*/b cpp_export
 /[[:space:]]DATA$/b data
 
 #
@@ -72,10 +78,14 @@ s/^\(.*\)[[:space:]]*DATA$/EXTERN_IMP2 \1/
 b end
 
 #
-# Mangled C++ .
+# Mangled C++ code and data.
 #
 :cpp_export
 s/^\(.*\)$/extern __imp_\1/
+b end
+
+:cpp_data_export
+s/^\(.*\)[[:space:]]DATA$/extern __imp_\1/
 b end
 
 }

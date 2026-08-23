@@ -176,7 +176,7 @@ static int vbclClipboardGuestPasteText(PasteboardRef pPasteboard, void *pData, u
 
     /* Convert END-OF-LINE */
     size_t cwcDst;
-    int rc = ShClUtf16CRLFLenUtf8((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), &cwcDst);
+    int rc = ShClHlpUtf16CRLFToLFLen((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), &cwcDst);
     AssertRCReturn(rc, rc);
 
     cwcDst++; /* Add space for terminator. */
@@ -184,7 +184,7 @@ static int vbclClipboardGuestPasteText(PasteboardRef pPasteboard, void *pData, u
     PRTUTF16 pwszDst = (RTUTF16 *)RTMemAlloc(cwcDst * sizeof(RTUTF16));
     AssertPtrReturn(pwszDst, VERR_NO_MEMORY);
 
-    rc = ShClConvUtf16CRLFToLF((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), pwszDst, cwcDst);
+    rc = ShClHlpConvUtf16CRLFToLF((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), pwszDst, cwcDst);
     if (RT_SUCCESS(rc))
     {
         /* Paste UTF16 */
@@ -192,8 +192,9 @@ static int vbclClipboardGuestPasteText(PasteboardRef pPasteboard, void *pData, u
         if (RT_SUCCESS(rc))
         {
             /* Paste UTF8 */
+            /** @todo r=bird: pwszDst has a BOM... */
             char *pszDst;
-            rc = RTUtf16ToUtf8((PRTUTF16)pwszDst, &pszDst);
+            rc = RTUtf16ToUtf8(pwszDst, &pszDst);
             if (RT_SUCCESS(rc))
             {
                 rc = vbclClipboardGuestPasteData(pPasteboard, (UInt8 *)pszDst, strlen(pszDst), kUTTypeUTF8PlainText, false);
@@ -227,7 +228,7 @@ static int vbclClipboardGuestPastePicture(PasteboardRef pPasteboard, void *pData
     /* Skip zero-sized buffer */
     AssertReturn(cbDataSize > 0, VINF_SUCCESS);
 
-    rc = ShClDibToBmp(pData, cbDataSize, &pBmp, &cbBmpSize);
+    rc = ShClHlpDibToBmp(pData, cbDataSize, &pBmp, &cbBmpSize);
     AssertReturn(RT_SUCCESS(rc), rc);
 
     rc = vbclClipboardGuestPasteData(pPasteboard, (UInt8 *)pBmp, cbBmpSize, kUTTypeBMP, true);

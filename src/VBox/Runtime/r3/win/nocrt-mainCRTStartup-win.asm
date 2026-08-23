@@ -42,3 +42,5 @@ BEGINPROC mainCRTStartup
         jmp     NAME(CustomMainEntrypoint)
 ENDPROC   mainCRTStartup
 
+
+MARK_OBJECT_RETPOLINE_SAFE

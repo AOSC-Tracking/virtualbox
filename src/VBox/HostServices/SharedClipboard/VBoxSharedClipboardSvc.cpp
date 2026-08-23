@@ -312,7 +312,7 @@ static void shClSvcClientMsgQueueReset(PSHCLCLIENT pClient);
 static int  shClSvcClientMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
 
 static int  shClSvcClientStateInit(PSHCLCLIENTSTATE pState, uint32_t uClientID);
-static int  shClSvcClientStateDestroy(PSHCLCLIENTSTATE pState);
+static int  shClSvcClientStateTerm(PSHCLCLIENTSTATE pState);
 static void shclSvcClientStateReset(PSHCLCLIENTSTATE pState);
 
 
@@ -609,7 +609,7 @@ int ShClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
     if (RT_SUCCESS(rc))
     {
         /* Create the client's own event source. */
-        rc = ShClEventSourceCreate(&pClient->EventSrc, 0 /* ID, ignored */);
+        rc = ShClEventSourceInit(&pClient->EventSrc, 0 /* ID, ignored */);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("[Client %RU32] Using event source %RU32\n", uClientID, pClient->EventSrc.uID));
@@ -663,8 +663,8 @@ static void shClSvcClientDestroy(PSHCLCLIENT pClient)
     ShClTransferCtxDestroy(&pClient->Transfers.Ctx);
 #endif
 
-    ShClEventSourceDestroy(&pClient->EventSrc);
-    shClSvcClientStateDestroy(&pClient->State);
+    ShClEventSourceTerm(&pClient->EventSrc);
+    shClSvcClientStateTerm(&pClient->State);
 
     ShClSvcClientUnlock(pClient);
 
@@ -1492,7 +1492,7 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
     int rc = VINF_SUCCESS;
     PSHCLEVENTPAYLOAD pPayload = NULL;
     if (cbData > 0)
-        rc = ShClPayloadAlloc(idEvent, pvData, cbData, &pPayload);
+        rc = ShClPayloadCreateDupData(idEvent, pvData, cbData, &pPayload);
 
     /*
      * Signal the event.
@@ -1501,7 +1501,7 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
     if (RT_FAILURE(rc2))
     {
         rc = rc2;
-        ShClPayloadFree(pPayload);
+        ShClPayloadDestroy(pPayload);
         LogRel(("Shared Clipboard: Signalling of guest clipboard data to the host failed: %Rrc\n", rc));
     }
 
@@ -1834,12 +1834,13 @@ static int shClSvcClientMsgDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHG
             pClient->State.POD.uFormat = uFormat;
     }
 
-#ifdef LOG_ENABLED
-    char *pszFmt = ShClFormatsToStrA(uFormat);
-    AssertPtrReturn(pszFmt, VERR_NO_MEMORY);
-    LogRel2(("Shared Clipboard: Guest wants to read %RU32 bytes host clipboard data in format '%s'\n", cbData, pszFmt));
-    RTStrFree(pszFmt);
-#endif
+    if (LogRelIs2Enabled())
+    {
+        char *pszFmt = ShClFormatsToStrA(uFormat);
+        LogRel2(("Shared Clipboard: Guest wants to read %RU32 bytes host clipboard data in format %#x/'%s'\n",
+                 cbData, uFormat, pszFmt ? pszFmt : "<alloc failed>"));
+        RTStrFree(pszFmt);
+    }
 
     /*
      * Do the reading.
@@ -2036,14 +2037,13 @@ static int shClSvcClientMsgDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXH
             pClient->State.POD.uFormat = uFormat;
     }
 
-#ifdef LOG_ENABLED
-    char *pszFmt = ShClFormatsToStrA(uFormat);
-    if (pszFmt)
+    if (LogRelIs2Enabled())
     {
-        LogRel2(("Shared Clipboard: Guest writes %RU32 bytes clipboard data in format '%s' to host\n", cbData, pszFmt));
+        char *pszFmt = ShClFormatsToStrA(uFormat);
+        LogRel2(("Shared Clipboard: Guest writes %RU32 bytes clipboard data in format %#x/'%s' to host\n",
+                 cbData, uFormat, pszFmt ? pszFmt : "<alloc failed>"));
         RTStrFree(pszFmt);
     }
-#endif
 
     /*
      * Write the data to the active host side clipboard.
@@ -2387,12 +2387,12 @@ static int shClSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClien
 }
 
 /**
- * Destroys a Shared Clipboard service's client state.
+ * Terminated (uninitializes) a Shared Clipboard service's client state.
  *
  * @returns VBox status code.
  * @param   pState              Client state to destroy.
  */
-static int shClSvcClientStateDestroy(PSHCLCLIENTSTATE pState)
+static int shClSvcClientStateTerm(PSHCLCLIENTSTATE pState)
 {
     LogFlowFuncEnter();
 
@@ -2850,7 +2850,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
                             memcpy(pvData, pPayload->pvData, RT_MIN(cbData, pPayload->cbData));
                             /** @todo r=andy How is this supposed to work wrt returning number of bytes read? */
 
-                            ShClPayloadFree(pPayload);
+                            ShClPayloadDestroy(pPayload);
                             pPayload = NULL;
                         }
                         else

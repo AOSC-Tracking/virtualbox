@@ -58,3 +58,4 @@ BEGINPROC_EXPORTED SUPR0TracerFireProbe
         jmp     xAX
 ENDPROC SUPR0TracerFireProbe
 
+MARK_OBJECT_RETPOLINE_SAFE ;; @todo retpoline: SUPR0TracerFireProbe makes an indirect call.

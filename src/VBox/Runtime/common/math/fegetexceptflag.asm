@@ -80,6 +80,7 @@ RT_NOCRT_BEGINPROC fegetexceptflag
         jz      .input_ok
         int3
         jmp     .return
+        int3
 .input_ok:
  %endif
 %endif
@@ -115,3 +116,4 @@ RT_NOCRT_BEGINPROC fegetexceptflag
         ret
 ENDPROC   RT_NOCRT(fegetexceptflag)
 
+MARK_OBJECT_RETPOLINE_SAFE

@@ -102,3 +102,4 @@ BEGINPROC rtNoCrtMathFma4
         ret
 ENDPROC   rtNoCrtMathFma4
 
+MARK_OBJECT_RETPOLINE_SAFE

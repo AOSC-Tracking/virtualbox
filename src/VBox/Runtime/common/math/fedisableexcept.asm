@@ -74,6 +74,7 @@ RT_NOCRT_BEGINPROC fedisableexcept
         jz      .input_ok
         int3
         jmp     .return
+        int3
 .input_ok:
 %endif
 
@@ -115,3 +116,4 @@ RT_NOCRT_BEGINPROC fedisableexcept
         ret
 ENDPROC   RT_NOCRT(fedisableexcept)
 
+MARK_OBJECT_RETPOLINE_SAFE

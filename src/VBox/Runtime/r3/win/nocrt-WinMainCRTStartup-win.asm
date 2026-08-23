@@ -42,3 +42,5 @@ BEGINPROC WinMainCRTStartup
         jmp     NAME(CustomMainEntrypoint)
 ENDPROC   WinMainCRTStartup
 
+
+MARK_OBJECT_RETPOLINE_SAFE

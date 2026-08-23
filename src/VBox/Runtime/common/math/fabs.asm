@@ -71,3 +71,4 @@ g_r64ClearSignMask:
         dd      0ffffffffh
         dd      07fffffffh
 
+MARK_OBJECT_RETPOLINE_SAFE

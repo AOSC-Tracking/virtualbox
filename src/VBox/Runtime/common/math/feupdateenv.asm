@@ -126,3 +126,4 @@ RT_NOCRT_BEGINPROC feupdateenv
         ret
 ENDPROC   RT_NOCRT(feupdateenv)
 
+MARK_OBJECT_RETPOLINE_SAFE

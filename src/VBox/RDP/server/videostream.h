@@ -47,6 +47,7 @@ typedef struct VIDEOSTREAMCALLBACKS
 {
     DECLR3CALLBACKMEMBER(bool, pfnVideoSourceStreamStart, (void *pvCallback, uint32_t u32SourceStreamId, const RGNRECT *prect, int64_t timeStart));
     DECLR3CALLBACKMEMBER(void, pfnVideoSourceStreamStop, (void *pvCallback, uint32_t u32SourceStreamId, const RGNRECT *prect));
+    DECLR3CALLBACKMEMBER(bool, pfnIsValidRect, (void *pvCallback, const RGNRECT *prect));
 } VIDEOSTREAMCALLBACKS;
 
 typedef struct VDCONTEXT VDCONTEXT;

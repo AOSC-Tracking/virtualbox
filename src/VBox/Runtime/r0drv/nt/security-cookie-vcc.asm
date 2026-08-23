@@ -138,3 +138,4 @@ BEGINPROC __security_init_cookie
         ret
 ENDPROC   __security_init_cookie
 
+MARK_OBJECT_RETPOLINE_SAFE

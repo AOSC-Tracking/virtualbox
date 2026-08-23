@@ -96,6 +96,7 @@ static DECLCALLBACK(void) VRDPUpdate (HVRDESERVER hServer,
 
     if (pServer)
     {
+#if 0 /* obsolete */
         if (cbUpdate > sizeof (VRDEORDERHDR))
         {
             /* The update includes VRDP order information. */
@@ -103,6 +104,8 @@ static DECLCALLBACK(void) VRDPUpdate (HVRDESERVER hServer,
             pServer->ProcessOutputUpdate (uScreenId, pvUpdate, cbUpdate);
         }
         else if (cbUpdate == sizeof (VRDEORDERHDR))
+#endif
+        if (cbUpdate == sizeof (VRDEORDERHDR))
         {
             /* This is just a bitmap update. */
             VRDPAPILOG(("%p, %d, %d (bitmap)\n", pServer, cbUpdate, sizeof (VRDEORDERHDR)));

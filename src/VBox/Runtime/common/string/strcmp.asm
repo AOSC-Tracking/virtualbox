@@ -99,6 +99,7 @@ RT_NOCRT_BEGINPROC strcmp
         add     psz1, 4
         add     psz2, 4
         jmp     .next
+        int3
 
 .equal:
 %ifdef RT_ARCH_X86
@@ -109,6 +110,7 @@ RT_NOCRT_BEGINPROC strcmp
 %endif
         xor     eax, eax
         ret
+        int3
 
 .not_equal:
         movzx   ecx, ah
@@ -123,3 +125,4 @@ RT_NOCRT_BEGINPROC strcmp
         ret
 ENDPROC RT_NOCRT(strcmp)
 
+MARK_OBJECT_RETPOLINE_SAFE

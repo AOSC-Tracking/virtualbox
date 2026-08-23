@@ -930,7 +930,8 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
                 break;
             }
 
-            /* vusbMsgSetup() may have reallocated pMsg */
+            /* vusbMsgSetup() may have reallocated just pMsg or the entire extra struct. */
+            pExtra = pPipe->pCtrl;
             pSetup = pExtra->pMsg;
 
             /* pre-buffer our output if it's device-to-host */

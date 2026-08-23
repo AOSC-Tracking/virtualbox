@@ -144,10 +144,10 @@ int vmsvga3dChangeMode(PVGASTATECC pThisCC);
 int vmsvga3dDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 int vmsvga3dDestroyScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 
-int vmsvga3dScreenUpdateFromSurface(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pDstScreen, SVGASignedRect const &dstRect,
+int vmsvga3dScreenUpdateFromSurface(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pDstScreen, SVGASignedRect const &dstRect,
                                     SVGA3dSurfaceImageId const &srcImage, SVGASignedRect const &srcRect,
                                     uint32_t cDstClipRects, SVGASignedRect *paDstClipRect);
-int vmsvga3dScreenUpdateFromScreenTarget(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pDstScreen, SVGA3dRect const &rect,
+int vmsvga3dScreenUpdateFromScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pDstScreen, SVGA3dRect const &rect,
                                          SVGA3dSurfaceImageId const &srcImage);
 void vmsvga3dProcessPendingTasks(PVGASTATE pThis, PVGASTATECC pThisCC);
 

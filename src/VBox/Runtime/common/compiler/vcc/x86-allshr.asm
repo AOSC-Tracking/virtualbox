@@ -56,6 +56,7 @@ BEGINPROC_RAW   __allshr
         shrd    eax, edx, cl
         sar     edx, cl
         ret
+        int3
 
 .shift_32_or_more:
         mov     eax, edx
@@ -67,9 +68,11 @@ BEGINPROC_RAW   __allshr
         and     cl, 31
         sar     eax, cl
         ret
+        int3
 
 .shift_64_or_more:
         mov     eax, edx
         ret
 ENDPROC_RAW     __allshr
 
+MARK_OBJECT_RETPOLINE_SAFE

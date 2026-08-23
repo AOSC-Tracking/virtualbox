@@ -44,3 +44,4 @@
 
 rtVccUnsignedDivision __aulldiv, 1
 
+MARK_OBJECT_RETPOLINE_SAFE

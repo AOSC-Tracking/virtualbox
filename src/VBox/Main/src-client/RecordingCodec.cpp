@@ -230,14 +230,17 @@ static DECLCALLBACK(int) recordingCodecVPXFinalize(PRECORDINGCODEC pCodec)
 /** @copydoc RECORDINGCODECOPS::pfnParseOptions */
 static DECLCALLBACK(int) recordingCodecVPXParseOptions(PRECORDINGCODEC pCodec, const com::Utf8Str &strOptions)
 {
+    PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
+
+    /* Screen recording must keep up with the display producer by default. */
+    pVPX->uEncoderDeadline = VPX_DL_REALTIME;
+
     size_t pos = 0;
     com::Utf8Str key, value;
     while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
     {
         if (key.compare("vc_quality", com::Utf8Str::CaseInsensitive) == 0)
         {
-            const PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
-
             if (value.compare("realtime", com::Utf8Str::CaseInsensitive) == 0)
                 pVPX->uEncoderDeadline = VPX_DL_REALTIME;
             else if (value.compare("good", com::Utf8Str::CaseInsensitive) == 0)

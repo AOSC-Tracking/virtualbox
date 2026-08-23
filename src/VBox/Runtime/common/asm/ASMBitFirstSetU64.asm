@@ -86,6 +86,7 @@ RT_BEGINPROC ASMBitFirstSetU64
         jc      .return
         inc     ax
         jmp     .next_bit
+        int3
 
 .return_zero:
         xor     ax, ax
@@ -103,6 +104,7 @@ RT_BEGINPROC ASMBitFirstSetU64
         jz      .return_zero
         inc     eax
         ret
+        int3
 
  %elif ARCH_BITS == 32
         ; Check the first dword then the 2nd one.
@@ -110,6 +112,7 @@ RT_BEGINPROC ASMBitFirstSetU64
         jnz     .check_2nd_dword
         inc     eax
         ret
+        int3
 .check_2nd_dword:
         bsf     eax, dword [esp + 4 + 4]
         jz      .return_zero
@@ -124,3 +127,4 @@ RT_BEGINPROC ASMBitFirstSetU64
 %endif
 ENDPROC ASMBitFirstSetU64
 
+MARK_OBJECT_RETPOLINE_SAFE

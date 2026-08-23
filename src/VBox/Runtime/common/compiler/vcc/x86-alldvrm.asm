@@ -74,6 +74,7 @@ BEGINPROC_RAW   __alldvrm
 
         ; Both positive, so same as unsigned division.
         jmp     __aulldvrm
+        int3
 
 
         ;
@@ -106,6 +107,7 @@ BEGINPROC_RAW   __alldvrm
 
         leave
         ret     10h
+        int3
 
 .negative_dividend:
         push    ebp
@@ -142,6 +144,7 @@ BEGINPROC_RAW   __alldvrm
 
         leave
         ret     10h
+        int3
 
 .negative_dividend_negative_divisor:
         ; negate both dividend (above) and divisor, do unsigned division, and negate the remainder.
@@ -158,3 +161,4 @@ BEGINPROC_RAW   __alldvrm
         jmp     .return_negated_remainder
 ENDPROC_RAW     __alldvrm
 
+MARK_OBJECT_RETPOLINE_SAFE

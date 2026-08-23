@@ -91,6 +91,7 @@ RT_NOCRT_BEGINPROC feclearexcept
         jne    .partial_mask
         fnclex
         jmp     .do_sse
+        int3
 
 .partial_mask:
         fnstenv [xBP - 20h]
@@ -119,3 +120,4 @@ RT_NOCRT_BEGINPROC feclearexcept
         ret
 ENDPROC   RT_NOCRT(feclearexcept)
 
+MARK_OBJECT_RETPOLINE_SAFE

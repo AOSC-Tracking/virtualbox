@@ -700,3 +700,10 @@ SUPR0DECL(void) SUPR0FpuEnd(uint32_t fBegin)
     Assert(fBegin == 0);
 }
 
+
+SUPR0DECL(void) SUPR0DispatchHostNmi(void)
+{
+    /** @todo FRED support when FreeBSD starts using it. */
+    __asm__ __volatile__ ("int $2\n\t" :::);
+}
+

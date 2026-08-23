@@ -843,9 +843,11 @@ if   !defined(VBOX_ONLY_DOCS) \
   endif
   ifn1of ($(KBUILD_TARGET), linux freebsd)
    VBoxDrv_SOURCES.x86   += \
-   	SUPDrvTracerA.asm
+   	SUPDrvTracerA.asm \
+   	SUPDrvA.asm
    VBoxDrv_SOURCES.amd64 += \
-   	SUPDrvTracerA.asm
+   	SUPDrvTracerA.asm \
+   	SUPDrvA.asm
    VBoxDrv_SOURCES.arm64 += \
    	SUPDrvTracerA-arm64.S
   endif

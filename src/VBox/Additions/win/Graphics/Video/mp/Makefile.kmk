@@ -106,7 +106,7 @@ ifdef VBOX_WITH_WDDM
  	$(VBOX_GRAPHICS_INCS)
 
  VBoxWddm_LDFLAGS.x86     += /Entry:DriverEntry@8
- VBoxWddm_LDFLAGS.amd64   += /Entry:DriverEntry
+ VBoxWddm_LDFLAGS.amd64   += /Entry:DriverEntry $(VBOX_VCC_LD_GUARD_RETPOLINE_IGNORE)
  VBoxWddm_LDFLAGS.arm64   += /Entry:DriverEntry
 
  VBoxWddm_SOURCES          = \

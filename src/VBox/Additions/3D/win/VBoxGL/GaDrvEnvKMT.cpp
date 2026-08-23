@@ -956,9 +956,19 @@ vboxDdiRender(GaKmtCallbacks *pKmtCallbacks,
         RenderData.Flags.PresentRedirected = fPresentRedirected;
 
         NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTRender(&RenderData);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status != STATUS_SUCCESS)
+        if (   fPresentRedirected
+            && (   Status == STATUS_GRAPHICS_PRESENT_OCCLUDED
+                || Status == STATUS_GRAPHICS_PRESENT_DENIED)
+           )
         {
+            /* "Nothing to present due to desktop occlusion"
+             * "Not able to present due to denial of desktop access"
+             * Treat as a success. RenderData.[p]New* are valid.
+             */
+        }
+        else if (Status != STATUS_SUCCESS)
+        {
+            AssertFailed();
             return false;
         }
 

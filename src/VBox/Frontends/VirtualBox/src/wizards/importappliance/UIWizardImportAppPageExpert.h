@@ -101,8 +101,14 @@ private slots:
     void sltHandleImportHDsAsVDICheckBoxChange();
     /** Handles translation event. */
     virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
+    void sltImportWarningShown();
 
 private:
+    enum ToolBoxPage
+    {
+        ToolBoxPage_Source = 0,
+        ToolBoxPage_Settings
+    };
 
     /** Holds whether default source should be Import from OCI. */
     bool     m_fImportFromOCIByDefault;

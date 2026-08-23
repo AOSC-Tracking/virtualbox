@@ -96,7 +96,7 @@ int main()
     RTThreadSleep(500);
 
     RTTEST_CHECK_RC_OK(hTest, ShClX11ThreadStop(&X11Ctx));
-    RTTEST_CHECK_RC_OK(hTest, ShClX11Destroy(&X11Ctx));
+    RTTEST_CHECK_RC_OK(hTest, ShClX11Term(&X11Ctx));
 
     return RTTestSummaryAndDestroy(hTest);
 }

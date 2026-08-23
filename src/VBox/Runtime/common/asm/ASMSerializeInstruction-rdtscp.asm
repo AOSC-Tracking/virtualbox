@@ -54,3 +54,4 @@ RT_BEGINPROC    ASMSerializeInstructionRdTscp
         ret
 ENDPROC         ASMSerializeInstructionRdTscp
 
+MARK_OBJECT_RETPOLINE_SAFE

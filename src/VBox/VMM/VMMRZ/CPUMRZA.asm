@@ -348,3 +348,4 @@ SEH64_END_PROLOGUE
         ret
 ENDPROC   cpumRZSaveGuestAvxRegisters
 
+MARK_OBJECT_RETPOLINE_SAFE

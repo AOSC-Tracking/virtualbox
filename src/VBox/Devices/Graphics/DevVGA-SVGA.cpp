@@ -1686,9 +1686,9 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
         VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[0];
         Assert(pScreen->idScreen == 0);
 
-        if (   pScreen->cWidth  == VMSVGA_VAL_UNINITIALIZED
-            || pScreen->cHeight == VMSVGA_VAL_UNINITIALIZED
-            || pScreen->cBpp    == VMSVGA_VAL_UNINITIALIZED)
+        if (   pThis->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
+            || pThis->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
+            || pThis->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
         {
             /* Do not apply the change if the guest has not finished updating registers.
              * This is necessary in order to make a full mode change.
@@ -1696,13 +1696,22 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
             return VINF_SUCCESS;
         }
 
+        ASSERT_GUEST_RETURN(pThis->svga.uWidth > 0 && pThis->svga.uWidth <= pThis->svga.u32MaxWidth, VERR_INVALID_STATE);
+        ASSERT_GUEST_RETURN(pThis->svga.uHeight > 0 && pThis->svga.uHeight <= pThis->svga.u32MaxHeight, VERR_INVALID_STATE);
+
+        /* Height can't exceed the available VRAM. */
+        uint32_t const cbPitch = pThis->svga.cbScanline
+                               ? pThis->svga.cbScanline
+                               : (uint32_t)pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
+        ASSERT_GUEST_RETURN(pThis->svga.uHeight <= pThis->vram_size / cbPitch, VERR_INVALID_STATE);
+
         pScreen->fDefined  = true;
         pScreen->fModified = true;
         pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET | SVGA_SCREEN_IS_PRIMARY;
         pScreen->xOrigin   = 0;
         pScreen->yOrigin   = 0;
         pScreen->offVRAM   = 0;
-        pScreen->cbPitch   = pThis->svga.cbScanline;
+        pScreen->cbPitch   = cbPitch;
         pScreen->cWidth    = pThis->svga.uWidth;
         pScreen->cHeight   = pThis->svga.uHeight;
         pScreen->cBpp      = pThis->svga.uBpp;
@@ -2034,7 +2043,6 @@ static void vmsvgaR3CursorMobId(PVGASTATE pThis, PVGASTATECC pThisCC)
         LogRelMax(16, ("VMSVGA: CURSOR_MOBID: Invalid mobid = %u (%#x). Ignoring request.\n", mobid, mobid));
     }
 }
-# endif /* VBOX_WITH_VMSVGA3D */
 
 
 /** Defines or frees a GMR.
@@ -2071,6 +2079,7 @@ static void vmsvgaR3GMRDescriptor(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGAGM
              idGMR, pGMRInfo->cDescriptors, pSVGAState->paGMR[idGMR].cbTotal, pGMRInfo->cPagesTotal));
     }
 }
+# endif /* VBOX_WITH_VMSVGA3D */
 
 #endif /* IN_RING3 */
 
@@ -3601,12 +3610,14 @@ static SVGACBStatus vmsvgaR3CmdBufDCPreempt(PPDMDEVINS pDevIns, PVMSVGAR3STATE p
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     PVMSVGACMDBUFCTX const pCmdBufCtx = pSvgaR3State->apCmdBufCtxs[pCmd->context];
+    if (!pCmdBufCtx)
+        return SVGA_CB_STATUS_COMMAND_ERROR;
+
     RTLISTANCHOR listPreempted;
+    RTListInit(&listPreempted);
 
     int rc = RTCritSectEnter(&pSvgaR3State->CritSectCmdBuf);
     AssertRC(rc);
-
-    RTListInit(&listPreempted);
 
     PVMSVGACMDBUF pIter, pNext;
     RTListForEachSafe(&pCmdBufCtx->listSubmitted, pIter, pNext, VMSVGACMDBUF, nodeBuffer)
@@ -4653,7 +4664,11 @@ static void vmsvgaR3CmdBufProcessBuffers(PPDMDEVINS pDevIns, PVGASTATE pThis, PV
                 ; /* Nothing. */
 #endif
             else if (pCmdBuf->idHostCommand == VMSVGACMDBUF_HOSTCOMMAND_GMR_DESCRIPTOR)
+#ifdef VBOX_WITH_VMSVGA3D
                 vmsvgaR3GMRDescriptor(pThis, pThisCC, (VMSVGAGMRINFO *)pCmdBuf->pvHostCommandData);
+#else
+                ; /* Nothing. */
+#endif
             else
                 AssertFailed();
             vmsvgaR3CmdBufFree(pCmdBuf);
@@ -7266,13 +7281,16 @@ static int vmsvgaR3LoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PVGASTATECC
         /* Try to setup at least the first screen. */
         VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[0];
         Assert(pScreen->idScreen == 0);
+        uint32_t const cbPitch = pThis->svga.cbScanline
+                               ? pThis->svga.cbScanline
+                               : (uint32_t)pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
         pScreen->fDefined  = true;
         pScreen->fModified = true;
         pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET | SVGA_SCREEN_IS_PRIMARY;
         pScreen->xOrigin   = 0;
         pScreen->yOrigin   = 0;
         pScreen->offVRAM   = pThis->svga.uScreenOffset;
-        pScreen->cbPitch   = pThis->svga.cbScanline;
+        pScreen->cbPitch   = cbPitch;
         pScreen->cWidth    = pThis->svga.uWidth;
         pScreen->cHeight   = pThis->svga.uHeight;
         pScreen->cBpp      = pThis->svga.uBpp;

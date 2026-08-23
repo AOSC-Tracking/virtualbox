@@ -92,6 +92,7 @@ RT_BEGINPROC RTStrMemFind32
  %endif
 %endif
         ret
+        int3
 
 .not_found:
 %ifdef ASM_CALL64_MSC
@@ -109,3 +110,4 @@ RT_BEGINPROC RTStrMemFind32
         ret
 ENDPROC RTStrMemFind32
 
+MARK_OBJECT_RETPOLINE_SAFE

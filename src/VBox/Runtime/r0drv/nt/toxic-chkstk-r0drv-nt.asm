@@ -50,3 +50,4 @@ BEGINPROC _chkstk
     jmp     MY_SYM
 ENDPROC _chkstk
 
+MARK_OBJECT_RETPOLINE_SAFE

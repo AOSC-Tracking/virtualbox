@@ -88,3 +88,4 @@ RT_NOCRT_BEGINPROC fegetenv
         ret
 ENDPROC   RT_NOCRT(fegetenv)
 
+MARK_OBJECT_RETPOLINE_SAFE

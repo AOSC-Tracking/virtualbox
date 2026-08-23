@@ -499,44 +499,77 @@ static void hmR0VmxUpdateStartVmFunction(PVMCPUCC pVCpu)
 {
     static const struct CLANGWORKAROUND { PFNHMVMXSTARTVM pfn; } s_aHmR0VmxStartVmFunctions[] =
     {
-        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
-        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit_SansPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit_WithPbrsb },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit_WithPbrsb },
     };
     uintptr_t const idx = (pVCpu->hmr0.s.fLoadSaveGuestXcr0                 ?  1 : 0)
                         | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_IBPB_ENTRY ?  2 : 0)
                         | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_L1D_ENTRY  ?  4 : 0)
                         | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_MDS_ENTRY  ?  8 : 0)
-                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_IBPB_EXIT  ? 16 : 0);
+                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_IBPB_EXIT  ? 16 : 0)
+                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_IBPB_PBRSB ? 32 : 0);
     PFNHMVMXSTARTVM const pfnStartVm = s_aHmR0VmxStartVmFunctions[idx].pfn;
     if (pVCpu->hmr0.s.vmx.pfnStartVm != pfnStartVm)
         pVCpu->hmr0.s.vmx.pfnStartVm = pfnStartVm;
@@ -5441,7 +5474,7 @@ static int hmR0VmxMapHCApicAccessPage(PVMCPUCC pVCpu, RTGCPHYS GCPhysApicBase)
 static DECLCALLBACK(void) hmR0DispatchHostNmi(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     RT_NOREF3(idCpu, pvUser1, pvUser2);
-    VMXDispatchHostNmi();
+    SUPR0DispatchHostNmi();
 }
 
 
@@ -5480,7 +5513,7 @@ static int hmR0VmxExitHostNmi(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
     RTCCUINTREG const fEFlags = ASMIntDisableFlags();
     if (idCpu == RTMpCpuId())
     {
-        VMXDispatchHostNmi();
+        SUPR0DispatchHostNmi();
         fDispatched = true;
     }
     ASMSetFlags(fEFlags);

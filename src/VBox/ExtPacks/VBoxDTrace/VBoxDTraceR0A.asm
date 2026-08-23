@@ -30,3 +30,4 @@ extern NAME(dtrace_probe)
 GLOBALNAME dtrace_probe6
     jmp     NAME(dtrace_probe)
 
+MARK_OBJECT_RETPOLINE_SAFE

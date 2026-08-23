@@ -89,6 +89,7 @@ BEGINPROC_RAW   __chkstk
         leave
 %ifndef RT_ARCH_X86
         ret
+        int3
 %else
         ;
         ; Do the stack space allocation and jump to the return location.
@@ -96,6 +97,7 @@ BEGINPROC_RAW   __chkstk
         sub     esp, eax
         add     esp, 4
         jmp     dword [esp + eax - 4]
+        int3
 %endif
 
         ;
@@ -141,6 +143,7 @@ BEGINPROC_RAW   __alloca_probe_ %+ %1
 
         pop     ecx
         jmp     __alloca_probe
+        int3
 
 .bad_alloc_size:
   %ifdef RT_STRICT
@@ -155,3 +158,4 @@ __alloc_probe_xxx 16
 __alloc_probe_xxx 8
 %endif ; RT_ARCH_X86
 
+MARK_OBJECT_RETPOLINE_SAFE

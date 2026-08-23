@@ -106,3 +106,4 @@ BEGINPROC __guard_xfg_dispatch_icall_nop
 ENDPROC   __guard_xfg_dispatch_icall_nop
 %endif
 
+MARK_OBJECT_RETPOLINE_SAFE

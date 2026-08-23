@@ -1270,6 +1270,12 @@ static void ehciR3DoReset(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC, uint
     LogFunc(("%s reset%s\n", fNewMode == EHCI_USB_RESET ? "hardware" : "software",
          fResetOnLinux ? " (reset on linux)" : ""));
 
+    if (!(pThis->intr_status & EHCI_STATUS_HCHALTED))
+    {
+        LogRel(("EHCI: Ignoring reset while not halted!\n"));
+        return;
+    }
+
     /*
      * Cancel all outstanding URBs.
      *
@@ -5054,6 +5060,7 @@ static DECLCALLBACK(int) ehciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Do a hardware reset.
      */
+    pThis->intr_status = EHCI_STATUS_HCHALTED;
     ehciR3DoReset(pDevIns, pThis, pThisCC, EHCI_USB_RESET, false /* don't reset devices */);
 
 #ifdef VBOX_WITH_STATISTICS

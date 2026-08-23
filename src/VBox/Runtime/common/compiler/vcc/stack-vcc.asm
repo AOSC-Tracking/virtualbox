@@ -266,6 +266,7 @@ ALIGNCODE(16)
 BEGINPROC _RTC_CheckEsp
         jne     .unexpected_esp
         ret
+        int3
 
 .unexpected_esp:
         push    xBP
@@ -637,3 +638,4 @@ BEGINPROC rtVccCaptureContext
         ret
 ENDPROC   rtVccCaptureContext
 
+MARK_OBJECT_RETPOLINE_SAFE

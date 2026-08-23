@@ -125,3 +125,4 @@ RT_NOCRT_BEGINPROC fesetexceptflag
         ret
 ENDPROC   RT_NOCRT(fesetexceptflag)
 
+MARK_OBJECT_RETPOLINE_SAFE

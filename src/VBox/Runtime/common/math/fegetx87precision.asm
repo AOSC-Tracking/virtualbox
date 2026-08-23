@@ -68,3 +68,4 @@ RT_NOCRT_BEGINPROC fegetx87precision
         ret
 ENDPROC   RT_NOCRT(fegetx87precision)
 
+MARK_OBJECT_RETPOLINE_SAFE

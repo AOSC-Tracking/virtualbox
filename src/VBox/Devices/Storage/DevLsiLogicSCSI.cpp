@@ -1195,7 +1195,7 @@ static int lsilogicR3ProcessMessageRequest(PPDMDEVINS pDevIns, PLSILOGICSCSI pTh
             if (pRegion)
             {
                 uint32_t offImgHdr = (LSILOGIC_FWIMGHDR_LOAD_ADDRESS - pRegion->u32AddrStart);
-                if (pRegion->u32AddrEnd - offImgHdr + 1 >= sizeof(FwImageHdr)) /* End address is inclusive. */
+                if (pRegion->u32AddrEnd - LSILOGIC_FWIMGHDR_LOAD_ADDRESS + 1 >= sizeof(FwImageHdr)) /* End address is inclusive. */
                 {
                     PFwImageHdr pFwImgHdr = (PFwImageHdr)&pRegion->au32Data[offImgHdr / 4];
 

@@ -356,6 +356,11 @@ bool videoDetectorBitmapUpdate(VDCONTEXT *pCtx,
         return false;
     }
 
+    if (!pCtx->pCallbacks->pfnIsValidRect(pCtx->pvCallback, prectUpdate))
+    {
+        return false;
+    }
+
 #ifdef DEBUG_sunlover
     VIDEOLOG(("@%d,%d %dx%d\n", prectUpdate->x, prectUpdate->y, prectUpdate->w, prectUpdate->h));
 #endif /* DEBUG_sunlover */

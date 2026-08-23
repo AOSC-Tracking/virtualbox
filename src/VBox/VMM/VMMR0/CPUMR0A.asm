@@ -149,6 +149,7 @@ SEH64_END_PROLOGUE
 
 %ifdef VBOX_WITH_KERNEL_USING_XMM
         jmp     .load_guest
+        int3
 %endif
 .already_saved_host:
 %ifdef VBOX_WITH_KERNEL_USING_XMM
@@ -310,3 +311,4 @@ SEH64_END_PROLOGUE
 %undef pXState
 ENDPROC   cpumR0SaveGuestRestoreHostFPUState
 
+MARK_OBJECT_RETPOLINE_SAFE

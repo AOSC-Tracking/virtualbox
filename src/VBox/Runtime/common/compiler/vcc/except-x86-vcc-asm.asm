@@ -181,6 +181,7 @@ __NLG_Dispatch:
         pop     ecx
         pop     eax
         ret
+        int3
 
 ;;
 ; NLG call + return2.
@@ -195,6 +196,7 @@ GLOBALNAME_RAW __NLG_Call, function, hidden
 global __NLG_Return2
 __NLG_Return2:
         ret
+        int3
 
 %endif
 
@@ -356,3 +358,4 @@ BEGINPROC   rtVccEh4DoGlobalUnwind
         ret
 ENDPROC   rtVccEh4DoGlobalUnwind
 
+MARK_OBJECT_RETPOLINE_SAFE  ;; @todo retpoline: file contains indirect jumps

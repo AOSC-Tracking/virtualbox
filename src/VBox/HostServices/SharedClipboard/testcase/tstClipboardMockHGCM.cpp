@@ -478,7 +478,7 @@ static void tstTestReadFromHost_MockDestroy(PTSTUSERMOCK pUsrMock)
 {
 #if defined(RT_OS_LINUX)
     ShClX11ThreadStop(&pUsrMock->X11Ctx);
-    ShClX11Destroy(&pUsrMock->X11Ctx);
+    ShClX11Term(&pUsrMock->X11Ctx);
     RTMemFree(pUsrMock->pCtx);
 #else
     RT_NOREF(pUsrMock);

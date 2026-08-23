@@ -76,6 +76,7 @@ RT_NOCRT_BEGINPROC trunc
         ffreep  st0                     ; return the xmm0 register value unchanged, as FLD changes SNaN to QNaN.
 %endif
         jmp     .return_val
+        int3
 .input_ok:
 
         ;
@@ -106,3 +107,4 @@ RT_NOCRT_BEGINPROC trunc
         ret
 ENDPROC   RT_NOCRT(trunc)
 
+MARK_OBJECT_RETPOLINE_SAFE

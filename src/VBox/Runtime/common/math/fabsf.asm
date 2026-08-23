@@ -70,3 +70,4 @@ g_r32ClearSignMask:
         dd      07fffffffh
         dd      07fffffffh
 
+MARK_OBJECT_RETPOLINE_SAFE

@@ -57,3 +57,4 @@ RT_BEGINPROC    ASMSerializeInstructionCpuId
         ret
 ENDPROC         ASMSerializeInstructionCpuId
 
+MARK_OBJECT_RETPOLINE_SAFE

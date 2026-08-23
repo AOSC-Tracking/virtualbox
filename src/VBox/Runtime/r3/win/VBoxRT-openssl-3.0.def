@@ -373,6 +373,8 @@
     EVP_MD_CTX_free
     EVP_MD_CTX_new
     EVP_MD_CTX_reset
+    EVP_MD_fetch
+    EVP_MD_free
     EVP_md5
     EVP_PKEY_CTX_new
     EVP_PKEY_CTX_new_id

@@ -118,6 +118,7 @@ RT_BEGINPROC ASMBitFirstSet
         leave
 %endif
         ret
+        int3
 
         ; failure
         ;}
@@ -135,3 +136,4 @@ RT_BEGINPROC ASMBitFirstSet
         ret
 ENDPROC ASMBitFirstSet
 
+MARK_OBJECT_RETPOLINE_SAFE

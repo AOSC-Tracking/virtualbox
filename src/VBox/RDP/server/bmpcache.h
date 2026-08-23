@@ -88,4 +88,24 @@ void *BCBitmapHeapBlockQuery(PBMPCACHE pbc, const BCHEAPHANDLE *pHandle, int32_t
 void BCBitmapHeapBlockRelease(PBMPCACHE pbc, const BCHEAPHANDLE *pHandle);
 void BCBitmapHeapBlockFree(PBMPCACHE pbc, const BCHEAPHANDLE *pHandle);
 
+DECLINLINE(bool) isValidBitsHdr(VRDEDATABITS const *pBitsHdr)
+{
+    switch (pBitsHdr->cbPixel)
+    {
+        case 2:
+        case 3:
+        case 4: break;
+
+        default:
+            return false;
+    }
+
+    /* uint16_t * uint16_t * uint8_t */
+    uint64_t const u64BitmapSize = (uint64_t)pBitsHdr->cWidth * pBitsHdr->cHeight * pBitsHdr->cbPixel;
+    if (pBitsHdr->cb < u64BitmapSize)
+        return false;
+
+    return true;
+}
+
 #endif /* !VRDP_INCLUDED_SRC_bmpcache_h */

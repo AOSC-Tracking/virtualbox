@@ -153,7 +153,7 @@
  *          - @ref pg_vgsvc_clipboard
  *      - VBoxControl.
  *      - Linux, Solaris and FreeBSD specific guest services and drivers.
- *          - @ref pg_vboxdrmcliet (Linux only).
+ *          - @ref pg_vboxdrmclient (Linux only).
  *          - VBoxClient.
  *          - VBoxVideo.
  *      - Windows Guests.

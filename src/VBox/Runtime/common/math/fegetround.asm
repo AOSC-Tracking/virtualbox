@@ -77,3 +77,4 @@ RT_NOCRT_BEGINPROC fegetround
         ret
 ENDPROC   RT_NOCRT(fegetround)
 
+MARK_OBJECT_RETPOLINE_SAFE

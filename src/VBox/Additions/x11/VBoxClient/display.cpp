@@ -27,11 +27,12 @@
 
 #include "VBoxClient.h"
 
+#include <iprt/asm.h>
 #include <iprt/errcore.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
-#include <iprt/asm.h>
+#include <iprt/thread.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -156,6 +157,7 @@ static void runDisplay(struct DISPLAYSTATE *pState, bool volatile *pfShutdown)
     XSelectInput(pDisplay, DefaultRootWindow(pDisplay), PropertyChangeMask | StructureNotifyMask);
     if (pState->fHaveRandR12)
         pState->pXRRSelectInput(pDisplay, DefaultRootWindow(pDisplay), RRScreenChangeNotifyMask);
+
     /* Semantics: when VBOXCLIENT_STARTED is set, pre-1.3 X.Org Server driver
      * assumes that a client capable of handling mode hints will be present for the
      * rest of the X session.  If we crash things will not work as they should.
@@ -163,6 +165,10 @@ static void runDisplay(struct DISPLAYSTATE *pState, bool volatile *pfShutdown)
      */
     XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay), XInternAtom(pState->pDisplay, "VBOXCLIENT_STARTED", 0),
                     XA_INTEGER, 32, PropModeReplace, (unsigned char *)&cValue, 1);
+
+    /* Signal parent thread that we're read. */
+    RTThreadUserSignal(RTThreadSelf());
+
     /* Interrupting this cleanly will be more work than making it robust
      * against spontaneous termination, especially as it will never get
      * properly tested, so I will go for the second. */
@@ -300,7 +306,7 @@ static DECLCALLBACK(void) stop(void)
      * main thread can set pfShutdown=true on process termination. */
 }
 
-VBCLSERVICE g_SvcDisplayLegacy =
+VBCLSERVICE const g_SvcDisplayLegacy =
 {
     "dp-legacy-x11",                    /* szName */
     "Legacy display assistant",         /* pszDescription */

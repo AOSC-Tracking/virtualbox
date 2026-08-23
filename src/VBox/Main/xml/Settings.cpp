@@ -9666,6 +9666,16 @@ void MachineConfigFile::sanitizeImportedSerialPorts()
     }
 }
 
+void MachineConfigFile::sanitizeSharedFolderSettings()
+{
+    hardwareMachine.llSharedFolders.clear();
+}
+
+void MachineConfigFile::sanitizeImportedNvramSettings()
+{
+    hardwareMachine.nvramSettings.strNvramPath.setNull();
+}
+
 /**
  * Called from write() before calling ConfigFileBase::createStubDocument().
  * This adjusts the settings version in m->sv if incompatible settings require

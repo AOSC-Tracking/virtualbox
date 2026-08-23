@@ -172,7 +172,7 @@ static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintfV(PCDBGFINFOHLP pHlp, c
     {
         va_list args2;
         va_copy(args2, args);
-        RTLogLoggerV(pMyHlp->pLogger, pszFormat, args);
+        RTLogLoggerV(pMyHlp->pLogger, pszFormat, args2);
         va_end(args2);
     }
     if (pMyHlp->fStdErr)
@@ -190,7 +190,7 @@ static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintfV(PCDBGFINFOHLP pHlp, c
         {
             va_list args2;
             va_copy(args2, args);
-            size_t cch = RTStrPrintfV(&pMyHlp->szSummary[pMyHlp->offSummary], cchLeft, pszFormat, args);
+            size_t cch = RTStrPrintfV(&pMyHlp->szSummary[pMyHlp->offSummary], cchLeft, pszFormat, args2);
             va_end(args2);
             Assert(cch <= cchLeft);
             pMyHlp->offSummary += cch;

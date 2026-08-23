@@ -105,3 +105,4 @@ RT_NOCRT_BEGINPROC fesetround
         ret
 ENDPROC   RT_NOCRT(fesetround)
 
+MARK_OBJECT_RETPOLINE_SAFE

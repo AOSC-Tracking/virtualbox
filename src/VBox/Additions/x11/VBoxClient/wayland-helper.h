@@ -117,7 +117,8 @@ typedef struct
     volatile uint32_t cUsers;
 } vbcl_wl_session_t;
 
-/** Session state change callback.
+/**
+ * Session state change callback.
  *
  * Data which belongs to a session must be accessed from
  * session callback only. It ensures session data integrity
@@ -156,23 +157,24 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnTerm, (void));
 
     /**
-     * Callback to set host clipboard connection handle.
+     * Callback to set shared clipboard context structure.
      *
-     * @param   pCtx    Host service connection context.
+     * @param   pCtx    The shared clipboard context being used.
      */
-    DECLCALLBACKMEMBER(void, pfnSetClipboardCtx, (PVBGLR3SHCLCMDCTX pCtx));
+    DECLCALLBACKMEMBER(void, pfnSetClipboardCtx, (PSHCLCONTEXT pCtx));
 
     /**
      * Callback to force guest to announce its clipboard content.
      *
      * @returns IPRT status code.
+     * @note Optional. Only needed by plain Wayland/Gtk.
      */
     DECLCALLBACKMEMBER(int, pfnPopup, (void));
 
-    /** A callback to notify guest about new content in host clipboard. */
+    /** Called upon receiving a new clipboard format report from the host. */
     PFNHOSTCLIPREPORTFMTS pfnHGClipReport;
-
-    /** Callback to notify guest that host wants to read clipboard data in specified format. */
+    /** Called upon receiving a read clipboard query from the host.
+     * @deprecated Only used by Gtk now. */
     PFNHOSTCLIPREAD pfnGHClipRead;
 
 } VBCLWAYLANDHELPER_CLIPBOARD;
@@ -338,7 +340,7 @@ namespace vbcl
  *
  * @param   pSession    A pointer to session data.
  */
-RTDECL(void) vbcl_wayland_session_init(vbcl_wl_session_t *pSession);
+void vbcl_wayland_session_init(vbcl_wl_session_t *pSession);
 
 /**
  * Start new session.
@@ -354,35 +356,94 @@ RTDECL(void) vbcl_wayland_session_init(vbcl_wl_session_t *pSession);
  * @param   pfnStart    Initialization callback.
  * @param   pvUser      User data to pass to initialization callback.
  */
-RTDECL(int) vbcl_wayland_session_start(vbcl_wl_session_t *pSession,
-                                       vbcl_wl_session_type_t enmType,
-                                       PFNVBCLWLSESSIONCB pfnStart,
-                                       void *pvUser);
+int vbcl_wayland_session_start(vbcl_wl_session_t *pSession, vbcl_wl_session_type_t enmType,
+                               PFNVBCLWLSESSIONCB pfnStart, void *pvUser);
 
 /**
- * Join session.
+ * Session join callback.
  *
- * Attempt to grab a reference to a session, execute provided
- * callback while holding a reference and release reference.
- * This function will fail if current session state is different
- * from STARTED.
+ * @returns IPRT status code.
+ * @param   pvUser      User defined.
+ */
+typedef DECLCALLBACKTYPE(int, FNVBCLWAYLANDSESSIONJOIN, (void *pvUser));
+/** Pointer to FNVBCLWAYLANDSESSIONJOIN. */
+typedef FNVBCLWAYLANDSESSIONJOIN *PFNVBCLWAYLANDSESSIONJOIN;
+
+/**
+ * Join session (only if given type).
+ *
+ * Attempt to grab a reference to a session, check that the session type matches
+ * the caller's expectations, execute the callback, and finally release
+ * reference. This function will fail if current session state is different from
+ * STARTED.
+ *
+ * This helps to ensure that the session remains valid while the callback is
+ * executed.
+ *
+ * @returns IPRT status code.
+ * @param   pSession        Session object.
+ * @param   enmSessionType  The session type required by the callback.
+ * @param   pfnCallback     A callback to run while holding session reference.
+ * @param   pvUser          User data to pass to callback.
+ * @param   pszCaller       Text tag which corresponds to calling function (only
+ *                          for logging)
+ */
+int VBClWaylandSessionJoinEx(vbcl_wl_session_t *pSession, vbcl_wl_session_type_t enmSessionType,
+                             PFNVBCLWAYLANDSESSIONJOIN pfnCallback, void *pvUser, const char *pszCaller);
+
+/**
+ * Join session (only if given type).
+ *
+ * Attempt to grab a reference to a session, check that the session type matches
+ * the caller's expectations, execute the callback, and finally release
+ * reference. This function will fail if current session state is different from
+ * STARTED.
+ *
+ * This helps to ensure that the session remains valid while the callback is
+ * executed.
+ *
+ * @returns IPRT status code.
+ * @param   pSession        Session object.
+ * @param   enmSessionType  The session type required by the callback.
+ * @param   pfnCallback     A callback to run while holding session reference.
+ * @param   pvUser          User data to pass to callback.
+ */
+#define VBClWaylandSessionJoin(pSession, enmSessionType, pfnCallback, pvUser) \
+    VBClWaylandSessionJoinEx(pSession, enmSessionType, pfnCallback, pvUser, __func__)
+
+
+/**
+ * Join any type of session.
+ *
+ * Attempt to grab a reference to a session, execute provided callback while
+ * holding a reference and release reference. This function will fail if current
+ * session state is different from STARTED.
  *
  * @returns IPRT status code.
  * @param   pSession    Session object.
- * @param   pfnJoin     A callback to run while holding session reference.
+ * @param   pfnCallback A callback to run while holding session reference.
  * @param   pvUser      User data to pass to callback.
- * @param   pcszCallee  Text tag which corresponds to calling function (only
+ * @param   pszCaller   Text tag which corresponds to calling function (only
  *                      for logging)
  */
-RTDECL(int) vbcl_wayland_session_join_ex(vbcl_wl_session_t *pSession,
-                                         PFNVBCLWLSESSIONCB pfnJoin, void *pvUser,
-                                         const char *pcszCallee);
+int VBClWaylandSessionJoinAnyTypeEx(vbcl_wl_session_t *pSession, PFNVBCLWLSESSIONCB pfnCallback,
+                                    void *pvUser, const char *pszCaller);
 
 /**
- * Join session (wrapper for vbcl_wayland_session_join_ex).
+ * Join any type of session.
+ *
+ * Attempt to grab a reference to a session, execute provided callback while
+ * holding a reference and release reference. This function will fail if current
+ * session state is different from STARTED.
+ *
+ * @returns IPRT status code.
+ * @param   pSession    Session object.
+ * @param   pfnCallback A callback to run while holding session reference.
+ * @param   pvUser      User data to pass to callback.
  */
-#define vbcl_wayland_session_join(pSession, pfnJoin, pvUser) \
-    vbcl_wayland_session_join_ex(pSession, pfnJoin, pvUser, __func__)
+#define VBClWaylandSessionJoinAnyType(pSession, pfnCallback, pvUser) \
+    VBClWaylandSessionJoinAnyTypeEx(pSession, pfnCallback, pvUser, __func__)
+
 
 /**
  * End session.
@@ -395,8 +456,7 @@ RTDECL(int) vbcl_wayland_session_join_ex(vbcl_wl_session_t *pSession,
  * @param   pfnEnd      Termination callback.
  * @param   pvUser      User data to pass to termination callback.
  */
-RTDECL(int) vbcl_wayland_session_end(vbcl_wl_session_t *pSession,
-                                     PFNVBCLWLSESSIONCB pfnEnd, void *pvUser);
+int vbcl_wayland_session_end(vbcl_wl_session_t *pSession, PFNVBCLWLSESSIONCB pfnEnd, void *pvUser);
 
 /**
  * Check if session was started.
@@ -404,18 +464,7 @@ RTDECL(int) vbcl_wayland_session_end(vbcl_wl_session_t *pSession,
  * @returns True if session is started, False otherwise.
  * @param   pSession    Session object.
  */
-RTDECL(bool) vbcl_wayland_session_is_started(vbcl_wl_session_t *pSession);
-
-/**
- * Create thread and wait until it started.
- *
- * @returns IPRT status code.
- * @param   pThread     Pointer to thread data.
- * @param   pfnThread   Pointer to thread main loop function.
- * @param   pszName     Thread name.
- * @param   pvUser      User data.
- */
-RTDECL(int) vbcl_wayland_thread_start(PRTTHREAD pThread, PFNRTTHREAD pfnThread, const char *pszName, void *pvUser);
+bool vbcl_wayland_session_is_started(vbcl_wl_session_t *pSession);
 
 /** Wayland helper which uses GTK library. */
 extern const VBCLWAYLANDHELPER g_WaylandHelperGtk;

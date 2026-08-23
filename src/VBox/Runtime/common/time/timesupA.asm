@@ -34,9 +34,8 @@
 ; SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 ;
 
-%ifndef IN_GUEST
-
 %include "iprt/asmdefs.mac"
+%ifndef IN_GUEST ; rest of the file
 %include "VBox/sup.mac"
 
 ;
@@ -159,3 +158,5 @@ BEGINCODE
 
 
 %endif ; !IN_GUEST
+
+MARK_OBJECT_RETPOLINE_SAFE

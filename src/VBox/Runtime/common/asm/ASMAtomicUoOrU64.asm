@@ -75,6 +75,7 @@ RT_BEGINPROC ASMAtomicUoOrU64
         mov     ecx, edx
         or      ecx, [ebp + 0ch + 4]
         jmp     .try_again
+        int3
 
 .done:
         pop     edi
@@ -84,3 +85,4 @@ RT_BEGINPROC ASMAtomicUoOrU64
         ret
 ENDPROC ASMAtomicUoOrU64
 
+MARK_OBJECT_RETPOLINE_SAFE

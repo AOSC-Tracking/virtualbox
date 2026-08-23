@@ -1,4 +1,4 @@
-/** $Id: draganddrop.h $ */
+/* $Id: draganddrop.h $ */
 /** @file
  * Guest Additions - VBoxClient drag'n drop - Main header.
  */
@@ -148,5 +148,6 @@ private:
 
     friend class VBClX11DnDInst;
 };
+
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_draganddrop_h */
 

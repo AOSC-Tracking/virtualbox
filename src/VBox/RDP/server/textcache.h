@@ -171,7 +171,7 @@ typedef struct _TCFONTTEXT2
 PTEXTCACHE TCCreate (void);
 void TCDelete (PTEXTCACHE ptc);
 
-bool TCCacheGlyphs (PTEXTCACHE ptc, const VRDEORDERTEXT *pOrder, TCFONTTEXT2 **ppFontText2);
+bool TCCacheGlyphs (PTEXTCACHE ptc, const VRDEORDERTEXT *pOrder, uint32_t cbOrder, TCFONTTEXT2 **ppFontText2);
 void TCFreeFontText2 (TCFONTTEXT2 *pFontText2);
 
 #endif /* !VRDP_INCLUDED_SRC_textcache_h */

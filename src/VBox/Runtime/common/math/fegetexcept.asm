@@ -80,3 +80,4 @@ RT_NOCRT_BEGINPROC fegetexcept
         ret
 ENDPROC   RT_NOCRT(fegetexcept)
 
+MARK_OBJECT_RETPOLINE_SAFE

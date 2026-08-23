@@ -1,4 +1,4 @@
-/** $Id: clipboard.h $ */
+/* $Id: clipboard.h $ */
 /** @file
  * Guest Additions - X11 Shared Clipboard - Main header.
  */
@@ -32,32 +32,35 @@
 #endif
 
 #include <VBox/GuestHost/SharedClipboard-x11.h>
+#include <VBox/GuestHost/SharedClipboard-Wayland.h>
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/thread.h>
 
 /**
- * Callback to notify guest that host has new clipboard data in the specified formats.
+ * Called upon receiving a new clipboard format report from the host.
  *
  * @returns VBox status code.
- * @param   fFormats        The formats available.
- *                          Optional and can be NULL.
+ * @param   pCtx            Our shared clipboard context structure.
+ * @param   fFormats        The formats available (VBOX_SHCL_FMT_XXX).
  */
-typedef DECLCALLBACKTYPE(int, FNHOSTCLIPREPORTFMTS, (SHCLFORMATS fFormats));
+typedef DECLCALLBACKTYPE(int, FNHOSTCLIPREPORTFMTS, (PSHCLCONTEXT pCtx, SHCLFORMATS fFormats));
+/** Pointer to FNHOSTCLIPREPORTFMTS. */
 typedef FNHOSTCLIPREPORTFMTS *PFNHOSTCLIPREPORTFMTS;
 
 /**
- * Callback to notify guest that host wants to read clipboard data in specified format.
+ * Called upon receiving a read clipboard query from the host.
  *
  * @returns VBox status code.
- * @param   uFmt            The format in which the data should be read
- *                          (VBOX_SHCL_FMT_XXX).
+ * @param   pCtx            Our shared clipboard context structure.
+ * @param   uFmt            The format in which the data should be read (a
+ *                          single VBOX_SHCL_FMT_XXX).
  */
-typedef DECLCALLBACKTYPE(int, FNHOSTCLIPREAD, (SHCLFORMAT uFmt));
+typedef DECLCALLBACKTYPE(int, FNHOSTCLIPREAD, (PSHCLCONTEXT pCtx, SHCLFORMAT uFmt));
+/** Pointer to FNHOSTCLIPREAD. */
 typedef FNHOSTCLIPREAD *PFNHOSTCLIPREAD;
 
-
 /**
- * Struct keeping am X11 Shared Clipboard context.
+ * The VBoxClient Shared Clipboard context structure.
  */
 struct SHCLCONTEXT
 {
@@ -73,38 +76,52 @@ struct SHCLCONTEXT
     {
         /** X11 clipboard context. */
         SHCLX11CTX       X11;
-        /** @todo Wayland clipboard context goes here. */
-        /* SHCLWAYLANDCTX Wl; */
+        /** Wayland clipboard context. */
+        SHCLWAYLANDCTX Wl;
     };
 };
+
+/** Checks if the revision indicates other side's clipboard ownership. */
+#define SHCLWLCTX_REV_IS_OTHER(a_uRevision) (((a_uRevision) & 1) == 0)
+/** Checks if the revision indicates our side's clipboard ownership. */
+#define SHCLWLCTX_REV_IS_OUR(a_uRevision)   (((a_uRevision) & 1) == 1)
+
+/** MIME type used for storing SHCLCONTEXT::Wl::uRevision and flag the (wayland)
+ *  clipboard as our. */
+#define VBOX_CLIPBOARD_MIME_TYPE_REVISION_NO    "application/x.virtualbox.vboxclient.revno"
 
 /** Shared Clipboard context.
  *  Only one context is supported at a time for now. */
 extern SHCLCONTEXT g_Ctx;
 
-/**
- * Read and process one event from the host clipboard service.
- *
- * @returns VBox status code.
- * @param   pCtx                Host Shared Clipboard service connection context.
- * @param   pfnHGClipReport     A callback to notify guest about new content in host clipboard.
- * @param   pfnGHClipRead       A callback to notify guest when host requests guest clipboard content.
- */
-RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPORTFMTS pfnHGClipReport,
-                                              const PFNHOSTCLIPREAD pfnGHClipRead);
+bool VBClClipboardShouldUseWayland(VBGHDISPLAYSERVERTYPE enmType);
 
-/**
- * Read entire host clipboard buffer in given format.
- *
- * This function will allocate clipboard buffer of necessary size and
- * place host clipboard content into it. Buffer needs to be freed by caller.
- *
- * @returns VBox status code.
- * @param   pCtx            Host Shared Clipboard service connection context.
- * @param   uFmt            Format in which data should be read.
- * @param   ppvData         Newly allocated output buffer (should be freed by caller).
- * @param   pcbData         Output buffer size.
- */
-RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFmt, void **ppvData, uint32_t *pcbData);
+int VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, PFNHOSTCLIPREPORTFMTS pfnHGClipReport, PFNHOSTCLIPREAD pfnGHClipRead);
+int VBClClipboardReadHostClipboard(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppvData, uint32_t *pcbData);
+
+int      VBClWaylandClipboardQueryHostData(PSHCLCONTEXT pCtx, const char *pszMimeType, void **ppvOutData, size_t *pcbOutData);
+uint64_t VBClWaylandClipboardResetOurState(PSHCLCONTEXT pCtx, const char *pszCaller, struct SHCLWLOFFERSLOT *pOffer);
+
+struct RTHANDLE;
+int     VBClClipboardSerializeCache(SHCLCACHE const *pCache, SHCLFORMATS fFormats, struct RTHANDLE const *pHandleDst,
+                                    RTMSINTERVAL cMsTimeout);
+int     VBClClipboardDeserializeCache(struct RTHANDLE const *pHandleSrc, PSHCLCACHE pCache, SHCLFORMATS *pfFormats,
+                                      RTMSINTERVAL cMsTimeout);
+
+/* clipboard-x11.cpp */
+int  VBClX11ClipboardInit(void);
+int  VBClX11ClipboardDestroy(void);
+int  VBClX11ClipboardMain(void);
+
+/* clipboard-wayland.cpp */
+int  VBClClipboardWaylandInit(SHCLCONTEXT *pCtx);
+int  VBClClipboardWaylandMain(SHCLCONTEXT *pCtx, bool volatile *pfShutdown);
+void VBClClipboardWaylandStop(SHCLCONTEXT *pCtx);
+void VBClClipboardWaylandTerm(SHCLCONTEXT *pCtx);
+
+/* clipboard-wayland-popup.cpp */
+int  VBClClipboardWaylandPopupGetAll(SHCLCONTEXT *pCtx);
+int  VBClClipboardWaylandPopupSetAll(SHCLCONTEXT *pCtx, SHCLFORMATS fFormats);
+
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_clipboard_h */

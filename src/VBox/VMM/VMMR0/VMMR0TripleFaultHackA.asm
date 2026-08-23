@@ -57,6 +57,7 @@ BEGINPROC vmmR0TripleFaultHack
 .forever:
     hlt
     jmp     .forever
+    int3
 
 .s_szHello:
     db      'Hello post-reset world', 0ah, 0dh, 0
@@ -188,6 +189,7 @@ BEGINPROC vmmR0TripleFaultHackKbdWait
 
         pop     xAX
         ret
+        int3
 
 .read_data_and_status:
         in      al, 60h
@@ -272,3 +274,4 @@ BEGINPROC vmmR0TripleFaultHackTripleFault
     ret
 ENDPROC   vmmR0TripleFaultHackTripleFault
 
+MARK_OBJECT_RETPOLINE_SAFE

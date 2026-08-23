@@ -55,6 +55,7 @@ BEGINPROC rtNoCrtHasSse
         test    al, 0x80
         jnz     .detect_sse
         ret
+        int3
 
 .detect_sse:
         push    ebx
@@ -76,3 +77,4 @@ BEGINPROC rtNoCrtHasSse
         ret
 ENDPROC   rtNoCrtHasSse
 
+MARK_OBJECT_RETPOLINE_SAFE

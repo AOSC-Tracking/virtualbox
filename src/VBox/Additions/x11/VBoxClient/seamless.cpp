@@ -137,7 +137,7 @@ static DECLCALLBACK(int) vbclSeamlessTerm(void)
     return rc;
 }
 
-VBCLSERVICE g_SvcSeamless =
+VBCLSERVICE const g_SvcSeamless =
 {
     "seamless",                 /* szName */
     "Seamless Mode Support",    /* pszDescription */

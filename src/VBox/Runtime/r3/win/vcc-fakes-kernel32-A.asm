@@ -56,3 +56,5 @@ GLOBALNAME vcc100_kernel32_fakes_asm
  %error "PORT ME!"
 %endif
 
+
+MARK_OBJECT_RETPOLINE_SAFE

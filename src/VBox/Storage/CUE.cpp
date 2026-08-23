@@ -954,7 +954,8 @@ static int cueParseTrack(PCUEIMAGE pThis, PCUETOKENIZER pTokenizer)
     if (cueTokenizerGetTokenType(pTokenizer) == CUETOKENTYPE_INTEGER_UNSIGNED)
     {
         uint64_t u64Track = cueTokenizerConsumeInteger(pTokenizer);
-        if (u64Track <= 99)
+        if (   u64Track >= 1
+            && u64Track <= 99)
         {
             /* Parse the data mode. */
             if (cueTokenizerGetTokenType(pTokenizer) == CUETOKENTYPE_KEYWORD)

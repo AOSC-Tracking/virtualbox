@@ -103,6 +103,7 @@ RT_NOCRT_BEGINPROC powf
         pop     xBX
         leave
         ret
+        int3
 
         ;
         ; But sometimes, like if we have NaN or other special inputs, we should
@@ -119,9 +120,11 @@ RT_NOCRT_BEGINPROC powf
 %endif
 .return_base:
         jmp     .return
+        int3
 
 .return_exp:
         movss   xmm0, xmm1
         jmp     .return
 ENDPROC   RT_NOCRT(powf)
 
+MARK_OBJECT_RETPOLINE_SAFE

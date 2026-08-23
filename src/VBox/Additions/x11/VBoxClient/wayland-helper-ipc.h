@@ -52,10 +52,13 @@
 #include "VBoxClient.h"
 #include "wayland-helper.h"
 
+/** Binary name of the Gtk helper tool which raises popup window and gets
+ * access to Wayland clipboard. */
+#define VBOXWL_FILENAME                "vboxwl"
 /** Path to Gtk helper tool which raises popup window and gets
  * access to Wayland clipboard. */
 #ifndef VBOXWL_PATH
-# define VBOXWL_PATH                    "/usr/bin/vboxwl"
+# define VBOXWL_PATH                    "/usr/bin/" VBOXWL_FILENAME
 #endif
 /** Limit maximum log verbosity level for popup tool. */
 #define VBOXWL_VERBOSITY_MAX            (5)
@@ -64,13 +67,16 @@
 #define VBOXWL_SRV_NAME_PREFIX_CLIP     "clip"
 #define VBOXWL_SRV_NAME_PREFIX_DND      "dnd"
 
-/** Arguments to vboxwl tool. */
+/** Arguments to vboxwl tool.
+ * @{ */
 #define VBOXWL_ARG_CLIP_HG_COPY         "--clip-hg-copy"
 #define VBOXWL_ARG_CLIP_GH_ANNOUNCE     "--clip-gh-announce"
 #define VBOXWL_ARG_CLIP_GH_COPY         "--clip-gh-copy"
 #define VBOXWL_ARG_DND_GH               "--dnd-gh"
 #define VBOXWL_ARG_DND_HG               "--dnd-hg"
 #define VBOXWL_ARG_SESSION_ID           "--session-id"
+#define VBOXWL_OPT_VERBOSITY            "--verbosity"
+/** @} */
 
 /** Time in milliseconds to wait for IPC socket events. */
 #define VBOX_GTKIPC_RX_TIMEOUT_MS       (VBCL_WAYLAND_DATA_WAIT_TIMEOUT_MS)
@@ -84,10 +90,10 @@ namespace vbcl
         {
             /** Initializer. */
             CMD_UNKNOWN = 0,
-            /** Send or receive list of clipboard formats which
+            /** Send or receive mask of clipboard formats which
              *  host or guest announces. */
             VBOX_FORMATS,
-            /** Send or receive a clipboard format which host
+            /** Send or receive a signle clipboard format which host
              *  or guest requests. */
             VBOX_FORMAT,
             /** Send or receive clipboard data in given format. */
@@ -186,7 +192,7 @@ namespace vbcl
                 uint64_t cbData;
             } data_packet_t;
 
-            /**
+            /** @name IPC command tables.
              * IPC commands flow is described as a table. Each entry of
              * such table contains command ID and flow direction. Both
              * sides, VBoxClient and vboxwl, go through exactly the same
@@ -196,6 +202,7 @@ namespace vbcl
              * (simultaneously) it means that IPC session is completed.
              * If error occurs on either side in the middle of the flow,
              * IPC session is aborted.
+             * @{
              */
 
             /** IPC flow description (clipboard): Copy clipboard from host to guest. */
@@ -226,7 +233,7 @@ namespace vbcl
             };
 
             /** IPC flow description (DnD): DnD operation started inside guest and
-             *  guest reports DnD content mime-type list. Host side picks up one
+             *  guest reports DnD content MIME type list. Host side picks up one
              *  of the formats and requests data in this format. Guest sends
              *  data in requested format. */
             const flow_t GHDragFlow[4] =
@@ -238,7 +245,7 @@ namespace vbcl
             };
 
             /** IPC flow description (DnD): DnD operation started on host and
-             *  host reports DnD content mime-type list. Guest side picks up one
+             *  host reports DnD content MIME type list. Guest side picks up one
              *  of the formats and requests data in this format. Host sends
              *  data in requested format. */
             const flow_t HGDragFlow[4] =
@@ -248,6 +255,8 @@ namespace vbcl
                 { VBOX_DATA,    FLOW_DIRECTION_CLIENT },
                 { CMD_MAX,      false }
             };
+
+            /** @} */
 
             class DataIpc
             {
@@ -447,12 +456,12 @@ namespace vbcl
  * in order to connect one to another. Output string will be in
  * format: GtkHlpIpcServer-&lt;prefix&gt;--&lt;active tty&gt;-&lt;user name&gt;.
  *
- * @returns     IPRT status code.
- * @param       szNamePrefix    Name prefix.
- * @param       szBuf           Where to store generated name string.
- * @param       cbBuf           Size of buffer.
+ * @returns IPRT status code.
+ * @param   pszNamePrefix   Name prefix.
+ * @param   pszBuf          Where to store generated name string.
+ * @param   cbBuf           Size of the buffer.
  */
-RTDECL(int) vbcl_wayland_hlp_gtk_ipc_srv_name(const char *szNamePrefix, char *szBuf, size_t cbBuf);
+int vbcl_wayland_hlp_gtk_ipc_srv_name(const char *pszNamePrefix, char *pszBuf, size_t cbBuf);
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_wayland_helper_ipc_h */
 

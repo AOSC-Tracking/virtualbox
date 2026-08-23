@@ -3181,9 +3181,6 @@ VBOX_PATH_X11_ROOT      = $(PATH_ROOT)/src/VBox/Additions/x11/x11include
 # Miscellaneous includes
 #
 VBOX_GRAPHICS_INCS = $(PATH_ROOT)/include/VBox/Graphics
-VBOX_JPEG_INCS     = \
-	$(PATH_ROOT)/src/libs/libjpeg-turbo-3.1.0/src \
-	$(PATH_ROOT)/src/libs/libjpeg-turbo-3.1.0
 
 
 # The icons to use.
@@ -3459,6 +3456,7 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_msse4.1                         ?= $(call VBOX_GCC_CHECK_CC,-msse4.1,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mavx                            ?= $(call VBOX_GCC_CHECK_CC,-mavx,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mavx2                           ?= $(call VBOX_GCC_CHECK_CC,-mavx2,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mharden-sls-all                 ?= $(call VBOX_GCC_CHECK_CXX,-mharden-sls=all,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_no-pie                          ?= $(call VBOX_GCC_CHECK_CC,-no-pie,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fdiagnostics-show-option        ?= $(call VBOX_GCC_CHECK_CC,-fdiagnostics-show-option,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fdiagnostics-color              ?= $(call VBOX_GCC_CHECK_CC,-fdiagnostics-color,)'
@@ -3835,6 +3833,9 @@ if1of (win, $(KBUILD_TARGET) $(KBUILD_HOST))
  VBOX_VCC_LD_GUARD_CF         :=
  VBOX_VCC_CC_GUARD_EHCONT     :=
  VBOX_VCC_LD_GUARD_EHCONT     :=
+ VBOX_VCC_LD_GUARD_RETPOLINE  :=
+ VBOX_VCC_LD_GUARD_RETPOLINE_IGNORE :=
+ VBOX_VCC_LD_GUARD_RETPOLINE_WITH_IGNORE :=
  VBOX_VCC_LD_HIGH_ENTRYOPY_VA :=
  VBOX_VCC_LD_CET_COMPAT       :=
 
@@ -3848,6 +3849,11 @@ if1of (win, $(KBUILD_TARGET) $(KBUILD_HOST))
    VBOX_VCC_LD_CET_COMPAT     := -CetCompat
    VBOX_VCC_CC_GUARD_EHCONT   := -guard:ehcont
    VBOX_VCC_LD_GUARD_EHCONT   := -Guard:ehcont
+  endif
+  if $(VBOX_VCC_TOOL_STEM) >= VCC142 # Since when? (Also present in older versions.)
+   VBOX_VCC_LD_GUARD_RETPOLINE             := -Guard:retpoline
+   VBOX_VCC_LD_GUARD_RETPOLINE_IGNORE      := -Ignore:4287
+   VBOX_VCC_LD_GUARD_RETPOLINE_WITH_IGNORE := -Guard:retpoline -Ignore:4287
   endif
  endif
 endif
@@ -5244,7 +5250,7 @@ SDK_VBoxSoftFloatGuestR3Shared_LIBS.$(KBUILD_TARGET_ARCH) = \
 
 ifdef VBOX_WITH_LIBSSH
  SDK_VBoxLibSsh                := libssh for dynamic dll loading with assembly stubs.
- SDK_VBoxLibSsh_INCS           ?= $(PATH_ROOT)/src/libs/libssh-0.11.4/include
+ SDK_VBoxLibSsh_INCS           ?= $(PATH_ROOT)/src/libs/libssh-0.12.2/include
  # SDK_VBoxLibSsh_LIBS is not defined, as VBoxLibSsh dll is not linked, but loaded explicitly
  # by auto-generated stub code (lazy loading)
 endif
@@ -5294,6 +5300,15 @@ SDK_VBoxLibXml2_DEFS          ?= _REENTRANT LIBXML_STATIC LIBXML_STATIC_FOR_DLL
 SDK_VBoxLibXml2_DEFS.win      ?= WIN32 _WINDOWS _MBCS HAVE_WIN32_THREADS HAVE_COMPILER_TLS
 # Note: no linking to LIB here, we do that explicitly in src/VBox/Runtime/Makefile.kmk to link
 #       libxml against VBoxRT
+
+# libjpeg
+SDK_VBoxLibJpeg              := libjpeg for dll linking.
+SDK_VBoxLibJpeg_DEFAULT_INCS ?= $(PATH_ROOT)/src/libs/libjpeg-turbo-3.1.0/src \
+	$(PATH_ROOT)/src/libs/libjpeg-turbo-3.1.0
+SDK_VBoxLibJpeg_INCS         ?= $(SDK_VBoxLibJpeg_DEFAULT_INCS)
+SDK_VBoxLibJpeg_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libjpeg$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-libjpeg12$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-libjpeg16$(VBOX_SUFF_LIB)
 
 # zlib
 SDK_VBoxZlib                  := zlib for dll linking.
@@ -5636,6 +5651,13 @@ ifeq ($(VBOX_LDR_FMT),pe)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
   TEMPLATE_VBoxR0_CXXFLAGS         += /volatileMetadata-
  endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Speculative execution hardening.
+  TEMPLATE_VBoxR0_CXXFLAGS         += -Qspectre
+  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+   TEMPLATE_VBoxR0_CXXFLAGS        += -Qspectre-jmp
+   #TEMPLATE_VBoxR0_CXXFLAGS        += -d2guardretpoline - requires RTLdr support or the VM fails to start due to mismatches.
+  endif
+ endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBoxR0_CXXFLAGS         += /analyze
  endif
@@ -5661,6 +5683,9 @@ ifeq ($(VBOX_LDR_FMT),pe)
   TEMPLATE_VBoxR0_LDFLAGS.win.amd64 += -Include:__security_init_cookie -Export:ModuleInitSecurityCookie=__security_init_cookie
   TEMPLATE_VBoxR0_LDFLAGS.win.x86  += -Include:___security_init_cookie -Export:ModuleInitSecurityCookie=__security_init_cookie
   TEMPLATE_VBoxR0_LDFLAGS.win.arm64 += -Include:__security_init_cookie -Export:ModuleInitSecurityCookie=__security_init_cookie
+ endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Speculative execution hardening.
+  #TEMPLATE_VBoxR0_LDFLAGS.win.amd64 += $(VBOX_VCC_LD_GUARD_RETPOLINE) - requires RTLdr support or the VM fails to start due to mismatches.
  endif
  TEMPLATE_VBoxR0_LATE_LIBS          = \
  	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
@@ -5689,8 +5714,8 @@ ifeq ($(VBOX_LDR_FMT),elf)
  if $(VBOX_GCC_VERSION_CC) >= 40500 # 4.1.2 complains, 4.5.2 is okay, didn't check which version inbetween made it okay with g++.
   TEMPLATE_VBoxR0_CXXFLAGS         += -ffreestanding
  endif
- TEMPLATE_VBoxR0_CFLAGS.amd64       = -m64 -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fasynchronous-unwind-tables -ffreestanding
- TEMPLATE_VBoxR0_CXXFLAGS.amd64     = -m64 -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fasynchronous-unwind-tables
+ TEMPLATE_VBoxR0_CFLAGS.amd64       = -m64 -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fasynchronous-unwind-tables $(VBOX_GCC_mharden-sls-all) -ffreestanding
+ TEMPLATE_VBoxR0_CXXFLAGS.amd64     = -m64 -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fasynchronous-unwind-tables $(VBOX_GCC_mharden-sls-all)
  TEMPLATE_VBoxR0_CXXFLAGS.arm64     = -mabi=lp64 -mgeneral-regs-only -ffixed-x18 -fconserve-stack \
  	-fno-stack-check $(VBOX_GCC_fno-stack-clash-protection) $(VBOX_GCC_fno-allow-store-data-races) -fno-delete-null-pointer-checks # (linux 6.11)
  # arm64: Add -mbranch-protection=pac-ret ?
@@ -5865,10 +5890,17 @@ ifeq ($(KBUILD_TARGET),win)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
   TEMPLATE_VBoxR0Drv_CXXFLAGS         += /volatileMetadata-
  endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Speculative execution hardening.
+  TEMPLATE_VBoxR0Drv_CXXFLAGS         += -Qspectre
+  TEMPLATE_VBoxR0Drv_CXXFLAGS.win.x86 += -Qspectre-jmp
+  TEMPLATE_VBoxR0Drv_CXXFLAGS.win.amd64 += -Qspectre-jmp -d2guardretpoline
+ endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBoxR0Drv_CXXFLAGS         += /analyze
  endif
  TEMPLATE_VBoxR0Drv_CFLAGS             = $(TEMPLATE_VBoxR0Drv_CXXFLAGS)
+ TEMPLATE_VBoxR0Drv_CFLAGS.win.x86     = $(TEMPLATE_VBoxR0Drv_CXXFLAGS.win.x86)
+ TEMPLATE_VBoxR0Drv_CFLAGS.win.amd64   = $(TEMPLATE_VBoxR0Drv_CXXFLAGS.win.amd64)
  TEMPLATE_VBoxR0Drv_LDFLAGS            = -WX -Ignore:4197 \
  	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD -Release -Debug -Opt:Ref -Opt:Icf \
  	$(VBOX_VCC_LD_GUARD_CF) \
@@ -5886,6 +5918,9 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR0Drv_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA) $(VBOX_VCC_LD_GUARD_EHCONT) $(VBOX_VCC_LD_CET_COMPAT)
  TEMPLATE_VBoxR0Drv_LDFLAGS.win.arm64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA) $(VBOX_VCC_LD_GUARD_EHCONT)
  TEMPLATE_VBoxR0Drv_LDFLAGS.win.x86    = $(VBOX_VCC_LD_CET_COMPAT)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Speculative execution hardening.
+  TEMPLATE_VBoxR0Drv_LDFLAGS.win.amd64 += $(VBOX_VCC_LD_GUARD_RETPOLINE)
+ endif
  TEMPLATE_VBoxR0Drv_ORDERDEPS          = $(VBOX_SIGN_DRIVER_ORDERDEPS)
  TEMPLATE_VBoxR0Drv_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif
@@ -9531,7 +9566,7 @@ SVN                    ?= svn$(HOSTSUFF_EXE)
 GIT                    ?= git$(HOSTSUFF_EXE)
 VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
 ifndef VBOX_SVN_REV
- VBOX_SVN_REV_CONFIG_FALLBACK := $(patsubst %:,,  $Rev: 174514 $  )
+ VBOX_SVN_REV_CONFIG_FALLBACK := $(patsubst %:,,  $Rev: 174864 $  )
  VBOX_SVN_REV_FALLBACK := $(if-expr $(VBOX_SVN_REV_CONFIG_FALLBACK) > $(VBOX_SVN_REV_VERSION_FALLBACK),$(VBOX_SVN_REV_CONFIG_FALLBACK),$(VBOX_SVN_REV_VERSION_FALLBACK))
  VBOX_SVN_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.svn/wc.db $(abspath $(PATH_ROOT)/../.svn/wc.db) $(abspath $(PATH_ROOT)/../../.svn/wc.db) $(PATH_ROOT)/.svn/entries))
  VBOX_GIT_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.git/config $(abspath $(PATH_ROOT)/../.git/config) $(abspath $(PATH_ROOT)/../../.git/config)))
@@ -9545,7 +9580,7 @@ ifndef VBOX_SVN_REV
  ifneq ($(VBOX_GIT_DEP),)
   #
   # VBOX_SVN_REV_CONFIG_FALLBACK is not properly populated for a git checkout,
-  # as the $Rev: 174514 $ is not expanded, so we have to set it based on the information in the repo.
+  # as the $Rev: 174864 $ is not expanded, so we have to set it based on the information in the repo.
   #
   VBOX_SVN_REV_FALLBACK := $(shell $(GIT) log -1 $(PATH_ROOT)/Config.kmk | $(SED) -e 's/^[ \t]*//' -e '/svn:sync-xref-src-repo-rev\: r/!d' -e 's/svn:sync-xref-src-repo-rev\: r*//; t a; :a q')
  endif

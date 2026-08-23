@@ -97,3 +97,4 @@ RT_NOCRT_BEGINPROC feholdexcept
         ret
 ENDPROC   RT_NOCRT(feholdexcept)
 
+MARK_OBJECT_RETPOLINE_SAFE

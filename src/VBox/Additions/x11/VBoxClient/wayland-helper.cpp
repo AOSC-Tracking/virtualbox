@@ -1,6 +1,8 @@
 /* $Id: wayland-helper.cpp $ */
 /** @file
  * Guest Additions - Common code for Wayland Desktop Environment helpers.
+ *
+ * @note Obsolete. Compiled with 'kmk VBOX_WITH_WAYLAND_ADDITIONS_LEGACY=1'.
  */
 
 /*
@@ -39,23 +41,24 @@ static const char *g_pcszSessionDescClipardCopyToGuest      = "Copy clipboard to
 static const char *g_pcszSessionDescClipardAnnounceToHost   = "Announce and copy clipboard to the host";
 static const char *g_pcszSessionDescClipardCopyToHost       = "Copy clipboard to the host";
 
-/**
+/** @page pg_VBoxClient_Wayland  VBoxClient & Wayland.
+ *
  * Interaction between VBoxClient and Wayland environment implies
  * a sequential data exchange between both parties. In order to
  * temporary store and protect this data, we put it into a Session.
-
+ *
  * Session can be started, joined or ended.
-
+ *
  * Each time when either host (via VBoxClient) or Wayland client
  * initiates a new data transfer (such as clipboard sharing or drag-n-drop
  * operation) a new session should be started. Due to current implementation,
  * no more than one session can run in the same time. Therefore, before
  * starting new session, previous one needs to be ended.
-
+ *
  * When either VBoxClient or Wayland thread needs to access session data,
  * it need to join session at first. Multiple threads can join the same
  * session in parallel.
-
+ *
  * When sequence of operations which were required to transfer data to
  * either side is complete, session should be ended.
  *
@@ -113,7 +116,7 @@ static int vbcl_wayland_session_enter_state(volatile vbcl_wl_session_state_t *pS
     bool fRc = false;
     uint64_t tsStart = RTTimeMilliTS();
 
-    while (   !(fRc = ASMAtomicCmpXchgU8((volatile uint8_t *)pSessionState, to, from))
+    while (   !(fRc = ASMAtomicCmpXchgU8((volatile uint8_t *)pSessionState, to, from)) /** @todo r=bird: It isn't 8-bit, it's int-sized. */
            && (RTTimeMilliTS() - tsStart) < u64TimeoutMs)
     {
         RTThreadSleep(VBCL_WAYLAND_RELAX_INTERVAL_MS);
@@ -123,8 +126,46 @@ static int vbcl_wayland_session_enter_state(volatile vbcl_wl_session_state_t *pS
 }
 
 
+/**
+ * Try atomically enter session state within time interval.
+ *
+ * @returns IPRT status code.
+ * @param   penmState       The session state variable.
+ * @param   enmDesiredState The desired state.
+ * @param   cMsTimeout      Number of milliseconds to poll.
+ * @param   pszCaller       The caller name (optional).
+ */
+static int vbclWaylandSessionWaitForState(vbcl_wl_session_state_t volatile *penmState,
+                                          vbcl_wl_session_state_t enmDesiredState,
+                                          uint64_t cMsTimeout, const char *pszCaller)
+{
+    /* it is likely that the state is */
+    AssertCompile(sizeof(*penmState) == sizeof(uint32_t));
+    if ((vbcl_wl_session_state_t)ASMAtomicUoReadU32((uint32_t volatile *)penmState) == enmDesiredState)
+        return VINF_SUCCESS;
 
-RTDECL(void) vbcl_wayland_session_init(vbcl_wl_session_t *pSession)
+    /* Okay, do polling. */
+    uint64_t const msStart = RTTimeMilliTS();
+    do
+    {
+        AssertCompile(sizeof(*penmState) == sizeof(uint32_t));
+        if ((vbcl_wl_session_state_t)ASMAtomicUoReadU32((uint32_t volatile *)penmState) == enmDesiredState)
+            return VINF_SUCCESS;
+        RTThreadSleep(VBCL_WAYLAND_RELAX_INTERVAL_MS);
+    } while (RTTimeMilliTS() - msStart < cMsTimeout);
+
+    /* timed out, recheck then return. */
+    vbcl_wl_session_state_t const enmFinalState = (vbcl_wl_session_state_t)ASMAtomicUoReadU32((uint32_t volatile *)penmState);
+    if (enmFinalState == enmDesiredState)
+        return VINF_SUCCESS;
+    VBClLogError("Session state wait failed%s%s: Wanted %d, is %d\n , rc=%Rrc\n",
+                 pszCaller ? " for " : "", pszCaller ? pszCaller : "", enmDesiredState, enmFinalState);
+    return VERR_RESOURCE_BUSY;
+}
+
+
+
+void vbcl_wayland_session_init(vbcl_wl_session_t *pSession)
 {
     AssertPtrReturnVoid(pSession);
 
@@ -138,10 +179,8 @@ RTDECL(void) vbcl_wayland_session_init(vbcl_wl_session_t *pSession)
     ASMAtomicWriteU32(&pSession->cUsers, 0);
 }
 
-RTDECL(int) vbcl_wayland_session_start(vbcl_wl_session_t *pSession,
-                                       vbcl_wl_session_type_t enmType,
-                                       PFNVBCLWLSESSIONCB pfnStart,
-                                       void *pvUser)
+int vbcl_wayland_session_start(vbcl_wl_session_t *pSession, vbcl_wl_session_type_t enmType,
+                               PFNVBCLWLSESSIONCB pfnStart, void *pvUser)
 {
     int rc;
     const char *pcszDesc;
@@ -202,50 +241,86 @@ RTDECL(int) vbcl_wayland_session_start(vbcl_wl_session_t *pSession,
     return rc;
 }
 
-RTDECL(int) vbcl_wayland_session_join_ex(vbcl_wl_session_t *pSession,
-                                         PFNVBCLWLSESSIONCB pfnJoin, void *pvUser,
-                                         const char *pcszCallee)
+int VBClWaylandSessionJoinEx(vbcl_wl_session_t *pSession, vbcl_wl_session_type_t enmSessionType,
+                             PFNVBCLWAYLANDSESSIONJOIN pfnCallback, void *pvUser, const char *pszCaller)
 {
-    int rc;
-
-    /* Make sure mandatory parameters were provided. */
+    /*
+     * Validate input.
+     */
     AssertPtrReturn(pSession, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pfnJoin, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfnCallback, VERR_INVALID_PARAMETER);
+    AssertReturn(ASMAtomicUoReadU32(&pSession->u32Magic) == VBCL_WAYLAND_SESSION_MAGIC, VERR_INVALID_STATE);
 
-    /* Make sure session was initialized. */
-    AssertReturn(ASMAtomicReadU32(&pSession->u32Magic) == VBCL_WAYLAND_SESSION_MAGIC,
-                 VERR_SEM_DESTROYED);
-
-    rc = vbcl_wayland_session_enter_state(&pSession->enmState,
-                                          VBCL_WL_SESSION_STATE_STARTED,
-                                          VBCL_WL_SESSION_STATE_STARTED,
-                                          RT_MS_1SEC);
+    /*
+     * Check state and type.
+     */
+    int rc = vbclWaylandSessionWaitForState(&pSession->enmState, VBCL_WL_SESSION_STATE_STARTED, RT_MS_1SEC, pszCaller);
     if (RT_SUCCESS(rc))
     {
-        uint32_t cUsers;
-        const char *pcszDesc = pSession->pcszDesc;
+        const char * const pcszDesc = pSession->pcszDesc;
+        if (pSession->enmType == enmSessionType)
+        {
+            /*
+             * Take reference, work the callback and drop the reference.
+             */
+            /** @todo r=bird: This doesn't actually offer any termination protection,
+             *        since we're not checking for cUsers being too low... */
+            uint32_t cUsers = ASMAtomicIncU32(&pSession->cUsers);
+            VBClLogVerbose(2, "session [%s] join from %s (cUsers=%u)\n", pcszDesc, pszCaller, cUsers);
 
-        /* Take session reference. */
-        cUsers = ASMAtomicIncU32(&pSession->cUsers);
-        VBClLogVerbose(2, "session join [%s @ %s], cUsers=%u\n", pcszDesc, pcszCallee, cUsers);
+            rc = pfnCallback(pvUser);
 
-        /* Process callback while holding reference to session. */
-        rc = pfnJoin(pSession->enmType, pvUser);
-
-        /* Release session reference. */
-        cUsers = ASMAtomicDecU32(&pSession->cUsers);
-        VBClLogVerbose(2, "session leave [%s @ %s], cUsers=%u, rc=%Rrc\n",
-                       pcszDesc, pcszCallee, cUsers, rc);
-
+            cUsers = ASMAtomicDecU32(&pSession->cUsers);
+            VBClLogVerbose(2, "session [%s] return to %s (cUsers=%u): %Rrc\n", pcszDesc, pszCaller, cUsers, rc);
+        }
+        else
+        {
+            VBClLogVerbose(2, "session [%s] mismatching type for %s\n", pcszDesc, pszCaller);
+            rc = VERR_WRONG_ORDER;
+        }
     }
-    else
-        VBClLogError("cannot join session from %s, rc=%Rrc\n", pcszCallee, rc);
-
     return rc;
 }
 
-RTDECL(int) vbcl_wayland_session_end(vbcl_wl_session_t *pSession,
-                                     PFNVBCLWLSESSIONCB pfnEnd, void *pvUser)
+int VBClWaylandSessionJoinAnyTypeEx(vbcl_wl_session_t *pSession, PFNVBCLWLSESSIONCB pfnCallback,
+                                    void *pvUser, const char *pszCaller)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pSession, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfnCallback, VERR_INVALID_PARAMETER);
+    AssertReturn(ASMAtomicUoReadU32(&pSession->u32Magic) == VBCL_WAYLAND_SESSION_MAGIC, VERR_INVALID_STATE);
+
+    /*
+     * Check state.
+     */
+    int rc = vbclWaylandSessionWaitForState(&pSession->enmState, VBCL_WL_SESSION_STATE_STARTED, RT_MS_1SEC, pszCaller);
+    if (RT_SUCCESS(rc))
+    {
+        const char *pcszDesc = pSession->pcszDesc;
+
+        /*
+         * Take reference, work the callback and drop the reference.
+         */
+        /** @todo r=bird: This doesn't actually offer any termination protection,
+         *        since we're not checking for cUsers being too low... */
+        /* Take session reference. */
+        uint32_t cUsers = ASMAtomicIncU32(&pSession->cUsers);
+        VBClLogVerbose(2, "session [%s] join from %s (cUsers=%u)\n", pcszDesc, pszCaller, cUsers);
+
+        /* Process callback while holding reference to session. */
+        rc = pfnCallback(pSession->enmType, pvUser);
+
+        /* Release session reference. */
+        cUsers = ASMAtomicDecU32(&pSession->cUsers);
+        VBClLogVerbose(2, "session [%s] return to %s (cUsers=%u): %Rrc\n", pcszDesc, pszCaller, cUsers, rc);
+
+    }
+    return rc;
+}
+
+int vbcl_wayland_session_end(vbcl_wl_session_t *pSession, PFNVBCLWLSESSIONCB pfnEnd, void *pvUser)
 {
     int rc;
 
@@ -304,7 +379,7 @@ RTDECL(int) vbcl_wayland_session_end(vbcl_wl_session_t *pSession,
     return rc;
 }
 
-RTDECL(bool) vbcl_wayland_session_is_started(vbcl_wl_session_t *pSession)
+bool vbcl_wayland_session_is_started(vbcl_wl_session_t *pSession)
 {
     /* Make sure mandatory parameters were provided. */
     AssertPtrReturn(pSession, false);
@@ -313,19 +388,5 @@ RTDECL(bool) vbcl_wayland_session_is_started(vbcl_wl_session_t *pSession)
     AssertReturn(ASMAtomicReadU32(&pSession->u32Magic) == VBCL_WAYLAND_SESSION_MAGIC, false);
 
     return ASMAtomicReadU8((volatile uint8_t *)&pSession->enmState) == VBCL_WL_SESSION_STATE_STARTED;
-}
-
-RTDECL(int) vbcl_wayland_thread_start(PRTTHREAD pThread, PFNRTTHREAD pfnThread, const char *pszName, void *pvUser)
-{
-    int rc = RTThreadCreate(pThread, pfnThread, pvUser, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, pszName);
-    if (RT_SUCCESS(rc))
-        rc = RTThreadUserWait(*pThread, RT_MS_30SEC /* msTimeout */);
-
-    if (RT_SUCCESS(rc))
-        VBClLogVerbose(1, "started %s thread\n", pszName);
-    else
-        LogRel(("unable to start %s thread, rc=%Rrc\n", pszName, rc));
-
-    return rc;
 }
 

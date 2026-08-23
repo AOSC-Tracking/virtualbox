@@ -115,6 +115,7 @@ RT_BEGINPROC ASMBitNextClear
         leave
 %endif
         ret
+        int3
 
         ;
         ; Do dword scan.
@@ -175,9 +176,11 @@ RT_BEGINPROC ASMBitNextClear
         shl     edi, 3                  ; edi=bit offset of current dword.
         add     eax, edi
         jmp     .return
+        int3
 
 .return_failure:
         mov     eax, 0ffffffffh
         jmp     .return
 ENDPROC ASMBitNextClear
 
+MARK_OBJECT_RETPOLINE_SAFE

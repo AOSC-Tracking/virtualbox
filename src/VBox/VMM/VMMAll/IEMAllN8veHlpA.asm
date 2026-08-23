@@ -303,3 +303,5 @@ SEH64_END_PROLOGUE
 
         ret
 ENDPROC     iemNativeFpCtrlRegRestore
+
+MARK_OBJECT_RETPOLINE_SAFE  ;; @todo retpoline: iemNativeTbEntry does an indirect jmp (probably not something we want to touch).

@@ -1363,6 +1363,15 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
             fWorldSwitcher |= HM_WSF_IBPB_EXIT;
         if (pVM->hm.s.fIbpbOnVmEntry)
             fWorldSwitcher |= HM_WSF_IBPB_ENTRY;
+
+        /* If IBPB doesn't clear the RSBs, do so manually unless shadow stack is enabled.  */
+        if (fWorldSwitcher & (HM_WSF_IBPB_ENTRY | HM_WSF_IBPB_EXIT))
+        {
+            if (g_CpumHostFeatures.s.fIbpbNoRet    && !hmR0IsShadowStackEnabled())
+                fWorldSwitcher |= HM_WSF_IBPB_MAN_RET;
+            if (!g_CpumHostFeatures.s.fArchPbrsbNo && !hmR0IsShadowStackEnabled())
+                fWorldSwitcher |= HM_WSF_IBPB_PBRSB;
+        }
     }
     if (g_CpumHostFeatures.s.fFlushCmd)
     {

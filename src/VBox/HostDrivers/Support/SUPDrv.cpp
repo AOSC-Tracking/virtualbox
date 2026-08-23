@@ -366,6 +366,7 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    1,  SUPR0GetSvmUsability),      /* not-arch-arm64 */
     SUPEXP_STK_BACK(    1,  SUPR0GetVTSupport),         /* not-arch-arm64 */
     SUPEXP_STK_BACK(    1,  SUPR0GetVmxUsability),      /* not-arch-arm64 */
+    SUPEXP_STK_BACK(    0,  SUPR0DispatchHostNmi),      /* not-arch-arm64 */
 #endif
     SUPEXP_STK_BACK(    2,  SUPR0LdrIsLockOwnerByMod),
     SUPEXP_STK_BACK(    1,  SUPR0LdrLock),

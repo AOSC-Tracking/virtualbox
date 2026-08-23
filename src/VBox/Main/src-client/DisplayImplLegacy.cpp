@@ -390,7 +390,8 @@ static bool i_vbvaFetchBytes(uint8_t RT_UNTRUSTED_VOLATILE_GUEST const *pu8RingB
 
 
 static bool i_vbvaPartialRead(uint8_t **ppu8, uint32_t *pcb, uint32_t cbRecord,
-                              uint8_t RT_UNTRUSTED_VOLATILE_GUEST const *pu8RingBuffer, uint32_t off32Data)
+                              uint8_t RT_UNTRUSTED_VOLATILE_GUEST const *pu8RingBuffer, uint32_t off32Data,
+                              uint32_t RT_UNTRUSTED_VOLATILE_GUEST *poff32Data)
 {
     uint8_t *pu8New;
 
@@ -426,7 +427,8 @@ static bool i_vbvaPartialRead(uint8_t **ppu8, uint32_t *pcb, uint32_t cbRecord,
     }
 
     /* Fetch data from the ring buffer. */
-    if (!i_vbvaFetchBytes(pu8RingBuffer, off32Data, pu8New + *pcb, cbRecord - *pcb))
+    uint32_t const cbFetch = cbRecord - *pcb;
+    if (!i_vbvaFetchBytes(pu8RingBuffer, off32Data, pu8New + *pcb, cbFetch))
     {
         RTMemFree(pu8New);
 
@@ -435,6 +437,9 @@ static bool i_vbvaPartialRead(uint8_t **ppu8, uint32_t *pcb, uint32_t cbRecord,
 
         return false;
     }
+
+    /* Advance data offset. */
+    *poff32Data = (off32Data + cbFetch) % VMMDEV_VBVA_RING_BUFFER_SIZE;
 
     *ppu8 = pu8New;
     *pcb = cbRecord;
@@ -490,7 +495,8 @@ static bool i_vbvaFetchCmd(VIDEOACCEL *pVideoAccel, VBVACMDHDR **ppHdr, uint32_t
         if (cbRecord > pVideoAccel->cbVbvaPartial)
         {
             /* New data has been added to the record. */
-            if (!i_vbvaPartialRead(&pVideoAccel->pu8VbvaPartial, &pVideoAccel->cbVbvaPartial, cbRecord, &pVbvaMemory->au8RingBuffer[0], off32Data))
+            if (!i_vbvaPartialRead(&pVideoAccel->pu8VbvaPartial, &pVideoAccel->cbVbvaPartial, cbRecord,
+                                   &pVbvaMemory->au8RingBuffer[0], off32Data, &pVbvaMemory->off32Data))
             {
                 return false;
             }
@@ -524,7 +530,8 @@ static bool i_vbvaFetchCmd(VIDEOACCEL *pVideoAccel, VBVACMDHDR **ppHdr, uint32_t
         if (cbRecord >= VMMDEV_VBVA_RING_BUFFER_SIZE - VMMDEV_VBVA_RING_BUFFER_THRESHOLD)
         {
             /* Partial read must be started. */
-            if (!i_vbvaPartialRead(&pVideoAccel->pu8VbvaPartial, &pVideoAccel->cbVbvaPartial, cbRecord, &pVbvaMemory->au8RingBuffer[0], off32Data))
+            if (!i_vbvaPartialRead(&pVideoAccel->pu8VbvaPartial, &pVideoAccel->cbVbvaPartial, cbRecord,
+                                   &pVbvaMemory->au8RingBuffer[0], off32Data, &pVbvaMemory->off32Data))
             {
                 return false;
             }
@@ -671,19 +678,18 @@ int Display::i_videoAccelFlush(PPDMIDISPLAYPORT pUpPort)
                          cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
 #endif /* DEBUG_sunlover */
 
-            VBVACMDHDR hdrSaved = *phdr;
-
-            int x = phdr->x;
-            int y = phdr->y;
-            int w = phdr->w;
-            int h = phdr->h;
+            VBVACMDHDR hdr = *phdr;
+            int x = hdr.x;
+            int y = hdr.y;
+            int w = hdr.w;
+            int h = hdr.h;
 
             uScreenId = mapCoordsToScreen(maFramebuffers, mcMonitors, &x, &y, &w, &h);
 
-            phdr->x = (int16_t)x;
-            phdr->y = (int16_t)y;
-            phdr->w = (uint16_t)w;
-            phdr->h = (uint16_t)h;
+            hdr.x = (int16_t)x;
+            hdr.y = (int16_t)y;
+            hdr.w = (uint16_t)w;
+            hdr.h = (uint16_t)h;
 
             /* Handle the command.
              *
@@ -698,12 +704,10 @@ int Display::i_videoAccelFlush(PPDMIDISPLAYPORT pUpPort)
              */
 
             /* Accumulate the update. */
-            vbvaRgnDirtyRect(&rgn, uScreenId, phdr);
+            vbvaRgnDirtyRect(&rgn, uScreenId, &hdr);
 
-            /* Forward the command to VRDP server. */
-            mParent->i_consoleVRDPServer()->SendUpdate(uScreenId, phdr, cbCmd);
-
-            *phdr = hdrSaved;
+            /* Forward the command to VRDP server as a bitmap update. */
+            mParent->i_consoleVRDPServer()->SendUpdate(uScreenId, &hdr, sizeof(hdr));
         }
 
         i_vbvaReleaseCmd(pVideoAccel, phdr, cbCmd);

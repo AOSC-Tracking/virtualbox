@@ -102,3 +102,4 @@ RT_NOCRT_BEGINPROC remainder
         ret
 ENDPROC   RT_NOCRT(remainder)
 
+MARK_OBJECT_RETPOLINE_SAFE
