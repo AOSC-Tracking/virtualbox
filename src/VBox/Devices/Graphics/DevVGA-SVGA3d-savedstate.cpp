@@ -685,7 +685,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
 
                 rc = vmsvga3dSurfaceDefine(pThisCC, sid, surface.f.surfaceFlags, surface.format, surface.multiSampleCount,
                                            SVGA3D_MS_PATTERN_NONE, SVGA3D_MS_QUALITY_NONE,
-                                           surface.autogenFilter, surface.cLevels, &pMipmapLevelSize[0], /* arraySize = */ 0, /* bufferByteStride = */ 0, /* fAllocMipLevels = */ true);
+                                           surface.autogenFilter, surface.cLevels, &pMipmapLevelSize[0], /* arraySize = */ 0, /* bufferByteStride = */ 0, VMSVGA3D_SURFACE_DEFINE_F_ALLOC_MIP_LEVELS);
                 AssertRCReturn(rc, rc);
 
                 RTMemFree(pMipmapLevelSize);

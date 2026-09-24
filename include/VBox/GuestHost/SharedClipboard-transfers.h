@@ -75,6 +75,8 @@ typedef struct SHCLTRANSFER *PSHCLTRANSFER;
 #define SHCL_TRANSFER_PATH_MAX                  RTPATH_MAX
 /** Defines the default maximum transfer chunk size (in bytes) of a Shared Clipboard transfer. */
 #define SHCL_TRANSFER_DEFAULT_MAX_CHUNK_SIZE    _64K
+/** Maximum number of guest-provided root entries accepted for one transfer. */
+#define SHCL_TRANSFER_MAX_ROOT_ENTRIES          _4K
 /** Defines the default maximum list handles a Shared Clipboard transfer can have. */
 #define SHCL_TRANSFER_DEFAULT_MAX_LIST_HANDLES  _4K
 /** Defines the default maximum object handles a Shared Clipboard transfer can have. */
@@ -468,7 +470,7 @@ typedef SHCLLISTENTRY *PSHCLLISTENTRY;
 /** Pointer to a const Shared Clipboard list entry. */
 typedef SHCLLISTENTRY *PCSHCLLISTENTRY;
 
-/** Maximum length (in UTF-8 characters) of a list entry name. Includes terminator. */
+/** Maximum size (in bytes) of a UTF-8 list entry name. Includes terminator. */
 #define SHCLLISTENTRY_MAX_NAME     4096
 
 /**
@@ -1270,6 +1272,7 @@ int ShClPathSanitize(char *pszPath, size_t cbPath);
 const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus);
 int ShClTransferTransformPath(char *pszPath, size_t cbPath);
 int ShClTransferValidatePath(const char *pcszPath, bool fMustExist);
+int ShClTransferValidatePathEx(const char *pcszPath, size_t cbPath, bool fMustExist);
 int ShClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags, char **ppszResolved);
 int ShClTransferConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen);
 int ShClFsObjInfoQueryLocal(const char *pszPath, PSHCLFSOBJINFO pObjInfo);

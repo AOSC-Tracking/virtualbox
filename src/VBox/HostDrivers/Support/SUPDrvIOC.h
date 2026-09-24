@@ -137,6 +137,8 @@
 #define SUP_IOCTL_FAST_DO_NOP                   SUP_CTL_CODE_FAST(66)
 /** First fast path IOCtl number. */
 #define SUP_IOCTL_FAST_DO_FIRST                 SUP_IOCTL_FAST_DO_HM_RUN
+/** Window specific IOCtl: Verify the RWX page. */
+#define SUP_IOCTL_WIN_VERIFY_RWX_PG             SUP_CTL_CODE_FAST(127)
 /** @} */
 
 

@@ -563,18 +563,15 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                             GlobalUnlock(hMem);
 
                             HANDLE hClip = SetClipboardData(uFmtWin, hMem);
-                            if (!hClip)
-                            {
-                                /* The hMem ownership has gone to the system. Finish the processing. */
-                                break;
-                            }
+                            if (hClip)
+                                hMem = NULL; /* The system now owns the memory. */
                             else
-                                VBoxTrayError("Shared Clipboard: Setting host data buffer to clipboard failed with %Rrc\n",
-                                              RTErrConvertFromWin32(GetLastError()));
+                                VBoxTrayError("Shared Clipboard: Setting host data buffer to clipboard failed with %Rrc\n", RTErrConvertFromWin32(GetLastError()));
                         }
                         else
                             VBoxTrayError("Shared Clipboard: Failed to lock memory (%Rrc)\n", RTErrConvertFromWin32(GetLastError()));
-                        GlobalFree(hMem);
+                        if (hMem)
+                            GlobalFree(hMem);
                     }
                     else
                         VBoxTrayError("Shared Clipboard: No memory for allocating host data buffer\n");
@@ -633,6 +630,7 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
             }
 
             LogFunc(("SHCL_WIN_WM_REPORT_FORMATS: fFormats=0x%x, lastErr=%ld\n", fFormats, GetLastError()));
+            VbglR3ClipboardEventFree(pEvent);
             break;
         }
 
@@ -735,7 +733,8 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
 
             /* If the requested clipboard format is not available, we must send empty data. */
             if (hClip == NULL)
-                VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, VBOX_SHCL_FMT_NONE, NULL, 0);
+                VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, NULL, 0);
+            VbglR3ClipboardEventFree(pEvent);
             break;
         }
 
@@ -1097,20 +1096,20 @@ DECLCALLBACK(int) vbtrShClWorker(void *pvInstance, bool volatile *pfShutdown)
                     /* The host has announced available clipboard formats.
                      * Forward the information to the window, so it can later
                      * respond to WM_RENDERFORMAT message. */
-                    ::PostMessage(pWinCtx->hWnd, SHCL_WIN_WM_REPORT_FORMATS,
-                                  0 /* wParam */, (LPARAM)pEvent /* lParam */);
-
-                    pEvent = NULL; /* Consume pointer. */
+                    if (::PostMessage(pWinCtx->hWnd, SHCL_WIN_WM_REPORT_FORMATS,
+                                      0 /* wParam */, (LPARAM)pEvent /* lParam */))
+                        pEvent = NULL; /* Ownership transferred to the window thread. */
                     break;
                 }
 
                 case VBGLR3CLIPBOARDEVENTTYPE_READ_DATA:
                 {
-                    /* The host needs data in the specified format. */
-                    ::PostMessage(pWinCtx->hWnd, SHCL_WIN_WM_READ_DATA,
-                                  0 /* wParam */, (LPARAM)pEvent /* lParam */);
-
-                    pEvent = NULL; /* Consume pointer. */
+                    /* Queue the request; if this fails, complete it before freeing the event. */
+                    if (::PostMessage(pWinCtx->hWnd, SHCL_WIN_WM_READ_DATA,
+                                      0 /* wParam */, (LPARAM)pEvent /* lParam */))
+                        pEvent = NULL; /* Ownership transferred to the window thread. */
+                    else
+                        VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, pEvent->u.fReadData, NULL, 0);
                     break;
                 }
 
@@ -1153,6 +1152,10 @@ DECLCALLBACK(int) vbtrShClWorker(void *pvInstance, bool volatile *pfShutdown)
             break;
     }
 
+    /* Stop the window thread after all clipboard events have been queued. */
+    ASMAtomicWriteBool(&pCtx->fShutdown, true);
+    PostMessage(pWinCtx->hWnd, WM_QUIT, 0, 0);
+
     VBoxTrayVerbose(1, "Shared Clipboard: Worker loop ended\n");
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -1178,9 +1181,6 @@ DECLCALLBACK(int) vbtrShClStop(void *pvInstance)
 
     /* Set shutdown indicator. */
     ASMAtomicWriteBool(&pCtx->fShutdown, true);
-
-    /* Let our clipboard know that we're going to shut down. */
-    PostMessage(pCtx->Win.hWnd, WM_QUIT, 0, 0);
 
     /* Disconnect from the host service.
      * This will also send a VBOX_SHCL_HOST_MSG_QUIT from the host so that we can break out from our message worker. */

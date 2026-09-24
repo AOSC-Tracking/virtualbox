@@ -217,6 +217,12 @@ typedef struct VBOXWDDM_ALLOCATION
         uint32_t                sid;                        /* For surfaces. */
         uint32_t                SegmentId;                  /* Segment of the allocation. */
         AVLU32TREE              treeInstances;              /* DX_ALLOCATION_INSTANCE */
+        struct
+        {
+            uint32_t            fReadbackCompleted : 1;
+            uint32_t            fReserved : 31;
+        } flags;
+        uint64_t                u64LastReferencedCommandFence;
     } dx;
 #endif /* VBOX_WITH_VMSVGA3D_DX */
 } VBOXWDDM_ALLOCATION, *PVBOXWDDM_ALLOCATION;

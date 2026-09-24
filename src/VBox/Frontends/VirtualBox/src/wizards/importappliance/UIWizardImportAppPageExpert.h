@@ -99,6 +99,7 @@ private slots:
     void sltHandleMACImportPolicyComboChange();
     /** Handles import HDs as VDI check-box change. */
     void sltHandleImportHDsAsVDICheckBoxChange();
+    void sltHandleKeepExtraDataCheckBoxChange();
     /** Handles translation event. */
     virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
     void sltImportWarningShown();
@@ -170,6 +171,7 @@ private:
     QLabel                        *m_pLabelAdditionalOptions;
     /** Holds the 'import HDs as VDI' checkbox instance. */
     QCheckBox                     *m_pCheckboxImportHDsAsVDI;
+    QCheckBox                     *m_pCheckboxKeepExtraData;
     /** Holds the signature/certificate info label instance. */
     QLabel                        *m_pCertLabel;
 

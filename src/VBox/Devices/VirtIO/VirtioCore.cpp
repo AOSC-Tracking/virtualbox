@@ -1190,6 +1190,11 @@ DECLHIDDEN(int) virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
         STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsIn, cSegsIn);
 #endif
     }
+    else
+    {
+        pVirtqBuf->pSgPhysReturn = NULL;
+        pVirtqBuf->cbPhysReturn  = 0;
+    }
 
     if (cSegsOut)
     {
@@ -1199,6 +1204,11 @@ DECLHIDDEN(int) virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
 #ifdef VBOX_WITH_STATISTICS
         STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsOut, cSegsOut);
 #endif
+    }
+    else
+    {
+        pVirtqBuf->pSgPhysSend   = NULL;
+        pVirtqBuf->cbPhysSend    = 0;
     }
 
 #ifdef VBOX_WITH_STATISTICS

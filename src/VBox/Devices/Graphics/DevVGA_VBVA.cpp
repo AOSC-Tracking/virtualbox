@@ -977,6 +977,7 @@ int vboxVBVALoadStateExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion
             uint32_t cViews = 0;
             rc = pHlp->pfnSSMGetU32 (pSSM, &cViews);
             AssertRCReturn(rc, rc);
+            AssertReturn(cViews <= pThis->cMonitors, VERR_INVALID_STATE);
 
             uint32_t iView;
             for (iView = 0; iView < cViews; iView++)

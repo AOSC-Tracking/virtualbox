@@ -883,9 +883,9 @@ static int vmsvgaR3GboTransfer(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
         AssertPtr(pv);
 
         if (enmDirection == VMSVGAGboTransferDirection_Read)
-            memcpy(pvData, pv, cbData);
+            vmsvgaR3GboMemCpy(pvData, pv, cbData);
         else
-            memcpy(pv, pvData, cbData);
+            vmsvgaR3GboMemCpy(pv, pvData, cbData);
     }
     else
     {
@@ -1875,6 +1875,7 @@ void vmsvgaR3InstallColorCursor(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAGBColo
 static void vmsvga3dCmdDefineSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineSurface_v2 const *pCmd,
                                      uint32_t cMipLevelSizes, SVGA3dSize *paMipLevelSizes)
 {
+    ASSERT_GUEST_RETURN_VOID(vmsvga3dIsLegacyBackend(pThisCC));
     ASSERT_GUEST_RETURN_VOID(pCmd->sid < SVGA3D_MAX_SURFACE_IDS);
     ASSERT_GUEST_RETURN_VOID(cMipLevelSizes >= 1);
     RT_UNTRUSTED_VALIDATED_FENCE();
@@ -1936,7 +1937,8 @@ static void vmsvga3dCmdDefineSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineSurface
     SVGA3dMSQualityLevel const qualityLevel = pCmd->multisampleCount > 1 ? SVGA3D_MS_QUALITY_FULL : SVGA3D_MS_QUALITY_NONE;
     vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
                           pCmd->multisampleCount, multisamplePattern, qualityLevel, pCmd->autogenFilter,
-                          pCmd->face[0].numMipLevels, &paMipLevelSizes[0], /* arraySize = */ 0, /* bufferByteStride = */ 0, /* fAllocMipLevels = */ true);
+                          pCmd->face[0].numMipLevels, &paMipLevelSizes[0], /* arraySize = */ 0, /* bufferByteStride = */ 0,
+                          VMSVGA3D_SURFACE_DEFINE_F_ALLOC_MIP_LEVELS);
 }
 
 
@@ -2024,7 +2026,8 @@ static void vmsvga3dCmdDefineGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSur
         SVGA3dMSQualityLevel const qualityLevel = pCmd->multisampleCount > 1 ? SVGA3D_MS_QUALITY_FULL : SVGA3D_MS_QUALITY_NONE;
         vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
                               pCmd->multisampleCount, multisamplePattern, qualityLevel, pCmd->autogenFilter,
-                              pCmd->numMipLevels, &pCmd->size, /* arraySize = */ 0, /* bufferByteStride = */ 0, /* fAllocMipLevels = */ false);
+                              pCmd->numMipLevels, &pCmd->size, /* arraySize = */ 0, /* bufferByteStride = */ 0,
+                              VMSVGA3D_SURFACE_DEFINE_F_GB);
     }
 }
 
@@ -2754,7 +2757,8 @@ static void vmsvga3dCmdDefineGBSurface_v2(PVGASTATECC pThisCC, SVGA3dCmdDefineGB
         SVGA3dMSQualityLevel const qualityLevel = pCmd->multisampleCount > 1 ? SVGA3D_MS_QUALITY_FULL : SVGA3D_MS_QUALITY_NONE;
         vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
                               pCmd->multisampleCount, multisamplePattern, qualityLevel, pCmd->autogenFilter,
-                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, /* bufferByteStride = */ 0, /* fAllocMipLevels = */ false);
+                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, /* bufferByteStride = */ 0,
+                              VMSVGA3D_SURFACE_DEFINE_F_GB);
     }
 }
 
@@ -4489,7 +4493,8 @@ static int vmsvga3dCmdDefineGBSurface_v3(PVGASTATECC pThisCC, SVGA3dCmdDefineGBS
         /* Create the host surface. */
         vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
                               pCmd->multisampleCount, pCmd->multisamplePattern, pCmd->qualityLevel, pCmd->autogenFilter,
-                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, /* bufferByteStride = */ 0, /* fAllocMipLevels = */ false);
+                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, /* bufferByteStride = */ 0,
+                              VMSVGA3D_SURFACE_DEFINE_F_GB);
     }
     return rc;
 #else
@@ -4896,7 +4901,8 @@ static int vmsvga3dCmdDefineGBSurface_v4(PVGASTATECC pThisCC, SVGA3dCmdDefineGBS
         /* Create the host surface. */
         vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
                               pCmd->multisampleCount, pCmd->multisamplePattern, pCmd->qualityLevel, pCmd->autogenFilter,
-                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, pCmd->bufferByteStride, /* fAllocMipLevels = */ false);
+                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, pCmd->bufferByteStride,
+                              VMSVGA3D_SURFACE_DEFINE_F_GB);
     }
     return rc;
 #else
